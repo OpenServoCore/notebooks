@@ -1,0 +1,21 @@
+[project]
+name = "notebooks"
+version = "0.1.0"
+description = "Measurements and experiments behind the OpenServoCore firmware"
+requires-python = ">=3.12"
+dependencies = [
+    "fnirsi-dps150",
+    "bleak>=0.22",
+    "numpy>=2.1",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+    "jupyterlab>=4.2",
+    "ipykernel>=6.29",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -114,6 +114,68 @@ A hobbyist without an EE degree should be able to follow along. The
 notebooks are committed with their outputs baked in, so they read straight
 from GitHub.
 
+## Equipment
+
+What the experiments use, by the names the stage READMEs refer to. The
+scripts that drive the controlled ones live in `equipment/`.
+
+### DMM
+
+An OWON B41T+ handheld multimeter, 4.5 digits, true RMS, with Bluetooth LE
+streaming and a K thermocouple input. It reads DC volts, ohms at about a
+milliamp, DC amps and temperature. [equipment/b41t.py](equipment/b41t.py)
+connects and logs every packet with the host time of arrival. A review with
+the measured accuracy is at
+[lygte-info.dk](https://lygte-info.dk/review/DMMOwon%20B41T%20UK.html).
+Amazon link: to add.
+
+### DPS
+
+A FNIRSI DPS-150 bench supply, 0 to 30 V, 0 to 5 A, 150 W, fed from a
+100 W USB-C PD adapter, scripted over USB serial through the
+[fnirsi-dps150](https://pypi.org/project/fnirsi-dps150/) package.
+[equipment/dps150.py](equipment/dps150.py) reads it, sets a voltage and a
+current limit, and switches the output. The voltage readback agrees with
+the DMM within millivolts. The current readback reads well under the
+true current and is not used as a measurement. Product page at
+[Elektor](https://elektor.com/products/fnirsi-dps150-dc-power-supply-150-w).
+Amazon link: to add.
+
+### loads
+
+Three uxcell aluminium-housed wirewound power resistors, 5 ohm 50 W 5 %.
+One is used bare, one with a capacitor across it, and the three in series
+make about 15 ohm. Their values come from the power-resistors experiment in
+stage 0, not from the label. A power inductor of about 1 mH rated 2 A or
+more, in series with one resistor, makes the RL dummy for the bridge-state
+experiment. Amazon links: to add.
+
+### thermocouple
+
+A welded K-type thermocouple on twisted leads, read on the DMM's
+temperature input. Its offset, slope and time constant come from the thermocouple
+experiment in stage 0. Amazon link: to add.
+
+### camera
+
+A phone filming two printed ArUco tags, one on the horn and one fixed
+beside it, plus a printed ChArUco board for the lens calibration. The
+prints come from `oscnb.fiducial_print` and the pipeline lives in
+`oscnb.fiducial`. The phone model goes in the camera's registry entry,
+since the lens calibration belongs to it.
+
+### clapper
+
+The servo board's status LED, flashed from the host through a register in
+the experiment firmware image. Like a film clapper, every recording sees
+the same flash, so the camera, the DMM log and the host log can be lined
+up afterwards.
+
+### host
+
+The computer running `osc` over the osc adapter, with the capture scripts in
+this repo. Python comes through `uv`, see Setup.
+
 ## Results
 
 Each experiment writes one file, `results/<stage>/<experiment>.json`, with
@@ -122,6 +184,8 @@ reads these files and nothing else from the stages before it.
 
 ## Setup
 
-Coming with the code. It will be `uv sync` and `uv run jupyter lab`.
+You will need [uv](https://docs.astral.sh/uv/). Then `uv sync` in this folder
+installs Python 3.12 and the dependencies, `uv run python equipment/dps150.py read`
+checks the DPS, and `uv run jupyter lab` opens the notebooks.
 
 The principles and rules this repo follows are in [PRINCIPLES.md](PRINCIPLES.md).
