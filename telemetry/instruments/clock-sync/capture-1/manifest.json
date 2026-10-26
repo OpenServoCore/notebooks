@@ -1,0 +1,25 @@
+{
+  "clips": {
+    "lamp.mp4": {
+      "bytes": 255610284,
+      "frames": 4637,
+      "fps": 203.20265853524933,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 22.819583333333334,
+      "sha256": "a35741fe32b4dece996156aa285eea7528e8d0488ad35d1cbf0cfa11d911fb5c",
+      "lamp_roi": [
+        408,
+        1008,
+        24,
+        24
+      ]
+    }
+  },
+  "pipeline": {
+    "commit": "240b210",
+    "oscnb_dirty": true,
+    "fiducial_sha256": "bdea2f7f600d",
+    "opencv": "5.0.0"
+  }
+}
