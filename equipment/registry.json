@@ -1,0 +1,4 @@
+{
+  "dmm": {"model": "OWON B41T+", "address": "88:01:F9:C0:97:27"},
+  "dps": {"model": "FNIRSI DPS-150", "port_glob": "/dev/serial/by-id/usb-Artery_AT32_Virtual_Com_Port_*"}
+}
