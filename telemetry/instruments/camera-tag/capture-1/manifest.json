@@ -1,0 +1,46 @@
+{
+  "clips": {
+    "board.mp4": {
+      "bytes": 1316163452,
+      "frames": 24182,
+      "fps": 204.46220023885772,
+      "width": 1920,
+      "height": 1080,
+      "duration_s": 118.27125,
+      "sha256": "f25daaf19018200c9d45fd0cbead6e0dcd7d7f7a2a3878ed497a85e327d5de0d"
+    },
+    "board-handheld.mp4": {
+      "bytes": 492424524,
+      "frames": 9022,
+      "fps": 204.09263570640852,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 44.20541666666667,
+      "sha256": "e0483fc88af1183bc990ee4171e11b963ef758f6d1e4593701ad14eea34b2be2"
+    },
+    "still.mp4": {
+      "bytes": 122617699,
+      "frames": 2228,
+      "fps": 204.30214343025256,
+      "width": 1920,
+      "height": 1080,
+      "duration_s": 10.905416666666666,
+      "sha256": "5ffee96802fd7f4b78e9186874ba3da178b2ba8039b08945b0fe7a604ac50bde"
+    },
+    "turn.mp4": {
+      "bytes": 4410341956,
+      "frames": 81069,
+      "fps": 204.58537323979206,
+      "width": 1920,
+      "height": 1080,
+      "duration_s": 396.26,
+      "sha256": "d065d6e4712bc38b5cb928894fdd194872e9d0acabf5225ed805cfc7570e8d57"
+    }
+  },
+  "pipeline": {
+    "commit": "ccaf1bb",
+    "oscnb_dirty": false,
+    "fiducial_sha256": "613cd1c16ea3",
+    "opencv": "5.0.0"
+  }
+}

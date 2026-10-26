@@ -1,0 +1,17 @@
+{
+  "phone": "iPhone 17e (MHRN4LL/A, iOS 27.0.1), 1080p 240 fps slo-mo, 1x",
+  "distance_mm": 250.0,
+  "horn": {
+    "x_mm": 50.21,
+    "y_mm": 49.77
+  },
+  "ref": {
+    "x_mm": 50.25,
+    "y_mm": 49.86
+  },
+  "board": {
+    "x_mm": 125.1,
+    "y_mm": 124.25
+  },
+  "notes": "caliper read -0.76 mm closed; raw readings were 0.76 lower than these. Tags glued with a glue stick on the side of a cardboard box; board sheet taped to cardboard and held in the hands under the fixed phone for board.mp4"
+}
