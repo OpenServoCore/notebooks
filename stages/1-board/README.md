@@ -35,7 +35,7 @@ structure in it.
 Needs: board, DPS, bare load, host.
 
 How: torque-off streams at the control rate, ten seconds each, three per
-level at a 1S, a USB and a 2S level, plus one with the board NTC in the row.
+level at a 1S, a USB and a 2S level, the board NTC in every row.
 
 Run: `uv run python stages/1-board/rest-noise/capture.py`, then the notebook.
 

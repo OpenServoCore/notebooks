@@ -19,7 +19,5 @@ for v in LEVELS:
     for k in range(REPEATS):
         # a 5 % rung of 50 ms is the smallest the sweep records; the rest before it is the capture
         osc.sweep(out / f"rest-{v:g}V-{k}", ["5@50"], baseline_ms=REST_MS, rest_ms=200, dirs="fwd")
-    osc.sweep(out / f"rest-{v:g}V-ntc", ["5@50"], baseline_ms=REST_MS, rest_ms=200, dirs="fwd",
-              tel_chunks=osc.CHUNKS_NTC)
 bench.power_down()
 print("wrote", out)

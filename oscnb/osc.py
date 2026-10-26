@@ -60,8 +60,15 @@ def status():
     return run("status", capture=True)
 
 
+# The TEL row a static load wants, one chunk: vbus_raw, ntc_raw, current_raw,
+# vmotor_a, vmotor_b, duty_ticks. The six are contiguous in the table and fill
+# the 12-byte row, so the position, which a resistor has no use for, stays out
+# and every stream carries the rail and the board temperature.
+CHUNKS_RAW = "0x23c+12"
+
+
 def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500, dirs="both", decay="slow",
-          tel_chunks=None, static_load=True):
+          tel_chunks=CHUNKS_RAW, static_load=True):
     """`osc sweep` into `out` (sweep.csv + meta.json). `duty` is the step list
     as the tool takes it, percent, with `then:` and `@MS` forms allowed."""
     out = Path(out)
@@ -74,13 +81,6 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500, dirs="both", 
         args.append("--static-load")
     run(*args)
     return out
-
-
-# The default TEL row: pos, then current_raw, vmotor_a, vmotor_b, vbus_raw, duty_ticks.
-# A row holds 12 bytes, so the NTC rides along only in place of the position,
-# which a static load has no use for.
-CHUNKS_DEFAULT = "0x238+2,0x240+10"
-CHUNKS_NTC = "0x23e+2,0x240+10"
 
 
 def bursts(out, pct, repeats=3, chans="diff"):

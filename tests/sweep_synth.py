@@ -11,7 +11,7 @@ HEADER = "seg,cmd_duty_q15,dir,tick,window_valid,pos,current,current_trough,duty
 
 
 def write(folder, board=None, rungs=((32767, 1), (32767, -1)), rail_v=7.4, r_load=5.09, zero=1205,
-          baseline_rows=2000, rung_rows=3000, climb_rows=0, noise=1.3, ntc=None, seed=0, drop_at=None):
+          baseline_rows=2000, rung_rows=3000, climb_rows=0, noise=1.3, ntc=1942, seed=0, drop_at=None):
     """Baseline then rungs at 100 % (or any Q15) on a resistor: the current
     is V/R, the taps split the rail, the rail sags 0.1 V under the lap."""
     board = board or boards.BOARDS[boards.DEFAULT]
@@ -23,12 +23,12 @@ def write(folder, board=None, rungs=((32767, 1), (32767, -1)), rail_v=7.4, r_loa
     vb = board.bias_nom_counts
 
     def row(seg, cmd, d, duty_counts, amps, va, vbn, rail, n):
-        return {"seg": seg, "cmd_duty_q15": cmd, "dir": d, "tick": tick + n, "window_valid": 1, "pos": 2048,
+        return {"seg": seg, "cmd_duty_q15": cmd, "dir": d, "tick": tick + n, "window_valid": 1, "pos": "",
                 "current": "", "current_trough": "", "duty_counts": duty_counts, "vdiff": "", "vbus": "",
                 "current_raw": int(round(zero + amps * board.counts_per_a + rng.normal(0, noise))),
                 "vmotor_a": int(round(va + rng.normal(0, 0.9))), "vmotor_b": int(round(vbn + rng.normal(0, 0.9))),
                 "vbus_raw": int(round(rail / board.v_rail_per_count + rng.normal(0, 0.8))),
-                "ntc_raw": "" if ntc is None else int(ntc), "pos_lin": ""}
+                "ntc_raw": int(ntc), "pos_lin": ""}
 
     for n in range(baseline_rows):
         rows.append(row(0, 0, 0, 0, 0.0, vb, vb, rail_v, n))
