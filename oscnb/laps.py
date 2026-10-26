@@ -33,7 +33,7 @@ LAP_MS = 3000
 LIMIT_COUNTS = 2000     # about 1.8 A, over any lap here; the saved limit comes back after
 
 
-def run(out, levels, load, lap_ms=LAP_MS, chunks=None, log=print):
+def run(out, levels, load, lap_ms=LAP_MS, log=print):
     """One lap per level into `out/laps/K`, the rail trimmed to each level
     with the DPS output left on, `levels.csv` with the host time of each
     lap. `levels` are VSYS volts at rest; `volts_set` is the level,
@@ -52,7 +52,7 @@ def run(out, levels, load, lap_ms=LAP_MS, chunks=None, log=print):
             log(f"lap {k}: {load} at VSYS {v} V (rail reads {vsys:.3f} V, DPS {dps_read:.3f} V)")
             t0 = time.time()
             osc.sweep(out / "laps" / str(k), [f"100@{lap_ms}"], baseline_ms=1000, rest_ms=2000,
-                      dirs="both", tel_chunks=chunks)
+                      dirs="both")
             w.writerow([k, load, v, f"{dps_read:.3f}", f"{vsys:.3f}", f"{t0:.3f}", f"{time.time():.3f}", f"laps/{k}"])
             f.flush()
     return out

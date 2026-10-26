@@ -39,7 +39,7 @@ with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect=expect), osc.Limit
                 "room again": "Dryer off, lid open, board back near room."}[p]
         capture.prompt(f"{hint} Enter runs the laps for the {p} plateau.")
         marks.mark(p)
-        laps.run(out / p.replace(" ", "-"), LEVELS, "bare", chunks=osc.CHUNKS_NTC)
+        laps.run(out / p.replace(" ", "-"), LEVELS, "bare")
     marks.mark("end")
     marks.close()
 bench.power_down()
