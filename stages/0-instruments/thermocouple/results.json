@@ -1,0 +1,46 @@
+{
+  "capture": "telemetry/instruments/thermocouple/capture-1",
+  "notes": "offset from capture-2 (packed ice), the rest from capture-1; boiling point 99.29 C at 989.3 hPa (223 m, 30.00 inHg at sea level); DMM temperature accuracy from the manual: to add",
+  "offset_c": {
+    "value": 0.1,
+    "lo": 0.0,
+    "hi": 0.3,
+    "unit": "C"
+  },
+  "boil_reading_c": {
+    "value": 98.6,
+    "lo": 98.25938800824747,
+    "hi": 98.94061199175252,
+    "unit": "C"
+  },
+  "slope": {
+    "value": 0.9919996439768058,
+    "lo": 0.989985431501726,
+    "hi": 0.9930067502143457,
+    "unit": "C/C"
+  },
+  "noise_sd_c": {
+    "value": 0.04043630442872455,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "tau_liquid_max_s": {
+    "value": 0.2484948784444385,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "settle_air_1c_s": {
+    "value": 33.931999921798706,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "packet_interval_s": {
+    "value": 0.5849997997283936,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  }
+}
