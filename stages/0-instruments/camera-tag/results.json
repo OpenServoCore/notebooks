@@ -1,0 +1,40 @@
+{
+  "capture": "telemetry/instruments/camera-tag/capture-1",
+  "notes": "iPhone 17e (MHRN4LL/A, iOS 27.0.1), 1080p 240 fps slo-mo, 1x, 250 mm lens to tags; errors are the 90th percentile of |error| over the turn with both tags moving; angle_error_deg is the image reading, for a camera square to the tags, and angle_error_mapped_deg the plane-mapped cross-check",
+  "angle_error_deg": {
+    "value": 0.16016516064542544,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "angle_error_mapped_deg": {
+    "value": 0.3685295347396846,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "noise_deg": {
+    "value": 0.012598831438972294,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "plate_tilt_90_deg": {
+    "value": 2.6379985735199107,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "lens_rms_px": {
+    "value": 0.5540927158082253,
+    "lo": null,
+    "hi": null,
+    "unit": "px"
+  },
+  "tag_px": {
+    "value": 153.7201,
+    "lo": null,
+    "hi": null,
+    "unit": "px"
+  }
+}
