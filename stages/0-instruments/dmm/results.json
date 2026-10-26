@@ -1,0 +1,22 @@
+{
+  "capture": "telemetry/instruments/dmm/capture-1",
+  "notes": "reading accuracy from the B41T+ manual: to add",
+  "lag_s": {
+    "value": 0.020198345184326172,
+    "lo": -0.08134341239929199,
+    "hi": 0.20231056213378906,
+    "unit": "s"
+  },
+  "packet_interval_s": {
+    "value": 0.5849997997283936,
+    "lo": 0.19499993324279785,
+    "hi": 0.7799999713897705,
+    "unit": "s"
+  },
+  "steps": {
+    "value": 11.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  }
+}
