@@ -27,10 +27,11 @@ and does not recompute them.
 Experiments are excited open loop. A closed loop appears in the control and
 safety stages only, as the thing under test.
 
-### Five parts per experiment
+### One shape for every notebook
 
-Procedure, model, estimator, validity envelope, accuracy. A notebook states
-all five.
+Purpose, procedure, data, method, results, limitations, open questions and
+a conclusion, in that order. A reader who knows one notebook knows where to look in all of
+them.
 
 ### Open items come with a test
 
