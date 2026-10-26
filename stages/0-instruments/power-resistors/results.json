@@ -1,0 +1,88 @@
+{
+  "capture": "telemetry/instruments/power-resistors/capture-1",
+  "notes": "wirewound parts, a few uH each, from the part class; r_cold excludes the leads and the ammeter, subtracted at the matching current",
+  "leads": {
+    "value": 0.14443359089639468,
+    "lo": 0.14056224899598396,
+    "hi": 0.14543630892678033,
+    "unit": "ohm"
+  },
+  "bare": {
+    "r_cold": {
+      "value": 5.09159000987181,
+      "lo": 5.08907315536433,
+      "hi": 5.09410686437929,
+      "unit": "ohm"
+    },
+    "drift": {
+      "value": 0.0018699943949952635,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm/W"
+    },
+    "rest_two_wire": {
+      "value": 5.050000000000001,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "power_max": {
+      "value": 11.833635250454298,
+      "lo": null,
+      "hi": null,
+      "unit": "W"
+    }
+  },
+  "cap": {
+    "r_cold": {
+      "value": 5.089680813453882,
+      "lo": 5.087588890972291,
+      "hi": 5.091772735935472,
+      "unit": "ohm"
+    },
+    "drift": {
+      "value": 0.0027712442370107977,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm/W"
+    },
+    "rest_two_wire": {
+      "value": 5.04,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "power_max": {
+      "value": 11.814744537083024,
+      "lo": null,
+      "hi": null,
+      "unit": "W"
+    }
+  },
+  "series": {
+    "r_cold": {
+      "value": 15.269061997219087,
+      "lo": 15.257785395232727,
+      "hi": 15.280338599205447,
+      "unit": "ohm"
+    },
+    "drift": {
+      "value": 0.0009698071576229113,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm/W"
+    },
+    "rest_two_wire": {
+      "value": 15.12,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "power_max": {
+      "value": 20.79161255357313,
+      "lo": null,
+      "hi": null,
+      "unit": "W"
+    }
+  }
+}
