@@ -13,7 +13,7 @@ the bench order are the same.
 
 ### 0. Instruments
 
-Targets the rulers. The DMM, the power resistors, the camera tag, the
+Folder `stages/0-instruments/`. Targets the rulers. The DMM, the power resistors, the camera tag, the
 thermocouple thermocouple and the clock that lines their logs up.
 
 The later stages compare their results against these, so each one gets its
@@ -21,7 +21,7 @@ own error bar first. No board and no servo on the bench.
 
 ### 1. Board
 
-Targets the controller board, one type at a time (dev board, swap board),
+Folder `stages/1-board/`. Targets the controller board, one type at a time (dev board, swap board),
 latest revision only.
 
 Known loads only, power resistors and an RL dummy, with the rail swept by
@@ -31,7 +31,7 @@ sitting with stage 0.
 
 ### 2. Motor
 
-Targets the motor on its own, by type. Today that is a small brushed DC
+Folder `stages/2-motor/`. Targets the motor on its own, by type. Today that is a small brushed DC
 motor.
 
 The bare motor is clamped on a plate with the DMM across its tabs.
@@ -41,7 +41,7 @@ numbers. Same sitting as stage 1.
 
 ### 3. Servo
 
-Targets the assembled servo, meaning the motor plus a gear train, a pot and
+Folder `stages/3-servo/`. Targets the assembled servo, meaning the motor plus a gear train, a pot and
 a case.
 
 Open loop throughout, with the camera tag on the horn and the thermocouple inside
@@ -53,7 +53,7 @@ long sitting.
 
 ### 4. Estimators
 
-Targets the real-time estimators the firmware runs. Speed, position,
+Folder `stages/4-estimators/`. Targets the real-time estimators the firmware runs. Speed, position,
 current zero and winding temperature.
 
 No new captures. Each estimator is designed offline over the stage 3 data
@@ -61,7 +61,7 @@ and graded against the stage 0 instruments.
 
 ### 5. Control design
 
-Targets the control loops. Current, velocity, position and trajectory,
+Folder `stages/5-control/`. Targets the control loops. Current, velocity, position and trajectory,
 including how a hold behaves.
 
 The loops are designed from the measured plant and the estimators' noise
@@ -70,7 +70,7 @@ what the firmware does today next to what the data supports.
 
 ### 6. Safety design
 
-Targets the limits and the faults. The current ceiling, the stall and
+Folder `stages/6-safety/`. Targets the limits and the faults. The current ceiling, the stall and
 position-error faults, the thermal derate and cutoff, the stop-hold limits.
 
 Derived from stages 3 to 5 and validated on the bench, including on a
@@ -78,10 +78,22 @@ sagging supply.
 
 ## How an experiment is laid out
 
-One folder with two files. A `capture.sh` that drives the bench through
-`osc` and writes a dataset, and one notebook that fits, grades and writes
-its result to `results/`. Each stage folder has a README listing its
-experiments and how they chain.
+One folder with three files. A `capture.py` that drives the bench and
+writes a dataset under `telemetry/`, one notebook that reads the dataset and
+writes its result, and the `results.json` it wrote. Each stage folder has a
+README listing its experiments and how they chain.
+
+Every notebook has the same sections, in the order a reader asks the
+questions. Purpose, why the number is needed and who uses it. Procedure, what
+the capture script does, step by step. Data, each file of the dataset shown
+on its own with its columns. Method, how the number is pulled out of the
+data, with the code. Results, the numbers in words and the write to the
+result file. Limitations, what the experiment does not cover. Open questions,
+each with the measurement that would settle it. Conclusion, the highlight:
+under which conditions the thing measured can be relied on, and what later
+experiments should take from it. Every code cell has a
+sentence above saying what it does, and every figure a sentence below saying
+what it shows.
 
 ## Purpose
 
@@ -124,7 +136,12 @@ scripts that drive the controlled ones live in `equipment/`.
 An OWON B41T+ handheld multimeter, 4.5 digits, true RMS, with Bluetooth LE
 streaming and a K thermocouple input. It reads DC volts, ohms at about a
 milliamp, DC amps and temperature. [equipment/b41t.py](equipment/b41t.py)
-connects and logs every packet with the host time of arrival. A review with
+connects and logs every packet with the host time of arrival. Its Bluetooth
+address sits in [equipment/registry.json](equipment/registry.json) so the
+script connects without a scan. Two bluez quirks the script handles on its own:
+a meter left connected stops advertising, so the script always disconnects on
+exit, and a stale discovery makes bluez refuse a new scan, which an adapter
+power cycle clears. A review with
 the measured accuracy is at
 [lygte-info.dk](https://lygte-info.dk/review/DMMOwon%20B41T%20UK.html).
 Amazon link: to add.
@@ -160,27 +177,49 @@ experiment in stage 0. Amazon link: to add.
 
 A phone filming two printed ArUco tags, one on the horn and one fixed
 beside it, plus a printed ChArUco board for the lens calibration. The
-prints come from `oscnb.fiducial_print` and the pipeline lives in
-`oscnb.fiducial`. The phone model goes in the camera's registry entry,
-since the lens calibration belongs to it.
+pipeline lives in `oscnb.fiducial`. The phone model goes in the camera's
+registry entry, since the lens calibration belongs to it.
+
+- [equipment/camera/tags.md](equipment/camera/tags.md): generating the tag and board
+  sheets, and printing and mounting them.
+- [equipment/camera/iphone.md](equipment/camera/iphone.md): setting an iPhone up for the
+  tag videos and getting the clips onto the host.
+- [equipment/camera/extract.py](equipment/camera/extract.py): runs the pipeline over
+  a dataset's clips once and writes what the notebooks read.
+
+The original clips are not committed: a slow-motion phone clip runs to
+gigabytes, and the tag pipeline takes only the corners of two squares from
+each frame. A dataset holds the lens calibration, a corners table per clip,
+and a manifest with each original's size and hash. Each clip also has a
+960 px real-time preview, a few megabytes, committed so that anyone
+replicating the experiment can see what was filmed and how. The originals
+stay on the host that captured them. The pipeline can be tried on the
+previews in place of the originals; the camera-tag notebook shows what
+that costs (a noise floor several times higher, the geometric error about
+the same).
 
 ### clapper
 
-The servo board's status LED, flashed from the host through a register in
-the experiment firmware image. Like a film clapper, every recording sees
-the same flash, so the camera, the DMM log and the host log can be lined
-up afterwards.
+The servo board's STAT lamp, flashed from the host through the
+`stat_flash_ticks` register (`osc clapper`). Like a film clapper, every
+recording sees the same flash, so the camera's clip and the host's log can
+be lined up afterwards.
 
 ### host
 
 The computer running `osc` over the osc adapter, with the capture scripts in
-this repo. Python comes through `uv`, see Setup.
+this repo. Python comes through `uv`, see Setup. On Linux, turn USB
+autosuspend off for the Bluetooth dongle (`options btusb enable_autosuspend=0`
+in modprobe.d). A dongle that suspends between the DMM's packets resets on
+USB, comes back as a new adapter, and bluez forgets the meter.
 
 ## Results
 
-Each experiment writes one file, `results/<stage>/<experiment>.json`, with
-the value, its bounds, the unit and the capture it came from. A later stage
-reads these files and nothing else from the stages before it.
+Each notebook writes one file next to itself, `results.json`, with the
+value, its bounds, the unit and the capture it came from. An experiment run
+on a servo and board pair writes `results/<servo>__<board>.json` in its
+folder instead, one file per pair. A later stage reads these files and
+nothing else from the stages before it.
 
 ## Setup
 
