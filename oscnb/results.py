@@ -18,6 +18,14 @@ def quantity(value, lo=None, hi=None, unit=""):
             "hi": None if hi is None else float(hi), "unit": unit}
 
 
+def rel(p):
+    """`p` relative to the repo root, the form every notebook prints and the
+    result files carry; an absolute path says where one machine keeps the
+    repo and belongs in no output."""
+    p = Path(p)
+    return p.resolve().relative_to(ROOT) if p.is_absolute() else p
+
+
 def path(stage, experiment, pair=None):
     folder = ROOT / "stages" / stage / experiment
     return folder / "results.json" if pair is None else folder / "results" / f"{pair}.json"
@@ -27,10 +35,9 @@ def write(stage, experiment, capture, pair=None, notes="", **quantities):
     p = path(stage, experiment, pair)
     p.parent.mkdir(parents=True, exist_ok=True)
     capture = Path(capture)
-    doc = {"capture": str(capture.resolve().relative_to(ROOT)) if capture.is_absolute() else str(capture),
-           "notes": notes, **quantities}
+    doc = {"capture": str(rel(capture)), "notes": notes, **quantities}
     p.write_text(json.dumps(doc, indent=2) + "\n")
-    return p
+    return rel(p)
 
 
 def read(stage, experiment, pair=None):
