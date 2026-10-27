@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/instruments/dmm/capture-1",
-  "notes": "reading accuracy from the B41T+ manual: to add",
+  "notes": "reading accuracy from the B41T+ manual, technical specifications at 18 to 28 C: accuracy[range] = pct of the reading + fixed, the fixed part and the step in the range's unit; the 20 A range is limited to 2 min in 10 above 10 A and 10 s in 15 above 15 A",
   "lag_s": {
     "value": 0.020198345184326172,
     "lo": -0.08134341239929199,
@@ -18,5 +18,187 @@
     "lo": null,
     "hi": null,
     "unit": "count"
+  },
+  "accuracy": {
+    "dc_v_22v": {
+      "pct": {
+        "value": 0.1,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 0.002,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "step": {
+        "value": 0.001,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "dc_v_2v2": {
+      "pct": {
+        "value": 0.1,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 0.0002,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "step": {
+        "value": 0.0001,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "dc_mv_220mv": {
+      "pct": {
+        "value": 0.1,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 5e-05,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "step": {
+        "value": 1e-05,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "dc_a_20a": {
+      "pct": {
+        "value": 2.0,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 0.025,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "step": {
+        "value": 0.001,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    },
+    "dc_a_220ma": {
+      "pct": {
+        "value": 0.8,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 0.0001,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "step": {
+        "value": 1e-05,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    },
+    "dc_a_22ma": {
+      "pct": {
+        "value": 0.5,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 9.999999999999999e-06,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "step": {
+        "value": 1e-06,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    },
+    "ohm_220": {
+      "pct": {
+        "value": 0.5,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 0.1,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "step": {
+        "value": 0.01,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      }
+    },
+    "ohm_2k2": {
+      "pct": {
+        "value": 0.5,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "step": {
+        "value": 0.1,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      }
+    },
+    "temp_c": {
+      "pct": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "% of reading"
+      },
+      "fixed": {
+        "value": 0.5,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "step": {
+        "value": 0.1,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      }
+    }
   }
 }
