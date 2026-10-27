@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/instruments/thermocouple/capture-1",
-  "notes": "offset from capture-2 (packed ice), the rest from capture-1; boiling point 99.29 C at 989.3 hPa (223 m, 30.00 inHg at sea level); DMM temperature accuracy from the manual: to add",
+  "notes": "offset from capture-2 (packed ice), the rest from capture-1; boiling point 99.29 C at 989.3 hPa (223 m, 30.00 inHg at sea level); the DMM's temperature class, 1 % of the reading plus 0.5 C, is in the dmm result",
   "offset_c": {
     "value": 0.1,
     "lo": 0.0,
