@@ -1,0 +1,248 @@
+{
+  "capture": "telemetry/dev-v006-2A-D/opamp-temperature/capture-1",
+  "notes": "DC laps on the bare load at four plateaus of a printer bed, the load on the bed too, meter route ammeter on the 20 A range at room; one line per plateau through counts over the lap's own zero against the meter's amps; gain_drift_pct_per_c is the line through the four plateaus' gain_pct against the board NTC through ntc-curve's beta_nominal, its design conversion, with its standard error as the bounds, gain_drift_pooled_pct_per_c the one-offset model over all forty rows; a plateau's board_c is the mean over its laps' drives with the spread over the laps as lo/hi, and beyond that it carries ntc-curve's grade, the meter's class of 1 % + 0.5 C and the bed gradient, 1.1 C at the hot plateau; gain_drift_max_pct is the hot plateau against room; reversibility_pct is room-again against room with both errors; ntc_move_in_lap_c is the NTC's fall through the 7.6 V lap at the room plateaus, ntc_move_over_laps_c the fall from the first lap's rest to the last's there",
+  "gain_drift_pct_per_c": {
+    "value": -0.00896383754492321,
+    "lo": -0.010697298392006397,
+    "hi": -0.007230376697840022,
+    "unit": "%/C"
+  },
+  "gain_drift_pooled_pct_per_c": {
+    "value": -0.007973518486092818,
+    "lo": -0.009324187997672467,
+    "hi": -0.006622848974513168,
+    "unit": "%/C"
+  },
+  "gain_drift_per_100_counts_pct": {
+    "value": 0.026586307694395406,
+    "lo": 0.02252342781345615,
+    "hi": 0.030649187575334663,
+    "unit": "%/100 counts"
+  },
+  "zero_drift_counts_per_c": {
+    "value": 0.062375322946973455,
+    "lo": 0.04752381429335602,
+    "hi": 0.07722683160059089,
+    "unit": "counts/C"
+  },
+  "gain_drift_max_pct": {
+    "value": -0.2674572034188194,
+    "lo": -0.44303676182430074,
+    "hi": -0.09187764501333809,
+    "unit": "%"
+  },
+  "copper_error_max_c": {
+    "value": -0.6857877010738959,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "copper_error_c_per_c": {
+    "value": -0.022984198833136432,
+    "lo": null,
+    "hi": null,
+    "unit": "C/C"
+  },
+  "range_c": {
+    "value": 62.57287572191742,
+    "lo": 27.675311368363488,
+    "hi": 62.57287572191742,
+    "unit": "C"
+  },
+  "reversibility_pct": {
+    "value": 0.03480254412895345,
+    "lo": -0.17233896057233242,
+    "hi": 0.24194404883023932,
+    "unit": "%"
+  },
+  "ntc_move_in_lap_c": {
+    "value": 0.16168960666107068,
+    "lo": 0.13227411438919034,
+    "hi": 0.19110509893295102,
+    "unit": "C"
+  },
+  "ntc_move_over_laps_c": {
+    "value": 0.6458062419221164,
+    "lo": 0.25308359326817254,
+    "hi": 0.6458062419221164,
+    "unit": "C"
+  },
+  "plateaus": {
+    "room": {
+      "board_c": {
+        "value": 27.675311368363488,
+        "lo": 27.390201312255556,
+        "hi": 28.19335071824287,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 1927.505942294863,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "gain_counts_per_a": {
+        "value": 1134.664505040913,
+        "lo": 1132.726825779864,
+        "hi": 1136.6021843019619,
+        "unit": "counts/A"
+      },
+      "offset_counts": {
+        "value": 5.477774820247808,
+        "lo": 3.4879822566712337,
+        "hi": 7.467567383824381,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1207.0,
+        "lo": 1207.0,
+        "hi": 1207.0,
+        "unit": "counts"
+      },
+      "gain_pct": {
+        "value": 0.0,
+        "lo": -0.17077111802126854,
+        "hi": 0.17077111802126854,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 1.4474783391529036,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "warm": {
+      "board_c": {
+        "value": 49.54204943611842,
+        "lo": 49.16473865918215,
+        "hi": 50.06805514783986,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 1095.5123215476985,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "gain_counts_per_a": {
+        "value": 1132.0430886997158,
+        "lo": 1129.99057990811,
+        "hi": 1134.0955974913215,
+        "unit": "counts/A"
+      },
+      "offset_counts": {
+        "value": 6.214000304839959,
+        "lo": 4.126925005051406,
+        "hi": 8.301075604628512,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1209.0,
+        "lo": 1209.0,
+        "hi": 1209.0,
+        "unit": "counts"
+      },
+      "gain_pct": {
+        "value": -0.23103008242093548,
+        "lo": -0.4123402120524178,
+        "hi": -0.04971995278945321,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 1.5135406637493105,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "hot": {
+      "board_c": {
+        "value": 62.57287572191742,
+        "lo": 62.344578461880076,
+        "hi": 62.80698326879457,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 757.8408205470313,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "gain_counts_per_a": {
+        "value": 1131.6297630875445,
+        "lo": 1129.6428525467304,
+        "hi": 1133.6166736283585,
+        "unit": "counts/A"
+      },
+      "offset_counts": {
+        "value": 5.503968024870099,
+        "lo": 3.4942953287952236,
+        "hi": 7.513640720944975,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1209.0,
+        "lo": 1208.0,
+        "hi": 1210.0,
+        "unit": "counts"
+      },
+      "gain_pct": {
+        "value": -0.2674572034188194,
+        "lo": -0.44303676182430074,
+        "hi": -0.09187764501333809,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 1.464697407948793,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "room-again": {
+      "board_c": {
+        "value": 29.624077262700126,
+        "lo": 29.500330148942624,
+        "hi": 29.94162887507383,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 1841.5193078719149,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "gain_counts_per_a": {
+        "value": 1135.0593971559954,
+        "lo": 1133.7286723678367,
+        "hi": 1136.390121944154,
+        "unit": "counts/A"
+      },
+      "offset_counts": {
+        "value": 5.125329996503408,
+        "lo": 3.759802166044623,
+        "hi": 6.490857826962192,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1207.2,
+        "lo": 1207.0,
+        "hi": 1208.0,
+        "unit": "counts"
+      },
+      "gain_pct": {
+        "value": 0.03480254412895345,
+        "lo": -0.08243579524720289,
+        "hi": 0.1520408835051098,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 0.99241746873354,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    }
+  }
+}

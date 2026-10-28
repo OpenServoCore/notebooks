@@ -103,7 +103,8 @@ Run: `uv run python stages/1-board/ntc-curve/capture.py`, then the notebook.
 
 ## [opamp-temperature](opamp-temperature/opamp-temperature.ipynb)
 
-Targets: the current chain's gain and zero against board temperature.
+Targets: the current chain's gain and zero against board temperature, and
+whether the board's own heat under drive moves the NTC.
 
 Needs: board on the heater, DPS, bare load and DMM on DC A off the heater, host; the ntc-curve result.
 
