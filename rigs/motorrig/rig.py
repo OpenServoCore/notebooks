@@ -8,9 +8,10 @@ from build123d import (Align, Box, Circle, Cylinder, FontStyle, Part, Polygon, P
 
 @dataclass(frozen=True)
 class Spec:
-    # motor: the flat can, rear face down, shaft up (sg90/measurements.py, [cal]/[dwg])
-    can_d: float = 10.0          # across the round sides
-    can_flat: float = 8.0        # across the flats
+    # motor: the flat can, rear face down, shaft up; the can and the pinion are mg90-b measured with calipers,
+    # the rest the SG90-class dimensions (sg90/measurements.py, [cal]/[dwg]) until measured
+    can_d: float = 9.95          # across the round sides
+    can_flat: float = 7.95       # across the flats
     can_l: float = 12.3          # rear face to front face
     front_boss_d: float = 4.0
     front_boss_l: float = 0.6
@@ -22,7 +23,7 @@ class Spec:
     term_w: float = 1.5          # tab width, along Y
     term_t: float = 0.3          # tab thickness, along X
     term_l: float = 1.0          # tab stickout past the rear face, before solder
-    pinion_d: float = 2.23       # over the teeth
+    pinion_d: float = 2.25       # over the teeth
     pinion_h: float = 2.17
     # fits, per side
     can_clear: float = 0.15      # the can drops in and sits square
