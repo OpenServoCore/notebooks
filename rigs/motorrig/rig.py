@@ -26,19 +26,20 @@ class Spec:
     pinion_d: float = 2.25       # over the teeth
     pinion_h: float = 2.17
     # fits, per side
-    can_clear: float = 0.15      # the can drops in and sits square
+    can_clear: float = 0.10      # the can drops in and sits square
     bore_clear: float = 0.05     # the bar drops over the pinion; the slit closes the rest
     # base
-    floor: float = 3.5
+    floor: float = 3.5           # under the can's rear face; the lead channel runs in it
+    deck_h: float = 8.0          # the solid plate, half the base's height, so the boss and the ring stand short
     recess: float = 0.8          # the can's front face this far below the base top, so the bar lies flat on the base
     bolt_r: float = 22.0
     holes: int = 12
-    pin_d: float = 2.1           # a loose M2 screw or a 2 mm pin drops through the bar into the pillar, no thread
+    pin_d: float = 2.1           # a loose M2 screw or a 2 mm pin drops through the bar into the ring, no thread
     pin_depth: float = 6.0
     rim: float = 5.0             # plate past the bolt circle
-    boss_wall: float = 2.5       # the boss around the pocket, standing on the plate
-    pillar_d: float = 6.0        # one pillar per hole, up to the bar's level
-    label_r: float = 17.0        # the hole numbers, engraved in the plate inside the bolt circle
+    boss_wall: float = 2.5       # the boss around the pocket, standing on the deck
+    ring_w: float = 6.0          # the ring on the bolt circle with the pin holes, up to the bar's level
+    label_r: float = 17.0        # the hole numbers, engraved in the deck inside the ring
     tab_slot_x: float = 1.0      # tab slot, X by Y, in the pocket floor
     tab_slot_y: float = 2.3
     tab_slot_depth: float = 1.6  # tab plus solder
@@ -67,10 +68,6 @@ class Spec:
     nut_t: float = 1.6
     nut_clear: float = 0.25      # on the slot's width and thickness
     nut_wall: float = 1.5        # between the slit and the nut slot
-    # coupon
-    coupon_bores: tuple = (2.2, 2.3, 2.4, 2.5, 2.6)
-    coupon_t: float = 4.0
-    coupon_w: float = 10.0
 
     @property
     def pocket_depth(self):
@@ -100,6 +97,11 @@ class Spec:
     @property
     def plate_d(self):
         return 2 * (self.bolt_r + self.rim)
+
+    @property
+    def ring_r(self):
+        """The ring's inner and outer radii."""
+        return self.bolt_r - self.ring_w / 2, self.bolt_r + self.ring_w / 2
 
     @property
     def boss_d(self):
@@ -153,10 +155,12 @@ class Spec:
             raise ValueError("Every relief must leave floor under it")
         if self.pin_depth >= self.base_h:
             raise ValueError("The pin holes must not break through the base")
-        if self.pillar_d <= self.pin_d + 2.0:
-            raise ValueError("A pillar must leave a wall around its pin hole")
-        if self.label_r + self.label_font / 2 >= self.bolt_r - self.pillar_d / 2 or self.label_r - self.label_font / 2 <= self.boss_d / 2:
-            raise ValueError("The hole numbers must fit between the boss and the pillars")
+        if self.ring_w <= self.pin_d + 2.0:
+            raise ValueError("The ring must leave a wall around its pin holes")
+        if self.deck_h <= self.floor or self.deck_h >= self.base_h - self.pin_depth:
+            raise ValueError("The deck must stand above the floor and below the pin holes")
+        if self.label_r + self.label_font / 2 >= self.ring_r[0] or self.label_r - self.label_font / 2 <= self.boss_d / 2:
+            raise ValueError("The hole numbers must fit between the boss and the ring")
         if self.bore_clear <= 0:
             raise ValueError("The bore must slip over the pinion; the slit does the gripping")
         if self.slit_l / 2 + 1.5 >= self.bolt_r - self.bar_hole_d / 2:
@@ -197,12 +201,10 @@ def label(text, x, y, z, h, size, angle=0):
 
 def build_base(s: Spec = Spec()) -> Part:
     s.check()
-    # a plate, a boss around the pocket and one pillar per hole, all to the bar's level
-    p = extrude(Circle(s.plate_d / 2), s.floor)
+    # a deck, a boss around the pocket and a ring on the bolt circle, the boss and the ring to the bar's level
+    p = extrude(Circle(s.plate_d / 2), s.deck_h)
     p += cyl(0, 0, 0, s.boss_d, s.base_h)
-    for k in range(s.holes):
-        a = 2 * math.pi * k / s.holes
-        p += cyl(s.bolt_r * math.cos(a), s.bolt_r * math.sin(a), 0, s.pillar_d, s.base_h)
+    p += extrude(Circle(s.ring_r[1]) - Circle(s.ring_r[0]), s.base_h)
     # the can pocket, open at the top, the can's rear face on the floor
     p -= Pos(0, 0, s.floor) * extrude(flat_profile(s.can_d + 2 * s.can_clear, s.can_flat + 2 * s.can_clear),
                                       s.pocket_depth + 1)
@@ -218,7 +220,7 @@ def build_base(s: Spec = Spec()) -> Part:
         a = 2 * math.pi * k / s.holes
         x, y = s.bolt_r * math.cos(a), s.bolt_r * math.sin(a)
         p -= cyl(x, y, s.base_h - s.pin_depth, s.pin_d, s.pin_depth + 0.1)
-        p -= label(str(k), s.label_r * math.cos(a), s.label_r * math.sin(a), s.floor - s.label_h, s.label_h + 0.1,
+        p -= label(str(k), s.label_r * math.cos(a), s.label_r * math.sin(a), s.deck_h - s.label_h, s.label_h + 0.1,
                    s.label_font, angle=math.degrees(a) - 90)
     p.label = "motorrig_base"
     return p
@@ -246,15 +248,3 @@ def build_bar(s: Spec = Spec()) -> Part:
     p.label = "motorrig_bar"
     return p
 
-
-def build_coupon(s: Spec = Spec()) -> Part:
-    # the bores open at the top and the labels sit beside them on the same face, so it prints as it lies
-    pitch = 6.0
-    n = len(s.coupon_bores)
-    p = extrude(RectangleRounded(pitch * n + 2, s.coupon_w, 1.0), s.coupon_t)
-    for i, d in enumerate(s.coupon_bores):
-        x = (i - (n - 1) / 2) * pitch
-        p -= cyl(x, 1.6, s.coupon_t - s.socket_depth, d, s.socket_depth + 0.1)
-        p -= label(f"{d:.1f}", x, -2.8, s.coupon_t - s.label_h, s.label_h + 0.1, 1.8)
-    p.label = "motorrig_coupon"
-    return p

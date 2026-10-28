@@ -1,8 +1,7 @@
-"""The bare-motor rig for the stage 2 experiments: a base plate with a boss
-that seats the motor can and twelve pillars on a bolt circle, a slit wrench
-bar that clamps the rotor by its pinion and is pinned to two pillars at one
-of the twelve angles, and a fit coupon that reads the printer's bore against
-the pinion in hand.
+"""The bare-motor rig for the stage 2 experiments: a base with a boss that
+seats the motor can and a ring with twelve pin holes on a bolt circle, and a
+slit wrench bar that clamps the rotor by its pinion and is pinned to the ring
+at one of the twelve angles.
 
 Nothing in the rig pushes or pulls along the shaft. The motor sits on its
 can's rear face, with reliefs under the rear boss and the terminal tabs, so a
@@ -32,10 +31,11 @@ down.
 
 Frame: X east, Y north, Z up, the shaft on Z. Hole 0 of the bolt circle is on
 +X and the holes count counterclockwise seen from above, the sign the
-notebooks use for angle. The base prints on its underside with the boss and
-the pillars standing, the bar on its underside with the hub standing and the
-nut slots opening upward, the coupon as it lies with its bores and labels on
-the top face, so every bore is vertical and no part needs support.
+notebooks use for angle. The base is a solid deck to half its height with
+the boss and the ring standing on it, so nothing on it is a lone post; it
+prints on its underside, the bar on its underside with the hub standing and
+the nut slots opening upward, so every bore is vertical and no part needs
+support.
 
 Motor dimensions default to the SG90-class flat can and pinion measured in
 the firmware repo's mechanical/sg90/measurements.py; the motor at hand is
