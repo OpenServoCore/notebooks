@@ -25,28 +25,25 @@ and lifted off by its screw, since a shaft pressed past its end play rides
 the brushes wrong and the motor is not the same motor after.
 
 One motor goes through every experiment in the order below and is torn
-down last. A second motor of the same batch is read with the meter at a few
-rotor angles at the start of rest-resistance, and that notebook carries one
-paragraph on how far the two sit apart; there is no dataset for it.
+down last.
 
 ## [rest-resistance](rest-resistance/rest-resistance.ipynb)
 
 Targets: the terminal resistance at rest and how it moves with the rotor's
-angle, by the meter's route and by the board's own, the brush drop and the
-contact resistance as the line through the stall laps gives them, and how
-much of the total the brushes own once the teardown has read the copper.
+angle, the brush drop and the contact resistance as the line through the
+stall laps gives them, and how much of the total the brushes own once the
+teardown has read the copper.
 
-Needs: motor in the rig, bar, DMM on ohms for the first pass, board and DPS
-for the second, host; the stage 1 current-scale and terminal-chain results.
+Needs: motor in the rig, bar, board, DPS, host; the stage 1 current-scale
+and terminal-chain results.
 
-How: the bar steps the rotor through the twelve holes. The ohms pass reads
-the lead zero with the leads shorted, then the meter for forty seconds at
-each hole. The stall pass drives 100 % laps of 300 ms into the locked rotor
-at the three 1S levels, both directions, the board's current and terminal
-taps as stage 1 graded them; the meter's packets come slower than a cold
-lap lasts, so it stays out of this pass.
+How: the bar steps the rotor through the twelve holes. At each hole the
+stall pass drives 100 % laps of 300 ms into the locked rotor at the three
+1S levels, both directions, the board's current and terminal taps as stage
+1 graded them.
 
-Run: `capture.py ohms`, `capture.py stall`, then the notebook.
+Run: `uv run python stages/2-motor/rest-resistance/capture.py`, then the
+notebook.
 
 ## [inductance](inductance/inductance.ipynb)
 

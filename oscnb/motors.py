@@ -35,8 +35,7 @@ MOTORS = {
         slots=3,
         brushes=2,
         pinion_teeth=9,
-        notes="runs bare on the stage 2 rig through every experiment, then is torn down for the last one; "
-              "a second motor of the same batch gives the sanity readings in rest-resistance, no dataset",
+        notes="runs bare on the stage 2 rig through every experiment, then is torn down for the last one",
     ),
 }
 DEFAULT = "mg90-b"
