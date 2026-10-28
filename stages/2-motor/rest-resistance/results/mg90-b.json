@@ -1,0 +1,164 @@
+{
+  "capture": "telemetry/mg90-b__dev-v006-2A-D/rest-resistance/capture-1",
+  "notes": "stall pass alone: 100 % laps of 300 ms into the rotor locked at twelve holes 30 degrees apart, rails [3.3, 3.7, 4.2] V, direction +1 then -1 a second later; current and terminal volts through the stage 1 current-scale and terminal-chain results; each lap is read as V/I at the drive's first row, a line through V/I over 60 ms to the end extrapolated back, so the lap's own warming and the early fall are out; r_term_* is that V/I on the direction +1 laps at the graded levels (3.7 and 4.2 V), per hole the mean of the two, the brush drop included, median over the holes with the range over the holes as the bounds; direction -1 starts warm from the +1 lap and is reported apart; the 3.3 V level is not graded in stage 1 and enters no number; r_stall_ohm and v0_brush_v are the line V = V0 + R I through each hole's two graded +1 laps at the start, median over the holes with the range as the bounds, a two-point line over 0.1 A that does not resolve the brush drop; the copper's temperature is not measured, board_ntc_c is the board's",
+  "r_term_median_ohm": {
+    "value": 4.455291999475676,
+    "lo": 4.383552379419841,
+    "hi": 4.530836376874988,
+    "unit": "ohm"
+  },
+  "r_term_by_hole": [
+    4.3836,
+    4.4525,
+    4.4434,
+    4.4068,
+    4.4496,
+    4.4857,
+    4.4916,
+    4.5308,
+    4.5098,
+    4.4581,
+    4.4453,
+    4.4973
+  ],
+  "r_term_minus_by_hole": [
+    4.4358,
+    4.5143,
+    4.4983,
+    4.4835,
+    4.5237,
+    4.5698,
+    4.5426,
+    4.5689,
+    4.5828,
+    4.5185,
+    4.5008,
+    4.5608
+  ],
+  "r_term_angle_pct": {
+    "value": 3.3058214247793427,
+    "lo": -1.6102114084616148,
+    "hi": 1.695610016317728,
+    "unit": "%"
+  },
+  "r_term_lap_scatter_pct": {
+    "value": 0.23777200400468124,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_term_amps": {
+    "value": 0.7835925564566736,
+    "lo": 0.7727446404676683,
+    "hi": 0.7960396423102305,
+    "unit": "A"
+  },
+  "r_stall_ohm": {
+    "value": 4.4014509997014954,
+    "lo": 4.152925003773717,
+    "hi": 4.829194137836801,
+    "unit": "ohm"
+  },
+  "v0_brush_v": {
+    "value": 0.05962971791831151,
+    "lo": -0.24642379667552383,
+    "hi": 0.18315077079436767,
+    "unit": "V"
+  },
+  "v0_mean_v": {
+    "value": 0.04488922631691949,
+    "lo": 0.01362244872286203,
+    "hi": 0.07615600391097695,
+    "unit": "V"
+  },
+  "v0_all_rails_v": {
+    "value": 0.4079278790723464,
+    "lo": 0.14512509081619993,
+    "hi": 0.6331878761146436,
+    "unit": "V"
+  },
+  "v0_all_rails_scaled_v": {
+    "value": -0.14636596934760876,
+    "lo": -0.45728802163631477,
+    "hi": 0.08225373592424533,
+    "unit": "V"
+  },
+  "r_stall_all_rails_ohm": {
+    "value": 3.9651928629548205,
+    "lo": 3.6304686224752536,
+    "hi": 4.342515023229497,
+    "unit": "ohm"
+  },
+  "direction_gap_pct": {
+    "value": 1.190392809911715,
+    "lo": -1.1305559937422764,
+    "hi": 2.204390727229464,
+    "unit": "%"
+  },
+  "direction_gap_kept": {
+    "value": 0.5903232090546155,
+    "lo": 0.5646957321303758,
+    "hi": 0.6159506859788553,
+    "unit": ""
+  },
+  "direction_gap_offset_ohm": {
+    "value": 0.0015903725296211022,
+    "lo": -0.012067795330319035,
+    "hi": 0.015248540389561239,
+    "unit": "ohm"
+  },
+  "copper_tau_s": {
+    "value": 1.8972269140555271,
+    "lo": 1.7498785843791398,
+    "hi": 2.0636070815904586,
+    "unit": "s"
+  },
+  "warming_pct_per_j": {
+    "value": 2.864060242279899,
+    "lo": 1.9214753809617044,
+    "hi": 3.475033358608472,
+    "unit": "%/J"
+  },
+  "copper_heat_capacity_max_j_per_c": {
+    "value": 0.13721778410888358,
+    "lo": null,
+    "hi": null,
+    "unit": "J/C"
+  },
+  "copper_mass_max_g": {
+    "value": 0.35640982885424305,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "early_excess_pct": {
+    "value": 0.8630167438241068,
+    "lo": -0.8302174413682306,
+    "hi": 2.222219622194377,
+    "unit": "%"
+  },
+  "v_over_i_3v3_excess_pct": {
+    "value": 2.4509763131989715,
+    "lo": 1.224594687694891,
+    "hi": 4.111818887434837,
+    "unit": "%"
+  },
+  "v_over_i_3v3_stage1_pct": {
+    "value": 3.9412220770681072,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "lap_joules": {
+    "value": 0.9340108077197572,
+    "lo": 0.6542368943814497,
+    "hi": 0.9340108077197572,
+    "unit": "J"
+  },
+  "board_ntc_c": {
+    "value": 25.67649784258606,
+    "lo": 25.517992150152566,
+    "hi": 25.815067288363934,
+    "unit": "C"
+  }
+}
