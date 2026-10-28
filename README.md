@@ -34,9 +34,12 @@ sitting with stage 0.
 Folder `stages/2-motor/`. Targets the motor on its own, by type. Today that is a small brushed DC
 motor.
 
-The bare motor is clamped on a plate with the DMM across its tabs.
-Resistance, inductance, the back-EMF constant and the no-load current are
-measured here with nothing else in the way. Stage 3 is graded against these
+The bare motor sits in the printed [motor rig](rigs/motorrig/__init__.py),
+a base that seats the can with the leads under it and a wrench bar that
+holds the rotor by its pinion at one of twelve angles, with the DMM across
+its tabs. Resistance, inductance, the back-EMF constant and the no-load
+current are measured here with nothing else in the way, and the teardown
+at the end reads the copper on its own. Stage 3 is graded against these
 numbers. Same sitting as stage 1.
 
 ### 3. Servo
@@ -197,6 +200,12 @@ stay on the host that captured them. The pipeline can be tried on the
 previews in place of the originals; the camera-tag notebook shows what
 that costs (a noise floor several times higher, the geometric error about
 the same).
+
+### rigs
+
+Printed fixtures under [rigs/](rigs/README.md), parametric CAD in
+build123d with the measured parts as their inputs. The motor rig of stage 2
+seats the bare motor and holds its rotor at indexed angles.
 
 ### clapper
 
