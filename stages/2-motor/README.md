@@ -88,6 +88,26 @@ against the coast that follows it.
 
 Run: no capture of its own; the notebook reads bemf-coast's dataset.
 
+## speed-torque
+
+Targets: the speed, the current, the output power and the efficiency
+against the torque at one rail, the motor's performance curve, with the
+measured run-up over the line the model draws from the constants.
+
+Needs: motor in the rig, bar off, board, DPS, host; the bemf-coast,
+no-load-current and rest-resistance results.
+
+How: three cycles of a 300 ms spin at 100 % from rest and a 0.6 s coast,
+both directions, on a 5.0 V rail, twenty seconds apart. The rotor's
+inertia is the load, so the run-up sweeps the curve from stall to no load:
+the torque is the inertia times the rise of the speed plus the drag at that
+speed. The bemf-coast spins add the same at their partial duties. The spin
+is short because a free motor at 100 % runs at its top speed, which wears
+the brushes.
+
+Run: `uv run python stages/2-motor/speed-torque/capture.py`; the notebook
+comes after rest-resistance, its last input.
+
 ## [teardown](teardown/teardown.ipynb)
 
 Targets: the copper's temperature coefficient on the rotor out of its can,
