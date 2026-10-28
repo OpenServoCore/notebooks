@@ -20,6 +20,9 @@ def dataset(group, experiment, argv=None, default=1):
     argv = sys.argv if argv is None else argv
     n = int(argv[1]) if len(argv) > 1 else default
     out = ROOT / "telemetry" / group / experiment / f"capture-{n}"
+    if out.exists() and any(out.iterdir()):
+        # a re-record replaces a dataset in place, but never by accident: name the folder first
+        prompt(f"{out.relative_to(ROOT)} already holds a dataset and this run overwrites it.")
     out.mkdir(parents=True, exist_ok=True)
     return out
 

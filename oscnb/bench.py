@@ -15,9 +15,10 @@ DIODE_V = 0.25     # the dev board's feed diode at rest, the first guess for the
 
 
 def power_up(volts, amps=2.5):
-    """DPS on at `volts` with the board's leads off, then the leads on, then
-    the bus checked."""
-    capture.prompt(f"Board power leads OFF the DPS. The DPS turns on at {volts} V now.")
+    """DPS on at `volts` with the board's leads connected, then the bus checked.
+    The DPS output comes up at its previous setting for a moment when enabled,
+    which the board's rail tolerates, so the leads stay on."""
+    capture.prompt(f"Board power leads on the DPS, adapter on the bus. The DPS turns on at {volts} V now.")
     p = dps150.open_supply()
     try:
         dps150.on(p, volts, amps)
@@ -25,7 +26,6 @@ def power_up(volts, amps=2.5):
     finally:
         p.close()
     print(f"DPS on, {m.output_voltage:.2f} V")
-    capture.prompt("Board power leads on the DPS, adapter on the bus.")
     time.sleep(1)
     print(f"bus at {osc.bus_baud()} baud")
     osc.require_3m()
