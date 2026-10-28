@@ -3,7 +3,8 @@
 One row per control tick at 20 kHz, segments numbered from 0 (the torque-off
 baseline) through the rungs. The raw columns are ADC counts: `current_raw`
 over the shunt amplifier, `vmotor_a` and `vmotor_b` the terminal taps,
-`vbus_raw` the rail tap, `ntc_raw` the board NTC when the row carries it.
+`vbus_raw` the rail tap, `ntc_raw` the board NTC and `vref_raw` the chip's
+1.2 V reference when the row carries them.
 `duty_counts` is the applied window in timer ticks either side of the crest,
 signed by direction. A dropped frame shows as a jump in `tick`.
 """
@@ -17,7 +18,7 @@ from . import boards
 
 FRAME_ROWS = 16
 SETTLE_ROWS = 40      # 2 ms after a rung opens, for the rail and the taps to settle
-RAW = ["current_raw", "vmotor_a", "vmotor_b", "vbus_raw", "ntc_raw"]
+RAW = ["current_raw", "vmotor_a", "vmotor_b", "vbus_raw", "ntc_raw", "vref_raw"]
 
 
 def load(folder, board=None):

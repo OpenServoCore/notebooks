@@ -41,8 +41,12 @@ class Board:
     ntc_pullup_ohm: int
     ntc_r25_ohm: int
     ntc_beta: int
+    # op-amp input pull-ups to VDD, one on each input, which set the inputs' common mode;
+    # 0 on a board without them
+    opa_pullup_ohm: int = 0
     # converter and timer
     vdd_mv: int = 3300
+    vref_v: float = 1.2       # the chip's internal reference, CH32V006 datasheet nominal
     adc_counts: int = 4096
     tick_hz: int = 20_000
     pwm_arr: int = 1200          # the counter's crest; a window is `drive_ticks` either side of it
@@ -115,10 +119,21 @@ class Board:
     def amps(self, current_raw, zero_counts):
         return (np.asarray(current_raw, float) - zero_counts) * self.a_per_count
 
-    def rail_v(self, vbus_raw):
+    def vdd_v(self, vref_raw):
+        """VDD from the chip's 1.2 V reference as the ADC reads it (`vref_raw`
+        in a TEL row). The ADC's reference is VDD, so a count is VDD / 4096 and
+        the 1.2 V reference reads lower as VDD rises."""
+        return self.vref_v * self.adc_counts / np.asarray(vref_raw, float)
+
+    def rail_v(self, vbus_raw, vref_raw=None):
         """Rail volts from the raw rail tap (`vbus_raw` in a TEL row). Not the
-        firmware's `vbus_counts`, which is already scaled into tap units."""
-        return np.asarray(vbus_raw, float) * self.v_rail_per_count
+        firmware's `vbus_counts`, which is already scaled into tap units. The
+        tap is a share of VDD, so with `vref_raw` the measured VDD replaces the
+        nominal one, and the reading stays right when the regulator drops out."""
+        v = np.asarray(vbus_raw, float) * self.v_rail_per_count
+        if vref_raw is None:
+            return v
+        return v * self.vdd_v(vref_raw) / (self.vdd_mv / 1e3)
 
     def ntc_ohm(self, ntc_raw):
         """The NTC's resistance from its raw count, pull-up to VDD."""
@@ -155,11 +170,13 @@ BOARDS = {
         bias_top=430, bias_bot=100, bias_nom_counts=773,
         vbus_div_top=6_400, vbus_div_bot=1_600, rail_drop_mv=250,
         ntc_pullup_ohm=10_000, ntc_r25_ohm=10_000, ntc_beta=3950,
+        opa_pullup_ohm=1_500,
         i_window_min_ticks=64, v_window_min_ticks=93,
         notes="Rs1 60 mOhm with the bare op-amp at Rf 6k4 / Rg 430. Terminal taps 6k4 over 1k6 "
-              "returned to the VB node from 430 / 100. VSNS 6k4 / 1k6 to ground. Every value here "
-              "is what the firmware publishes in its calib table; the stage 1 results carry the "
-              "measured corrections.",
+              "returned to the VB node from 430 / 100. VSNS 6k4 / 1k6 to ground. 1k5 pull-ups from "
+              "3V3 to both op-amp inputs, hand-soldered 1 % thick film, no Rs1 pads. Every value "
+              "here but the pull-ups is what the firmware publishes in its calib table; the stage 1 "
+              "results carry the measured corrections.",
     ),
 }
 
