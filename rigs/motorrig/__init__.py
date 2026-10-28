@@ -34,8 +34,8 @@ Frame: X east, Y north, Z up, the shaft on Z. Hole 0 of the bolt circle is on
 +X and the holes count counterclockwise seen from above, the sign the
 notebooks use for angle. The base prints on its underside with the boss and
 the pillars standing, the bar on its underside with the hub standing and the
-nut slots opening upward, the coupon on its top face, so every bore is vertical
-and no part needs support.
+nut slots opening upward, the coupon as it lies with its bores and labels on
+the top face, so every bore is vertical and no part needs support.
 
 Motor dimensions default to the SG90-class flat can and pinion measured in
 the firmware repo's mechanical/sg90/measurements.py; the motor at hand is

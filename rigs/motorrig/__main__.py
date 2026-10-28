@@ -3,12 +3,12 @@ import argparse
 from dataclasses import fields, replace
 from pathlib import Path
 
-from build123d import Pos, Rot, export_step, export_stl
+from build123d import Pos, export_step, export_stl
 
 from .rig import Spec, build_bar, build_base, build_coupon
 
 MOTOR_FIELDS = ("can_d", "can_flat", "can_l", "front_boss_l", "shaft_l", "pinion_d", "pinion_h", "term_span")
-PRINT = {"motorrig_base": None, "motorrig_bar": None, "motorrig_coupon": Rot(180, 0, 0)}   # the bar stands on its underside, the slots open up
+PRINT = {"motorrig_base": None, "motorrig_bar": None, "motorrig_coupon": None}   # every part prints as it lies
 
 
 def print_pose(part):

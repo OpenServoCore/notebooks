@@ -69,6 +69,7 @@ class Spec:
     # coupon
     coupon_bores: tuple = (2.2, 2.3, 2.4, 2.5, 2.6)
     coupon_t: float = 4.0
+    coupon_w: float = 10.0
 
     @property
     def pocket_depth(self):
@@ -246,12 +247,13 @@ def build_bar(s: Spec = Spec()) -> Part:
 
 
 def build_coupon(s: Spec = Spec()) -> Part:
+    # the bores open at the top and the labels sit beside them on the same face, so it prints as it lies
     pitch = 6.0
     n = len(s.coupon_bores)
-    p = extrude(RectangleRounded(pitch * n + 2, 8.0, 1.0), s.coupon_t)
+    p = extrude(RectangleRounded(pitch * n + 2, s.coupon_w, 1.0), s.coupon_t)
     for i, d in enumerate(s.coupon_bores):
         x = (i - (n - 1) / 2) * pitch
-        p -= cyl(x, 1.0, -0.1, d, s.socket_depth + 0.1)
-        p -= label(f"{d:.1f}", x, -2.6, s.coupon_t - s.label_h, s.label_h + 0.1, 1.8)
+        p -= cyl(x, 1.6, s.coupon_t - s.socket_depth, d, s.socket_depth + 0.1)
+        p -= label(f"{d:.1f}", x, -2.8, s.coupon_t - s.label_h, s.label_h + 0.1, 1.8)
     p.label = "motorrig_coupon"
     return p
