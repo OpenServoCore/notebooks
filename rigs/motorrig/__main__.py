@@ -5,10 +5,10 @@ from pathlib import Path
 
 from build123d import Pos, Rot, export_step, export_stl
 
-from .rig import Spec, build_bar, build_base, build_coupon
+from .rig import Spec, build_bar, build_base, build_cap, build_coupon
 
 MOTOR_FIELDS = ("can_d", "can_flat", "can_l", "front_boss_l", "shaft_l", "pinion_d", "pinion_h", "term_span")
-PRINT = {"motorrig_base": None, "motorrig_bar": None, "motorrig_coupon": Rot(180, 0, 0)}   # the bar stands on its underside, hub up
+PRINT = {"motorrig_base": None, "motorrig_bar": None, "motorrig_cap": None, "motorrig_coupon": Rot(180, 0, 0)}   # the bar and the cap stand on their undersides
 
 
 def print_pose(part):
@@ -51,7 +51,7 @@ def main():
     spec = replace(Spec(), **{k: v for k, v in vars(args).items() if k != "preview"})
     out = Path(__file__).parent / "build"
     out.mkdir(exist_ok=True)
-    for build in (build_base, build_bar, build_coupon):
+    for build in (build_base, build_bar, build_cap, build_coupon):
         part = build(spec)
         if not part.is_valid or len(part.solids()) != 1:
             raise RuntimeError(f"{part.label} must be one valid solid")

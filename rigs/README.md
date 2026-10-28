@@ -15,6 +15,7 @@ uv run --group cad python -m rigs.motorrig --pinion-d 2.3 --can-l 12.0   # the m
 ```
 
 - [motorrig](motorrig/__init__.py): the bare-motor rig for stage 2. A base
-  that seats the motor can with its leads under it, a wrench bar that holds
-  the rotor by its pinion at one of twelve indexed angles with a clamp screw,
-  and a fit coupon that picks the bar's bore for the pinion in hand.
+  that seats the motor can with its leads under it, a wrench bar and cap
+  that pinch the rotor's pinion between two rigid halves and pin the bar at
+  one of twelve indexed angles, and a fit coupon that reads the printer's
+  bore against the pinion in hand.

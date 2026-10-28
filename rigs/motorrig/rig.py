@@ -26,7 +26,7 @@ class Spec:
     pinion_h: float = 2.17
     # fits, per side
     can_clear: float = 0.15      # the can drops in and sits square
-    bore_clear: float = 0.10     # the bar slides over the pinion with no force; the clamp grips
+    bore_clear: float = -0.05    # the bore a tenth under the pinion, so the two halves grip before their faces meet
     # base
     floor: float = 3.5
     recess: float = 0.8          # the can's front face this far below the base top, so the bar lies flat on the base
@@ -53,15 +53,17 @@ class Spec:
     bar_end: float = 4.0         # past each hole
     bar_hole_d: float = 2.4      # M2 clearance
     socket_roof: float = 0.4     # the socket is this much deeper than the pinion reaches
-    hub_d: float = 12.0          # the wrench hub around the socket, standing on the bar
-    hub_h: float = 12.0          # from the bar's underside; the clamp screw sits high enough for a driver over the plate
-    slit_w: float = 0.5          # from the bore out through the -Y edge: the +Y side is the hinge
-    clamp_y: float = -3.2        # the clamp screw runs along X across the slit here
-    clamp_pilot_len: float = 3.0
+    # the clamp: the hub carries the +Y half of the bore, a separate cap the -Y half, two screws along Y pull them together
+    hub_x: float = 12.0          # the hub's span along the bar
+    hub_y: float = 6.0           # from the bore axis to the hub's back
+    hub_h: float = 12.0          # from the bar's underside; the screws sit high enough for a driver over the plate
+    cap_y: float = 6.0           # from the bore axis to the cap's face
+    cap_gap: float = 0.3         # between the cap and the hub when the bore is at the pinion's diameter
+    clamp_x: float = 3.8         # the two screws, at +/- this along the bar
     clamp_z: float = 8.0
-    clamp_pilot_d: float = 1.8
-    clamp_clear_d: float = 2.2
-    clamp_seat_d: float = 4.2    # a flat seat for the screw head in the hub's round side
+    clamp_pilot_d: float = 1.8   # self-tapping M2 into the hub
+    clamp_pilot_depth: float = 4.0
+    clamp_clear_d: float = 2.2   # through the cap
     # coupon
     coupon_bores: tuple = (2.2, 2.3, 2.4, 2.5, 2.6)
     coupon_t: float = 4.0
@@ -124,12 +126,14 @@ class Spec:
             raise ValueError("A pillar must leave a wall around its pin hole")
         if self.label_r + self.label_font / 2 >= self.bolt_r - self.pillar_d / 2 or self.label_r - self.label_font / 2 <= self.boss_d / 2:
             raise ValueError("The hole numbers must fit between the boss and the pillars")
-        if -self.clamp_y - self.clamp_clear_d / 2 <= self.bore_d / 2 + 0.8 or -self.clamp_y + self.clamp_clear_d / 2 >= self.hub_d / 2 - 1.5:
-            raise ValueError("The clamp screw must cross the slit between the bore and the hub's side with a wall each way")
-        if self.clamp_z - self.clamp_clear_d / 2 <= self.bar_t or self.clamp_z + self.clamp_seat_d / 2 >= self.hub_h:
-            raise ValueError("The clamp screw must sit in the hub above the bar")
-        if self.hub_d <= self.bar_w:
-            raise ValueError("The hub must stand proud of the bar's sides")
+        if self.clamp_x - self.clamp_clear_d / 2 <= self.bore_d / 2 + 1.0 or self.clamp_x + self.clamp_clear_d / 2 >= self.hub_x / 2 - 1.0:
+            raise ValueError("The clamp screws must pass beside the bore inside the hub")
+        if self.clamp_z - self.clamp_clear_d / 2 <= self.bar_t or self.clamp_z + self.clamp_clear_d / 2 >= self.hub_h:
+            raise ValueError("The clamp screws must sit in the hub above the bar")
+        if self.clamp_pilot_depth >= self.hub_y - self.cap_gap / 2 - 0.5:
+            raise ValueError("The pilots must stay inside the hub")
+        if self.cap_gap <= 0 or self.cap_gap / 2 >= self.bore_d / 2 - 0.3:
+            raise ValueError("The split faces must sit inside the bore's edge with a gap")
         if self.plate_d > 250:
             raise ValueError("The base exceeds the printer bed")
 
@@ -186,22 +190,31 @@ def build_bar(s: Spec = Spec()) -> Part:
     p = extrude(RectangleRounded(s.bar_l, s.bar_w, s.bar_w / 2 - 0.01), s.bar_t)
     for sx in (-1, 1):
         p -= cyl(sx * s.bolt_r, 0, -0.1, s.bar_hole_d, s.bar_t + 0.2)
-    # the wrench hub around the socket, and the socket as a blind bore from the underside
-    p += cyl(0, 0, 0, s.hub_d, s.hub_h)
+    # the hub on the +Y side of the bore, the bar's arm cut away on the -Y side where the cap goes
+    p += box(0, (s.cap_gap / 2 + s.hub_y) / 2, 0, s.hub_x, s.hub_y - s.cap_gap / 2, s.hub_h)
+    p -= box(0, -(s.bar_w / 2 + 1) / 2 - s.cap_gap / 4, -0.1, s.hub_x, s.bar_w / 2 + 1 - s.cap_gap / 2, s.bar_t + 0.2)
+    # the socket, a blind bore from the underside, open on the -Y face
     p -= cyl(0, 0, -0.1, s.bore_d, s.socket_depth + 0.1)
-    # the slit from the bore out through the -Y side, full height: the +Y side is the hinge
-    p -= box(0, -s.hub_d / 4 - 1, -0.1, s.slit_w, s.hub_d / 2 + 2, s.hub_h + 0.2)
-    # the clamp screw along X across the slit: a flat seat and a clearance hole on the -X side, a pilot on the +X side
-    p -= Pos(-s.hub_d / 2 + 1.0, s.clamp_y, s.clamp_z) * Rot(0, -90, 0) * Cylinder(
-        s.clamp_seat_d / 2, s.hub_d, align=(Align.CENTER, Align.CENTER, Align.MIN))
-    p -= Pos(0.1, s.clamp_y, s.clamp_z) * Rot(0, -90, 0) * Cylinder(
-        s.clamp_clear_d / 2, s.hub_d, align=(Align.CENTER, Align.CENTER, Align.MIN))
-    p -= Pos(-0.1, s.clamp_y, s.clamp_z) * Rot(0, 90, 0) * Cylinder(
-        s.clamp_pilot_d / 2, s.clamp_pilot_len + 0.1, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    # the two pilots along Y into the hub's face
+    for sx in (-1, 1):
+        p -= Pos(sx * s.clamp_x, s.cap_gap / 2 - 0.1, s.clamp_z) * Rot(-90, 0, 0) * Cylinder(
+            s.clamp_pilot_d / 2, s.clamp_pilot_depth + 0.1, align=(Align.CENTER, Align.CENTER, Align.MIN))
     # the index arrow on the top face at the +X end, pointing out along the bar
     ax = s.bolt_r - s.bar_hole_d / 2 - 3.0
     p += Pos(0, 0, s.bar_t) * extrude(Pos(ax, 0) * Polygon((0, -1.2), (2.0, 0), (0, 1.2), align=None), s.label_h)
     p.label = "motorrig_bar"
+    return p
+
+
+def build_cap(s: Spec = Spec()) -> Part:
+    """The other half of the clamp: the -Y half of the bore, two clearance holes."""
+    s.check()
+    p = box(0, -(s.cap_gap / 2 + s.cap_y) / 2, 0, s.hub_x, s.cap_y - s.cap_gap / 2, s.hub_h)
+    p -= cyl(0, 0, -0.1, s.bore_d, s.socket_depth + 0.1)
+    for sx in (-1, 1):
+        p -= Pos(sx * s.clamp_x, -s.cap_y - 0.1, s.clamp_z) * Rot(-90, 0, 0) * Cylinder(
+            s.clamp_clear_d / 2, s.cap_y + 0.2, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    p.label = "motorrig_cap"
     return p
 
 
