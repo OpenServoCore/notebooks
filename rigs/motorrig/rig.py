@@ -40,14 +40,14 @@ class Spec:
     rim: float = 5.0             # plate past the bolt circle
     boss_wall: float = 2.5       # the boss around the pocket, standing on the deck
     ring_w: float = 6.0          # the ring on the bolt circle with the pin holes, up to the bar's level
-    label_r: float = 17.0        # the hole numbers, engraved in the deck inside the ring
+    label_r: float = 13.5        # the hole numbers, raised on the deck between the boss and the ring
     tab_room: float = 1.5        # the well past each tab center along X: the tab, its solder and the lead
     well_y: float = 4.4          # the well across: the rear boss with its clearance; the can's flats carry the motor
     well_depth: float = 1.6      # tab plus solder; the well opens into the lead channel under it
     channel_w: float = 2.5       # the lead channel in the underside, under the well, out to the +X edge
     channel_depth: float = 2.3   # meets the well; a lead on the table stays a millimeter under the can
-    label_h: float = 0.4         # engraving depth, two layers
-    label_font: float = 3.0
+    label_h: float = 0.6         # the numbers and the arrow stand this high, three layers
+    label_font: float = 4.5
     # bar
     bar_w: float = 8.0
     bar_t: float = 4.0
@@ -171,6 +171,8 @@ class Spec:
             raise ValueError("The deck must stand above the floor and below the boss top and the pin holes")
         if self.label_r + self.label_font / 2 >= self.ring_r[0] or self.label_r - self.label_font / 2 <= self.boss_d / 2:
             raise ValueError("The hole numbers must fit between the boss and the ring")
+        if 2 * math.pi * self.label_r / self.holes <= 1.5 * self.label_font:
+            raise ValueError("The hole numbers must not run into their neighbors")
         if self.bore_clear <= 0:
             raise ValueError("The bore must slip over the pinion; the slit does the gripping")
         if self.slit_l / 2 + 1.5 >= self.bolt_r - self.bar_hole_d / 2:
@@ -228,7 +230,7 @@ def build_base(s: Spec = Spec()) -> Part:
         a = 2 * math.pi * k / s.holes
         x, y = s.bolt_r * math.cos(a), s.bolt_r * math.sin(a)
         p -= cyl(x, y, s.base_h - s.pin_depth, s.pin_d, s.pin_depth + 0.1)
-        p -= label(str(k), s.label_r * math.cos(a), s.label_r * math.sin(a), s.deck_h - s.label_h, s.label_h + 0.1,
+        p += label(str(k), s.label_r * math.cos(a), s.label_r * math.sin(a), s.deck_h, s.label_h,
                    s.label_font, angle=math.degrees(a) - 90)
     p.label = "motorrig_base"
     return p
