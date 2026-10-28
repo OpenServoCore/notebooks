@@ -88,14 +88,14 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500, dirs="both", 
     return out
 
 
-def bursts(out, pct, repeats=3, chans="diff"):
-    """`osc ident burst --static-load`: the ADC free running on the shunt and
-    the taps through PWM periods around a duty step, `burst-K.csv` files in
-    `out`."""
+def bursts(out, pct, repeats=3, chans="diff", dirs="both", rest_ms=150):
+    """`osc burst` into `out` (burst-K.csv + meta.json): the ADC free running
+    on the shunt and the taps through PWM periods around a duty step from
+    rest, each duty by sign by repeat. The raw instrument, no fit."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    run("ident", "--out", out, "--burst-pct", ",".join(map(str, pct)), "--burst-repeats", repeats,
-        "--burst-chans", chans, "burst", "--static-load")
+    run("burst", "--out", out, "--duty-pct", ",".join(map(str, pct)), "--repeats", repeats,
+        "--chans", chans, "--dirs", dirs, "--rest-ms", rest_ms)
     return out
 
 
