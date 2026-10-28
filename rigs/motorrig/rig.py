@@ -45,7 +45,7 @@ class Spec:
     tab_slot_depth: float = 1.6  # tab plus solder; the slot opens into the lead channel under it
     boss_relief_clear: float = 0.2
     boss_relief_depth: float = 1.2
-    channel_w: float = 3.2       # the lead channel in the underside, two leads side by side, out to the +X edge
+    channel_w: float = 2.5       # the lead channel in the underside, under the tabs, out to the +X edge
     channel_depth: float = 2.3   # meets the boss relief; a lead on the table stays a millimeter under the boss
     label_h: float = 0.4         # engraving depth, two layers
     label_font: float = 3.0
