@@ -177,6 +177,21 @@ BOARDS = {
               "3V3 to both op-amp inputs, hand-soldered 1 % thick film. A twisted pair soldered to the Rs1 pads for the meter. Every value "
               "here is the part's nominal; the stage 1 results carry the measured conversions.",
     ),
+    "dev-v006-2A-E": Board(
+        key="dev-v006-2A-E",
+        label="osc-dev-v006 rev 2A, board E",
+        uid="76e0bc220ef1abcd",
+        shunt_mohm=60, shunt_tcr_ppm_per_c=50, gain_milli=14_884,
+        vmotor_div_top=6_400, vmotor_div_bot=1_600,
+        bias_top=430, bias_bot=100, bias_nom_counts=773,
+        vbus_div_top=6_400, vbus_div_bot=1_600, rail_drop_mv=250,
+        ntc_pullup_ohm=10_000, ntc_r25_ohm=10_000, ntc_beta=3950,
+        opa_pullup_ohm=1_500,
+        i_window_min_ticks=64, v_window_min_ticks=93,
+        notes="The same parts as board D. 1k5 pull-ups from 3V3 to both op-amp inputs fitted by hand. "
+              "Rest zero 1355 counts on the current channel against D's 1207, the pull-up and reference "
+              "parts' tolerance on a zero that is the difference of two large terms. Other rework to confirm.",
+    ),
 }
 
 DEFAULT = "dev-v006-2A-D"
