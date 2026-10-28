@@ -24,6 +24,10 @@ build-backend = "hatchling.build"
 packages = ["oscnb"]
 
 [dependency-groups]
+cad = [
+    "build123d>=0.11",
+    "trimesh>=4",
+]
 dev = ["pytest>=8"]
 
 [tool.pytest.ini_options]
