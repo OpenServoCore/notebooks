@@ -1,0 +1,270 @@
+{
+  "capture": "telemetry/dev-v006-2A-D/ntc-curve/capture-1",
+  "notes": "board NTC polled on a printer bed with the thermocouple taped to the top surface beside it, no paste; t_c is the thermocouple after its stage 0 correction; the nominal beta (registry R25 and beta) is graded against it and is inside the meter's class once the rig's two effects are out, the tip's loss through its tape (press-1 pad test) and the bed gradient; design_* is the fixed-point quadratic in the count fitted through the nominal beta equation over design_range_c with no thermocouple data in it, design_form_error_c its largest residual against the beta equation (lo/hi the residual's range); beta_fit and the refit_* quadratic are fits through the measured points, the plateaus (the last 90 s before the mark that ends each) and the cool-down, against a thermocouple shown to read low, so they correct the NTC toward a low reading and are NOT design constants; beta_fit's bracket is the spread over the row choices (cool-down alone, whole run); gradient_c_per_c is the gap per C the bed sits over the board, the thermocouple reading under the NTC's copper; curve_slope_c_per_c is the nominal beta's gap per C of board with the bed at or below the board, which the pad test attributes to the tip's loss; pad_rise_c is the towel's rise over the bare tip on the bed (lo the whole padded stretch, hi its highest), tip_loss_fraction that rise over the bed's excess over the room, bed_c_during_pad_test the bed's own thermistor (lo/hi its cycling)",
+  "design_t_ref_cc": {
+    "value": 2584.0,
+    "lo": null,
+    "hi": null,
+    "unit": "cC"
+  },
+  "design_k1_q88": {
+    "value": 212.0,
+    "lo": null,
+    "hi": null,
+    "unit": "Q8.8"
+  },
+  "design_k2_q24": {
+    "value": 28463.0,
+    "lo": null,
+    "hi": null,
+    "unit": "Q24"
+  },
+  "design_range_c": {
+    "value": 100.0,
+    "lo": 20.0,
+    "hi": 100.0,
+    "unit": "C"
+  },
+  "design_form_error_c": {
+    "value": 5.539661813732366,
+    "lo": -5.539661813732366,
+    "hi": 4.811193675814373,
+    "unit": "C"
+  },
+  "beta_nominal": {
+    "value": 3950.0,
+    "lo": null,
+    "hi": null,
+    "unit": "K"
+  },
+  "beta_fit": {
+    "value": 4331.320236363223,
+    "lo": 4315.971548787307,
+    "hi": 4382.7284966767065,
+    "unit": "K"
+  },
+  "refit_raw_ref": {
+    "value": 2048.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "refit_t_ref_cc": {
+    "value": 2482.0,
+    "lo": null,
+    "hi": null,
+    "unit": "cC"
+  },
+  "refit_k1_q88": {
+    "value": 452.0,
+    "lo": null,
+    "hi": null,
+    "unit": "Q8.8"
+  },
+  "refit_k2_q24": {
+    "value": 11195.0,
+    "lo": null,
+    "hi": null,
+    "unit": "Q24"
+  },
+  "range_c": {
+    "value": 60.08066672390209,
+    "lo": 23.89113760665234,
+    "hi": 60.08066672390209,
+    "unit": "C"
+  },
+  "fit_rows": {
+    "value": 743.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  },
+  "curve_slope_c_per_c": {
+    "value": 0.061079089811280685,
+    "lo": 0.04947203557880841,
+    "hi": 0.07211213053650962,
+    "unit": "C/C"
+  },
+  "gradient_c_per_c": {
+    "value": 0.060098803148136266,
+    "lo": 0.04596136180188337,
+    "hi": 0.06612908622536103,
+    "unit": "C/C"
+  },
+  "gap_at_25_c": {
+    "value": 0.5726925186891986,
+    "lo": 0.5613320746525685,
+    "hi": 0.5840529627258286,
+    "unit": "C"
+  },
+  "pad_rise_c": {
+    "value": 7.562329903017542,
+    "lo": 6.646443109475925,
+    "hi": 9.506455024716203,
+    "unit": "C"
+  },
+  "tip_loss_fraction": {
+    "value": 0.1344991432011608,
+    "lo": 0.11820972042003458,
+    "hi": 0.16907620694972653,
+    "unit": "C/C"
+  },
+  "bed_c_during_pad_test": {
+    "value": 80.21249999999999,
+    "lo": 79.5,
+    "hi": 80.9,
+    "unit": "C"
+  },
+  "plateaus": {
+    "room": {
+      "thermocouple_c": {
+        "value": 23.986640689453278,
+        "lo": 23.914443128669934,
+        "hi": 24.058838250236622,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 2068.5116279069766,
+        "lo": 2064.5693534062343,
+        "hi": 2072.453902407719,
+        "unit": "counts"
+      },
+      "bed_c": {
+        "value": 22.540802675273657,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "meter_class_c": {
+        "value": 0.7398664068945328,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_nominal_error_c": {
+        "value": 0.5632593377807389,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_nominal_error_rig_out_c": {
+        "value": 0.1393550176297943,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_fit_error_c": {
+        "value": 0.602828658082835,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "quadratic_error_c": {
+        "value": 0.46568489194207174,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      }
+    },
+    "warm": {
+      "thermocouple_c": {
+        "value": 46.90411139127907,
+        "lo": 46.79954843026189,
+        "hi": 47.008674352296254,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 1093.9767441860465,
+        "lo": 1090.9728707176805,
+        "hi": 1096.9806176544125,
+        "unit": "counts"
+      },
+      "bed_c": {
+        "value": 60.30785989279145,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "meter_class_c": {
+        "value": 0.9690411139127908,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_nominal_error_c": {
+        "value": 2.687481099765023,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_nominal_error_rig_out_c": {
+        "value": -0.028643848467925448,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_fit_error_c": {
+        "value": 0.3608120811988087,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "quadratic_error_c": {
+        "value": 0.8247258180232464,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      }
+    },
+    "hot": {
+      "thermocouple_c": {
+        "value": 59.765603698155935,
+        "lo": 59.64164663634038,
+        "hi": 59.88956075997149,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 730.3255813953489,
+        "lo": 727.2571481808196,
+        "hi": 733.3940146098781,
+        "unit": "counts"
+      },
+      "bed_c": {
+        "value": 80.20198447772673,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "meter_class_c": {
+        "value": 1.0976560369815593,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_nominal_error_c": {
+        "value": 4.101846953098068,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_nominal_error_rig_out_c": {
+        "value": 0.17750097825403044,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "beta_fit_error_c": {
+        "value": 0.27784692390017085,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      },
+      "quadratic_error_c": {
+        "value": -0.1042083493187107,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      }
+    }
+  }
+}
