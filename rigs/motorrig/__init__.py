@@ -4,11 +4,15 @@ slit wrench bar that clamps the rotor by its pinion and is pinned to the ring
 at one of the twelve angles.
 
 Nothing in the rig pushes or pulls along the shaft. The motor sits on its
-can's rear face, with reliefs under the rear boss and the terminal tabs, so a
-load on the motor goes into the can. The leads are soldered to the tabs
-before the motor goes in; they drop through the tab slots into a channel in
-the base's underside and leave at the edge below hole 0, so the base sits
-flat on the table with the leads under it and nothing pulls on the tabs.
+can's rear face, along its two flats, over one well in the floor that takes
+the rear boss and the terminal tabs, so a load on the motor goes into the
+can. The boss holds two thirds of the can's length and the top third stands
+above it, so the motor comes out held by the can and never by the shaft;
+the ring is taller than the boss and sets the bar's level. The leads are
+soldered to the tabs before the motor goes in; they drop through the well
+into a channel in the base's underside and leave at the edge below hole 0,
+so the base sits flat on the table with the leads under it and nothing pulls
+on the tabs.
 The bar is one piece with a slit along its length through the bore, from
 well past the hub to short of the pin holes, so the two ends that carry the
 pins stay solid and the two halves around the bore can close. Two M2 screws

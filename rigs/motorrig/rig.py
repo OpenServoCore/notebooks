@@ -31,7 +31,8 @@ class Spec:
     # base
     floor: float = 3.5           # under the can's rear face; the lead channel runs in it
     deck_h: float = 8.0          # the solid plate, half the base's height, so the boss and the ring stand short
-    recess: float = 0.8          # the can's front face this far below the base top, so the bar lies flat on the base
+    pocket_frac: float = 2 / 3   # of the can's length in the boss; the rest stands above it, to pull the motor by the can
+    recess: float = 0.8          # the can's front face this far below the ring's top, so the bar lies on the ring over it
     bolt_r: float = 22.0
     holes: int = 12
     pin_d: float = 2.1           # a loose M2 screw or a 2 mm pin drops through the bar into the ring, no thread
@@ -40,13 +41,11 @@ class Spec:
     boss_wall: float = 2.5       # the boss around the pocket, standing on the deck
     ring_w: float = 6.0          # the ring on the bolt circle with the pin holes, up to the bar's level
     label_r: float = 17.0        # the hole numbers, engraved in the deck inside the ring
-    tab_slot_x: float = 1.5      # tab slot, X by Y, in the pocket floor: the tab, its solder and the lead
-    tab_slot_y: float = 2.5
-    tab_slot_depth: float = 1.6  # tab plus solder; the slot opens into the lead channel under it
-    boss_relief_clear: float = 0.2
-    boss_relief_depth: float = 1.2
-    channel_w: float = 2.5       # the lead channel in the underside, under the tabs, out to the +X edge
-    channel_depth: float = 2.3   # meets the boss relief; a lead on the table stays a millimeter under the boss
+    tab_room: float = 1.5        # the well past each tab center along X: the tab, its solder and the lead
+    well_y: float = 4.4          # the well across: the rear boss with its clearance; the can's flats carry the motor
+    well_depth: float = 1.6      # tab plus solder; the well opens into the lead channel under it
+    channel_w: float = 2.5       # the lead channel in the underside, under the well, out to the +X edge
+    channel_depth: float = 2.3   # meets the well; a lead on the table stays a millimeter under the can
     label_h: float = 0.4         # engraving depth, two layers
     label_font: float = 3.0
     # bar
@@ -71,11 +70,20 @@ class Spec:
 
     @property
     def pocket_depth(self):
-        return self.can_l + self.recess
+        return self.pocket_frac * self.can_l
+
+    @property
+    def boss_h(self):
+        return self.floor + self.pocket_depth
 
     @property
     def base_h(self):
-        return self.floor + self.pocket_depth
+        """The ring's top, the bar's level."""
+        return self.floor + self.can_l + self.recess
+
+    @property
+    def well_x(self):
+        return self.term_span + self.tab_room
 
     @property
     def pinion_top(self):
@@ -145,20 +153,22 @@ class Spec:
             raise ValueError("The socket must not break through the bar's top")
         if self.pinion_bottom <= self.front_boss_l - self.recess:
             raise ValueError("The socket would reach the front boss")
-        if self.channel_w < self.tab_slot_y:
-            raise ValueError("The lead channel must take the whole tab slot")
-        if self.channel_depth + self.boss_relief_depth < self.floor:
-            raise ValueError("The lead channel must reach the boss relief, or a skin too thin to print is left between")
-        if self.channel_depth + self.tab_slot_depth <= self.floor:
-            raise ValueError("The tab slots must open into the lead channel")
-        if max(self.boss_relief_depth, self.tab_slot_depth) >= self.floor or self.channel_depth >= self.floor:
-            raise ValueError("Every relief must leave floor under it")
+        if self.pocket_depth >= self.can_l - 2.0 or self.pocket_depth <= self.can_l / 2:
+            raise ValueError("The boss must hold the can by more than half and leave a few millimeters to pull it by")
+        if self.well_y >= self.can_flat - 2.0 or self.well_x >= self.can_d - 0.5:
+            raise ValueError("The well must leave the can's rear face a ledge along both flats")
+        if self.well_y <= self.rear_boss_d or self.well_x <= self.term_span + self.term_t:
+            raise ValueError("The well must clear the rear boss and both tabs")
+        if self.channel_depth + self.well_depth <= self.floor:
+            raise ValueError("The well must open into the lead channel")
+        if self.well_depth >= self.floor or self.channel_depth >= self.floor:
+            raise ValueError("The well and the channel must leave floor under them")
         if self.pin_depth >= self.base_h:
             raise ValueError("The pin holes must not break through the base")
         if self.ring_w <= self.pin_d + 2.0:
             raise ValueError("The ring must leave a wall around its pin holes")
-        if self.deck_h <= self.floor or self.deck_h >= self.base_h - self.pin_depth:
-            raise ValueError("The deck must stand above the floor and below the pin holes")
+        if self.deck_h <= self.floor or self.deck_h >= min(self.boss_h, self.base_h - self.pin_depth):
+            raise ValueError("The deck must stand above the floor and below the boss top and the pin holes")
         if self.label_r + self.label_font / 2 >= self.ring_r[0] or self.label_r - self.label_font / 2 <= self.boss_d / 2:
             raise ValueError("The hole numbers must fit between the boss and the ring")
         if self.bore_clear <= 0:
@@ -201,19 +211,17 @@ def label(text, x, y, z, h, size, angle=0):
 
 def build_base(s: Spec = Spec()) -> Part:
     s.check()
-    # a deck, a boss around the pocket and a ring on the bolt circle, the boss and the ring to the bar's level
+    # a deck, a boss around the pocket to two thirds of the can, and a ring on the bolt circle to the bar's level
     p = extrude(Circle(s.plate_d / 2), s.deck_h)
-    p += cyl(0, 0, 0, s.boss_d, s.base_h)
+    p += cyl(0, 0, 0, s.boss_d, s.boss_h)
     p += extrude(Circle(s.ring_r[1]) - Circle(s.ring_r[0]), s.base_h)
     # the can pocket, open at the top, the can's rear face on the floor
     p -= Pos(0, 0, s.floor) * extrude(flat_profile(s.can_d + 2 * s.can_clear, s.can_flat + 2 * s.can_clear),
                                       s.pocket_depth + 1)
-    # reliefs under the rear boss and the tabs, so the rear face carries the motor
-    p -= cyl(0, 0, s.floor - s.boss_relief_depth, s.rear_boss_d + 2 * s.boss_relief_clear, s.boss_relief_depth + 0.1)
-    for sx in (-1, 1):
-        p -= box(sx * s.term_span / 2, 0, s.floor - s.tab_slot_depth, s.tab_slot_x, s.tab_slot_y, s.tab_slot_depth + 0.1)
-    # the lead channel in the underside: under both tab slots, along X, out through the +X edge
-    x0 = -s.term_span / 2 - s.channel_w / 2
+    # one well in the floor under the rear boss and both tabs, so the rear face carries the motor along its flats
+    p -= box(0, 0, s.floor - s.well_depth, s.well_x, s.well_y, s.well_depth + 0.1)
+    # the lead channel in the underside: under the well, along X, out through the +X edge
+    x0 = -s.well_x / 2
     p -= box((x0 + s.plate_d / 2 + 1) / 2, 0, -0.1, s.plate_d / 2 + 1 - x0, s.channel_w, s.channel_depth + 0.1)
     # the bolt circle, hole 0 on +X, counterclockwise from above
     for k in range(s.holes):
