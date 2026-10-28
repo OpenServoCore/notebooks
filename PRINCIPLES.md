@@ -47,6 +47,9 @@ non-destructive methods. It is done once per family, not per servo.
 
 A firmware change that rests on a measurement waits for the notebook. The
 other direction is open, a bench finding can change a notebook at any time.
+A notebook never describes what the firmware does today, since the firmware
+is built from the notebooks and not the other way round. It says what the
+data supports and what the firmware should carry.
 
 ## Rules
 

@@ -66,7 +66,7 @@ including how a hold behaves.
 
 The loops are designed from the measured plant and the estimators' noise
 and delay, then validated closed loop on the bench. Each notebook ends with
-what the firmware does today next to what the data supports.
+the loop the data supports, which is what the firmware carries.
 
 ### 6. Safety design
 

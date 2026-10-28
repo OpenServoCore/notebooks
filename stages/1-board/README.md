@@ -5,8 +5,9 @@ and no motor. Every current, voltage and temperature the later stages read
 comes through this board's chain, so its conversions are graded here, against
 the stage 0 instruments, before anything with a motor is measured. The board
 is `dev-v006-2A-D`, the rev 2A board D; its registry entry in
-`oscnb/boards.py` carries the parts and the firmware's published constants,
-and the results here carry the measured corrections.
+`oscnb/boards.py` carries the parts' nominal values, and the results here
+carry the measured conversions, which is where the firmware takes its
+constants from.
 
 The sitting needs the board on the DPS, the adapter on its bus at 3 Mbps,
 the stage 0 loads (the bare 5 ohm and the series 15 ohm power resistors),
@@ -78,7 +79,7 @@ Run: `capture.py load`, `capture.py tap_a`, `capture.py rail`, `capture.py rail-
 ## [sample-timing](sample-timing/sample-timing.ipynb)
 
 Targets: the duty from which each crest sample reads the drive honestly,
-against the floors the firmware publishes, and the shunt's settle inside a window.
+against the window floors the board registry carries, and the shunt's settle inside a window.
 
 Needs: board, DPS, bare load, host.
 
@@ -90,8 +91,8 @@ Run: `uv run python stages/1-board/sample-timing/capture.py`, then the notebook.
 
 ## [ntc-curve](ntc-curve/ntc-curve.ipynb)
 
-Targets: the board NTC against the thermocouple, the firmware's conversion
-graded, and its constants refitted.
+Targets: the board NTC against the thermocouple, and the count to
+temperature conversion the firmware takes from it.
 
 Needs: board on the heater, DPS, thermocouple taped to the board, DMM on temperature, host.
 

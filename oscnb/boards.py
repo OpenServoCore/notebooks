@@ -3,11 +3,11 @@
 A board is the measurement chain between the motor and the firmware: the
 shunt and its amplifier, the terminal and rail dividers, the bias node the
 taps return to, the NTC, the ADC and its reference, and the PWM timer the
-drive windows are counted on. The entry holds the parts' nominal values,
-the firmware's published constants for the same parts, and the conversions
-from counts to volts and amps that follow from them. Measured corrections
-to those conversions are the stage 1 results, read from the results files;
-nothing measured is typed in here.
+drive windows are counted on. The entry holds the parts' nominal values and the
+conversions from counts to volts and amps that follow from them. The
+measured conversions are the stage 1 results, read from the results files,
+and the firmware takes its constants from those; nothing measured is typed
+in here.
 
 Authority: every capture's meta.json carries a `sense` block read from the
 servo at capture time, and `check_meta` fails loudly when a capture was
@@ -24,8 +24,9 @@ class Board:
     key: str
     label: str
     uid: str
-    # current chain: the shunt and the op-amp gain, as the firmware publishes them
+    # current chain: the shunt and the op-amp gain, nominal
     shunt_mohm: int
+    shunt_tcr_ppm_per_c: int   # the shunt's rated temperature coefficient, a drift bound the firmware cannot see
     gain_milli: int
     # terminal taps, top to the terminal, bottom returned to the VB bias node
     vmotor_div_top: int
@@ -92,7 +93,7 @@ class Board:
 
     # --- duty ---
     def drive_ticks(self, q15):
-        """The firmware's window half-width for a Q15 duty: (|d| x arr + 2^14) >> 15."""
+        """The drive window's half-width for a Q15 duty: (|d| x arr + 2^14) >> 15."""
         return (np.abs(np.asarray(q15, dtype=np.int64)) * self.pwm_arr + (1 << 14)) >> 15
 
     def duty_pct_of_ticks(self, ticks):
@@ -126,8 +127,7 @@ class Board:
         return self.vref_v * self.adc_counts / np.asarray(vref_raw, float)
 
     def rail_v(self, vbus_raw, vref_raw=None):
-        """Rail volts from the raw rail tap (`vbus_raw` in a TEL row). Not the
-        firmware's `vbus_counts`, which is already scaled into tap units. The
+        """Rail volts from the raw rail tap (`vbus_raw` in a TEL row). The
         tap is a share of VDD, so with `vref_raw` the measured VDD replaces the
         nominal one, and the reading stays right when the regulator drops out."""
         v = np.asarray(vbus_raw, float) * self.v_rail_per_count
@@ -165,18 +165,17 @@ BOARDS = {
         key="dev-v006-2A-D",
         label="osc-dev-v006 rev 2A, board D",
         uid="cdabf60e22bce576",
-        shunt_mohm=60, gain_milli=14_884,
+        shunt_mohm=60, shunt_tcr_ppm_per_c=50, gain_milli=14_884,
         vmotor_div_top=6_400, vmotor_div_bot=1_600,
         bias_top=430, bias_bot=100, bias_nom_counts=773,
         vbus_div_top=6_400, vbus_div_bot=1_600, rail_drop_mv=250,
         ntc_pullup_ohm=10_000, ntc_r25_ohm=10_000, ntc_beta=3950,
         opa_pullup_ohm=1_500,
         i_window_min_ticks=64, v_window_min_ticks=93,
-        notes="Rs1 60 mOhm with the bare op-amp at Rf 6k4 / Rg 430. Terminal taps 6k4 over 1k6 "
+        notes="Rs1 60 mOhm, a JIERR JER1206F1R060 metal alloy 1206 part, 1 %, 50 ppm per C, 1 W to 70 C, on Kelvin pads, with the bare op-amp at Rf 6k4 / Rg 430. Terminal taps 6k4 over 1k6 "
               "returned to the VB node from 430 / 100. VSNS 6k4 / 1k6 to ground. 1k5 pull-ups from "
-              "3V3 to both op-amp inputs, hand-soldered 1 % thick film, no Rs1 pads. Every value "
-              "here but the pull-ups is what the firmware publishes in its calib table; the stage 1 "
-              "results carry the measured corrections.",
+              "3V3 to both op-amp inputs, hand-soldered 1 % thick film. A twisted pair soldered to the Rs1 pads for the meter. Every value "
+              "here is the part's nominal; the stage 1 results carry the measured conversions.",
     ),
 }
 
