@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/dev-v006-2A-D/opamp-temperature/capture-1",
-  "notes": "DC laps on the bare load at four plateaus of a printer bed, the load on the bed too, meter route ammeter on the 20 A range at room; one line per plateau through counts over the lap's own zero against the meter's amps; gain_drift_pct_per_c is the line through the four plateaus' gain_pct against the board NTC through ntc-curve's beta_nominal, its design conversion, with its standard error as the bounds, gain_drift_pooled_pct_per_c the one-offset model over all forty rows; a plateau's board_c is the mean over its laps' drives with the spread over the laps as lo/hi, and beyond that it carries ntc-curve's grade, the meter's class of 1 % + 0.5 C and the bed gradient, 1.1 C at the hot plateau; gain_drift_max_pct is the hot plateau against room; reversibility_pct is room-again against room with both errors; ntc_move_in_lap_c is the NTC's fall through the 7.6 V lap at the room plateaus, ntc_move_over_laps_c the fall from the first lap's rest to the last's there",
+  "notes": "DC laps on the bare load at four plateaus of a printer bed, the load on the bed too, meter route ammeter on the 20 A range at room in capture-1, and the same laps a day later in telemetry/dev-v006-2A-D/opamp-temperature/capture-2 on route rs1, the meter on the 220 mV range across the Rs1 pads, with a rest stream of the chip's 1.2 V reference at a 5.5 V rail before each plateau's laps; one line per plateau through counts over the lap's own zero against the meter's amps; gain_drift_pct_per_c is the line through the four plateaus' gain_pct against the board NTC through ntc-curve's beta_nominal, its design conversion, with its standard error as the bounds, gain_drift_pooled_pct_per_c the one-offset model over all forty rows; a plateau's board_c is the mean over its laps' drives with the spread over the laps as lo/hi, and beyond that it carries ntc-curve's grade, the meter's class of 1 % + 0.5 C and the bed gradient, 1.1 C at the hot plateau; gain_drift_max_pct is the hot plateau against room; reversibility_pct is room-again against room with both errors; ntc_move_in_lap_c is the NTC's fall through the 7.6 V lap at the room plateaus, ntc_move_over_laps_c the fall from the first lap's rest to the last's there; amp_drift_pct_per_c and amp_drift_pooled_pct_per_c are the same two estimators on capture-2's counts per millivolt of shunt, the amplifier and the ADC with the shunt out of the route, amp_drift_max_pct its hot plateau against room; vdd_v per plateau in plateaus_rs1 is the rest stream's mean with the stream's spread as lo/hi, read to about a count of vref_raw, and vdd_drift_pct_per_c the line through the four; shunt_drift_pct_per_c is gain_drift_pct_per_c less amp_drift_pct_per_c with the errors in quadrature, the shunt's own resistance change, shunt_drift_max_pct the same at the hot plateau, against the part's rating of 50 ppm per C either way; the *_hot_ratio_pct_per_c keys are the per-lap ratio at the hot plateau over each capture's own room to hot span, the estimator that resolves the split; the two captures are a day apart on the same board and rig",
   "gain_drift_pct_per_c": {
     "value": -0.00896383754492321,
     "lo": -0.010697298392006397,
@@ -66,6 +66,72 @@
     "lo": 0.25308359326817254,
     "hi": 0.6458062419221164,
     "unit": "C"
+  },
+  "amp_drift_pct_per_c": {
+    "value": -0.0033628927057654185,
+    "lo": -0.006810679956504575,
+    "hi": 8.48945449737383e-05,
+    "unit": "%/C"
+  },
+  "amp_drift_pooled_pct_per_c": {
+    "value": -0.0029461640583296274,
+    "lo": -0.003886137183388455,
+    "hi": -0.0020061909332707998,
+    "unit": "%/C"
+  },
+  "amp_drift_max_pct": {
+    "value": -0.026508047614848262,
+    "lo": -0.13584437793246867,
+    "hi": 0.08282828270277215,
+    "unit": "%"
+  },
+  "amp_reversibility_pct": {
+    "value": 0.14543714679819963,
+    "lo": -0.007816122834754108,
+    "hi": 0.29869041643115335,
+    "unit": "%"
+  },
+  "vdd_drift_pct_per_c": {
+    "value": 0.0038516761136783003,
+    "lo": 0.002195792263905872,
+    "hi": 0.0055075599634507285,
+    "unit": "%/C"
+  },
+  "shunt_drift_pct_per_c": {
+    "value": -0.005600944839157791,
+    "lo": -0.009459976250630085,
+    "hi": -0.001741913427685498,
+    "unit": "%/C"
+  },
+  "shunt_drift_max_pct": {
+    "value": -0.24094915580397114,
+    "lo": -0.44778874209534725,
+    "hi": -0.03410956951259503,
+    "unit": "%"
+  },
+  "shunt_tcr_rating_pct_per_c": {
+    "value": 0.005,
+    "lo": -0.005,
+    "hi": 0.005,
+    "unit": "%/C"
+  },
+  "gain_hot_ratio_pct_per_c": {
+    "value": -0.007192425985446952,
+    "lo": -0.0084894715515256,
+    "hi": -0.005895380419368304,
+    "unit": "%/C"
+  },
+  "amp_hot_ratio_pct_per_c": {
+    "value": -0.0022687055737142174,
+    "lo": -0.0032626399594255498,
+    "hi": -0.0012747711880028852,
+    "unit": "%/C"
+  },
+  "shunt_hot_ratio_pct_per_c": {
+    "value": -0.004923720411732734,
+    "lo": -0.006557805098517248,
+    "hi": -0.0032896357249482203,
+    "unit": "%/C"
   },
   "plateaus": {
     "room": {
@@ -242,6 +308,232 @@
         "lo": null,
         "hi": null,
         "unit": "counts"
+      }
+    }
+  },
+  "plateaus_rs1": {
+    "room": {
+      "board_c": {
+        "value": 26.483806024861156,
+        "lo": 26.124795235331078,
+        "hi": 27.122493735581884,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 1980.8636390927284,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "amp_counts_per_mv": {
+        "value": 18.626827559879754,
+        "lo": 18.60516987364872,
+        "hi": 18.648485246110788,
+        "unit": "counts/mV"
+      },
+      "offset_counts": {
+        "value": 3.1514790612074974,
+        "lo": 1.7791449325465247,
+        "hi": 4.52381318986847,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1206.6,
+        "lo": 1206.0,
+        "hi": 1207.0,
+        "unit": "counts"
+      },
+      "amp_pct": {
+        "value": 0.0,
+        "lo": -0.11627147006870484,
+        "hi": 0.11627147006870484,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 0.9974259061049617,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "vdd_v": {
+        "value": 3.3014533830409665,
+        "lo": 3.2981759037228926,
+        "hi": 3.3047308623590403,
+        "unit": "V"
+      },
+      "rest_c": {
+        "value": 26.11519970200527,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      }
+    },
+    "warm": {
+      "board_c": {
+        "value": 49.74756351941766,
+        "lo": 49.43687889603518,
+        "hi": 50.34426834897249,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 1089.275100066711,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "amp_counts_per_mv": {
+        "value": 18.60889285792133,
+        "lo": 18.58558141246289,
+        "hi": 18.63220430337977,
+        "unit": "counts/mV"
+      },
+      "offset_counts": {
+        "value": 3.48598093788619,
+        "lo": 2.0224288326227775,
+        "hi": 4.949533043149603,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1208.4,
+        "lo": 1208.0,
+        "hi": 1209.0,
+        "unit": "counts"
+      },
+      "amp_pct": {
+        "value": -0.09628425399209606,
+        "lo": -0.22155471277984065,
+        "hi": 0.028986204795648535,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 1.059335983024656,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "vdd_v": {
+        "value": 3.3034656296200535,
+        "lo": 3.3000289492580612,
+        "hi": 3.306902309982046,
+        "unit": "V"
+      },
+      "rest_c": {
+        "value": 49.615364312826216,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      }
+    },
+    "hot": {
+      "board_c": {
+        "value": 63.35105044072178,
+        "lo": 63.15965679935829,
+        "hi": 63.629060527557726,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 741.1803852568379,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "amp_counts_per_mv": {
+        "value": 18.621889951561045,
+        "lo": 18.601529460452223,
+        "hi": 18.642250442669866,
+        "unit": "counts/mV"
+      },
+      "offset_counts": {
+        "value": 2.452873323889094,
+        "lo": 1.1838685996261058,
+        "hi": 3.7218780481520826,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1209.6,
+        "lo": 1209.0,
+        "hi": 1210.0,
+        "unit": "counts"
+      },
+      "amp_pct": {
+        "value": -0.026508047614848262,
+        "lo": -0.13584437793246867,
+        "hi": 0.08282828270277215,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 0.9174195372928421,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "vdd_v": {
+        "value": 3.304717315545153,
+        "lo": 3.301364304009949,
+        "hi": 3.3080703270803564,
+        "unit": "V"
+      },
+      "rest_c": {
+        "value": 63.28074906250663,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
+      }
+    },
+    "room-again": {
+      "board_c": {
+        "value": 30.679329406004513,
+        "lo": 30.52641294812838,
+        "hi": 31.063413380543523,
+        "unit": "C"
+      },
+      "ntc_raw": {
+        "value": 1795.7079703135423,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "amp_counts_per_mv": {
+        "value": 18.653917886421862,
+        "lo": 18.63529429657121,
+        "hi": 18.672541476272514,
+        "unit": "counts/mV"
+      },
+      "offset_counts": {
+        "value": 1.7096923805512776,
+        "lo": 0.5295995176023975,
+        "hi": 2.8897852435001576,
+        "unit": "counts"
+      },
+      "zero_counts": {
+        "value": 1207.0,
+        "lo": 1207.0,
+        "hi": 1207.0,
+        "unit": "counts"
+      },
+      "amp_pct": {
+        "value": 0.14543714679819963,
+        "lo": 0.04559972945753972,
+        "hi": 0.24527456413885956,
+        "unit": "%"
+      },
+      "residual_rms_counts": {
+        "value": 0.855461732651213,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "vdd_v": {
+        "value": 3.29884048797161,
+        "lo": 3.295819106527884,
+        "hi": 3.301861869415336,
+        "unit": "V"
+      },
+      "rest_c": {
+        "value": 30.619326886886086,
+        "lo": null,
+        "hi": null,
+        "unit": "C"
       }
     }
   }
