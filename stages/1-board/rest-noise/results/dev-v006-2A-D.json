@@ -1,0 +1,52 @@
+{
+  "capture": "telemetry/dev-v006-2A-D/rest-noise/capture-1",
+  "notes": "torque-off streams at the control rate, bridge off, bare load on the terminals",
+  "current_noise": {
+    "value": 1.08426780297127,
+    "lo": 1.0566586981371806,
+    "hi": 1.1125222521302276,
+    "unit": "counts rms"
+  },
+  "tap_a_noise": {
+    "value": 0.6070058790403331,
+    "lo": 0.5603496337859876,
+    "hi": 0.6476122013669827,
+    "unit": "counts rms"
+  },
+  "tap_b_noise": {
+    "value": 0.6519371574246453,
+    "lo": 0.590411709261518,
+    "hi": 0.6834563014867402,
+    "unit": "counts rms"
+  },
+  "rail_noise": {
+    "value": 1.2638898911932446,
+    "lo": 1.0470569541306283,
+    "hi": 1.5134789644607398,
+    "unit": "counts rms"
+  },
+  "ntc_noise": {
+    "value": 1.1535212077557448,
+    "lo": 1.0121493139977518,
+    "hi": 1.4938255783661547,
+    "unit": "counts rms"
+  },
+  "vref_noise": {
+    "value": 1.2805603112435073,
+    "lo": 1.204359763980946,
+    "hi": 1.3369815973747547,
+    "unit": "counts rms"
+  },
+  "vdd_v": {
+    "value": 3.2922161884264276,
+    "lo": 3.286713531429655,
+    "hi": 3.2971505996612156,
+    "unit": "V"
+  },
+  "current_frame_spread": {
+    "value": 0.9461333333333641,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  }
+}

@@ -9,7 +9,7 @@ from oscnb import bench, boards, capture, osc
 
 LEVELS = [3.7, 5.0, 7.4]
 REPEATS = 3
-REST_MS = 10_000
+REST_MS = 3000      # the longest burst the servo arms is 65535 rows, 3277 ms at the control rate
 
 out = capture.dataset(boards.DEFAULT, "rest-noise")
 bench.power_up(LEVELS[0] + bench.DIODE_V)
@@ -18,6 +18,7 @@ for v in LEVELS:
     print(f"VSYS {v} V: rail reads {vsys:.3f} V, DPS {dps_read:.3f} V")
     for k in range(REPEATS):
         # a 5 % rung of 50 ms is the smallest the sweep records; the rest before it is the capture
-        osc.sweep(out / f"rest-{v:g}V-{k}", ["5@50"], baseline_ms=REST_MS, rest_ms=200, dirs="fwd")
+        osc.sweep(out / f"rest-{v:g}V-{k}", ["5@50"], baseline_ms=REST_MS, rest_ms=200, dirs="fwd",
+                  tel_chunks=osc.CHUNKS_REST)
 bench.power_down()
 print("wrote", out)
