@@ -104,13 +104,18 @@ Run: `uv run python stages/1-board/ntc-curve/capture.py`, then the notebook.
 
 ## [opamp-temperature](opamp-temperature/opamp-temperature.ipynb)
 
-Targets: the current chain's gain and zero against board temperature, and
-whether the board's own heat under drive moves the NTC.
+Targets: the current chain's gain and zero against board temperature, how
+much of that is the shunt's and how much the amplifier's, VDD at each
+plateau, and whether the board's own heat under drive moves the NTC.
 
-Needs: board on the heater, DPS, bare load and DMM on DC A off the heater, host; the ntc-curve result.
+Needs: board on the heater, DPS, bare load, DMM on DC A off the heater for
+the ammeter route or on DC V across the Rs1 pads for the rs1 route, host; the
+ntc-curve result.
 
-How: the DC laps at four plateaus of the heater, the NTC in every stream; a
+How: the DC laps at four plateaus of the heater, the NTC in every stream and
+a rest stream with the chip's 1.2 V reference before each plateau's laps; a
 line per plateau gives the gain and offset, and their slope with temperature
-is the drift.
+is the drift. The ammeter route reads the chain as a whole, the rs1 route
+reads the amplifier alone, and the rest streams read VDD at each plateau.
 
-Run: `uv run python stages/1-board/opamp-temperature/capture.py`, then the notebook.
+Run: `capture.py ammeter`, `capture.py rs1`, then the notebook.
