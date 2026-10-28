@@ -26,8 +26,8 @@ Supply levels are rail volts, VSYS, from a 1S pack's 3.3 V through USB to a
 2S pack's 8 V. A swap board has no feed diode and its rail is the battery, so
 the levels name the rail, and each capture trims the DPS until the board's
 own rail tap reads the level. The DPS output comes up at its previous
-setting for a moment when enabled, so every script turns it on before the
-board's leads go on.
+setting for a moment when enabled, which the board's rail tolerates, so the
+scripts turn it on with the leads connected.
 
 The bridge-states experiment on the RL dummy waits for the inductor.
 
@@ -100,7 +100,8 @@ How: the NTC polled while the heater takes the board to about 45 C, then 60 C,
 then cools it toward room; the thermocouple logged throughout, and the heater's
 own log kept as a side note on the rig, never as a reference.
 
-Run: `uv run python stages/1-board/ntc-curve/capture.py`, then the notebook.
+Run: `uv run python stages/1-board/ntc-curve/capture.py [board]`, once per board of the
+revision, then the notebook.
 
 ## [opamp-temperature](opamp-temperature/opamp-temperature.ipynb)
 

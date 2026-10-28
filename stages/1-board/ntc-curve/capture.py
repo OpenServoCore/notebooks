@@ -7,9 +7,13 @@ the DMM on temperature, the board on the DPS and the `osc` tool. The heater
 runs at two settings and then off; the script polls the NTC's raw count the
 whole time.
 
-  uv run python stages/1-board/ntc-curve/capture.py [N]    writes telemetry/<board>/ntc-curve/capture-N
+  uv run python stages/1-board/ntc-curve/capture.py [board] [N]    writes telemetry/<board>/ntc-curve/capture-N
+
+board is a key of the board registry (oscnb/boards.py), the default board
+when left out, so one script serves every board of a revision in turn.
 """
 import csv
+import sys
 import threading
 import time
 
@@ -30,7 +34,10 @@ def poll(path, stop):
             stop.wait(POLL_S)
 
 
-out = capture.dataset(boards.DEFAULT, "ntc-curve")
+board = next((a for a in sys.argv[1:] if a in boards.BOARDS), boards.DEFAULT)
+n = [a for a in sys.argv[1:] if a.isdigit()]
+out = capture.dataset(board, "ntc-curve", ["", *n])
+print("board", board)
 capture.prompt("Thermocouple tip taped to the board next to the NTC, DMM on temperature (C), Bluetooth on. "
                "Board on the heater, heater off.")
 bench.power_up(VOLTS + bench.DIODE_V)
