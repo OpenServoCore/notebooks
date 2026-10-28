@@ -32,8 +32,8 @@ class Spec:
     recess: float = 0.8          # the can's front face this far below the base top, so the bar lies flat on the base
     bolt_r: float = 22.0
     holes: int = 12
-    pilot_d: float = 1.8         # M2 self-tapping pilot (testharness uses the same)
-    pilot_depth: float = 6.0
+    pin_d: float = 2.1           # a loose M2 screw or a 2 mm pin drops through the bar into the pillar, no thread
+    pin_depth: float = 6.0
     rim: float = 5.0             # plate past the bolt circle
     boss_wall: float = 2.5       # the boss around the pocket, standing on the plate
     pillar_d: float = 6.0        # one pillar per hole, up to the bar's level
@@ -118,10 +118,10 @@ class Spec:
             raise ValueError("The tab slots must open into the lead channel")
         if max(self.boss_relief_depth, self.tab_slot_depth) >= self.floor or self.channel_depth >= self.floor:
             raise ValueError("Every relief must leave floor under it")
-        if self.pilot_depth >= self.base_h:
-            raise ValueError("The pilots must not break through the base")
-        if self.pillar_d <= self.pilot_d + 2.0:
-            raise ValueError("A pillar must leave a wall around its pilot")
+        if self.pin_depth >= self.base_h:
+            raise ValueError("The pin holes must not break through the base")
+        if self.pillar_d <= self.pin_d + 2.0:
+            raise ValueError("A pillar must leave a wall around its pin hole")
         if self.label_r + self.label_font / 2 >= self.bolt_r - self.pillar_d / 2 or self.label_r - self.label_font / 2 <= self.boss_d / 2:
             raise ValueError("The hole numbers must fit between the boss and the pillars")
         if -self.clamp_y - self.clamp_clear_d / 2 <= self.bore_d / 2 + 0.8 or -self.clamp_y + self.clamp_clear_d / 2 >= self.hub_d / 2 - 1.5:
@@ -174,7 +174,7 @@ def build_base(s: Spec = Spec()) -> Part:
     for k in range(s.holes):
         a = 2 * math.pi * k / s.holes
         x, y = s.bolt_r * math.cos(a), s.bolt_r * math.sin(a)
-        p -= cyl(x, y, s.base_h - s.pilot_depth, s.pilot_d, s.pilot_depth + 0.1)
+        p -= cyl(x, y, s.base_h - s.pin_depth, s.pin_d, s.pin_depth + 0.1)
         p -= label(str(k), s.label_r * math.cos(a), s.label_r * math.sin(a), s.floor - s.label_h, s.label_h + 0.1,
                    s.label_font, angle=math.degrees(a) - 90)
     p.label = "motorrig_base"
