@@ -5,8 +5,10 @@ own stream read the same DC quantity, and the difference is the chain's.
 The capture side steps the DPS through the levels and records one sweep per
 level, both directions, with a torque-off baseline before each. The
 analysis side turns each lap into one row per direction: the settled means
-of the raw columns, the baseline zero, and whatever the meter read in that
-window.
+of the raw columns, the baseline zero, and what the meter read while that
+direction drove. The meter log is not on the sweep's clock, so the driven
+stretches are found in the log itself: readings well away from zero, split
+where the sign flips, in the order the sweep drives them.
 
 Supply levels are rail volts, VSYS, and cover the three supplies a servo
 meets: a 1S pack from empty to full, USB, and a 2S pack from its floor to
@@ -58,9 +60,37 @@ def run(out, levels, load, lap_ms=LAP_MS, log=print):
     return out
 
 
+DRIVEN_FRACTION = 0.25     # a meter reading this far from zero, against the lap's largest, is a drive
+
+
+def driven_groups(values, fraction=DRIVEN_FRACTION):
+    """The driven stretches of a signed meter log over one lap, in time
+    order: runs of readings at least `fraction` of the largest magnitude,
+    a new run at every sign flip or rest reading. Each is an array of the
+    readings in it."""
+    v = np.asarray(values, float)
+    if len(v) == 0 or not np.isfinite(v).any():
+        return []
+    floor = fraction * np.nanmax(np.abs(v))
+    groups, cur, sign = [], [], 0
+    for x in v:
+        s = int(np.sign(x)) if np.isfinite(x) and abs(x) >= floor and floor > 0 else 0
+        if s != sign and cur:
+            groups.append(np.array(cur))
+            cur = []
+        if s:
+            cur.append(x)
+        sign = s
+    if cur:
+        groups.append(np.array(cur))
+    return groups
+
+
 def table(folder, board=None, dmm=None, dmm_margin_s=0.7):
     """One row per lap and direction. `dmm` is a DMM log frame (t_host,
-    value); its median inside the lap's driven window joins as `meter`."""
+    value); the median of the driven stretch that direction made in the
+    log joins as `meter`, signed as the meter read it, with `meter_n`
+    readings behind it."""
     folder = Path(folder)
     levels = pd.read_csv(folder / "levels.csv")
     rows = []
@@ -70,10 +100,13 @@ def table(folder, board=None, dmm=None, dmm_margin_s=0.7):
         zero = float(b["current_raw"].median())
         vb = float(pd.concat([b["vmotor_a"], b["vmotor_b"]]).median())
         rail_rest = float(b["vbus_raw"].mean())
-        r = tel.rungs(df)
-        for _, g in r.iterrows():
-            seg = df[df["seg"] == g["seg"]]
-            t_on = L["t_start"] + seg["t"].iloc[0] + (meta.get("baseline_ms", 1000) / 1e3 if "t_start" in L else 0)
+        r = tel.rungs(df).sort_values("seg")
+        groups = []
+        if dmm is not None:
+            lo, hi = L["t_start"] + dmm_margin_s, L["t_end"] - dmm_margin_s
+            m = dmm[(dmm["t_host"] >= lo) & (dmm["t_host"] <= hi)].sort_values("t_host")
+            groups = driven_groups(m["value"])
+        for i, (_, g) in enumerate(r.iterrows()):
             row = {"k": int(L["k"]), "load": L["load"], "volts_set": L["volts_set"], "vsys_read": L.get("vsys_read", np.nan),
                    "dir": int(g["dir"]), "duty_ticks": g["duty_ticks"], "zero": zero, "vb_rest": vb,
                    "rail_rest": rail_rest, "current_raw": g["current_raw"], "vmotor_a": g["vmotor_a"],
@@ -82,12 +115,9 @@ def table(folder, board=None, dmm=None, dmm_margin_s=0.7):
             if "ntc_raw" in g and np.isfinite(g.get("ntc_raw", np.nan)):
                 row["ntc_raw"] = g["ntc_raw"]
             if dmm is not None:
-                # the lap's host window: the sweep's own clock is not logged, so the
-                # window is the level's span less a margin either side
-                lo, hi = L["t_start"] + dmm_margin_s, L["t_end"] - dmm_margin_s
-                m = dmm[(dmm["t_host"] >= lo) & (dmm["t_host"] <= hi)]["value"].dropna()
-                row["meter"] = float(m.median()) if len(m) else np.nan
-                row["meter_n"] = int(len(m))
+                grp = groups[i] if i < len(groups) else np.array([])
+                row["meter"] = float(np.median(grp)) if len(grp) else np.nan
+                row["meter_n"] = int(len(grp))
             rows.append(row)
     return pd.DataFrame(rows)
 

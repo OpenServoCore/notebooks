@@ -66,6 +66,11 @@ def status():
 # and every stream carries the rail and the board temperature.
 CHUNKS_RAW = "0x23c+12"
 
+# The TEL row a rest stream wants: vref_raw, then the same six less the duty,
+# which a rest has no use for. vref_raw is the ADC's own 1.2 V reference, so
+# a rest stream carries VDD, which every other count is a share of.
+CHUNKS_REST = "0x23a+12"
+
 
 def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500, dirs="both", decay="slow",
           tel_chunks=CHUNKS_RAW, static_load=True):

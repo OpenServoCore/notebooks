@@ -8,12 +8,20 @@ to a power of ten per function family. Temperature comes as displayed.
 
 Ohms are read by pushing about a milliamp through the part, so an ohms
 reading taken while something else drives the same terminals means nothing.
+
+On Linux the reader talks to bluez: it can pick the adapter (BT_ADAPTER),
+power cycle it when a scan sticks, and reconnect by the address the registry
+holds. On macOS bleak uses CoreBluetooth, which has one radio, no adapter
+choice and no Bluetooth address, only a per-host UUID, so the meter is found
+by its name on every run. The first run there asks for the terminal's
+Bluetooth permission in System Settings.
 """
 import asyncio
 import csv
 import json
 import os
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -28,6 +36,7 @@ OHM_EXP = {4: 0, 5: 3, 6: 6}
 NAME_HINTS = ("B41", "BDM", "OWON", "LILLIPUT")
 SCAN_S = 8.0
 SCAN_TRIES = 5
+LINUX = sys.platform.startswith("linux")
 
 
 def adapter():
@@ -39,6 +48,12 @@ def adapter():
         return env
     names = sorted(os.listdir("/sys/class/bluetooth")) if os.path.isdir("/sys/class/bluetooth") else []
     return names[0] if names else "hci0"
+
+
+def backend():
+    """The keyword arguments bleak's scanner and client take on this host.
+    Picking an adapter is a bluez feature; CoreBluetooth has one radio."""
+    return {"adapter": adapter()} if LINUX else {}
 
 
 def decode(packet):
@@ -80,7 +95,8 @@ REGISTRY = Path(__file__).resolve().parents[1] / "equipment" / "registry.json"
 
 def known_address():
     """The meter's Bluetooth address from B41T_ADDR, else from the equipment
-    registry, else None (then the reader scans for it)."""
+    registry, else None (then the reader scans for it). The registry holds
+    the bluez address; on macOS B41T_ADDR can carry the host's UUID for it."""
     addr = os.environ.get("B41T_ADDR")
     if addr:
         return addr
@@ -130,7 +146,7 @@ class Meter:
         cycled = False
         for _ in range(SCAN_TRIES):
             try:
-                devs = await BleakScanner.discover(timeout=SCAN_S)
+                devs = await BleakScanner.discover(timeout=SCAN_S, **backend())
             except BleakDBusError as e:
                 if "InProgress" in str(e) and not cycled:
                     cycled = True
@@ -140,7 +156,7 @@ class Meter:
             dev = next((d for d in devs if d.name and any(h in d.name.upper() for h in NAME_HINTS)), None)
             if dev:
                 return dev
-            if not devs and not cycled:
+            if not devs and LINUX and not cycled:
                 cycled = True
                 adapter_power_cycle()
                 continue
@@ -161,10 +177,15 @@ class Meter:
         addr = known_address()
         if not addr:
             return None
+        if not LINUX:
+            if ":" in addr:
+                return None     # a bluez address; CoreBluetooth knows the meter by a UUID of its own
+            from bleak import BleakScanner
+            return await BleakScanner.find_device_by_address(addr, timeout=SCAN_S)
         path = f"/org/bluez/{adapter()}/dev_{addr.replace(':', '_')}"
         dev = BLEDevice(addr, "B41T+", {"path": path, "props": {}})
         try:
-            async with BleakClient(dev, timeout=5.0):
+            async with BleakClient(dev, timeout=5.0, **backend()):
                 pass
         except asyncio.TimeoutError:
             return None
@@ -178,7 +199,7 @@ class Meter:
         from bleak import BleakClient
         dev = await self._known() or await self._find()
         self.address, self.name = dev.address, dev.name or "?"
-        async with BleakClient(dev) as cl:
+        async with BleakClient(dev, **backend()) as cl:
             chars = [c for s in cl.services for c in s.characteristics if "notify" in c.properties]
             if not chars:
                 raise RuntimeError("meter has no notify characteristic")

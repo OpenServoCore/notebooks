@@ -53,12 +53,25 @@ def test_laps_table_joins_the_meter(tmp_path):
         w = csv.writer(f)
         w.writerow(["k", "load", "volts_set", "volts_read", "t_start", "t_end", "folder"])
         w.writerows(rows)
-    dmm = pd.DataFrame({"t_host": np.arange(1000, 1020, 0.5), "value": 0.8})
+    # the meter reads 0 at rest, +0.8 while the first direction drives, -0.8 for the second
+    t_host = np.arange(1000, 1020, 0.5)
+    phase = (t_host - 1000) % 10
+    value = np.where((phase >= 1) & (phase < 4), 0.8, np.where((phase >= 5) & (phase < 8), -0.8, 0.0))
+    dmm = pd.DataFrame({"t_host": t_host, "value": value})
     t = laps.table(out, B, dmm)
     assert len(t) == 4
-    assert (t["meter"] == 0.8).all()
+    assert (t["meter"].abs() == 0.8).all()
+    assert (np.sign(t["meter"]) == t["dir"]).all()
+    assert (t["meter_n"] >= 5).all()     # the end margin trims the last reading of the second group
     fit = laps.line(B.amps(t["current_raw"], t["zero"]), t["current_raw"] - t["zero"])
     assert fit["slope"] == pytest.approx(B.counts_per_a, rel=0.01)
+
+
+def test_driven_groups_split_at_the_sign_flip():
+    v = [0, 0.01, 0.8, 0.81, 0.79, 0, -0.8, -0.8, 0.02, 0.5, 0.5]
+    g = laps.driven_groups(v)
+    assert [list(x) for x in g] == [[0.8, 0.81, 0.79], [-0.8, -0.8], [0.5, 0.5]]
+    assert laps.driven_groups([]) == [] and laps.driven_groups([0, 0]) == []
 
 
 def test_ntc_quadratic_round_trip():

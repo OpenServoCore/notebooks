@@ -1,3 +1,6 @@
+import asyncio
+
+from oscnb import b41t
 from oscnb.b41t import decode, encode
 
 
@@ -29,3 +32,18 @@ def test_unknown_scale_gives_no_value():
 def test_hex_string_is_accepted():
     pkt = encode(0, 4, 3, 7400).hex()
     assert decode(pkt)[1] == decode(bytes.fromhex(pkt))[1]
+
+
+def test_adapter_choice_is_a_bluez_feature(monkeypatch):
+    monkeypatch.setattr(b41t, "LINUX", False)
+    assert b41t.backend() == {}
+    monkeypatch.setattr(b41t, "LINUX", True)
+    monkeypatch.setattr(b41t, "adapter", lambda: "hci3")
+    assert b41t.backend() == {"adapter": "hci3"}
+
+
+def test_bluez_address_is_skipped_off_linux(monkeypatch):
+    monkeypatch.setattr(b41t, "LINUX", False)
+    monkeypatch.setenv("B41T_ADDR", "88:01:F9:C0:97:27")
+    meter = b41t.Meter.__new__(b41t.Meter)
+    assert asyncio.run(meter._known()) is None

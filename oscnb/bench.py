@@ -42,9 +42,11 @@ def set_volts(volts, hold_s=2.0):
 
 
 def read_vsys(board=None):
-    """The rail as the board's own tap reads it, volts at the registry's nominal ratio."""
+    """The rail as the board's own tap reads it, at the VDD its 1.2 V reference
+    reads. Below the regulator's dropout the tap alone reads high, since every
+    count is a share of a sagging VDD, and a trim on it walks the wrong way."""
     board = board or boards.BOARDS[boards.DEFAULT]
-    return float(board.rail_v(osc.get("vbus_raw")))
+    return float(board.rail_v(osc.get("vbus_raw"), osc.get("vref_raw")))
 
 
 def set_vsys(target, tol=0.03, tries=4):

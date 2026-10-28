@@ -1,13 +1,13 @@
 """Stage 1, opamp-temperature: the current chain's gain and zero against
-board temperature. DC laps against the meter at each of four plateaus of the
-filament dryer, the board NTC riding in every stream for the temperature.
-Needs the board in the dryer on the DPS, the bare load, the DMM and the
-`osc` tool. Run ntc-curve first, so the NTC reading is a temperature.
+board temperature. DC laps against the meter at each of four plateaus of a
+controlled heat source, the same one ntc-curve used, the board NTC riding in
+every stream for the temperature. Needs the board on the heater on the DPS,
+the bare load and the DMM off the heater, and the `osc` tool. Run ntc-curve first, so the NTC reading is a temperature.
 
   uv run python stages/1-board/opamp-temperature/capture.py [ammeter|rs1] [N]
                                                           writes telemetry/<board>/opamp-temperature/capture-N
 
-ammeter (default): the DMM on DC A in series with the load, outside the dryer.
+ammeter (default): the DMM on DC A in series with the load, off the heater.
 rs1: the DMM on DC V across the Rs1 pads on a soldered twisted pair, the
   amplifier's own input, so the shunt's value drops out.
 """
@@ -25,18 +25,18 @@ if route == "rs1":
     capture.prompt("Bare load on the motor terminals. DMM on DC V across the Rs1 pads, Bluetooth on.")
     expect = "DC V"
 else:
-    capture.prompt("DMM on DC A, red probe in the A jack. MOT_A -> meter -> bare load -> MOT_B, meter outside "
-                   "the dryer. Bluetooth on.")
+    capture.prompt("DMM on DC A, red probe in the A jack. MOT_A -> meter -> bare load -> MOT_B, load and meter "
+                   "off the heater. Bluetooth on.")
     expect = "DC A"
 (out / "route.txt").write_text(route + "\n")
 bench.power_up(LEVELS[0] + bench.DIODE_V)
 with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect=expect), osc.Limit(laps.LIMIT_COUNTS):
     marks = capture.Marks(out)
     for p in PLATEAUS:
-        hint = {"room": "Lid open, dryer off, board at room.",
-                "warm": "Dryer at about 45 C, lid closed, settled.",
-                "hot": "Dryer at about 60 C, settled.",
-                "room again": "Dryer off, lid open, board back near room."}[p]
+        hint = {"room": "Heater off, board at room.",
+                "warm": "Heater at about 45 C, settled.",
+                "hot": "Heater at about 60 C, settled.",
+                "room again": "Heater off, board back near room."}[p]
         capture.prompt(f"{hint} Enter runs the laps for the {p} plateau.")
         marks.mark(p)
         laps.run(out / p.replace(" ", "-"), LEVELS, "bare")
