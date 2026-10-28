@@ -40,8 +40,8 @@ class Spec:
     boss_wall: float = 2.5       # the boss around the pocket, standing on the deck
     ring_w: float = 6.0          # the ring on the bolt circle with the pin holes, up to the bar's level
     label_r: float = 17.0        # the hole numbers, engraved in the deck inside the ring
-    tab_slot_x: float = 2.6      # tab slot, X by Y, in the pocket floor: the tab, its solder and the lead's bend
-    tab_slot_y: float = 3.2
+    tab_slot_x: float = 1.5      # tab slot, X by Y, in the pocket floor: the tab, its solder and the lead
+    tab_slot_y: float = 2.5
     tab_slot_depth: float = 1.6  # tab plus solder; the slot opens into the lead channel under it
     boss_relief_clear: float = 0.2
     boss_relief_depth: float = 1.2
