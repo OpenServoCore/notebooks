@@ -24,13 +24,13 @@ motor = motors.MOTORS[motors.DEFAULT]
 board = boards.BOARDS[boards.DEFAULT]
 out = capture.dataset(f"{motor.key}__{board.key}", "inductance", ["", *n])
 print("motor", motor.key, "board", board.key)
-capture.prompt(f"Motor leads on the board's motor connector. Bar on the pinion at hole {HOLES[0]}, clamp snug.")
+capture.prompt(f"Motor leads on the board's motor connector, the board on the DPS. Bar on the pinion at hole {HOLES[0]}, clamp snug.")
 bench.power_up(LEVEL + bench.DIODE_V)
 dps_read, vsys = bench.set_vsys(LEVEL)
 print(f"VSYS {LEVEL} V: rail reads {vsys:.3f} V, DPS {dps_read:.3f} V")
 for k in HOLES:
     if k != HOLES[0]:
-        capture.prompt(f"Clamp loose, bar moved to hole {k}, clamp snug.")
+        capture.prompt(f"Pins out, bar turned to hole {k}, pins in.")
     osc.bursts(out / f"hole-{k}", PCT, repeats=REPEATS, chans="diff")
     capture.hold(REST_S, f"hole {k} done, the copper resting")
 bench.power_down()

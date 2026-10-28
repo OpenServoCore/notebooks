@@ -36,13 +36,15 @@ angle, by the meter's route and by the board's own, the brush drop and the
 contact resistance as the line through the stall laps gives them, and how
 much of the total the brushes own once the teardown has read the copper.
 
-Needs: motor in the rig, bar, DMM on ohms for the first pass and on DC V
-across the tabs for the second, board, DPS, host.
+Needs: motor in the rig, bar, DMM on ohms for the first pass, board and DPS
+for the second, host; the stage 1 current-scale and terminal-chain results.
 
 How: the bar steps the rotor through the twelve holes. The ohms pass reads
-the meter for forty seconds at each. The stall pass drives 100 % laps of
-300 ms into the locked rotor at 3.3 and 3.7 V, both directions, the board's
-current and terminals against the meter's volts.
+the lead zero with the leads shorted, then the meter for forty seconds at
+each hole. The stall pass drives 100 % laps of 300 ms into the locked rotor
+at the three 1S levels, both directions, the board's current and terminal
+taps as stage 1 graded them; the meter's packets come slower than a cold
+lap lasts, so it stays out of this pass.
 
 Run: `capture.py ohms`, `capture.py stall`, then the notebook.
 

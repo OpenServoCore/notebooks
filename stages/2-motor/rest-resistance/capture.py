@@ -4,13 +4,15 @@ soldered to the tabs, the wrench bar, the DMM and, for the stall pass, the
 board on the DPS and the `osc` tool.
 
   uv run python stages/2-motor/rest-resistance/capture.py ohms [N]     the meter in ohms across the tabs, the motor off the board
-  uv run python stages/2-motor/rest-resistance/capture.py stall [N]    100 % laps into the locked rotor, the meter on DC V across the tabs
+  uv run python stages/2-motor/rest-resistance/capture.py stall [N]    100 % laps into the locked rotor, the board's own reading
 
 Both passes step the bar through the twelve holes of the rig's bolt circle,
 prompting at each, so a reading belongs to a rotor angle. The ohms pass is
-the meter's milliamp through the winding and both brush contacts; the stall
-pass is the board's own current and terminal reading at the lowest rails,
-in laps short enough to leave the copper cold.
+the meter's milliamp through the winding and both brush contacts, after a
+lead zero with the leads shorted. The stall pass is the board's current and
+terminal taps, graded against the meter in stage 1, at the three 1S rails
+in laps short enough to leave the copper cold; the meter is not in it, since
+its packets come slower than a cold lap lasts.
 """
 import csv
 import sys
@@ -19,8 +21,8 @@ import time
 from oscnb import b41t, bench, boards, capture, motors, osc
 
 ANGLES = 12                  # the rig's bolt circle
-OHMS_S = 40                  # the meter settles for a minute after the rotor moves; read the tail
-LEVELS = [3.3, 3.7]          # rail volts: the stall current stays under an amp
+OHMS_S = 40                  # the meter settles after the rotor moves; the notebook reads the tail
+LEVELS = [3.3, 3.7, 4.2]     # rail volts, the 1S levels: the stall current stays under an amp
 LAP_MS = 300                 # 100 % into the locked rotor, cold: under a joule per lap
 REST_S = 20                  # between angles, the bench rule for a bare motor
 
@@ -35,27 +37,28 @@ out.mkdir(parents=True, exist_ok=True)
 print("motor", motor.key, "board", board.key, "route", route)
 
 if route == "ohms":
-    capture.prompt("Motor leads off the board and on the DMM, DMM on ohms, Bluetooth on. Bar on the pinion at hole 0.")
+    capture.prompt("Motor leads off the board. DMM probes shorted together, DMM on ohms, manual 220 ohm range, Bluetooth on.")
     with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect="ohm"):
         marks = capture.Marks(out)
+        marks.mark("leads shorted")
+        capture.hold(OHMS_S / 2, "the lead zero")
+        capture.prompt("Probes on the motor leads. Bar on the pinion at hole 0, clamp snug.")
         for k in range(ANGLES):
             if k:
-                capture.prompt(f"Clamp loose, bar moved to hole {k}, clamp snug.")
+                capture.prompt(f"Pins out, bar turned to hole {k}, pins in.")
             marks.mark(f"hole {k}")
             capture.hold(OHMS_S, f"hole {k}: the meter settling")
         marks.mark("end")
         marks.close()
 else:
-    capture.prompt("Motor leads on the board's motor connector, DMM on DC V across the tabs, Bluetooth on. "
-                   "Bar on the pinion at hole 0, clamp snug.")
+    capture.prompt("Motor leads on the board's motor connector, the board on the DPS. Bar on the pinion at hole 0, clamp snug.")
     bench.power_up(LEVELS[0] + bench.DIODE_V)
-    with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect="DC V"), \
-            open(out / "laps.csv", "w", newline="") as f:
+    with open(out / "laps.csv", "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["hole", "volts_set", "dps_read", "vsys_read", "t_start", "t_end", "folder"])
         for k in range(ANGLES):
             if k:
-                capture.prompt(f"Clamp loose, bar moved to hole {k}, clamp snug.")
+                capture.prompt(f"Pins out, bar turned to hole {k}, pins in.")
             for v in LEVELS:
                 dps_read, vsys = bench.set_vsys(v)
                 folder = f"hole-{k}/{v:g}V"
