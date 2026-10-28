@@ -58,9 +58,9 @@ class Spec:
     hub_w: float = 10.0          # across the bar
     hub_h: float = 8.0           # from the bar's underside
     slit_w: float = 0.5
-    slit_l: float = 32.0         # centered on the bore, well past the hub, short of the pin holes
+    slit_l: float = 38.0         # centered on the bore, up to the pin holes, so the arm halves flex over their whole length
     clamp_x: float = 4.3         # the two screws, at +/- this along the bar
-    clamp_z: float = 4.0         # the screw axis above the bar's underside
+    clamp_z: float = 3.5         # the screw axis above the bar's underside, as low as the nut floor allows: nearer the pinion, less tilt
     screw_clear_d: float = 2.2   # through the whole hub, along Y
     nut_af: float = 4.0          # M2 nut across flats
     nut_t: float = 1.6
