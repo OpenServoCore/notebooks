@@ -5,14 +5,11 @@ anything that holds a set temperature with the whole board at one
 temperature) with the thermocouple tip taped to the board next to the NTC,
 the DMM on temperature, the board on the DPS and the `osc` tool. The heater
 runs at two settings and then off; the script polls the NTC's raw count the
-whole time and records the conversion constants the board holds, so the
-notebook computes the firmware's reading itself (the experiment image
-publishes no estimate).
+whole time.
 
   uv run python stages/1-board/ntc-curve/capture.py [N]    writes telemetry/<board>/ntc-curve/capture-N
 """
 import csv
-import json
 import threading
 import time
 
@@ -21,8 +18,6 @@ from oscnb import b41t, bench, boards, capture, osc
 VOLTS = 7.4
 POLL_S = 2.0
 PLATEAUS = ["room", "warm", "hot", "room again"]
-# the quadratic the firmware converts the count with, from its calibration block
-NTC_CONSTANTS = ["ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24"]
 
 
 def poll(path, stop):
@@ -39,7 +34,6 @@ out = capture.dataset(boards.DEFAULT, "ntc-curve")
 capture.prompt("Thermocouple tip taped to the board next to the NTC, DMM on temperature (C), Bluetooth on. "
                "Board on the heater, heater off.")
 bench.power_up(VOLTS + bench.DIODE_V)
-(out / "ntc-constants.json").write_text(json.dumps({k: osc.get(k) for k in NTC_CONSTANTS}, indent=1))
 stop = threading.Event()
 with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect="C"):
     marks = capture.Marks(out)

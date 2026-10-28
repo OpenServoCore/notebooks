@@ -96,7 +96,8 @@ graded, and its constants refitted.
 Needs: board on the heater, DPS, thermocouple taped to the board, DMM on temperature, host.
 
 How: the NTC polled while the heater takes the board to about 45 C, then 60 C,
-then back to room; the thermocouple logged throughout.
+then cools it toward room; the thermocouple logged throughout, and the heater's
+own log kept as a side note on the rig, never as a reference.
 
 Run: `uv run python stages/1-board/ntc-curve/capture.py`, then the notebook.
 

@@ -78,7 +78,7 @@ def test_ntc_quadratic_round_trip():
     raw = np.arange(1200, 2800, 50)
     t = B.ntc_c_beta(raw)
     t_ref, k1, k2 = ntc.fit_quadratic(raw, t, 2048)
-    back = ntc.firmware_cc(raw, 2048, t_ref, k1, k2) / 100
+    back = ntc.quadratic_cc(raw, 2048, t_ref, k1, k2) / 100
     assert np.abs(back - t).max() < 0.5
     beta = ntc.fit_beta(B.ntc_ohm(raw), t, B.ntc_r25_ohm)
     assert beta == pytest.approx(B.ntc_beta, rel=1e-3)
