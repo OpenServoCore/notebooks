@@ -1,0 +1,130 @@
+{
+  "capture": "telemetry/dev-v006-2A-D/current-scale/capture-1",
+  "notes": "DC laps at 100 % duty on the bare 5 ohm and series 15 ohm loads, the DMM in series on its 20 A range; counts over the lap's own torque-off zero = drive_offset_counts + counts_per_a x amps, one line through both loads over the 3.7 V and up laps, 0.23 to 1.31 A; the 3.3 V level sits off the line and is reported apart; the rs1 pass, the meter on DC mV across the shunt pads, grades the amplifier alone as amp_counts_per_mv; shunt_mohm is the chain over the amplifier and carries the 20 A jack's class",
+  "counts_per_a": {
+    "value": 1135.0134295210348,
+    "lo": 1133.7767129182596,
+    "hi": 1136.25014612381,
+    "unit": "counts/A"
+  },
+  "drive_offset_counts": {
+    "value": 5.260528725347414,
+    "lo": 4.391093512591281,
+    "hi": 6.129963938103547,
+    "unit": "counts"
+  },
+  "residual_rms_counts": {
+    "value": 2.1862638217713735,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "scale_over_nominal_pct": {
+    "value": 2.3962566760698634,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "amps_range": {
+    "value": 1.308,
+    "lo": 0.228,
+    "hi": 1.308,
+    "unit": "A"
+  },
+  "amp_counts_per_mv": {
+    "value": 18.653571127819404,
+    "lo": 18.634283961919227,
+    "hi": 18.67285829371958,
+    "unit": "counts/mV"
+  },
+  "amp_offset_counts": {
+    "value": 1.5531064969753396,
+    "lo": 0.39806968279774924,
+    "hi": 2.70814331115293,
+    "unit": "counts"
+  },
+  "amp_over_nominal_pct": {
+    "value": 0.9709210895705978,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "shunt_mohm": {
+    "value": 60.84697786518251,
+    "lo": null,
+    "hi": null,
+    "unit": "mOhm"
+  },
+  "counts_per_a_bare": {
+    "value": 1136.4715660468223,
+    "lo": 1134.7147243315862,
+    "hi": 1138.2284077620584,
+    "unit": "counts/A"
+  },
+  "drive_offset_bare_counts": {
+    "value": 3.410286002206511,
+    "lo": 1.739344194759507,
+    "hi": 5.081227809653515,
+    "unit": "counts"
+  },
+  "counts_per_a_series": {
+    "value": 1153.6802827443964,
+    "lo": 1148.7593525686686,
+    "hi": 1158.6012129201242,
+    "unit": "counts/A"
+  },
+  "drive_offset_series_counts": {
+    "value": -0.9105506133194108,
+    "lo": -2.719723017436616,
+    "hi": 0.898621790797794,
+    "unit": "counts"
+  },
+  "counts_per_a_every_lap": {
+    "value": 1132.3736431130671,
+    "lo": 1125.5215525637088,
+    "hi": 1139.2257336624255,
+    "unit": "counts/A"
+  },
+  "drive_offset_every_lap_counts": {
+    "value": 10.443142628185662,
+    "lo": 5.81159742119417,
+    "hi": 15.074687835177153,
+    "unit": "counts"
+  },
+  "direction_counts": {
+    "value": 1.209174525901131,
+    "lo": 0.30197113962359357,
+    "hi": 2.1670180993008166,
+    "unit": "counts"
+  },
+  "rest_zero_counts": {
+    "value": 1206.0,
+    "lo": 1205.0,
+    "hi": 1207.0,
+    "unit": "counts"
+  },
+  "rest_zero_3v3_counts": {
+    "value": 1189.5,
+    "lo": 1189.0,
+    "hi": 1190.0,
+    "unit": "counts"
+  },
+  "vdd_3v3_v": {
+    "value": 3.1199424659047224,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "deviation_3v3_bare_pct": {
+    "value": 8.355681600451458,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "deviation_3v3_series_pct": {
+    "value": 3.465291075365684,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  }
+}
