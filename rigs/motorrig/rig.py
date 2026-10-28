@@ -35,6 +35,9 @@ class Spec:
     pilot_d: float = 1.8         # M2 self-tapping pilot (testharness uses the same)
     pilot_depth: float = 6.0
     rim: float = 5.0             # plate past the bolt circle
+    boss_wall: float = 2.5       # the boss around the pocket, standing on the plate
+    pillar_d: float = 6.0        # one pillar per hole, up to the bar's level
+    label_r: float = 17.0        # the hole numbers, engraved in the plate inside the bolt circle
     tab_slot_x: float = 1.0      # tab slot, X by Y, in the pocket floor
     tab_slot_y: float = 2.3
     tab_slot_depth: float = 1.6  # tab plus solder
@@ -50,11 +53,15 @@ class Spec:
     bar_end: float = 4.0         # past each hole
     bar_hole_d: float = 2.4      # M2 clearance
     socket_roof: float = 0.4     # the socket is this much deeper than the pinion reaches
-    slit_w: float = 0.5
-    slit_len: float = 6.0        # from the bore axis along +X
-    clamp_x: float = 3.6         # the clamp screw crosses the slit here
+    hub_d: float = 12.0          # the wrench hub around the socket, standing on the bar
+    hub_h: float = 12.0          # from the bar's underside; the clamp screw sits high enough for a driver over the plate
+    slit_w: float = 0.5          # from the bore out through the -Y edge: the +Y side is the hinge
+    clamp_y: float = -3.2        # the clamp screw runs along X across the slit here
+    clamp_pilot_len: float = 3.0
+    clamp_z: float = 8.0
     clamp_pilot_d: float = 1.8
     clamp_clear_d: float = 2.2
+    clamp_seat_d: float = 4.2    # a flat seat for the screw head in the hub's round side
     # coupon
     coupon_bores: tuple = (2.2, 2.3, 2.4, 2.5, 2.6)
     coupon_t: float = 4.0
@@ -89,6 +96,10 @@ class Spec:
         return 2 * (self.bolt_r + self.rim)
 
     @property
+    def boss_d(self):
+        return self.can_d + 2 * self.can_clear + 2 * self.boss_wall
+
+    @property
     def bar_l(self):
         return 2 * (self.bolt_r + self.bar_end)
 
@@ -109,8 +120,16 @@ class Spec:
             raise ValueError("Every relief must leave floor under it")
         if self.pilot_depth >= self.base_h:
             raise ValueError("The pilots must not break through the base")
-        if self.clamp_x <= self.bore_d / 2 + self.clamp_clear_d / 2 or self.clamp_x >= self.slit_len:
-            raise ValueError("The clamp screw must cross the slit past the bore")
+        if self.pillar_d <= self.pilot_d + 2.0:
+            raise ValueError("A pillar must leave a wall around its pilot")
+        if self.label_r + self.label_font / 2 >= self.bolt_r - self.pillar_d / 2 or self.label_r - self.label_font / 2 <= self.boss_d / 2:
+            raise ValueError("The hole numbers must fit between the boss and the pillars")
+        if -self.clamp_y - self.clamp_clear_d / 2 <= self.bore_d / 2 + 0.8 or -self.clamp_y + self.clamp_clear_d / 2 >= self.hub_d / 2 - 1.5:
+            raise ValueError("The clamp screw must cross the slit between the bore and the hub's side with a wall each way")
+        if self.clamp_z - self.clamp_clear_d / 2 <= self.bar_t or self.clamp_z + self.clamp_seat_d / 2 >= self.hub_h:
+            raise ValueError("The clamp screw must sit in the hub above the bar")
+        if self.hub_d <= self.bar_w:
+            raise ValueError("The hub must stand proud of the bar's sides")
         if self.plate_d > 250:
             raise ValueError("The base exceeds the printer bed")
 
@@ -135,7 +154,12 @@ def label(text, x, y, z, h, size, angle=0):
 
 def build_base(s: Spec = Spec()) -> Part:
     s.check()
-    p = extrude(Circle(s.plate_d / 2), s.base_h)
+    # a plate, a boss around the pocket and one pillar per hole, all to the bar's level
+    p = extrude(Circle(s.plate_d / 2), s.floor)
+    p += cyl(0, 0, 0, s.boss_d, s.base_h)
+    for k in range(s.holes):
+        a = 2 * math.pi * k / s.holes
+        p += cyl(s.bolt_r * math.cos(a), s.bolt_r * math.sin(a), 0, s.pillar_d, s.base_h)
     # the can pocket, open at the top, the can's rear face on the floor
     p -= Pos(0, 0, s.floor) * extrude(flat_profile(s.can_d + 2 * s.can_clear, s.can_flat + 2 * s.can_clear),
                                       s.pocket_depth + 1)
@@ -151,10 +175,8 @@ def build_base(s: Spec = Spec()) -> Part:
         a = 2 * math.pi * k / s.holes
         x, y = s.bolt_r * math.cos(a), s.bolt_r * math.sin(a)
         p -= cyl(x, y, s.base_h - s.pilot_depth, s.pilot_d, s.pilot_depth + 0.1)
-        # engraved, never raised: the bar lies across the rim and must sit flat
-        r = s.bolt_r + s.rim / 2 + 0.3
-        p -= label(str(k), r * math.cos(a), r * math.sin(a), s.base_h - s.label_h, s.label_h + 0.1, s.label_font,
-                   angle=math.degrees(a) - 90)
+        p -= label(str(k), s.label_r * math.cos(a), s.label_r * math.sin(a), s.floor - s.label_h, s.label_h + 0.1,
+                   s.label_font, angle=math.degrees(a) - 90)
     p.label = "motorrig_base"
     return p
 
@@ -164,14 +186,18 @@ def build_bar(s: Spec = Spec()) -> Part:
     p = extrude(RectangleRounded(s.bar_l, s.bar_w, s.bar_w / 2 - 0.01), s.bar_t)
     for sx in (-1, 1):
         p -= cyl(sx * s.bolt_r, 0, -0.1, s.bar_hole_d, s.bar_t + 0.2)
-    # the socket, a blind bore from the underside
+    # the wrench hub around the socket, and the socket as a blind bore from the underside
+    p += cyl(0, 0, 0, s.hub_d, s.hub_h)
     p -= cyl(0, 0, -0.1, s.bore_d, s.socket_depth + 0.1)
-    # the slit from the bore along +X, the full thickness, and the clamp screw across it along Y
-    p -= box(s.slit_len / 2, 0, -0.1, s.slit_len, s.slit_w, s.bar_t + 0.2)
-    p -= Pos(s.clamp_x, -s.bar_w / 2 - 0.1, s.bar_t / 2) * Rot(-90, 0, 0) * Cylinder(
-        s.clamp_clear_d / 2, s.bar_w / 2 + s.slit_w / 2 + 0.1, align=(Align.CENTER, Align.CENTER, Align.MIN))
-    p -= Pos(s.clamp_x, s.slit_w / 2 - 0.1, s.bar_t / 2) * Rot(-90, 0, 0) * Cylinder(
-        s.clamp_pilot_d / 2, s.bar_w / 2, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    # the slit from the bore out through the -Y side, full height: the +Y side is the hinge
+    p -= box(0, -s.hub_d / 4 - 1, -0.1, s.slit_w, s.hub_d / 2 + 2, s.hub_h + 0.2)
+    # the clamp screw along X across the slit: a flat seat and a clearance hole on the -X side, a pilot on the +X side
+    p -= Pos(-s.hub_d / 2 + 1.0, s.clamp_y, s.clamp_z) * Rot(0, -90, 0) * Cylinder(
+        s.clamp_seat_d / 2, s.hub_d, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    p -= Pos(0.1, s.clamp_y, s.clamp_z) * Rot(0, -90, 0) * Cylinder(
+        s.clamp_clear_d / 2, s.hub_d, align=(Align.CENTER, Align.CENTER, Align.MIN))
+    p -= Pos(-0.1, s.clamp_y, s.clamp_z) * Rot(0, 90, 0) * Cylinder(
+        s.clamp_pilot_d / 2, s.clamp_pilot_len + 0.1, align=(Align.CENTER, Align.CENTER, Align.MIN))
     # the index arrow on the top face at the +X end, pointing out along the bar
     ax = s.bolt_r - s.bar_hole_d / 2 - 3.0
     p += Pos(0, 0, s.bar_t) * extrude(Pos(ax, 0) * Polygon((0, -1.2), (2.0, 0), (0, 1.2), align=None), s.label_h)
