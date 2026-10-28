@@ -1,0 +1,256 @@
+{
+  "capture": "telemetry/dev-v006-2A-D/terminal-chain/capture-1",
+  "notes": "DC laps at 100 % duty on the bare load with the DMM on DC V at one node per pass, plus a 216 point walk of the rail at rest and a vdd pass; scales are counts per volt of the node against the meter, from 3.7 V up; the 3.3 V level is reported apart; the converter's residual on the fine grid is in results/<board>-inl.csv as code, residual_counts; the meter's class on the 20 V range is 0.1 % plus 2 mV from the dmm result",
+  "stream_offset_s": {
+    "value": 0.4630516767501831,
+    "lo": 0.42305171489715576,
+    "hi": 0.642301619052887,
+    "unit": "s"
+  },
+  "terminal_counts_per_v": {
+    "value": 248.3657104993979,
+    "lo": 248.19990107822065,
+    "hi": 248.53151992057514,
+    "unit": "counts/V"
+  },
+  "terminal_offset_counts": {
+    "value": 2.3816859542547317,
+    "lo": 1.568776168969739,
+    "hi": 3.194595739539724,
+    "unit": "counts"
+  },
+  "terminal_residual_rms_counts": {
+    "value": 0.7084239987211609,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "terminal_scale_over_nominal_pct": {
+    "value": 0.049663653321907475,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "terminal_error_at_nominal_pct": {
+    "value": 0.26665510781712165,
+    "lo": 0.14677870254278247,
+    "hi": 0.44000386798819235,
+    "unit": "%"
+  },
+  "tap_a_high_error_at_nominal_pct": {
+    "value": 1.617549322551633,
+    "lo": 1.419122712544366,
+    "hi": 1.884072354738666,
+    "unit": "%"
+  },
+  "tap_a_low_excess_v": {
+    "value": 0.07350528142319959,
+    "lo": 0.03696350987246677,
+    "hi": 0.12131907296596184,
+    "unit": "V"
+  },
+  "return_path_ohm": {
+    "value": 0.3054211193665129,
+    "lo": 0.2999187383173873,
+    "hi": 0.31502821588070073,
+    "unit": "ohm"
+  },
+  "bias_rise_under_drive_mv": {
+    "value": 19.62453019140961,
+    "lo": 9.240877468116693,
+    "hi": 33.02771583969366,
+    "unit": "mV"
+  },
+  "bias_rise_mv_per_v": {
+    "value": 5.755669986605907,
+    "lo": 5.4111655563328585,
+    "hi": 6.100174416878956,
+    "unit": "mV/V"
+  },
+  "bias_source_ohm_bare_divider": {
+    "value": 81.13207547169812,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "rail_counts_per_v": {
+    "value": 247.53700044200863,
+    "lo": 247.48836153912583,
+    "hi": 247.58563934489143,
+    "unit": "counts/V"
+  },
+  "rail_offset_counts": {
+    "value": 5.951142612972218,
+    "lo": 5.6611928120219615,
+    "hi": 6.241092413922474,
+    "unit": "counts"
+  },
+  "rail_residual_rms_counts": {
+    "value": 0.8857460811732367,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "rail_scale_over_nominal_pct": {
+    "value": -0.2841673024135183,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "rail_counts_per_v_ratiometric": {
+    "value": 247.97852110433877,
+    "lo": 247.92710076435068,
+    "hi": 248.02994144432685,
+    "unit": "counts/V"
+  },
+  "rail_range_v": {
+    "value": 7.977,
+    "lo": 3.685,
+    "hi": 7.977,
+    "unit": "V"
+  },
+  "rail_rest_counts_per_v_laps": {
+    "value": 247.19023795303335,
+    "lo": 246.95691485528909,
+    "hi": 247.4235610507776,
+    "unit": "counts/V"
+  },
+  "rail_lap_counts_per_v": {
+    "value": 243.7777323157189,
+    "lo": 243.60637727598646,
+    "hi": 243.94908735545135,
+    "unit": "counts/V"
+  },
+  "rail_lap_offset_counts": {
+    "value": 6.767657119243571,
+    "lo": 5.851220073674358,
+    "hi": 7.684094164812785,
+    "unit": "counts"
+  },
+  "rail_lap_deficit_v": {
+    "value": 0.0657610651974362,
+    "lo": 0.03113038200597318,
+    "hi": 0.10457618164713978,
+    "unit": "V"
+  },
+  "rail_lap_deficit_ohm": {
+    "value": 0.06840181915730667,
+    "lo": 0.04873469086034134,
+    "hi": 0.08015222610756677,
+    "unit": "ohm"
+  },
+  "rail_sag_v_per_a": {
+    "value": 0.1490907282591673,
+    "lo": 0.1467766689722833,
+    "hi": 0.1514047875460513,
+    "unit": "V/A"
+  },
+  "rail_sag_offset_v": {
+    "value": 0.07012053117588415,
+    "lo": 0.0678878987133677,
+    "hi": 0.07235316363840061,
+    "unit": "V"
+  },
+  "rail_sag_v": {
+    "value": 0.2092857142857145,
+    "lo": 0.16600000000000037,
+    "hi": 0.2655000000000003,
+    "unit": "V"
+  },
+  "inl_sawtooth_pp_counts": {
+    "value": 2.0432210083093816,
+    "lo": 1.4562255312422356,
+    "hi": 2.5273995263330757,
+    "unit": "counts"
+  },
+  "inl_period_codes": {
+    "value": 256.0,
+    "lo": null,
+    "hi": null,
+    "unit": "codes"
+  },
+  "inl_code_1023_width_codes": {
+    "value": 10.0,
+    "lo": null,
+    "hi": null,
+    "unit": "codes"
+  },
+  "inl_missing_codes_at_1024": {
+    "value": 9.0,
+    "lo": null,
+    "hi": null,
+    "unit": "codes"
+  },
+  "inl_code_range": {
+    "value": 1980.1742,
+    "lo": 918.1828,
+    "hi": 1980.1742,
+    "unit": "counts"
+  },
+  "inl_residual_after_sawtooth_rms_counts": {
+    "value": 0.6730786478302914,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "series_step_counts": {
+    "value": 4.732349437099172,
+    "lo": 4.406327337880052,
+    "hi": 4.732349437099172,
+    "unit": "counts"
+  },
+  "series_step_with_map_counts": {
+    "value": 3.613596490943767,
+    "lo": 3.3974850601545272,
+    "hi": 3.613596490943767,
+    "unit": "counts"
+  },
+  "vdd_v": {
+    "value": 3.2931787008361555,
+    "lo": 3.2868336806565663,
+    "hi": 3.2976082008682073,
+    "unit": "V"
+  },
+  "vdd_mv_per_v": {
+    "value": 2.5104583857073046,
+    "lo": 2.0924714079071243,
+    "hi": 2.9284453635074854,
+    "unit": "mV/V"
+  },
+  "vdd_3v3_v": {
+    "value": 3.1199424659047224,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "vdd_3v3_under_lap_v": {
+    "value": 3.0059543270769606,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "bias_rest_counts": {
+    "value": 772.9428833333335,
+    "lo": 772.09535,
+    "hi": 774.40945,
+    "unit": "counts"
+  },
+  "bias_rest_meter_v": {
+    "value": 0.6196428571428572,
+    "lo": 0.619,
+    "hi": 0.62,
+    "unit": "V"
+  },
+  "terminal_error_3v3_pct": {
+    "value": 12.626219645446067,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "rail_error_3v3_lap_pct": {
+    "value": 9.782134978653389,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  }
+}
