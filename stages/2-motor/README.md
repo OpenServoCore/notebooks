@@ -35,7 +35,8 @@ stall laps gives them, and how much of the total the brushes own once the
 teardown has read the copper.
 
 Needs: motor in the rig, bar, board, DPS, host; the stage 1 current-scale
-and terminal-chain results.
+and terminal-chain results, the bemf-coast result, and the speed-torque dataset
+for its run-ups' first milliseconds.
 
 How: the bar steps the rotor through the twelve holes. At each hole the
 stall pass drives 100 % laps of 300 ms into the locked rotor at the three

@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/rest-resistance/capture-1",
-  "notes": "stall pass alone: 100 % laps of 300 ms into the rotor locked at twelve holes 30 degrees apart, rails [3.3, 3.7, 4.2] V, direction +1 then -1 a second later; current and terminal volts through the stage 1 current-scale and terminal-chain results; each lap is read as V/I at the drive's first row, a line through V/I over 60 ms to the end extrapolated back, so the lap's own warming and the early fall are out; r_term_* is that V/I on the direction +1 laps at the graded levels (3.7 and 4.2 V), per hole the mean of the two, the brush drop included, median over the holes with the range over the holes as the bounds; direction -1 starts warm from the +1 lap and is reported apart; the 3.3 V level is not graded in stage 1 and enters no number; r_stall_ohm and v0_brush_v are the line V = V0 + R I through each hole's two graded +1 laps at the start, median over the holes with the range as the bounds, a two-point line over 0.1 A that does not resolve the brush drop; the copper's temperature is not measured, board_ntc_c is the board's",
+  "notes": "stall pass alone: 100 % laps of 300 ms into the rotor locked at twelve holes 30 degrees apart, rails [3.3, 3.7, 4.2] V, direction +1 then -1 a second later; current and terminal volts through the stage 1 current-scale and terminal-chain results; each lap is read as V/I at the drive's first row, a line through V/I over 60 ms to the end extrapolated back, so the lap's own warming and the early fall are out; r_term_* is that V/I on the direction +1 laps at the graded levels (3.7 and 4.2 V), per hole the mean of the two, the brush drop included, median over the holes with the range over the holes as the bounds; direction -1 starts warm from the +1 lap and is reported apart; the 3.3 V level is not graded in stage 1 and enters no number; r_stall_ohm and v0_brush_v are the brush drop and the resistance under it: the values are the line V = V0 + R I through each hole's two graded +1 laps at the start, median over the holes (v0_graded_lines_v and r_stall_graded_lines_ohm carry those with their range), and the bounds are the bracket the speed-torque run-ups' first milliseconds add, V0 from 0 to 0.5 V with R = r_term - V0 / I to match; r_runup_ohm is the run-ups' V/I at about 1 A with the EMF of the moving rotor taken out by a fit of the current on the volts and the charge, j_runup_kg_m2 the inertia that fit's EMF term gives with the drag left out; hole_map_body_* is one warming body with a free time constant against the hole map, and hole_map_angle_* what the map keeps once it is taken out; the copper's temperature is not measured, board_ntc_c is the board's",
   "r_term_median_ohm": {
     "value": 4.455291999475676,
     "lo": 4.383552379419841,
@@ -55,16 +55,96 @@
   },
   "r_stall_ohm": {
     "value": 4.4014509997014954,
+    "lo": 3.817205284792028,
+    "hi": 4.455291999475676,
+    "unit": "ohm"
+  },
+  "v0_brush_v": {
+    "value": 0.05962971791831151,
+    "lo": 0.0,
+    "hi": 0.5,
+    "unit": "V"
+  },
+  "r_stall_graded_lines_ohm": {
+    "value": 4.4014509997014954,
     "lo": 4.152925003773717,
     "hi": 4.829194137836801,
     "unit": "ohm"
   },
-  "v0_brush_v": {
+  "v0_graded_lines_v": {
     "value": 0.05962971791831151,
     "lo": -0.24642379667552383,
     "hi": 0.18315077079436767,
     "unit": "V"
   },
+  "r_runup_ohm": {
+    "value": 4.145144305015822,
+    "lo": 4.086853106187942,
+    "hi": 4.203435503843702,
+    "unit": "ohm"
+  },
+  "r_runup_amps": {
+    "value": 0.9091279955432826,
+    "lo": 0.895430823373668,
+    "hi": 0.9196172535628752,
+    "unit": "A"
+  },
+  "v0_runup_lever_v": {
+    "value": 1.5564665025979134,
+    "lo": 1.352913241719314,
+    "hi": 1.7600197634765127,
+    "unit": "V"
+  },
+  "j_runup_kg_m2": {
+    "value": 5.954190704540123e-09,
+    "lo": 5.731823072871537e-09,
+    "hi": 6.17655833620871e-09,
+    "unit": "kg m^2"
+  },
+  "runup_rise_tau_us": {
+    "value": 188.7032544042252,
+    "lo": 72.13497825291688,
+    "hi": 239.2375226721602,
+    "unit": "us"
+  },
+  "hole_map_body_tau_s": {
+    "value": 90.0,
+    "lo": 40.0,
+    "hi": 220.0,
+    "unit": "s"
+  },
+  "hole_map_body_share": {
+    "value": 0.6167208381708837,
+    "lo": null,
+    "hi": null,
+    "unit": ""
+  },
+  "hole_map_body_span_pct": {
+    "value": 2.1429154863331137,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "hole_map_angle_pct": {
+    "value": 0.5893717239361542,
+    "lo": -0.9905839968992951,
+    "hi": 0.872757742881284,
+    "unit": "%"
+  },
+  "hole_map_angle_by_hole": [
+    -0.528,
+    0.37,
+    0.343,
+    -0.772,
+    0.593,
+    0.277,
+    -0.061,
+    0.873,
+    0.508,
+    -0.494,
+    -0.991,
+    -0.118
+  ],
   "v0_mean_v": {
     "value": 0.04488922631691949,
     "lo": 0.01362244872286203,
