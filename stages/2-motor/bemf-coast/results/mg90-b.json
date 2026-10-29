@@ -1,17 +1,147 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/bemf-coast/capture-1",
-  "notes": "cycles of a 1.5 s spin and a 0.8 s coast with the bridge open, both directions, 15 to 60 % at 5.0 and 7.4 V; ke_v_s_per_rad is the coast route, the EMF over the whole ripple cycles closest to 10 ms (at least 3) from 1 ms past the cut over the speed counted in the same rows, 6 ripple events per revolution, with the rows where the brush path opens bridged, mean over the cycles with their sd as the bounds; ke_read_v_s_per_rad leaves those rows as read; the windows down the coast give ke_speed_trend_pct_per_100_rev_s; the spin route is E0 at the cut over the spin's current-ripple speed and is reported as its paired difference; terminal volts through the stage 1 terminal-chain scale with each cycle's rest difference as the zero, current through current-scale with its in-drive offset taken out (i_spin_a) and, beside it, with the open bridge's own zero (i_spin_open_zero_a); cycles is the per-cycle table no-load-current reads",
+  "notes": "cycles of a 1.5 s spin and a 0.8 s coast with the bridge open, both directions, 15 to 60 % at 5.0 and 7.4 V; ke_v_s_per_rad is the coast route, the EMF over the whole ripple cycles closest to 10 ms (at least 3) from 1 ms past the cut over the speed counted in the same rows, 6 ripple events per revolution, with the rows where the brush path opens bridged, mean over the cycles; its bounds are the span the choice of the tap difference's zero leaves (none, the rest difference, the coast's own tail), each with the cycles' sd, since the zero is open; ke_by_zero carries each read with the open rows masked, with its trend down the coast, its EMF line's intercept and its direction split beside it; ke_clock_class_pct is the class of the board's tick, which paces every count and is not measured here, an accuracy term on Ke and on every speed; ke_read_v_s_per_rad leaves those rows as read; the windows down the coast give ke_speed_trend_pct_per_100_rev_s under the rest zero; the spin route is E0 at the cut over the spin's current-ripple speed and is reported as its paired difference; terminal volts through the stage 1 terminal-chain scale with each cycle's rest difference as the zero, current through current-scale with its in-drive offset taken out (i_spin_a) and, beside it, with the open bridge's own zero (i_spin_open_zero_a); cycles is the per-cycle table no-load-current reads",
   "ke_v_s_per_rad": {
     "value": 0.0011683788605218186,
-    "lo": 0.0011640156909519185,
-    "hi": 0.0011727420300917187,
+    "lo": 0.0011609130609392226,
+    "hi": 0.001174512840342053,
     "unit": "V s/rad"
   },
   "ke_mv_per_rev_s": {
     "value": 7.3411408896499175,
-    "lo": 7.313726286715588,
-    "hi": 7.368555492584247,
+    "lo": 7.2942318874062035,
+    "hi": 7.3796818215309505,
     "unit": "mV per rev/s"
+  },
+  "ke_by_zero": {
+    "none": {
+      "value": 0.0011642687664334523,
+      "lo": 0.0011609130609392226,
+      "hi": 0.001167624471927682,
+      "unit": "V s/rad"
+    },
+    "rest, both directions alike": {
+      "value": 0.001169248725903308,
+      "lo": 0.001165864323224296,
+      "hi": 0.00117263312858232,
+      "unit": "V s/rad"
+    },
+    "rest, signed by the direction": {
+      "value": 0.0011643101947999568,
+      "lo": 0.001157285211289094,
+      "hi": 0.0011713351783108196,
+      "unit": "V s/rad"
+    },
+    "the coast's tail": {
+      "value": 0.0011704853574725758,
+      "lo": 0.0011664578746030986,
+      "hi": 0.001174512840342053,
+      "unit": "V s/rad"
+    }
+  },
+  "ke_speed_trend_by_zero_pct_per_100_rev_s": {
+    "none": {
+      "value": 0.017157424732933878,
+      "lo": null,
+      "hi": null,
+      "unit": "% per 100 rev/s"
+    },
+    "rest, both directions alike": {
+      "value": -0.1998741295902078,
+      "lo": null,
+      "hi": null,
+      "unit": "% per 100 rev/s"
+    },
+    "rest, signed by the direction": {
+      "value": -0.005221377074849395,
+      "lo": null,
+      "hi": null,
+      "unit": "% per 100 rev/s"
+    },
+    "the coast's tail": {
+      "value": -0.24936269322936122,
+      "lo": null,
+      "hi": null,
+      "unit": "% per 100 rev/s"
+    }
+  },
+  "emf_line_intercept_by_zero_mv": {
+    "none": {
+      "value": 0.6841470617191211,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "rest, both directions alike": {
+      "value": 4.913599837287372,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "rest, signed by the direction": {
+      "value": 1.0395780553158518,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "the coast's tail": {
+      "value": 5.748337832913038,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    }
+  },
+  "ke_direction_split_by_zero_pct": {
+    "none": {
+      "value": 0.036777823805067555,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "rest, both directions alike": {
+      "value": 0.04371032314989254,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "rest, signed by the direction": {
+      "value": 0.8962029107957958,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "the coast's tail": {
+      "value": 0.07409440055512473,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "tail_zero_counts_by_direction": {
+    "+1": {
+      "value": -1.289796232623276,
+      "lo": -1.329150990485351,
+      "hi": -1.250441474761201,
+      "unit": "counts"
+    },
+    "-1": {
+      "value": 1.2262613098795059,
+      "lo": 1.1801001580322146,
+      "hi": 1.2724224617267972,
+      "unit": "counts"
+    }
+  },
+  "rest_zero_counts": {
+    "value": -1.0333333333333334,
+    "lo": -1.214353668052726,
+    "hi": -0.8523129986139409,
+    "unit": "counts"
+  },
+  "ke_clock_class_pct": {
+    "value": 1.0,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
   },
   "ke_mv_per_ripple_hz": {
     "value": 1.2235234816083196,
