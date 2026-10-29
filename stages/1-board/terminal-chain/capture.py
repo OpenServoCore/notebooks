@@ -1,7 +1,7 @@
 """Stage 1, terminal-chain: the terminal taps, the rail tap and the bias
 node against the meter. The same DC laps as current-scale, with the DMM on
 DC V at one node per pass. Needs the board on the DPS, the bare load, the
-DMM and the `osc` tool.
+DMM and the `osc` and `osc-lab` tools.
 
   uv run python stages/1-board/terminal-chain/capture.py <load|tap_a|rail|rail-fine|vdd> [N]
                                                           writes telemetry/<board>/terminal-chain/capture-N/<node>

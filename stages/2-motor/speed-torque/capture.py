@@ -4,7 +4,7 @@ The rotor's own inertia is the load: the torque at each moment is that
 inertia times the rise of the speed, plus the drag at that speed, both from
 the no-load-current result. The coast after each spin is a second coast at
 full speed for the same notebook. Needs the bare motor in the rig with the
-wrench bar OFF, the board on the DPS and the `osc` tool; no meter.
+wrench bar OFF, the board on the DPS and the `osc` and `osc-lab` tools; no meter.
 
   uv run python stages/2-motor/speed-torque/capture.py [N]    writes telemetry/<motor>__<board>/speed-torque/capture-N
 

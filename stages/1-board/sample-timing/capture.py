@@ -4,7 +4,7 @@ ladder on the bare load in both directions and both decay modes, with the
 100 % rung as the control, then free-running ADC bursts that draw the
 current and the terminals inside one PWM period, then the slow ladder and
 the bursts again on a 1S rail. Needs the board on the DPS, the bare load and
-the `osc` tool; no meter.
+the `osc` and `osc-lab` tools; no meter.
 
   uv run python stages/1-board/sample-timing/capture.py [N]    writes telemetry/<board>/sample-timing/capture-N
 """

@@ -49,7 +49,7 @@ a case.
 
 Open loop throughout, with the camera tag on the horn and the thermocouple inside
 the case. Three groups of experiments live here. Electrical repeats the
-stage 2 measurements in situ, the way `osc ident` has to do them. Mechanical
+stage 2 measurements in situ, the way `osc-cal` has to do them. Mechanical
 covers friction, inertia, the gear train and the pot. Thermal
 covers the heating holds and the winding temperature constants. This is the
 long sitting.
@@ -110,8 +110,8 @@ reproduced by the tools on the user's own servo.
 
 ### Build the methods behind the tools
 
-The characterization, identification and calibration steps that `osc ident`,
-`osc cal` and the osc-web calibration flow run on a user's servo start here
+The characterization, identification and calibration steps that `osc-cal` and
+the osc-web calibration flow run on a user's servo start here
 as experiments, in long form, with the model and its limits worked out on
 real data. An experiment is written for a type of thing, like a brushed DC
 motor or a pot, not for one servo model. The MG90 goes through first, the
@@ -216,7 +216,7 @@ be lined up afterwards.
 
 ### host
 
-The computer running `osc` over the osc adapter, with the capture scripts in
+The computer running `osc` and `osc-lab` over the osc adapter, with the capture scripts in
 this repo. Python comes through `uv`, see Setup. On Linux, turn USB
 autosuspend off for the Bluetooth dongle (`options btusb enable_autosuspend=0`
 in modprobe.d). A dongle that suspends between the DMM's packets resets on

@@ -2,7 +2,7 @@
 opened, the terminal voltage decaying as the rotor coasts. The spin's tail
 is the no-load current, read by the no-load-current notebook from this
 same dataset. Needs the bare motor in the rig with the wrench bar OFF, the
-board on the DPS and the `osc` tool; no meter.
+board on the DPS and the `osc` and `osc-lab` tools; no meter.
 
   uv run python stages/2-motor/bemf-coast/capture.py [N]    writes telemetry/<motor>__<board>/bemf-coast/capture-N
 

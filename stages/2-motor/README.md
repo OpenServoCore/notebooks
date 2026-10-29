@@ -11,7 +11,7 @@ brushes and the pinion's teeth, since a motor has no datasheet. The board is
 The sitting needs the bare motor in the [motor rig](../../rigs/motorrig/__init__.py)
 with two leads soldered to its tabs, the rig's wrench bar for the experiments
 that hold the rotor, the board on the DPS with the adapter on its bus at
-3 Mbps, the DMM, and the `osc` tool. The board runs the experiment image, as
+3 Mbps, the DMM, and the `osc` and `osc-lab` tools. The board runs the experiment image, as
 in stage 1. Datasets land in `telemetry/<motor>__<board>/<experiment>/capture-N/`,
 and each notebook writes `results/<motor>.json` in its folder. The teardown
 has no board in it and lands in `telemetry/<motor>/teardown/`.
