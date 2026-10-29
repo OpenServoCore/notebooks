@@ -291,9 +291,8 @@ mod tests {
     #[test]
     fn burst_csv_is_byte_compatible_with_a_committed_capture() {
         use crate::instrument::burst::{CSV_HEADER, Meta};
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(
-            "../telemetry/dev-v006-2A-D/sample-timing/capture-1/bursts/1793045728/burst-0.csv",
-        );
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../telemetry/dev-v006-2A-D/sample-timing/capture-1/bursts/burst-0.csv");
         let text = std::fs::read_to_string(path).unwrap();
         let mut lines = text.lines();
         assert_eq!(lines.next(), Some(CSV_HEADER));
