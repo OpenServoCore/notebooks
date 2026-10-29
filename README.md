@@ -230,6 +230,31 @@ on a servo and board pair writes `results/<servo>__<board>.json` in its
 folder instead, one file per pair. A later stage reads these files and
 nothing else from the stages before it.
 
+## osc-lab
+
+`osc-lab` is the little Rust tool in [osc-lab/](osc-lab) that every capture
+records with. It has two commands. `osc-lab sweep` drives open-loop duty
+rungs and streams the raw TEL rows into `sweep.csv`. `osc-lab burst` takes
+the high-rate shunt bursts from rest into `burst-K.csv`. Both write a
+`meta.json` beside the data with the servo's constants at the time.
+
+It is the only capture instrument. Nothing in it fits, identifies or
+calibrates. It is a raw instrument on purpose, so a dataset never goes
+through identification code on its way to disk. Everything else a capture
+script does to the servo, like `get`, `set`, `status` or `baud`, still goes
+through `osc` from the firmware repo.
+
+To install it, you will need a nightly Rust toolchain (the
+`rust-toolchain.toml` in the folder picks it for you). Then run this in
+this folder:
+
+```
+cargo install --locked --path osc-lab
+```
+
+`oscnb.osc` finds it on the PATH, or at the path in the `OSC_LAB`
+environment variable.
+
 ## Setup
 
 You will need [uv](https://docs.astral.sh/uv/). Then `uv sync` in this folder
