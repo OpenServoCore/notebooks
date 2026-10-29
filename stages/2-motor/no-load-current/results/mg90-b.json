@@ -1,16 +1,16 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/bemf-coast/capture-1",
-  "notes": "read from the bemf-coast dataset and result, no capture of its own. The no-load current is bemf-coast's i_spin_a, the spin window's last 200 ms through current-scale with its in-drive offset, and i_spin_open_zero_a beside it; the speed is bemf-coast's count of the spin's current ripple. drive_drag_by_level is a + b ln(w / w_ref) fitted per level, valid over its speed range. The coast's speed is counted in windows of whole ripple cycles down every coast, no Ke involved; coast_decel_late_rad_s2 is a + b sqrt(w) through the decelerations more than 60 ms past the cut. alpha at the cut is a parabola in time through the ripple's crossings over the stretch where the speed falls 30 %, the speed at the cut pinned to the spin's count. j_kg_m2 is the spin-up route, the median of Kt (I - I0(w)) over the acceleration in the spin-up's windows with 150 mA and more over the settled curve of the level, both levels and directions; it is most likely an upper end, since the drive draws more than the settled curve early in a run; its bounds run from the lowest line route to that ratio's 84th percentile; j_by_route carries each route; drive_excess_a_by_level is the intercept of Kt I0 on alpha at the cut with one J for both levels, current the spin draws that the coast's deceleration does not account for; spinup_excess_a is the spin-up line's intercept",
+  "notes": "read from the bemf-coast dataset and result, no capture of its own. The no-load current is bemf-coast's i_spin_a, the spin window's last 200 ms through current-scale with its in-drive offset, and i_spin_open_zero_a beside it; the speed is bemf-coast's count of the spin's current ripple. drive_drag_by_level is a + b ln(w / w_ref) fitted per level, valid over its speed range. The coast's speed is counted in windows of whole ripple cycles down every coast, no Ke involved; coast_decel_late_rad_s2 is a + b sqrt(w) through the decelerations more than 60 ms past the cut. alpha at the cut is a parabola in time through the ripple's crossings over the stretch where the speed falls 30 %, the speed at the cut pinned to the spin's count. j_kg_m2 is the spin-up route, the median of Kt (I - I0(w)) over the acceleration in the spin-up's windows with 150 mA and more over the settled curve of the level, both levels and directions; its bounds run from the lowest line route, which lets a torque-free current in the drive show, to the ratio at the cut at the slowest 5.0 V rung, which needs none, since the data does not say which reading is right; j_by_route carries each route; drive_excess_a_by_level is the intercept of Kt I0 on alpha at the cut with one J for both levels, current the spin draws that the coast's deceleration does not account for; spinup_excess_a is the spin-up line's intercept",
   "ke_v_s_per_rad": {
     "value": 0.0011683788605218186,
-    "lo": 0.0011640156909519185,
-    "hi": 0.0011727420300917187,
+    "lo": 0.0011609130609392226,
+    "hi": 0.001174512840342053,
     "unit": "V s/rad"
   },
   "kt_n_m_per_a": {
     "value": 0.0011683788605218186,
-    "lo": 0.0011640156909519185,
-    "hi": 0.0011727420300917187,
+    "lo": 0.0011609130609392226,
+    "hi": 0.001174512840342053,
     "unit": "N m/A"
   },
   "i0_by_speed": [
@@ -730,14 +730,14 @@
   },
   "coast_relax_early_pct": {
     "value": 9.212139413575882,
-    "lo": 8.789034312721666,
+    "lo": 7.324120174928539,
     "hi": 9.212139413575882,
-    "unit": "% over the late curve, the first bins after the cut"
+    "unit": "% over the late curve in the first 8 ms, 5 ms windows; the bounds span the 5 and 10 ms windows"
   },
   "j_kg_m2": {
     "value": 6.296257745201083e-09,
     "lo": 4.394825518288091e-09,
-    "hi": 7.0396830033980525e-09,
+    "hi": 8.247147048291284e-09,
     "unit": "kg m^2"
   },
   "j_by_route": {
