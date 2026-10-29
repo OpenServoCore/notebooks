@@ -1,7 +1,7 @@
 """Stage 1, current-scale: the current chain against the meter. DC laps at
 100 % duty on a known load at several supply levels, the DMM in series with
 the load as the ammeter. Needs the board on the DPS, the load, the DMM and
-the `osc` tool.
+the `osc` and `osc-lab` tools.
 
   uv run python stages/1-board/current-scale/capture.py <bare|series|rs1> [N]
                                                           writes telemetry/<board>/current-scale/capture-N/<pass>

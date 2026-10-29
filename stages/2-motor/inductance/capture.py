@@ -1,7 +1,7 @@
 """Stage 2, inductance: the winding's current rise into the locked rotor,
 captured by the ADC free running on the shunt and the terminals. Needs the
 bare motor in the rig with the wrench bar clamped, the board on the DPS and
-the `osc` tool; no meter.
+the `osc` and `osc-lab` tools; no meter.
 
   uv run python stages/2-motor/inductance/capture.py [N]    writes telemetry/<motor>__<board>/inductance/capture-N
 

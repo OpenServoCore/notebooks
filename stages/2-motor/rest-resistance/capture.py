@@ -1,7 +1,7 @@
 """Stage 2, rest-resistance: the motor's terminal resistance at rest, over the
 rotor's angle, from the board's own current and terminal taps. Needs the
 bare motor in the rig with its leads soldered to the tabs, the wrench bar,
-the board on the DPS and the `osc` tool; no meter.
+the board on the DPS and the `osc` and `osc-lab` tools; no meter.
 
   uv run python stages/2-motor/rest-resistance/capture.py [N]    writes telemetry/<motor>__<board>/rest-resistance/capture-N/stall
 

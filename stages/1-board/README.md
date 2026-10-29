@@ -14,7 +14,7 @@ the stage 0 loads (the bare 5 ohm and the series 15 ohm power resistors),
 the DMM, the thermocouple and a controlled heat source for the two thermal
 experiments: a 3D printer's heated bed, a hot plate with a thermostat or a
 filament dryer, anything that holds the whole board at a set temperature.
-The `osc` tool on the PATH. The board runs the experiment
+The `osc` and `osc-lab` tools on the PATH. The board runs the experiment
 image (`scripts/build-image.sh --experiment <rev>` in the firmware repo,
 then `osc flash` over the bus): open-loop duty, raw streaming and register
 access, with the raw current trip and the bus dead-man as its only
