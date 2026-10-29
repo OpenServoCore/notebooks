@@ -1,4 +1,4 @@
-"""A synthetic `osc sweep` recording on a resistor, for the stage 1 tests."""
+"""A synthetic `osc-lab sweep` recording on a resistor, for the stage 1 tests."""
 import json
 from pathlib import Path
 

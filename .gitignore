@@ -8,3 +8,6 @@ equipment/camera/*.pdf
 # phone clips: originals go on a GitHub release, see equipment/camera/extract.py
 telemetry/**/*.mp4
 !telemetry/**/*.preview.mp4
+
+# osc-lab build output
+osc-lab/target/
