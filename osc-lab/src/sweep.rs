@@ -1434,7 +1434,7 @@ mod tests {
             .iter()
             .position(|w| *w == (control::TORQUE_ENABLE, 1))
             .unwrap();
-        assert_eq!(rig.writes[k + 1], deadman);
+        assert_eq!(rig.writes[k - 1], deadman);
     }
 
     /// The real capture's sweep.csv, row for row: every line parsed back
