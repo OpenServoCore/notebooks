@@ -4,8 +4,9 @@ A result is a dict of named quantities, each `{"value", "lo", "hi", "unit"}`,
 plus `capture` (the dataset folder it came from) and `notes`. An experiment
 without a servo and board pair writes `results.json` in its folder. One with
 a pair writes `results/<servo>__<board>.json` there, one file per pair, and
-a new run of the same pair replaces it. A later stage reads these files and
-nothing else from the stages before it.
+a new run of the same pair replaces it. A later stage takes its constants
+from these files; it may also quote the earlier notebooks and re-read their
+datasets.
 """
 import json
 from pathlib import Path

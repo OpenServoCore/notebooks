@@ -14,12 +14,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def dataset(group, experiment, argv=None, default=1):
-    """The dataset folder for this run, `telemetry/<group>/<experiment>/capture-N`.
+def dataset(group, experiment, argv=None, default=1, name="capture"):
+    """The dataset folder for this run, `telemetry/<group>/<experiment>/<name>-N`.
     N is the first command line argument when given."""
     argv = sys.argv if argv is None else argv
     n = int(argv[1]) if len(argv) > 1 else default
-    out = ROOT / "telemetry" / group / experiment / f"capture-{n}"
+    out = ROOT / "telemetry" / group / experiment / f"{name}-{n}"
     if out.exists() and any(out.iterdir()):
         # a re-record replaces a dataset in place, but never by accident: name the folder first
         prompt(f"{out.relative_to(ROOT)} already holds a dataset and this run overwrites it.")
