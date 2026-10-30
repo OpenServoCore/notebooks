@@ -1,0 +1,3 @@
+k,load,volts_set,dps_read,vsys_read,t_start,t_end,folder
+0,ra,3.7,3.950,3.702,1793301167.140,1793301179.343,laps/0
+1,ra,4.2,4.450,4.205,1793301183.261,1793301195.407,laps/1
