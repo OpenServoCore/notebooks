@@ -3,7 +3,7 @@ board temperature. DC laps against the meter at each of four plateaus of a
 controlled heat source, the same one ntc-curve used, the board NTC riding in
 every stream for the temperature, and a rest stream with the chip's 1.2 V
 reference before each plateau's laps, so VDD is read at every temperature. Needs the board on the heater on the DPS,
-the bare load and the DMM off the heater, and the `osc` tool. Run ntc-curve first, so the NTC reading is a temperature.
+the bare load and the DMM off the heater, and the `osc` and `osc-lab` tools. Run ntc-curve first, so the NTC reading is a temperature.
 
   uv run python stages/1-board/opamp-temperature/capture.py [ammeter|rs1] [N]
                                                           writes telemetry/<board>/opamp-temperature/capture-N
