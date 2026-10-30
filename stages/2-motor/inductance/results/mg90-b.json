@@ -1,0 +1,1098 @@
+{
+  "capture": "telemetry/mg90-b__dev-v006-2A-D/inductance/capture-1",
+  "notes": "capture-1: duty steps into the locked rotor at twelve holes 30 degrees apart on a 5 V rail, five groups per hole in the order g1 25 % forward (after the bar move, a 20 s rest and the last hole's reverse), g2 40 % forward, g3 40 % reverse, g4 25 % reverse, five bursts each, and g5 25 % reverse three bursts after a 20 s rest; reversal-1: hole 11 with nothing moved, six groups of five at 25 %, the first keeping capture-1's last sign and each later one reversing it after none, 5, 20, 50 s and none; capture-1 hole 9 g5 is excluded from every fit and from the edge pool (a pin screw of the bar was being unscrewed during it), its files kept; the winding current per period is the window's level at the middle of the bridge's window (the shunt reads its zero between windows under slow decay), the applied volts the period mean of the tap difference with the edge correction pooled per run, duty and sign; R and L by least squares of L (i[n+1] - i[n]) = T (V[n] - R (i[n] + i[n+1]) / 2) over the burst's period pairs, both divided by the window's scale k, the window's V/I over the 100 % laps on the bare resistor load from stage 1; l_ripple_mh is (V_on - R i) over the window's own slope, the median of the last three periods, l_ripple_first_mh of the first three; early_* is the same fit over the first three pairs; R and L move with the fit's length (R down, L up), so the burst is not one pole and r_burst_ohm is not the winding's resistance; every summary takes capture-1's bursts after the first of each group, the value the median over them and the bounds the range of the group medians (hole x group); *_first_capture and *_other_captures carry capture-1's first bursts and the others apart with their full range; *_first_jump_pct_by_change is each group's first burst over the median of its others, median over the holes (hole 0's g1 follows the power-up and is included); reversal_* the same for reversal-1 in run order; leftover_* is the volt-seconds a first burst applies beyond the group's others' R and L, and the rotor angle those volt-seconds equal at bemf-coast's Ke; *_by_hole lists run hole 0 to 11; steps-1: hole 11, thirteen groups of five, every forward group 25 % after a reverse group at 10, 25 or 40 %, rising then falling, steps_* keyed by the old step's duty, the median of its two forward groups with their range, the old step read by its last window current as the plain mean of the settled shunt samples (a 10 % window is too short for the line); steps_reverse_25_after_25 the two reverse 25 % groups after forward 25 %; leftover_per_amp_uvs_per_a is the leftover over the old and the new step's last window currents added, over steps-1's 25 % reversals, capture-1's g3 by hole and reversal-1's reversals; travel_bound_uvs is the most a rotor free from rest one period before the grid could add, no friction or stop, Kt = Ke, the smallest J of rest-resistance's run-ups, driven by the first burst's measured currents, keyed by the new step; fast-1: hole 11, f1 to f4 in fast decay (window on the trough, the grid from the first full window), f5 and f6 slow at the same seat; fast_l_ramp_mh is (V_on - R i_mid) over the line through the window's shunt from the shunt's settle, R rest-resistance's at hole 11, divided by k, median and range over the bursts after the first, keyed duty_sign; *_over_fit and *_over_ripple against capture-1's hole 11 groups at the same duty; fast_l_ramp_late_start_pct is the move with the line from 150 ticks; fast_on_edge_step_ma is that line at the bridge's ON edge, fast_on_edge_spike_* the pooled fold's peak and its charge over the window's line from the commanded start to the settle; fast_return_over_top is the return's largest reading over the window's top in the pooled forward fold, *_ra the same for bridge-states' ra; fast_zero_before_window_us is the time the fold reads its zero from the return's end to the next commanded start; ripple_over_fit is the ripple L over the fit, the mean of the two signs' medians with the range of the group medians, *_inductors bridge-states' three inductive wirings; window_scale_bridge_states is bridge-states' k from its own resistor wiring, k_bound_pct how much higher R, L and the ripple L read at it, *_bridge_states_k those quantities at it; drive_offset_twice_pct is the move of R, L, tau and the ripple L with the in-drive offset not taken off the window level a second time, k read again; fast_l_ramp_first_jump_pct and fast_slow_first_burst are each fast-1 group's first burst over its others, f5 the slow 25 % group after the fast reverse groups",
+  "l_mh": {
+    "value": 0.8140564150729208,
+    "lo": 0.7507260782160581,
+    "hi": 0.8939847219303474,
+    "unit": "mH"
+  },
+  "l_ripple_mh": {
+    "value": 0.6059834358863097,
+    "lo": 0.5853980400340996,
+    "hi": 0.6433753682271801,
+    "unit": "mH"
+  },
+  "l_ripple_first_mh": {
+    "value": 0.6749006674217869,
+    "lo": 0.625637237693947,
+    "hi": 0.7555799843747848,
+    "unit": "mH"
+  },
+  "tau_us": {
+    "value": 193.69458905019437,
+    "lo": 169.47446901092468,
+    "hi": 220.2557962109846,
+    "unit": "us"
+  },
+  "r_burst_ohm": {
+    "value": 4.217893856147809,
+    "lo": 3.952754984872131,
+    "hi": 4.559514021768004,
+    "unit": "ohm"
+  },
+  "early_l_mh": {
+    "value": 0.7558905820912359,
+    "lo": 0.6955520875729924,
+    "hi": 0.8440051876407844,
+    "unit": "mH"
+  },
+  "early_r_ohm": {
+    "value": 4.621293047277293,
+    "lo": 4.331247424501274,
+    "hi": 5.125744488256821,
+    "unit": "ohm"
+  },
+  "window_scale": {
+    "value": 1.0442498269597322,
+    "lo": 1.0390851179311764,
+    "hi": 1.049059846011722,
+    "unit": "ratio"
+  },
+  "applied_volts_drop_pct": {
+    "value": -5.365579144882638,
+    "lo": -6.4065965340457,
+    "hi": -4.678392768936773,
+    "unit": "%"
+  },
+  "captures": {
+    "value": 214.0,
+    "lo": null,
+    "hi": null,
+    "unit": "captures"
+  },
+  "l_first_capture_mh": {
+    "value": 0.8299702684890321,
+    "lo": 0.75639843713828,
+    "hi": 0.9893234367107976,
+    "unit": "mH"
+  },
+  "l_other_captures_mh": {
+    "value": 0.8140564150729208,
+    "lo": 0.7411092171375571,
+    "hi": 0.9015389165616597,
+    "unit": "mH"
+  },
+  "tau_first_capture_us": {
+    "value": 195.74683558529318,
+    "lo": 175.18684791139592,
+    "hi": 244.83499330682906,
+    "unit": "us"
+  },
+  "tau_other_captures_us": {
+    "value": 193.69458905019437,
+    "lo": 167.20169520875785,
+    "hi": 222.55901750177665,
+    "unit": "us"
+  },
+  "l_mh_by_hole": [
+    0.8133,
+    0.8053,
+    0.824,
+    0.7634,
+    0.8004,
+    0.8105,
+    0.8208,
+    0.7697,
+    0.813,
+    0.8234,
+    0.8181,
+    0.7728
+  ],
+  "l_ripple_mh_by_hole": [
+    0.6032,
+    0.6153,
+    0.6191,
+    0.5998,
+    0.6052,
+    0.6068,
+    0.6215,
+    0.6017,
+    0.6075,
+    0.6052,
+    0.6121,
+    0.6014
+  ],
+  "tau_us_by_hole": [
+    205.4707,
+    198.7165,
+    206.9417,
+    181.6682,
+    187.9499,
+    179.4904,
+    192.0972,
+    192.9311,
+    188.3884,
+    204.8275,
+    193.2599,
+    184.6189
+  ],
+  "r_burst_ohm_by_hole": [
+    3.9869,
+    4.0893,
+    4.0062,
+    4.3531,
+    4.2946,
+    4.5097,
+    4.3662,
+    4.0274,
+    4.3665,
+    4.0352,
+    4.2865,
+    4.2225
+  ],
+  "l_mh_25_by_hole": [
+    0.7944,
+    0.7908,
+    0.8139,
+    0.7573,
+    0.7857,
+    0.7923,
+    0.8144,
+    0.7672,
+    0.7973,
+    0.7873,
+    0.8045,
+    0.7554
+  ],
+  "l_mh_40_by_hole": [
+    0.8593,
+    0.8533,
+    0.8886,
+    0.8183,
+    0.8502,
+    0.8697,
+    0.8888,
+    0.8201,
+    0.8631,
+    0.8533,
+    0.8782,
+    0.8194
+  ],
+  "l_mh_by_duty_sign": {
+    "25_rev": 0.7861,
+    "25_fwd": 0.8006,
+    "40_rev": 0.8539,
+    "40_fwd": 0.8608
+  },
+  "l_ripple_mh_by_duty_sign": {
+    "25_rev": 0.6008,
+    "25_fwd": 0.6093,
+    "40_rev": 0.6026,
+    "40_fwd": 0.6216
+  },
+  "tau_us_by_duty_sign": {
+    "25_rev": 188.2431,
+    "25_fwd": 184.1872,
+    "40_rev": 201.8063,
+    "40_fwd": 200.8411
+  },
+  "r_burst_ohm_by_duty_sign": {
+    "25_rev": 4.1919,
+    "25_fwd": 4.3101,
+    "40_rev": 4.2577,
+    "40_fwd": 4.3308
+  },
+  "l_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 7.729045633501441,
+      "lo": 0.2279512651322202,
+      "hi": 12.930417472897249,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": -1.3369187347961553,
+      "lo": -2.4034769504779563,
+      "hi": -0.16513757814129448,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 11.093083411652138,
+      "lo": 9.289528133050041,
+      "hi": 13.277702904207933,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 0.8114448179531997,
+      "lo": -0.802407732107846,
+      "hi": 3.5926606910771763,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": 0.23984431072165968,
+      "lo": -1.7553815552445617,
+      "hi": 2.444752396018357,
+      "unit": "%"
+    }
+  },
+  "tau_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 5.572453343927575,
+      "lo": -0.3750146335777971,
+      "hi": 10.462355680663894,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": -3.0228160040282726,
+      "lo": -4.910059785391074,
+      "hi": -1.3294829331217173,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 11.173585041939837,
+      "lo": 8.23126900201614,
+      "hi": 12.815760743705873,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 1.262183070098244,
+      "lo": -1.600109731721866,
+      "hi": 4.081590693678372,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": -0.03812443386065345,
+      "lo": -2.657648710303784,
+      "hi": 3.4256866202823977,
+      "unit": "%"
+    }
+  },
+  "r_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 2.0555011802126932,
+      "lo": 0.6058050659195402,
+      "hi": 3.2707906350022853,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": 1.6840960428071816,
+      "lo": 0.5199029114667519,
+      "hi": 2.9986972714394877,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 0.19972248787706315,
+      "lo": -0.9916301063976452,
+      "hi": 0.9776843884033326,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": -0.1618048678908912,
+      "lo": -1.212553377101755,
+      "hi": 0.5277530863760926,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": 0.0974915863336312,
+      "lo": -0.9483225876188994,
+      "hi": 2.1932361934270395,
+      "unit": "%"
+    }
+  },
+  "l_ripple_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 0.6862180493136916,
+      "lo": -4.145214763650074,
+      "hi": 6.080702280372741,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": -0.3973119698446437,
+      "lo": -1.8186432425486787,
+      "hi": 1.6513489618874555,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 1.2836812118919183,
+      "lo": -0.46576386779653145,
+      "hi": 4.132318121122536,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 0.8839875555866072,
+      "lo": -1.958121297148241,
+      "hi": 2.857806478818703,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": -0.8232838798192921,
+      "lo": -4.134052762706819,
+      "hi": 3.0429245505545266,
+      "unit": "%"
+    }
+  },
+  "reversal_l_first_jump_pct": {
+    "r0_no_reversal": {
+      "value": -1.033065960633639,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r1_reversal_no_rest": {
+      "value": 12.583125271868202,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r2_reversal_after_5s": {
+      "value": 12.35062056104872,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r3_reversal_after_20s": {
+      "value": 11.919764810129664,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r4_reversal_after_50s": {
+      "value": 13.389913475317572,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r5_reversal_no_rest": {
+      "value": 11.809066390864453,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "reversal_tau_first_jump_pct": {
+    "r0_no_reversal": {
+      "value": -1.261070339821646,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r1_reversal_no_rest": {
+      "value": 11.444869806130576,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r2_reversal_after_5s": {
+      "value": 13.012147364143889,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r3_reversal_after_20s": {
+      "value": 12.56579451675497,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r4_reversal_after_50s": {
+      "value": 13.711399374826394,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r5_reversal_no_rest": {
+      "value": 11.459177481156257,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "reversal_r_first_jump_pct": {
+    "r0_no_reversal": {
+      "value": 0.17374674496895004,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r1_reversal_no_rest": {
+      "value": 0.9548203256267707,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r2_reversal_after_5s": {
+      "value": -0.7141459418569251,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r3_reversal_after_20s": {
+      "value": -0.5636051983195278,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r4_reversal_after_50s": {
+      "value": -0.1410897140183609,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r5_reversal_no_rest": {
+      "value": 0.3132390593024059,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "reversal_l_group_mh": {
+    "r0_no_reversal": {
+      "value": 0.7728670843576575,
+      "lo": 0.755431275230913,
+      "hi": 0.7802578922225231,
+      "unit": "mH"
+    },
+    "r1_reversal_no_rest": {
+      "value": 0.7573275173825933,
+      "lo": 0.748628557265457,
+      "hi": 0.7645122164315076,
+      "unit": "mH"
+    },
+    "r2_reversal_after_5s": {
+      "value": 0.7662639771963409,
+      "lo": 0.758623316994652,
+      "hi": 0.7725487724202033,
+      "unit": "mH"
+    },
+    "r3_reversal_after_20s": {
+      "value": 0.7659303320911038,
+      "lo": 0.7646163045574935,
+      "hi": 0.7674160774725963,
+      "unit": "mH"
+    },
+    "r4_reversal_after_50s": {
+      "value": 0.7681845028784007,
+      "lo": 0.7636572964468367,
+      "hi": 0.7729645901423596,
+      "unit": "mH"
+    },
+    "r5_reversal_no_rest": {
+      "value": 0.7602140342395963,
+      "lo": 0.752850364518813,
+      "hi": 0.7672627747911046,
+      "unit": "mH"
+    }
+  },
+  "leftover_flux_uvs_by_change": {
+    "g1": {
+      "value": 16.44054756453891,
+      "lo": 2.214655445482007,
+      "hi": 24.375913495987554,
+      "unit": "uV s"
+    },
+    "g2": {
+      "value": 3.1342665061053534,
+      "lo": 0.8379635378631081,
+      "hi": 11.114140802495701,
+      "unit": "uV s"
+    },
+    "g3": {
+      "value": 27.178674327998223,
+      "lo": 23.474105243990692,
+      "hi": 33.846998919833354,
+      "unit": "uV s"
+    },
+    "g4": {
+      "value": 0.8761552943408981,
+      "lo": -2.9212400468294484,
+      "hi": 3.5538462677967635,
+      "unit": "uV s"
+    },
+    "g5": {
+      "value": 0.7326309335850245,
+      "lo": -0.7326662843780876,
+      "hi": 7.380628691224036,
+      "unit": "uV s"
+    }
+  },
+  "leftover_rotor_angle_mrad_by_change": {
+    "g1": {
+      "value": 14.071247024442288,
+      "lo": null,
+      "hi": null,
+      "unit": "mrad"
+    },
+    "g2": {
+      "value": 2.682577211903282,
+      "lo": null,
+      "hi": null,
+      "unit": "mrad"
+    },
+    "g3": {
+      "value": 23.26186757252673,
+      "lo": null,
+      "hi": null,
+      "unit": "mrad"
+    },
+    "g4": {
+      "value": 0.7498897180916058,
+      "lo": null,
+      "hi": null,
+      "unit": "mrad"
+    },
+    "g5": {
+      "value": 0.6270491176619016,
+      "lo": null,
+      "hi": null,
+      "unit": "mrad"
+    }
+  },
+  "even_over_odd_holes_pct": {
+    "L at 25 %": {
+      "value": 3.378177396501831,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "L at 40 %": {
+      "value": 3.787495694412267,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "tau at 25 %": {
+      "value": 2.19251265632344,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "R": {
+      "value": 0.2749883664407513,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "ripple L": {
+      "value": 1.0544375194164362,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "even_over_odd_holes_p": {
+    "L at 25 %": {
+      "value": 0.012987012987012988,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "L at 40 %": {
+      "value": 0.02813852813852814,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "tau at 25 %": {
+      "value": 0.45670995670995673,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "R": {
+      "value": 0.8982683982683982,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "ripple L": {
+      "value": 0.12337662337662338,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    }
+  },
+  "steps_old_step_current_ma": {
+    "10": {
+      "value": 99.98954049604868,
+      "lo": 95.80456798695293,
+      "hi": 105.49608327117463,
+      "unit": "mA"
+    },
+    "25": {
+      "value": 243.732333097937,
+      "lo": 228.8426414339963,
+      "hi": 248.2256720024397,
+      "unit": "mA"
+    },
+    "40": {
+      "value": 382.04689819972316,
+      "lo": 375.292205728902,
+      "hi": 383.8089918877635,
+      "unit": "mA"
+    }
+  },
+  "steps_l_first_jump_pct_by_old_step": {
+    "10": {
+      "value": 9.424290044329332,
+      "lo": 8.406869761233926,
+      "hi": 10.441710327424737,
+      "unit": "%"
+    },
+    "25": {
+      "value": 12.316901313550089,
+      "lo": 11.948902838006248,
+      "hi": 12.68489978909393,
+      "unit": "%"
+    },
+    "40": {
+      "value": 11.732510184867696,
+      "lo": 11.402146491465604,
+      "hi": 12.062873878269787,
+      "unit": "%"
+    }
+  },
+  "steps_tau_first_jump_pct_by_old_step": {
+    "10": {
+      "value": 10.04433714713684,
+      "lo": 8.457368751759088,
+      "hi": 11.631305542514593,
+      "unit": "%"
+    },
+    "25": {
+      "value": 12.6847981469289,
+      "lo": 12.606137196770973,
+      "hi": 12.763459097086827,
+      "unit": "%"
+    },
+    "40": {
+      "value": 10.66463674063909,
+      "lo": 10.113003876627902,
+      "hi": 11.216269604650275,
+      "unit": "%"
+    }
+  },
+  "steps_r_first_jump_pct_by_old_step": {
+    "10": {
+      "value": -0.5567192914031571,
+      "lo": -1.0655273104155705,
+      "hi": -0.047911272390743775,
+      "unit": "%"
+    },
+    "25": {
+      "value": -0.3268568471137323,
+      "lo": -0.7231052108221725,
+      "hi": 0.06939151659470788,
+      "unit": "%"
+    },
+    "40": {
+      "value": 0.9441768278268592,
+      "lo": 0.5385908027295105,
+      "hi": 1.3497628529242078,
+      "unit": "%"
+    }
+  },
+  "steps_l_ripple_first_jump_pct_by_old_step": {
+    "10": {
+      "value": 3.000748818504295,
+      "lo": 2.16381634280145,
+      "hi": 3.8376812942071403,
+      "unit": "%"
+    },
+    "25": {
+      "value": 1.8980507170678673,
+      "lo": 1.3774871748902573,
+      "hi": 2.4186142592454773,
+      "unit": "%"
+    },
+    "40": {
+      "value": -0.2865473458194545,
+      "lo": -3.219858170137191,
+      "hi": 2.646763478498282,
+      "unit": "%"
+    }
+  },
+  "steps_leftover_uvs_by_old_step": {
+    "10": {
+      "value": 12.24291211446773,
+      "lo": 12.156206092587539,
+      "hi": 12.329618136347921,
+      "unit": "uV s"
+    },
+    "25": {
+      "value": 17.039594407340992,
+      "lo": 15.339655325601147,
+      "hi": 18.739533489080838,
+      "unit": "uV s"
+    },
+    "40": {
+      "value": 19.68219525580955,
+      "lo": 19.100471010729123,
+      "hi": 20.263919500889976,
+      "unit": "uV s"
+    }
+  },
+  "steps_late_current_pct_by_old_step": {
+    "10": {
+      "value": -1.9477428850082967,
+      "lo": -2.0807848518005434,
+      "hi": -1.81470091821605,
+      "unit": "%"
+    },
+    "25": {
+      "value": -3.018427858113726,
+      "lo": -3.521157976418743,
+      "hi": -2.515697739808709,
+      "unit": "%"
+    },
+    "40": {
+      "value": -3.5897336344559383,
+      "lo": -3.650191029483274,
+      "hi": -3.5292762394286026,
+      "unit": "%"
+    }
+  },
+  "steps_reverse_25_after_25": {
+    "l_first_jump_pct": {
+      "value": 12.625392974608285,
+      "lo": 12.524509253414596,
+      "hi": 12.726276695801975,
+      "unit": "%"
+    },
+    "leftover_uvs": {
+      "value": 17.182532383343442,
+      "lo": 16.967674974266842,
+      "hi": 17.39738979242004,
+      "unit": "uV s"
+    }
+  },
+  "leftover_per_amp_uvs_per_a": {
+    "value": 35.76063759665323,
+    "lo": 30.53225148634171,
+    "hi": 47.26190239101993,
+    "unit": "uV s/A"
+  },
+  "travel_bound_uvs": {
+    "25": {
+      "value": 2.876485063303755,
+      "lo": 2.8611445881977513,
+      "hi": 2.9023091427226837,
+      "unit": "uV s"
+    },
+    "40": {
+      "value": 4.4542772376663216,
+      "lo": 4.4454044192303455,
+      "hi": 4.463150056102298,
+      "unit": "uV s"
+    }
+  },
+  "fast_l_ramp_mh": {
+    "25_rev": {
+      "value": 0.6200010434531958,
+      "lo": 0.6170514006765851,
+      "hi": 0.6258974114184932,
+      "unit": "mH"
+    },
+    "25_fwd": {
+      "value": 0.6277450963606088,
+      "lo": 0.6270410548508011,
+      "hi": 0.6285635760690812,
+      "unit": "mH"
+    },
+    "40_rev": {
+      "value": 0.6515479057004381,
+      "lo": 0.6455699503674793,
+      "hi": 0.6542659568845416,
+      "unit": "mH"
+    },
+    "40_fwd": {
+      "value": 0.6543063280202187,
+      "lo": 0.6524226038030888,
+      "hi": 0.6586179542913658,
+      "unit": "mH"
+    }
+  },
+  "fast_l_ramp_over_fit": {
+    "25": {
+      "value": 0.8293500109515444,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.7973189210118371,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_l_ramp_over_ripple": {
+    "25": {
+      "value": 1.0531300506047367,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 1.0753860046674424,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_l_ramp_late_start_pct": {
+    "25": {
+      "value": 0.4952832322663969,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "40": {
+      "value": 1.82485826325276,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "fast_on_edge_step_ma": {
+    "25": {
+      "value": 17.53520435163265,
+      "lo": 16.59888028975447,
+      "hi": 18.042865237477873,
+      "unit": "mA"
+    },
+    "40": {
+      "value": 21.53669603159305,
+      "lo": 20.44411793541216,
+      "hi": 22.009835130040393,
+      "unit": "mA"
+    }
+  },
+  "fast_on_edge_spike_ma": {
+    "25": {
+      "value": 138.3243545111643,
+      "lo": null,
+      "hi": null,
+      "unit": "mA"
+    },
+    "40": {
+      "value": 140.96749504322474,
+      "lo": null,
+      "hi": null,
+      "unit": "mA"
+    }
+  },
+  "fast_on_edge_spike_nc": {
+    "25": {
+      "value": 41.87475607424918,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
+    },
+    "40": {
+      "value": 37.759659157203615,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
+    }
+  },
+  "fast_return_over_top": {
+    "25": {
+      "value": 0.46280991735537186,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.6140350877192983,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_return_over_top_ra": {
+    "25": {
+      "value": 0.8148148148148148,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.8476190476190476,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_zero_before_window_us": {
+    "25": {
+      "value": 30.125,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    },
+    "40": {
+      "value": 19.208333333333332,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    }
+  },
+  "fast_slow_l_mh": {
+    "25": {
+      "value": 0.7603781540714567,
+      "lo": 0.7579288282947468,
+      "hi": 0.7685203909707764,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8282859794047499,
+      "lo": 0.8246715654682181,
+      "hi": 0.8367292501987906,
+      "unit": "mH"
+    }
+  },
+  "fast_slow_l_ripple_mh": {
+    "25": {
+      "value": 0.5969976980741398,
+      "lo": 0.5928781614300324,
+      "hi": 0.5998143144020612,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.6094979545421075,
+      "lo": 0.5987305512676644,
+      "hi": 0.6153947310476636,
+      "unit": "mH"
+    }
+  },
+  "fast_l_ramp_first_jump_pct": {
+    "f1-fwd-25": {
+      "value": -0.7805355284231319,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "f2-fwd-40": {
+      "value": 0.03796645412297295,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "f3-rev-40": {
+      "value": -0.5302563454338216,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "f4-rev-25": {
+      "value": -1.3106551694891388,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "fast_slow_first_burst": {
+    "f5-fwd-25": {
+      "l_first_jump_pct": {
+        "value": 9.10775037484819,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "leftover_uvs": {
+        "value": 8.070909652206055,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      }
+    },
+    "f6-fwd-40": {
+      "l_first_jump_pct": {
+        "value": -2.178643389334889,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "leftover_uvs": {
+        "value": 1.0529982716139266,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      }
+    }
+  },
+  "ripple_over_fit": {
+    "25": {
+      "value": 0.7626058400382942,
+      "lo": 0.7327648938910009,
+      "hi": 0.7929215305590794,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.7138952193707209,
+      "lo": 0.6763554128509367,
+      "hi": 0.7533016555065839,
+      "unit": "ratio"
+    }
+  },
+  "ripple_over_fit_inductors": {
+    "25": {
+      "value": 0.9629557665992493,
+      "lo": 0.9519411307952006,
+      "hi": 0.9760047904205683,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.901274351715321,
+      "lo": 0.9006993106873309,
+      "hi": 0.9493868643070472,
+      "unit": "ratio"
+    }
+  },
+  "window_scale_bridge_states": {
+    "value": 1.0106425651385904,
+    "lo": 1.009057289094339,
+    "hi": 1.0136089347050754,
+    "unit": "ratio"
+  },
+  "k_bound_pct": {
+    "value": 3.3253360763143114,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "l_mh_bridge_states_k": {
+    "value": 0.8411265267248916,
+    "lo": 0.7756902433292763,
+    "hi": 0.9237127184054355,
+    "unit": "mH"
+  },
+  "l_ripple_mh_bridge_states_k": {
+    "value": 0.6261344216963262,
+    "lo": 0.6048644922493904,
+    "hi": 0.6647697614529586,
+    "unit": "mH"
+  },
+  "r_burst_ohm_bridge_states_k": {
+    "value": 4.358153002206937,
+    "lo": 4.0841973723923966,
+    "hi": 4.711133186438466,
+    "unit": "ohm"
+  },
+  "drive_offset_twice_pct": {
+    "R": {
+      "value": -1.3175155635717362,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "L": {
+      "value": -1.074000084218285,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "tau": {
+      "value": 0.12472473021654107,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "ripple L": {
+      "value": 0.46805063153221305,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  }
+}
