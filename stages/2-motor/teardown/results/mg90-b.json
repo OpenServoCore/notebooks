@@ -1,0 +1,603 @@
+{
+  "capture": "telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1",
+  "notes": "Teardown of mg90-b after every other stage 2 experiment. Masses on a 1 mg scale, dimensions by micrometer (can) and calipers (rotor), counts off the parts and the photos, all from telemetry/mg90-b/teardown/hand.csv; each quantity's value is the mean of its readings and the bounds their range. j_cylinder_upper_kg_m2 is the rotor (1.123 g, no pinion) as a uniform cylinder of the stack's 7.03 mm, an upper bound since the shaft, commutator and disc sit at a smaller radius; the pinion adds at most pinion_j_pct if it sat at the stack's radius. end_cap_* are terminals-1, the end cap on the empty can: ohms across the tabs and from each tab to the can read OL in every packet, found from the raw bits (decimals 7, reading 0), capacitance across the tabs against the open probes in air, and the current with the DPS across the tabs at 3.7, 5.0 and 7.4 V, every packet 0.000 mA. pair_zero_ohm is terminals-1's settled lead zero, leads_ohm the motor's two leads in series less it. rotor_pair_ohm is the median of the three tab pairs read by hand, zeroed, the bounds their range, rotor_pairs_by_tab in the order 1-2, 2-3, 3-1; coil_ohm is 1.5 x each pair (three coils in a delta, each pair one coil in parallel with two in series), coil_direct_ohm one coil read alone after the disc work. The hand readings carry no thermometer: teardown_room_c is the cool run's room (room-c2 and the board phase before the heat, through the stage 0 correction) with +/- 2 C as the bracket. copper_leads_ohm is rotor_pair_ohm + leads_ohm at teardown_room_c; brush_path_meter_ohm is rest-resistance's r_ohms_median_ohm less copper_leads_ohm moved to rest-resistance's room_c over alpha 0.00393, the bounds the 2 C bracket and two meter steps; terminal_over_copper_stall_pct is rest-resistance's r_term_median_ohm over copper_leads_ohm moved to its board_ntc_c (a proxy, the stall pass's copper was not measured), the bounds from r_term's range over the holes, stall_excess_v that excess times r_term_amps, the most a brush drop can be if the copper sat at the proxy. The gray disc was read by hand after the coil wires were cut at one pad: the two pairs through that pad read two sectors in parallel (the other two pads tied by their coil), so ring_sector_nf = (pair - open-probe stray) / 2 and ring_sector_kohm = 2 x pair, the bounds the two pairs; at an edge the brushes see 1.5 sectors (each brush on one segment) to 2 sectors (a brush bridging two), ring_terminal_nf with the midpoint as value, ring_terminal_kohm 2/3 to 1/2 of a sector, ring_leak_7v4_ua the leakage at 7.4 V. ring_spike_charge_nc holds each earlier ON-edge spike (inductance fast_on_edge_spike_nc at the window volts printed in the inductance notebook, bemf-coast spinning_by_point) beside Q = C x the window's volts for the ring's two geometries. drive_only_over_ring_leak is every earlier drive-only current per volt (inductance's fast-decay step, bemf-coast's spinning step, crest over meter and reading term by duty below 100 %) over the ring's largest leakage per volt. The cool run is telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1: the bare rotor in still air, held by its shaft in a clip, leads on commutator tabs 1 and 2 joined to the board by clips, heated at 100 % on the 3.3 V rail; R per streamed window is the median tap difference over the median shunt above the sweep's torque-off zero in raw counts, over the window's second half; R0 the median of the ten room probes; a rise is (R / R0 - 1) x (234.5 + tc_room_c), copper's coefficient referred to the room the probes sat at, a weighted copper temperature (coil 1-2 weighs 4, the other two 1 each), with the coefficient from earlier work and not measured here; heat_rise_c is the last 100 ms heating window, heat_peak_probe_c the first probe after the drive, fast_tau_s one exponential plus offset over the 30 probes 0.2 s apart after the drive (bounds +/- one standard error), slow_tau_s the same over the cool probes after the step, cool_step_c the step at flat_window_s (a clip contact, left out), pre_step_excess_c how far the cool probes from 25 s to the flat sit over the slow fit carried back, unresolved; c_eff_j_per_k is the first window's power through the stage 1 lines over its warming rate from 10 ms, the lower bound with stage 1's 3.3 V deviations divided out, an upper bound on what the weighted reading sees; the cool run's numbers belong to this rotor in open air and feed no calibration. tc_* is the thermocouple in the winding through the stage 0 correction, room-c1's 28.6 C flat is unexplained and not used.",
+  "hand_readings": "telemetry/mg90-b/teardown/hand.csv",
+  "terminals": "telemetry/mg90-b/teardown/terminals-1",
+  "mass_whole_g": {
+    "value": 3.182,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "mass_pinion_g": {
+    "value": 0.037,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "mass_rotor_g": {
+    "value": 1.123,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "mass_can_g": {
+    "value": 1.771,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "mass_end_cap_g": {
+    "value": 0.25,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "mass_parts_sum_g": {
+    "value": 3.181,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "can_flats_mm": {
+    "value": 7.985,
+    "lo": 7.98,
+    "hi": 7.99,
+    "unit": "mm"
+  },
+  "can_rounds_mm": {
+    "value": 9.98,
+    "lo": 9.96,
+    "hi": 10.0,
+    "unit": "mm"
+  },
+  "body_length_mm": {
+    "value": 12.535,
+    "lo": 12.53,
+    "hi": 12.54,
+    "unit": "mm"
+  },
+  "rotor_diameter_mm": {
+    "value": 7.03,
+    "lo": 7.03,
+    "hi": 7.03,
+    "unit": "mm"
+  },
+  "rotor_stack_length_mm": {
+    "value": 4.23,
+    "lo": 4.22,
+    "hi": 4.24,
+    "unit": "mm"
+  },
+  "commutator_diameter_mm": {
+    "value": 2.12,
+    "lo": 2.12,
+    "hi": 2.12,
+    "unit": "mm"
+  },
+  "shaft_diameter_mm": {
+    "value": 0.96,
+    "lo": 0.96,
+    "hi": 0.96,
+    "unit": "mm"
+  },
+  "counts": {
+    "rotor_poles": {
+      "value": 3.0,
+      "lo": null,
+      "hi": null,
+      "unit": "count"
+    },
+    "commutator_segments": {
+      "value": 3.0,
+      "lo": null,
+      "hi": null,
+      "unit": "count"
+    },
+    "magnets": {
+      "value": 2.0,
+      "lo": null,
+      "hi": null,
+      "unit": "count"
+    },
+    "brushes": {
+      "value": 2.0,
+      "lo": null,
+      "hi": null,
+      "unit": "count"
+    },
+    "fingers_per_brush": {
+      "value": 3.0,
+      "lo": null,
+      "hi": null,
+      "unit": "count"
+    },
+    "commutator_dark_bands": {
+      "value": 3.0,
+      "lo": null,
+      "hi": null,
+      "unit": "count"
+    }
+  },
+  "j_cylinder_upper_kg_m2": {
+    "value": 6.937458837500002e-09,
+    "lo": null,
+    "hi": null,
+    "unit": "kg m^2"
+  },
+  "pinion_j_pct": {
+    "value": 3.2947462154942118,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "end_cap_ohm_ol_packets": {
+    "value": 120.0,
+    "lo": null,
+    "hi": null,
+    "unit": "of 120 packets"
+  },
+  "end_cap_tabs_nf": {
+    "value": 0.091,
+    "lo": 0.09,
+    "hi": 0.091,
+    "unit": "nF"
+  },
+  "open_probe_nf": {
+    "value": 0.091,
+    "lo": 0.09,
+    "hi": 0.092,
+    "unit": "nF"
+  },
+  "end_cap_iv_ma": {
+    "3.7 V": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.001,
+      "unit": "mA"
+    },
+    "5.0 V": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.001,
+      "unit": "mA"
+    },
+    "7.4 V": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.001,
+      "unit": "mA"
+    }
+  },
+  "pair_zero_ohm": {
+    "value": 0.06,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "leads_ohm": {
+    "value": 0.08000000000000002,
+    "lo": 0.07000000000000002,
+    "hi": 0.09000000000000001,
+    "unit": "ohm"
+  },
+  "rotor_pair_ohm": {
+    "value": 4.010000000000001,
+    "lo": 4.010000000000001,
+    "hi": 4.03,
+    "unit": "ohm"
+  },
+  "rotor_pairs_by_tab": [
+    4.01,
+    4.01,
+    4.03
+  ],
+  "coil_ohm": {
+    "value": 6.025000000000001,
+    "lo": 6.015000000000001,
+    "hi": 6.045,
+    "unit": "ohm"
+  },
+  "coil_direct_ohm": {
+    "value": 6.010000000000001,
+    "lo": 6.000000000000001,
+    "hi": 6.0200000000000005,
+    "unit": "ohm"
+  },
+  "teardown_room_c": {
+    "value": 24.89920248457016,
+    "lo": 22.89920248457016,
+    "hi": 26.89920248457016,
+    "unit": "C"
+  },
+  "copper_leads_ohm": {
+    "value": 4.090000000000001,
+    "lo": 4.070000000000001,
+    "hi": 4.11,
+    "unit": "ohm"
+  },
+  "brush_path_meter_ohm": {
+    "value": 0.00046165064125336386,
+    "lo": -0.05107847991875357,
+    "hi": 0.0520017812012603,
+    "unit": "ohm"
+  },
+  "terminal_over_copper_stall_pct": {
+    "value": 8.605845879604846,
+    "lo": 6.85706215899522,
+    "hi": 10.447377480646015,
+    "unit": "%"
+  },
+  "stall_excess_v": {
+    "value": 0.27663481531107387,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "ring_sector_nf": {
+    "value": 4.746,
+    "lo": 4.732,
+    "hi": 4.760000000000001,
+    "unit": "nF"
+  },
+  "ring_sector_kohm": {
+    "value": 317.0,
+    "lo": 310.0,
+    "hi": 324.0,
+    "unit": "kohm"
+  },
+  "ring_terminal_nf": {
+    "value": 8.3055,
+    "lo": 7.119000000000001,
+    "hi": 9.492,
+    "unit": "nF"
+  },
+  "ring_terminal_kohm": {
+    "value": 184.91666666666669,
+    "lo": 158.5,
+    "hi": 211.33333333333334,
+    "unit": "kohm"
+  },
+  "ring_leak_7v4_ua": {
+    "value": 40.851735015772874,
+    "lo": 35.01577287066247,
+    "hi": 46.68769716088328,
+    "unit": "uA"
+  },
+  "ring_spike_charge_nc": {
+    "inductance, locked, hole 11, fast decay, 25 %": {
+      "measured_nc": {
+        "value": 41.87475607424918,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 4.92,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 40.863060000000004,
+        "lo": 35.02548,
+        "hi": 46.70064000000001,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    },
+    "inductance, locked, hole 11, fast decay, 40 %": {
+      "measured_nc": {
+        "value": 37.759659157203615,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 4.9,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 40.69695000000001,
+        "lo": 34.883100000000006,
+        "hi": 46.51080000000001,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    },
+    "bemf-coast, spinning, slow decay, 5 V 30 %": {
+      "measured_nc": {
+        "value": 11.118557235727197,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 4.914807686134248,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 40.819935237188005,
+        "lo": 34.988515917589716,
+        "hi": 46.65135455678629,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    },
+    "bemf-coast, spinning, fast decay, 5 V 30 %": {
+      "measured_nc": {
+        "value": 39.01640570960179,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 4.923397170282619,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 40.89127519778229,
+        "lo": 35.04966445524197,
+        "hi": 46.73288594032262,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    },
+    "bemf-coast, spinning, slow decay, 7.4 V 20 %": {
+      "measured_nc": {
+        "value": 35.856405972083934,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 7.301873423130237,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 60.645709715808195,
+        "lo": 51.982036899264166,
+        "hi": 69.30938253235222,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    },
+    "bemf-coast, spinning, fast decay, 7.4 V 20 %": {
+      "measured_nc": {
+        "value": 66.91461127092701,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 7.301990857483828,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 60.646685066831935,
+        "lo": 51.982872914427375,
+        "hi": 69.3104972192365,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    },
+    "bemf-coast, spinning, slow decay, 7.4 V 40 %": {
+      "measured_nc": {
+        "value": 28.60812465011595,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 7.290228968154878,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 60.548996695010345,
+        "lo": 51.89914002429458,
+        "hi": 69.19885336572611,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    },
+    "bemf-coast, spinning, fast decay, 7.4 V 40 %": {
+      "measured_nc": {
+        "value": 40.76507668187424,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 7.280288988940212,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 60.46644019764294,
+        "lo": 51.828377312265374,
+        "hi": 69.1045030830205,
+        "unit": "nC"
+      },
+      "inside": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the ring's band"
+      }
+    }
+  },
+  "drive_only_over_ring_leak": {
+    "value": 679.6153807556424,
+    "lo": 251.12032065791203,
+    "hi": 712.5642446367547,
+    "unit": "ratio"
+  },
+  "rise_coefficient_pct_per_c": {
+    "value": 0.3855061967892839,
+    "lo": null,
+    "hi": null,
+    "unit": "% per C at tc_room_c"
+  },
+  "room_probe_spread_pct": {
+    "value": 0.0,
+    "lo": -0.1681614349775873,
+    "hi": 0.22509848058525073,
+    "unit": "%"
+  },
+  "heat_rise_c": {
+    "value": 41.67836552818967,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "heat_peak_probe_c": {
+    "value": 46.000444359577074,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "fast_tail_end_c": {
+    "value": 20.987464182964963,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "fast_tau_s": {
+    "value": 2.1498321290259392,
+    "lo": 2.100250423499677,
+    "hi": 2.1994138345522014,
+    "unit": "s"
+  },
+  "slow_tau_s": {
+    "value": 96.48576861820439,
+    "lo": 93.11159394136627,
+    "hi": 99.85994329504251,
+    "unit": "s"
+  },
+  "cool_step_c": {
+    "value": 4.200363917977486,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "cool_step_pct": {
+    "value": 1.5771028037383283,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "flat_window_s": {
+    "value": 51.77899980545044,
+    "lo": 51.77899980545044,
+    "hi": 79.83899998664856,
+    "unit": "s"
+  },
+  "pre_step_excess_c": {
+    "value": 2.869075110770755,
+    "lo": 2.1837967643331293,
+    "hi": 3.8823941502465953,
+    "unit": "C"
+  },
+  "end_rise_c": {
+    "value": -0.14556633136060304,
+    "lo": -0.47249399359667704,
+    "hi": 0.14572988903626707,
+    "unit": "C"
+  },
+  "heat_power_w": {
+    "value": 2.4645314685676185,
+    "lo": 2.019496814376011,
+    "hi": 2.4645314685676185,
+    "unit": "W"
+  },
+  "heat_rate_c_per_s": {
+    "value": 17.740739935669517,
+    "lo": null,
+    "hi": null,
+    "unit": "C/s"
+  },
+  "c_eff_j_per_k": {
+    "value": 0.13891931664092735,
+    "lo": 0.11383385482787063,
+    "hi": 0.13891931664092735,
+    "unit": "J/C"
+  },
+  "leads_board_end_ohm": {
+    "value": 3.97,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "tc_room_c": {
+    "value": 24.89920248457016,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "tc_peak_rise_c": {
+    "value": 5.241937365172664,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "tc_peak_s": {
+    "value": 20.74399995803833,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "tc_gap_after_2min_c": {
+    "value": -0.4239566799795278,
+    "lo": -2.210292534223396,
+    "hi": 0.17007453022132962,
+    "unit": "C"
+  }
+}
