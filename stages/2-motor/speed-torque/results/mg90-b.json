@@ -1,0 +1,446 @@
+{
+  "capture": "telemetry/mg90-b__dev-v006-2A-D/speed-torque/capture-1",
+  "notes": "the free motor from rest at 100 % on the 5.0 V rail, three cycles of a 300 ms run-up and a 600 ms coast each way. The speed is the commutation ripple of the current counted at 6 events per revolution, by order tracking: the current resampled onto a rough angle and band-passed there at six per revolution +/- 25 %, the rough angle seeded by the coast's ripple line and refined from the count, missed and extra crossings repaired; speed per one-turn window, acceleration from a quadratic of angle on time over +/-5 ms. Current through current-scale with its in-drive offset, graded at 100 %, terminal volts through terminal-chain. The shaft torque is J alpha, and Kt (i - I0(w)) beside it, with I0 no-load-current's 5.0 V drag curve under drive, held at its lowest speed's value below its range and extrapolated above it; j_kg_m2 is the slope of the acceleration on that torque over the windows 150 mA and more over the drag, its bounds the span of the line with the 5.0 and 7.4 V curves, the ratio with either curve and with 17 and 36 mA of early-run drag, and the first turn's commutation dips read against the current's integral (j_dips_first_turn_kg_m2), widened by the standard error over the six run-ups and Kt's bounds; j_clock_class_pct is the tick's class, which scales J as its cube and is not measured. r_rotating_ohm and v0_rotating_v are the line of u - L di/dt - Ke w on the current over the turn windows of the first 100 ms, dropout rows left out. The curve's key numbers are per direction and pooled, the stall torque from the line of speed on torque extrapolated to zero speed and from the first ms beside it, the peaks the largest median per 0.05 mN m bin of the acceleration fits, pooled, with the two directions' as bounds; curve is those bins, the shaft torque J alpha with this notebook's J",
+  "j_kg_m2": {
+    "value": 6.237584510875891e-09,
+    "lo": 5.489279415160583e-09,
+    "hi": 6.714154967735732e-09,
+    "unit": "kg m^2"
+  },
+  "j_line_kg_m2": {
+    "value": 6.237584510875891e-09,
+    "lo": 6.163770979487752e-09,
+    "hi": 6.31139804226403e-09,
+    "unit": "kg m^2"
+  },
+  "j_line_by_direction": {
+    "+1": {
+      "value": 6.117097784407981e-09,
+      "lo": 5.952168964330217e-09,
+      "hi": 6.282026604485746e-09,
+      "unit": "kg m^2"
+    },
+    "-1": {
+      "value": 6.373937620479564e-09,
+      "lo": 5.923162362662606e-09,
+      "hi": 6.824712878296522e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_line_drag_7v4_kg_m2": {
+    "value": 6.260790792644801e-09,
+    "lo": null,
+    "hi": null,
+    "unit": "kg m^2"
+  },
+  "j_ratio_by_drag": {
+    "drag curve at 5.0 V": {
+      "value": 6.338062674900396e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    },
+    "drag curve at 7.4 V": {
+      "value": 6.097075439823296e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    },
+    "plus 17 mA of early-run drag": {
+      "value": 6.007232967545089e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    },
+    "plus 36 mA of early-run drag": {
+      "value": 5.661176297671371e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    }
+  },
+  "j_line_extra_drag_a": {
+    "value": 0.007000609527495039,
+    "lo": null,
+    "hi": null,
+    "unit": "A"
+  },
+  "j_clock_class_pct": {
+    "value": 3.0,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "j_dips_first_turn_kg_m2": {
+    "value": 6.542494319491721e-09,
+    "lo": 6.103543984481602e-09,
+    "hi": 6.8265049204224034e-09,
+    "unit": "kg m^2"
+  },
+  "j_windows": {
+    "value": 300.0,
+    "lo": 0.01064196937121943,
+    "hi": 0.036930154495670456,
+    "unit": "windows, from lo to hi s into the run-up"
+  },
+  "r_rotating_ohm": {
+    "value": 3.8078344449296964,
+    "lo": 3.7047212381345687,
+    "hi": 3.9181874181683543,
+    "unit": "ohm"
+  },
+  "v0_rotating_v": {
+    "value": 0.430456692771834,
+    "lo": 0.34236378093262065,
+    "hi": 0.5152628157145933,
+    "unit": "V"
+  },
+  "no_load_speed_rev_s": {
+    "value": 547.4652777777778,
+    "lo": 537.7083333333334,
+    "hi": 557.2222222222222,
+    "unit": "rev/s"
+  },
+  "no_load_speed_by_direction": {
+    "+1": {
+      "value": 537.7083333333334,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-1": {
+      "value": 557.2222222222222,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "no_load_current_a": {
+    "value": 0.109854548587972,
+    "lo": 0.10752510642769454,
+    "hi": 0.11218399074824946,
+    "unit": "A"
+  },
+  "stall_torque_n_m": {
+    "value": 0.001155084536269932,
+    "lo": 0.0011186429960593914,
+    "hi": 0.0011915260764804726,
+    "unit": "N m"
+  },
+  "stall_torque_first_ms_n_m": {
+    "value": 0.0011619664117433265,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "stall_current_a": {
+    "value": 1.0067860273979827,
+    "lo": 1.0010276136673115,
+    "hi": 1.012544441128654,
+    "unit": "A"
+  },
+  "stall_terminal_v": {
+    "value": 4.431825753755375,
+    "lo": 4.42421744756209,
+    "hi": 4.439434059948661,
+    "unit": "V"
+  },
+  "peak_power_w": {
+    "value": 0.9765222314912947,
+    "lo": 0.9669288740232549,
+    "hi": 0.9981341031379867,
+    "unit": "W"
+  },
+  "peak_power_torque_n_m": {
+    "value": 0.0005750000000000001,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "peak_efficiency": {
+    "value": 0.4598047091423941,
+    "lo": 0.45634133905718904,
+    "hi": 0.4742201039824677,
+    "unit": ""
+  },
+  "peak_efficiency_torque_n_m": {
+    "value": 0.00037500000000000006,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "key_numbers_by_direction": {
+    "+1": {
+      "no_load_rev_s": 537.7083333333334,
+      "stall_line_mnm": 1.1915260764804727,
+      "p_max_w": 0.9669288740232549,
+      "p_max_torque_mnm": 0.5750000000000001,
+      "p_max_rev_s": 267.48224098306946,
+      "p_line_w": 0.9915603701940713,
+      "eff_max": 0.4742201039824677,
+      "eff_max_torque_mnm": 0.32500000000000007,
+      "eff_max_rev_s": 401.2386801958778
+    },
+    "-1": {
+      "no_load_rev_s": 557.2222222222222,
+      "stall_line_mnm": 1.1186429960593913,
+      "p_max_w": 0.9981341031379867,
+      "p_max_torque_mnm": 0.6250000000000001,
+      "p_max_rev_s": 252.77321331204473,
+      "p_line_w": 0.9895890479076025,
+      "eff_max": 0.45634133905718904,
+      "eff_max_torque_mnm": 0.275,
+      "eff_max_rev_s": 424.1646094072086
+    }
+  },
+  "terminal_source": {
+    "form": "u = v_s - r_s i at the motor's terminals, the rail, the diode, the bridge and the leads as one source",
+    "v_s": {
+      "value": 4.930239378291476,
+      "lo": null,
+      "hi": null,
+      "unit": "V"
+    },
+    "r_s": {
+      "value": 0.5062322281408258,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    }
+  },
+  "speed_count_start_ms": {
+    "value": 8.504106479721381,
+    "lo": 8.278740941285186,
+    "hi": 8.718307393635932,
+    "unit": "ms"
+  },
+  "speed_count_start_rev_s": {
+    "value": 197.70242578411117,
+    "lo": 187.508238263662,
+    "hi": 217.13091491956357,
+    "unit": "rev/s"
+  },
+  "crossings_repaired": {
+    "value": 4.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  },
+  "crossings_total": {
+    "value": 5514.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  },
+  "dropouts_settled_per_s_by_direction": {
+    "+1": {
+      "value": 958.3333333333334,
+      "lo": 937.516673338672,
+      "hi": 979.1499933279947,
+      "unit": "1/s"
+    },
+    "-1": {
+      "value": 466.6666666666667,
+      "lo": 402.18152625948966,
+      "hi": 531.1518070738437,
+      "unit": "1/s"
+    }
+  },
+  "model_settled_rev_s": {
+    "the constants as handed": {
+      "value": 600.0572698395914,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "the constants, J 4.4": {
+      "value": 600.0581257527882,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "the constants, J 8.2": {
+      "value": 600.0371263484762,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "the run-up's own R, V0 and J": {
+      "value": 551.6280332920404,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "model_rise_63_ms": {
+    "the constants as handed": {
+      "value": 22.15,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "the constants, J 4.4": {
+      "value": 15.450000000000001,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "the constants, J 8.2": {
+      "value": 29.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "the run-up's own R, V0 and J": {
+      "value": 19.099999999999998,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    }
+  },
+  "measured_rise_63_ms": {
+    "+1": {
+      "value": 19.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "-1": {
+      "value": 19.5,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    }
+  },
+  "ke_coast_top_v_s_per_rad": {
+    "value": 0.001160568101414083,
+    "lo": 0.001156809048047133,
+    "hi": 0.0011643271547810328,
+    "unit": "V s/rad"
+  },
+  "ke_coast_top_rev_s": {
+    "value": 530.5487808285486,
+    "lo": 522.0641727810774,
+    "hi": 539.0333888760198,
+    "unit": "rev/s"
+  },
+  "curve": [
+    {
+      "torque_mnm": 0.025,
+      "n": 288,
+      "speed_rev_s": 525.15,
+      "current_a": 0.13327,
+      "terminal_v": 4.8628,
+      "power_w": 0.07566,
+      "efficiency": 0.1141
+    },
+    {
+      "torque_mnm": 0.075,
+      "n": 164,
+      "speed_rev_s": 512.84,
+      "current_a": 0.16088,
+      "terminal_v": 4.8453,
+      "power_w": 0.2314,
+      "efficiency": 0.2878
+    },
+    {
+      "torque_mnm": 0.125,
+      "n": 110,
+      "speed_rev_s": 491.56,
+      "current_a": 0.19365,
+      "terminal_v": 4.8279,
+      "power_w": 0.38052,
+      "efficiency": 0.4048
+    },
+    {
+      "torque_mnm": 0.175,
+      "n": 85,
+      "speed_rev_s": 461.96,
+      "current_a": 0.25108,
+      "terminal_v": 4.7974,
+      "power_w": 0.49757,
+      "efficiency": 0.4084
+    },
+    {
+      "torque_mnm": 0.225,
+      "n": 43,
+      "speed_rev_s": 445.41,
+      "current_a": 0.29817,
+      "terminal_v": 4.7695,
+      "power_w": 0.63938,
+      "efficiency": 0.4544
+    },
+    {
+      "torque_mnm": 0.275,
+      "n": 25,
+      "speed_rev_s": 422.58,
+      "current_a": 0.33966,
+      "terminal_v": 4.7482,
+      "power_w": 0.71788,
+      "efficiency": 0.4545
+    },
+    {
+      "torque_mnm": 0.325,
+      "n": 27,
+      "speed_rev_s": 401.55,
+      "current_a": 0.37375,
+      "terminal_v": 4.7325,
+      "power_w": 0.80171,
+      "efficiency": 0.4567
+    },
+    {
+      "torque_mnm": 0.375,
+      "n": 35,
+      "speed_rev_s": 376.17,
+      "current_a": 0.4111,
+      "terminal_v": 4.7139,
+      "power_w": 0.89223,
+      "efficiency": 0.4598
+    },
+    {
+      "torque_mnm": 0.425,
+      "n": 39,
+      "speed_rev_s": 345.04,
+      "current_a": 0.4637,
+      "terminal_v": 4.6916,
+      "power_w": 0.93131,
+      "efficiency": 0.427
+    },
+    {
+      "torque_mnm": 0.475,
+      "n": 27,
+      "speed_rev_s": 315.5,
+      "current_a": 0.51453,
+      "terminal_v": 4.6665,
+      "power_w": 0.94212,
+      "efficiency": 0.3918
+    },
+    {
+      "torque_mnm": 0.525,
+      "n": 18,
+      "speed_rev_s": 289.92,
+      "current_a": 0.55474,
+      "terminal_v": 4.6464,
+      "power_w": 0.96133,
+      "efficiency": 0.3724
+    },
+    {
+      "torque_mnm": 0.575,
+      "n": 20,
+      "speed_rev_s": 269.59,
+      "current_a": 0.58706,
+      "terminal_v": 4.631,
+      "power_w": 0.97652,
+      "efficiency": 0.3579
+    },
+    {
+      "torque_mnm": 0.625,
+      "n": 14,
+      "speed_rev_s": 249.81,
+      "current_a": 0.62434,
+      "terminal_v": 4.6139,
+      "power_w": 0.966,
+      "efficiency": 0.3386
+    }
+  ]
+}
