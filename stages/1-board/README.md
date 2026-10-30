@@ -14,7 +14,7 @@ the stage 0 loads (the bare 5 ohm and the series 15 ohm power resistors),
 the DMM, the thermocouple and a controlled heat source for the two thermal
 experiments: a 3D printer's heated bed, a hot plate with a thermostat or a
 filament dryer, anything that holds the whole board at a set temperature.
-The `osc` tool on the PATH. The board runs the experiment
+The `osc` and `osc-lab` tools on the PATH. The board runs the experiment
 image (`scripts/build-image.sh --experiment <rev>` in the firmware repo,
 then `osc flash` over the bus): open-loop duty, raw streaming and register
 access, with the raw current trip and the bus dead-man as its only
@@ -29,10 +29,10 @@ own rail tap reads the level. The DPS output comes up at its previous
 setting for a moment when enabled, which the board's rail tolerates, so the
 scripts turn it on with the leads connected.
 
-The bridge-states experiment on the RL dummy waits for the inductor.
-
 Run in this order. The lap experiments share one wiring and the heated
-experiments share another, and opamp-temperature reads the ntc-curve result.
+experiments share another, opamp-temperature reads the ntc-curve result, and
+bridge-states comes last on the RL dummy, the bare load in series with two
+power inductors.
 
 ## [rest-noise](rest-noise/rest-noise.ipynb)
 
@@ -120,3 +120,35 @@ is the drift. The ammeter route reads the chain as a whole, the rs1 route
 reads the amplifier alone, and the rest streams read VDD at each plateau.
 
 Run: `capture.py ammeter`, `capture.py rs1`, then the notebook.
+
+## [bridge-states](bridge-states/bridge-states.ipynb)
+
+Targets: the burst inductance method on a load with no moving parts, the
+ripple L against the period fit, the fitted R against the DC R, and whether
+two inductors add. What the shunt and the taps read in each bridge state
+with a real inductive current, in slow and fast decay. The dummy's DC
+resistance.
+
+Needs: board, DPS, bare load, two 1 mH power inductors (Bourns 2300LL-102-H-RC), A with orange leads and B with brown leads, Dupont pigtails, host.
+
+How: four wirings, each change adding or removing one part. The bare
+resistor alone is the control, then come A, A and B in series, and B.
+Each wiring gets DC laps at 100 % on a 3.7 and a 4.2 V rail for the DC
+resistance, then on a 5 V rail `osc-lab burst` at 25 and 40 %, both signs,
+five repeats each, once in slow decay and once in fast, and duty sweeps at
+25 and 40 % with the 100 % rung as the control in both decays, the trough
+shunt in the row beside the crest samples as the steady-state check. One
+inductor's time constant is about 0.19 ms, four PWM periods, and both in
+series about 0.37 ms, seven periods. A slow-decay burst runs about 9 periods
+past the step, so it ends near 90 % of the final current on one inductor and
+near 70 % on both, and fits L from the ramp inside each window and L/R from
+the rise across periods. The bare resistor's current settles with the
+amplifier, so on it the method should find next to no inductance. Under
+slow decay the current circulates through the low-side switches out of the
+shunt's path, which the slow bursts see through the whole period. Under
+fast decay it returns to the rail through the body diodes and reaches zero
+before the next drive below 50 %, so the fast bursts are periodic from the
+first full period and show the turn-off, the return on the taps, the amplifier's
+tail and the discontinuous current inside one period.
+
+Run: `uv run python stages/1-board/bridge-states/capture.py`, then the notebook.
