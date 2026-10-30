@@ -1,0 +1,211 @@
+//! Read the servo's limits for a drive to plan against
+//! ([`crate::instrument::limits`]), warn about a flat pack, refuse a servo
+//! that publishes no window floor, and say out loud when its stall settings
+//! leave the current limit as the only protection. Every drive reads them
+//! before it drives.
+
+use anyhow::{Context, Result, bail};
+use osc_client::Id;
+use osc_client::blocking::Client;
+use osc_client::pipe::Pipe;
+use osc_protocol::table::{CAP_EXPERIMENT, CAPABILITY_FLAGS};
+
+use super::battery;
+use super::pump::{read_i32, read_snapshot};
+use super::snapshot::{read_u16, read_u32};
+use crate::instrument::limits::{CLASS_R_MIN, DutyPlan, ServoLimits};
+use crate::instrument::regs::{calib, config, telemetry};
+use crate::instrument::units::{self, SenseParams};
+
+pub(crate) fn read<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<ServoLimits> {
+    battery::before_drive(c, id)?;
+    let sense = SenseParams {
+        shunt_r_mohm: read_u16(c, id, calib::SHUNT_R_MOHM)?,
+        gain_milli: read_u16(c, id, calib::GAIN_MILLI)?,
+        vmotor_div_top: 0,
+        vmotor_div_bot: 0,
+        vdd_mv: read_u16(c, id, calib::VDD_MV)?,
+    };
+    let tel = read_snapshot(c, id)?;
+    let lim = ServoLimits {
+        i_lim: read_u16(c, id, config::CURRENT_LIMIT_COUNTS)?,
+        i_cont: read_u16(c, id, config::I_CONT_COUNTS)?,
+        tau_trip: read_u16(c, id, config::STALL_TAU_TRIP_COUNTS)?,
+        soft: (
+            read_i32(c, id, config::POS_MIN_SOFT_COUNTS)?,
+            read_i32(c, id, config::POS_MAX_SOFT_COUNTS)?,
+        ),
+        raw: (
+            read_u16(c, id, calib::RAW_MIN)?,
+            read_u16(c, id, calib::RAW_MAX)?,
+        ),
+        r_q12: read_u16(c, id, calib::R_Q12)?,
+        vbus: vbus_counts(c, id, tel.vbus_counts)?,
+        window_floor_q15: tel.window_floor_q15,
+        amps_per_count: units::amps_per_count(&sense),
+    };
+    lim.check_floor()?;
+    for w in lim.warnings() {
+        eprintln!("warning: {w}");
+    }
+    Ok(lim)
+}
+
+/// The rail in vmotor-tap counts, the unit `ServoLimits::vbus` plans in.
+/// The experiment image runs no estimators (kernel sec 2.7) and publishes
+/// `vbus_counts` as 0, so for it the rail tap is rescaled here the way the
+/// production estimator scales it, from one sample at rest.
+fn vbus_counts<P: Pipe>(c: &mut Client<P>, id: Id, published: u16) -> Result<u16> {
+    let raw = c.read(id, CAPABILITY_FLAGS, 4).context("capability read")?;
+    let caps = u32::from_le_bytes(
+        raw.get(..4)
+            .and_then(|b| b.try_into().ok())
+            .unwrap_or([0; 4]),
+    );
+    if caps & CAP_EXPERIMENT == 0 {
+        return Ok(published);
+    }
+    Ok(vcounts_of_rail_tap(
+        read_u16(c, id, telemetry::VBUS_RAW)?,
+        (
+            read_u16(c, id, calib::VBUS_DIV_TOP_OHM)?,
+            read_u16(c, id, calib::VBUS_DIV_BOT_OHM)?,
+        ),
+        (
+            read_u16(c, id, calib::VMOTOR_DIV_TOP)?,
+            read_u16(c, id, calib::VMOTOR_DIV_BOT)?,
+        ),
+    ))
+}
+
+/// `vbus_raw` in vmotor-tap counts, by the production estimator's scale
+/// `(vbus_top + vbus_bot) * vmotor_bot / (vbus_bot * (vmotor_top +
+/// vmotor_bot))`; 0 when a divider bottom is unset.
+fn vcounts_of_rail_tap(raw: u16, (vt, vb): (u16, u16), (mt, mb): (u16, u16)) -> u16 {
+    let num = raw as u64 * (vt as u64 + vb as u64) * mb as u64;
+    num.checked_div(vb as u64 * (mt as u64 + mb as u64))
+        .map_or(0, |v| v.min(u16::MAX as u64) as u16)
+}
+
+/// The stall settings `ServoLimits` leaves out: what the stall timer does
+/// once it trips, and when a fold lets go.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Stall {
+    /// A stall folds the limit to the continuous current; else it latches
+    /// a fault.
+    pub(crate) folds: bool,
+    /// Kernel ticks.
+    pub(crate) time_ticks: u32,
+    pub(crate) release: u16,
+}
+
+impl Stall {
+    pub(crate) fn read<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<Self> {
+        let response = c
+            .read(id, config::STALL_RESPONSE.addr, 1)
+            .context("field read")?[0];
+        Ok(Self {
+            folds: response != 0,
+            time_ticks: read_u32(c, id, config::STALL_TIME_TICKS)?,
+            release: read_u16(c, id, config::STALL_RELEASE_COUNTS)?,
+        })
+    }
+
+    /// The name `stall_response` reads under in the descriptor.
+    pub(crate) fn response(&self) -> &'static str {
+        if self.folds { "yield" } else { "fault" }
+    }
+}
+
+/// The stall-safe plan for a drive: by the winding R the servo carries,
+/// else by the class's lowest, which errs safe.
+pub(crate) fn plan<P: Pipe>(c: &mut Client<P>, id: Id, lim: &ServoLimits) -> Result<DutyPlan> {
+    let sense = SenseParams {
+        shunt_r_mohm: read_u16(c, id, calib::SHUNT_R_MOHM)?,
+        gain_milli: read_u16(c, id, calib::GAIN_MILLI)?,
+        vmotor_div_top: read_u16(c, id, calib::VMOTOR_DIV_TOP)?,
+        vmotor_div_bot: read_u16(c, id, calib::VMOTOR_DIV_BOT)?,
+        vdd_mv: read_u16(c, id, calib::VDD_MV)?,
+    };
+    let (a, v) = (
+        units::amps_per_count(&sense),
+        units::volts_per_count(&sense),
+    );
+    if a <= 0.0 || v <= 0.0 {
+        bail!("CalibSense scales degenerate (shunt/gain/dividers/vdd)");
+    }
+    Ok(lim.stall_plan(CLASS_R_MIN * a / v))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::rig::testkit;
+
+    /// The bench table: the limits as set, the published floor and rail,
+    /// the stall settings that held it.
+    #[test]
+    fn limits_come_off_the_table() {
+        let (mut c, id) = testkit::table(1961);
+        let lim = read(&mut c, id).unwrap();
+        assert_eq!(
+            (lim.i_lim, lim.i_cont, lim.soft, lim.raw),
+            (280, 168, (432, 3626), (232, 3849))
+        );
+        assert_eq!((lim.window_floor_q15, lim.vbus), (4356, 3204));
+        let stall = Stall::read(&mut c, id).unwrap();
+        assert_eq!((stall.folds, stall.release), (true, 84));
+        assert_eq!(stall.response(), "yield");
+        let p = plan(&mut c, id, &lim).unwrap();
+        assert_eq!(p.seek, p.stop_cap);
+        assert!(p.stop_cap > 0.0 && p.stop_cap < 1.0);
+    }
+
+    /// A servo that publishes no window floor is refused before anything
+    /// drives.
+    #[test]
+    fn a_servo_without_a_floor_is_refused() {
+        let (mut c, id) = testkit::table(1961);
+        c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.limits.window_floor_q15 = 0;
+        });
+        let e = read(&mut c, id).unwrap_err().to_string();
+        assert!(e.contains("window_floor_q15 reads 0"), "{e}");
+    }
+
+    /// The experiment image publishes `vbus_counts` as 0: the limits carry
+    /// the rail tap rescaled into vmotor-tap counts instead, the same rail
+    /// the battery gate reads from `vbus_raw`, to a count. Any other image
+    /// keeps the published estimate.
+    #[test]
+    fn experiment_image_rail_comes_from_the_rail_tap() {
+        let (mut c, id) = testkit::table(1961);
+        assert_eq!(read(&mut c, id).unwrap().vbus, 3204);
+        testkit::rail_at(&mut c, 1961, 0);
+        c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.config.common.capability_flags |= CAP_EXPERIMENT;
+        });
+        let vbus = read(&mut c, id).unwrap().vbus;
+        let (rail_mv, _) = battery::read(&mut c, id).unwrap();
+        let sense = SenseParams {
+            shunt_r_mohm: 0,
+            gain_milli: 0,
+            vmotor_div_top: read_u16(&mut c, id, calib::VMOTOR_DIV_TOP).unwrap(),
+            vmotor_div_bot: read_u16(&mut c, id, calib::VMOTOR_DIV_BOT).unwrap(),
+            vdd_mv: read_u16(&mut c, id, calib::VDD_MV).unwrap(),
+        };
+        let mv_per_count = units::volts_per_count(&sense) * 1000.0;
+        assert!(vbus > 0);
+        assert!((vbus as f64 * mv_per_count - rail_mv as f64).abs() <= mv_per_count);
+    }
+
+    #[test]
+    fn rail_tap_rescale_is_zero_on_an_unset_divider() {
+        assert_eq!(vcounts_of_rail_tap(1961, (15_000, 0), (6400, 1600)), 0);
+        assert_eq!(vcounts_of_rail_tap(1961, (15_000, 10_000), (0, 0)), 0);
+        assert_eq!(
+            vcounts_of_rail_tap(1600, (15_000, 10_000), (6400, 1600)),
+            800
+        );
+    }
+}
