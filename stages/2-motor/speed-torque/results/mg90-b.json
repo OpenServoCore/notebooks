@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/speed-torque/capture-1",
-  "notes": "the free motor from rest at 100 % on the 5.0 V rail, three cycles of a 300 ms run-up and a 600 ms coast each way. The speed is the commutation ripple of the current counted at 6 events per revolution, by order tracking: the current resampled onto a rough angle and band-passed there at six per revolution +/- 25 %, the rough angle seeded by the coast's ripple line and refined from the count, missed and extra crossings repaired; speed per one-turn window, acceleration from a quadratic of angle on time over +/-5 ms. Current through current-scale with its in-drive offset, graded at 100 %, terminal volts through terminal-chain. The shaft torque is J alpha, and Kt (i - I0(w)) beside it, with I0 no-load-current's 5.0 V drag curve under drive, held at its lowest speed's value below its range and extrapolated above it; j_kg_m2 is the slope of the acceleration on that torque over the windows 150 mA and more over the drag, its bounds the span of the line with the 5.0 and 7.4 V curves, the ratio with either curve and with 17 and 36 mA of early-run drag, and the first turn's commutation dips read against the current's integral (j_dips_first_turn_kg_m2), widened by the standard error over the six run-ups and Kt's bounds; j_clock_class_pct is the tick's class, which scales J as its cube and is not measured. r_rotating_ohm and v0_rotating_v are the line of u - L di/dt - Ke w on the current over the turn windows of the first 100 ms, dropout rows left out. The curve's key numbers are per direction and pooled, the stall torque from the line of speed on torque extrapolated to zero speed and from the first ms beside it, the peaks the largest median per 0.05 mN m bin of the acceleration fits, pooled, with the two directions' as bounds; curve is those bins, the shaft torque J alpha with this notebook's J",
+  "notes": "the free motor from rest at 100 % on the 5.0 V rail, three cycles of a 300 ms run-up and a 600 ms coast each way. The speed is the commutation ripple of the current counted at 6 events per revolution, by order tracking: the current resampled onto a rough angle and band-passed there at six per revolution +/- 25 %, the rough angle seeded by the coast's ripple line and refined from the count, missed and extra crossings repaired; speed per one-turn window, acceleration from a quadratic of angle on time over +/-5 ms. Current through current-scale with its in-drive offset, graded at 100 %, terminal volts through terminal-chain. The shaft torque is J alpha, and Kt (i - I0(w)) beside it, with I0 no-load-current's 5.0 V drag curve under drive, held at its lowest speed's value below its range and extrapolated above it; j_kg_m2 is the slope of the acceleration on that torque over the windows 150 mA and more over the drag, its bounds the span of the line with the 5.0 and 7.4 V curves, the ratio with either curve and with 17 and 36 mA of early-run drag, and the first turn's commutation dips read against the current's integral (j_dips_first_turn_kg_m2), widened by the standard error over the six run-ups and Kt's bounds. r_rotating_ohm and v0_rotating_v are the line of u - L di/dt - Ke w on the current over the turn windows of the first 100 ms, dropout rows left out. The curve's key numbers are per direction and pooled, the stall torque from the line of speed on torque extrapolated to zero speed and from the first ms beside it, the peaks the largest median per 0.05 mN m bin of the acceleration fits, pooled, with the two directions' as bounds; curve is those bins, the shaft torque J alpha with this notebook's J",
   "j_kg_m2": {
     "value": 6.237584510875891e-09,
     "lo": 5.489279415160583e-09,
@@ -64,12 +64,6 @@
     "lo": null,
     "hi": null,
     "unit": "A"
-  },
-  "j_clock_class_pct": {
-    "value": 3.0,
-    "lo": null,
-    "hi": null,
-    "unit": "%"
   },
   "j_dips_first_turn_kg_m2": {
     "value": 6.542494319491721e-09,
