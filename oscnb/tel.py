@@ -1,4 +1,4 @@
-"""A sweep recording: `sweep.csv` and `meta.json` as `osc sweep` writes them.
+"""A sweep recording: `sweep.csv` and `meta.json` as `osc-lab sweep` writes them.
 
 One row per control tick at 20 kHz, segments numbered from 0 (the torque-off
 baseline) through the rungs. The raw columns are ADC counts: `current_raw`

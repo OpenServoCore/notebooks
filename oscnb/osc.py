@@ -1,9 +1,13 @@
-"""The `osc` tool from a capture script.
+"""The `osc` and `osc-lab` tools from a capture script.
 
-The tool is on the PATH (`cargo install --path tools/osc` in the firmware
-repo) or named by the OSC environment variable. Every call addresses one
-servo id, OSC_ID or 1. The tool prints its connection status on stderr and
-its output on stdout, so stdout is parsed and stderr is passed through.
+`osc-lab` is the capture instrument: `sweep()` and `bursts()` run it. It
+installs with `cargo install --locked --path osc-lab` from this repo, and is
+found on the PATH or named by the OSC_LAB environment variable. Every other call
+(get, set, status, ping, baud) runs `osc`, on the PATH (`cargo install
+--path tools/osc` in the firmware repo) or named by the OSC environment
+variable. Every call addresses one servo id, OSC_ID or 1. The tools print
+their connection status on stderr and their output on stdout, so stdout is
+parsed and stderr is passed through.
 """
 import os
 import re
@@ -11,12 +15,14 @@ import subprocess
 from pathlib import Path
 
 TOOL = os.environ.get("OSC", "osc")
+LAB = os.environ.get("OSC_LAB", "osc-lab")
 ID = os.environ.get("OSC_ID", "1")
 
 
-def run(*args, capture=False, check=True):
-    """Run `osc -i <id> <args>`; returns stdout when `capture`."""
-    cmd = [TOOL, "-i", ID, *map(str, args)]
+def run(*args, capture=False, check=True, tool=TOOL):
+    """Run `<tool> -i <id> <args>`, `osc` unless `tool` says otherwise;
+    returns stdout when `capture`."""
+    cmd = [tool, "-i", ID, *map(str, args)]
     r = subprocess.run(cmd, stdout=subprocess.PIPE if capture else None, text=True, check=check)
     return r.stdout if capture else None
 
@@ -74,7 +80,7 @@ CHUNKS_REST = "0x23a+12"
 
 def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500, dirs="both", decay="slow",
           tel_chunks=CHUNKS_RAW, static_load=True):
-    """`osc sweep` into `out` (sweep.csv + meta.json). `duty` is the step list
+    """`osc-lab sweep` into `out` (sweep.csv + meta.json). `duty` is the step list
     as the tool takes it, percent, with `then:` and `@MS` forms allowed."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -84,18 +90,26 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500, dirs="both", 
         args += ["--tel-chunks", tel_chunks]
     if static_load:
         args.append("--static-load")
-    run(*args)
+    run(*args, tool=LAB)
     return out
 
 
-def bursts(out, pct, repeats=3, chans="diff"):
-    """`osc ident burst --static-load`: the ADC free running on the shunt and
-    the taps through PWM periods around a duty step, `burst-K.csv` files in
-    `out`."""
+def bursts(out, pct, repeats=3, chans="diff", dirs="both", rest_ms=150, decay="slow", spin_ms=0):
+    """`osc-lab burst` into `out` (burst-K.csv + meta.json): the ADC free running
+    on the shunt and the taps through PWM periods around a duty step from
+    rest, each duty by sign by repeat, in `decay`. The raw instrument, no fit.
+    `spin_ms` drives each step's own duty that long before its arm, so a free
+    rotor is captured spinning in steady state on both sides of the step."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    run("ident", "--out", out, "--burst-pct", ",".join(map(str, pct)), "--burst-repeats", repeats,
-        "--burst-chans", chans, "burst", "--static-load")
+    args = ["burst", "--out", out, "--duty-pct", ",".join(map(str, pct)), "--repeats", repeats,
+            "--chans", chans, "--dirs", dirs, "--rest-ms", rest_ms]
+    # slow is the tool's default, so an osc-lab from before --decay still runs a slow set
+    if decay != "slow":
+        args += ["--decay", decay]
+    if spin_ms:
+        args += ["--spin-ms", spin_ms]
+    run(*args, tool=LAB)
     return out
 
 

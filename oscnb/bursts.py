@@ -1,4 +1,4 @@
-"""`osc ident burst` captures: the ADC free running through PWM periods
+"""`osc-lab burst` captures: the ADC free running through PWM periods
 around a duty step, `burst-K.csv` files. Column `code` is the raw sample,
 `k` its index; the meta fields repeat on the first row. Samples alternate
 the shunt with the taps, 26 ADC clocks apart at 24 MHz, so folding a burst

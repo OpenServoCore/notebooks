@@ -34,9 +34,12 @@ sitting with stage 0.
 Folder `stages/2-motor/`. Targets the motor on its own, by type. Today that is a small brushed DC
 motor.
 
-The bare motor is clamped on a plate with the DMM across its tabs.
-Resistance, inductance, the back-EMF constant and the no-load current are
-measured here with nothing else in the way. Stage 3 is graded against these
+The bare motor sits in the printed [motor rig](rigs/motorrig/__init__.py),
+a base that seats the can with the leads under it and a wrench bar that
+holds the rotor by its pinion at one of twelve angles, with the DMM across
+its tabs. Resistance, inductance, the back-EMF constant and the no-load
+current are measured here with nothing else in the way, and the teardown
+at the end reads the copper on its own. Stage 3 is graded against these
 numbers. Same sitting as stage 1.
 
 ### 3. Servo
@@ -46,7 +49,7 @@ a case.
 
 Open loop throughout, with the camera tag on the horn and the thermocouple inside
 the case. Three groups of experiments live here. Electrical repeats the
-stage 2 measurements in situ, the way `osc ident` has to do them. Mechanical
+stage 2 measurements in situ, the way `osc-cal` has to do them. Mechanical
 covers friction, inertia, the gear train and the pot. Thermal
 covers the heating holds and the winding temperature constants. This is the
 long sitting.
@@ -107,8 +110,8 @@ reproduced by the tools on the user's own servo.
 
 ### Build the methods behind the tools
 
-The characterization, identification and calibration steps that `osc ident`,
-`osc cal` and the osc-web calibration flow run on a user's servo start here
+The characterization, identification and calibration steps that `osc-cal` and
+the osc-web calibration flow run on a user's servo start here
 as experiments, in long form, with the model and its limits worked out on
 real data. An experiment is written for a type of thing, like a brushed DC
 motor or a pot, not for one servo model. The MG90 goes through first, the
@@ -198,6 +201,12 @@ previews in place of the originals; the camera-tag notebook shows what
 that costs (a noise floor several times higher, the geometric error about
 the same).
 
+### rigs
+
+Printed fixtures under [rigs/](rigs/README.md), parametric CAD in
+build123d with the measured parts as their inputs. The motor rig of stage 2
+seats the bare motor and holds its rotor at indexed angles.
+
 ### clapper
 
 The servo board's STAT lamp, flashed from the host through the
@@ -207,7 +216,7 @@ be lined up afterwards.
 
 ### host
 
-The computer running `osc` over the osc adapter, with the capture scripts in
+The computer running `osc` and `osc-lab` over the osc adapter, with the capture scripts in
 this repo. Python comes through `uv`, see Setup. On Linux, turn USB
 autosuspend off for the Bluetooth dongle (`options btusb enable_autosuspend=0`
 in modprobe.d). A dongle that suspends between the DMM's packets resets on
@@ -220,6 +229,31 @@ value, its bounds, the unit and the capture it came from. An experiment run
 on a servo and board pair writes `results/<servo>__<board>.json` in its
 folder instead, one file per pair. A later stage reads these files and
 nothing else from the stages before it.
+
+## osc-lab
+
+`osc-lab` is the little Rust tool in [osc-lab/](osc-lab) that every capture
+records with. It has two commands. `osc-lab sweep` drives open-loop duty
+rungs and streams the raw TEL rows into `sweep.csv`. `osc-lab burst` takes
+the high-rate shunt bursts from rest into `burst-K.csv`. Both write a
+`meta.json` beside the data with the servo's constants at the time.
+
+It is the only capture instrument. Nothing in it fits, identifies or
+calibrates. It is a raw instrument on purpose, so a dataset never goes
+through identification code on its way to disk. Everything else a capture
+script does to the servo, like `get`, `set`, `status` or `baud`, still goes
+through `osc` from the firmware repo.
+
+To install it, you will need a nightly Rust toolchain (the
+`rust-toolchain.toml` in the folder picks it for you). Then run this in
+this folder:
+
+```
+cargo install --locked --path osc-lab
+```
+
+`oscnb.osc` finds it on the PATH, or at the path in the `OSC_LAB`
+environment variable.
 
 ## Setup
 
