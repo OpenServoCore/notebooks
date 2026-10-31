@@ -9,6 +9,7 @@ path.
   uv run python stages/2-motor/teardown/capture.py coil ring [N]       writes telemetry/<motor>__<board>/teardown/coil-ring-N
   uv run python stages/2-motor/teardown/capture.py coil noring [N]     writes telemetry/<motor>__<board>/teardown/coil-noring-N
   uv run python stages/2-motor/teardown/capture.py coil can [N]        writes telemetry/<motor>__<board>/teardown/coil-can-N
+  uv run python stages/2-motor/teardown/capture.py disc iv [N]         writes telemetry/<motor>/teardown/disc-iv-N
 
 `terminals` looks for a path across the motor's terminals that is not the
 winding, on the end cap with its brush card seated back on the empty can
@@ -62,6 +63,15 @@ the rotor back into the can with its magnets, no end cap and no brushes,
 the shaft clamped so it cannot turn: the can's steel and the magnets come
 back, the brushes stay out.
 
+`disc iv` asks whether the gray disc is a varistor or only a capacitor ring
+with a leak, once it is off the rotor with the commutator's segments still
+fused to its pads and two leads on two of its pads. The meter reads the
+open probes' capacitance, then ohms and capacitance across the leads, then
+sits on DC current in series while the DPS steps the leads from 0 to
+DISC_V_MAX and back under a current limit of DISC_AMPS, once each way
+round. A capacitor ring passes a current that follows the volts in a
+straight line; a varistor turns up sharply at its knee.
+
 The masses, the photos and the counts of the teardown go into the notebook
 by hand.
 """
@@ -90,6 +100,10 @@ PROBE_MS = 5                 # at 100 %, 25 times the winding's L/R, about 15 mJ
 TAIL = 30                    # probes 0.2 s apart closing each heat, the copper's first six seconds of cooling
 COOL = [(60, 1000), (108, 5000)]   # probes and their spacing in ms: once a second to a minute, then every 5 s to 10 min
 BURST_V = 5.0                # inductance's rail, so the coil's bursts sit beside the motor's
+DISC_V_MAX = 20              # well over the 7.4 V the bridge drives, where a low-voltage varistor's knee would sit
+DISC_STEP_V = 1
+DISC_STEP_S = 5
+DISC_AMPS = 0.002            # holds a varistor past its knee to milliwatts; the leak alone is ~0.1 mA at 20 V
 COIL_GROUPS = [              # inductance fast-1's groups: (folder, duty %, direction, decay)
     ("f1-fwd-25", 25, "fwd", "fast"),
     ("f2-fwd-40", 40, "fwd", "fast"),
@@ -193,6 +207,49 @@ if "terminals" in args:
     print("wrote", out)
     sys.exit()
 
+if "disc" in args and "iv" in args:
+    out = capture.dataset(motor.key, "teardown", ["", *n], name="disc-iv")
+    print("motor", motor.key)
+    capture.prompt("The gray disc off the rotor, the segments still on its pads, two leads on two of its pads, "
+                   "hands off it. DMM on capacitance, probes apart in air. Bluetooth on.")
+    marks = capture.Marks(out)
+    up = list(range(0, DISC_V_MAX + 1, DISC_STEP_V))
+    with b41t.Meter() as meter:
+        window(meter, marks, out, "open cap", "F", IV_WINDOW_S)
+        capture.prompt("DMM on ohms, auto range, probes on the two leads' free ends.")
+        window(meter, marks, out, "pair ohm", "ohm", IV_WINDOW_S)
+        capture.prompt("DMM on capacitance, probes on the two leads' free ends.")
+        window(meter, marks, out, "pair cap", "F", IV_WINDOW_S)
+        capture.prompt("DMM on DC current, its lowest range (uA if it has one) held with RANGE, red probe in the "
+                       "matching jack. DPS leads OFF the disc's leads for now: the DPS turns on at 0 V next.")
+        p = dps150.open_supply()
+        try:
+            dps150.on(p, 0.0, DISC_AMPS)
+            for way, wiring in (("pos", "DPS + -> meter red, meter COM -> the white lead, the black lead -> DPS -."),
+                                ("neg", "Swap the disc's leads: DPS + -> meter red, meter COM -> the black lead, "
+                                        "the white lead -> DPS -.")):
+                p.set_voltage(0.0)
+                capture.prompt(wiring)
+                with open(out / f"steps-{way}.csv", "w", newline="") as f, \
+                        meter.log(out / f"iv-{way}.csv", expect="DC A"):
+                    w = csv.writer(f)
+                    w.writerow(["t_host", "volts_set", "dps_volts", "dps_amps"])
+                    for v in up + up[-2::-1]:
+                        p.set_voltage(float(v))
+                        marks.mark(f"{way} {v} V")
+                        time.sleep(DISC_STEP_S)
+                        r = dps150.read(p)
+                        w.writerow([f"{time.time():.3f}", v, f"{r.output_voltage:.3f}", f"{r.output_current:.4f}"])
+                        print(f"{way} {v:>2} V: DPS {r.output_voltage:.2f} V {r.output_current * 1e3:.2f} mA", flush=True)
+        finally:
+            dps150.off(p)
+            p.close()
+        print("DPS off")
+    marks.mark("end")
+    marks.close()
+    print("wrote", out)
+    sys.exit()
+
 if "coil" in args and ({"ring", "noring", "can"} & set(args)):
     wiring = next(w for w in ("noring", "ring", "can") if w in args)
     board = boards.BOARDS[boards.DEFAULT]
@@ -216,7 +273,7 @@ if "coil" in args and ({"ring", "noring", "can"} & set(args)):
     sys.exit()
 
 if "cool" not in args or not ({"winding", "core"} & set(args)):
-    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N] | coil ring [N] | coil noring [N] | coil can [N]")
+    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N] | coil ring [N] | coil noring [N] | coil can [N] | disc iv [N]")
 place = "winding" if "winding" in args else "core"
 board = boards.BOARDS[boards.DEFAULT]
 out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"cool-{place}")
