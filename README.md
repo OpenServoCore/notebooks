@@ -14,7 +14,7 @@ the bench order are the same.
 ### 0. Instruments
 
 Folder `stages/0-instruments/`. Targets the rulers. The DMM, the power resistors, the camera tag, the
-thermocouple thermocouple and the clock that lines their logs up.
+thermocouple and the clock that lines their logs up.
 
 The later stages compare their results against these, so each one gets its
 own error bar first. No board and no servo on the bench.
@@ -119,8 +119,8 @@ SG90 second to check the methods carry over.
 
 ### Grade the tools
 
-The notebooks hold the outside truth, a DMM, a camera, a thermocouple
-thermocouple. The tools are scored against it, and the range where an experiment
+The notebooks hold the outside truth, a DMM, a camera, a thermocouple.
+The tools are scored against it, and the range where an experiment
 holds becomes the range where the tool stops.
 
 ### Teach
@@ -229,6 +229,17 @@ value, its bounds, the unit and the capture it came from. An experiment run
 on a servo and board pair writes `results/<servo>__<board>.json` in its
 folder instead, one file per pair. A later stage reads these files and
 nothing else from the stages before it.
+
+Once a stage settles, its README opens with a TL;DR. It holds the
+constants a later stage reads, with their bounds, unit, confidence and
+notebook, then the key findings, the open questions and what the next stage
+takes. The constants table is not typed by hand. The stage's `tldr.toml`
+holds the hand-written parts of each row, the label, the result and key, the
+figures, what the bounds are and the confidence, and the numbers come from
+the result files. After a re-record or a spec change,
+`uv run python -m oscnb.tldr` rewrites the table between the
+`tldr:constants` markers in the README, and `uv run pytest` fails while a
+README is stale. A stage with no `tldr.toml` is skipped.
 
 ## osc-lab
 
