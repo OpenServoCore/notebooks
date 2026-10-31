@@ -143,8 +143,11 @@ How: three cycles of a 300 ms spin at 100 % from rest and a 0.6 s coast,
 both directions, on a 5.0 V rail, twenty seconds apart. The rotor's
 inertia is the load, so the run-up sweeps the curve from stall to no load.
 The shaft torque is the inertia times the rise of the speed, and with the
-drag at that speed added it is the motor's whole torque, which the torque
-constant times the current checks. The ripple counts the speed from about
+drag at that speed added it is the motor's whole torque, the torque
+constant times the current. The inertia is read from those two together,
+so the torque constant is taken equal to the back-EMF constant and not
+checked, and the drag is no-load-current's with bemf-coast's reading term
+taken out, since nothing switches at 100 %. The ripple counts the speed from about
 200 rev/s up, and the first milliseconds read the stall end below that.
 The bemf-coast spins at partial duty are left out, since there the current
 switches and the curve is another one. The spin is short because a free
