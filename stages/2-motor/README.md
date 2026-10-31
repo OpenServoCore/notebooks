@@ -159,21 +159,23 @@ comes after rest-resistance and inductance, its last inputs.
 ## [teardown](teardown/teardown.ipynb)
 
 Targets: the masses, dimensions and counts of every part, and the rotor's
-inertia bounded from its mass and size. Any path across the motor's
+inertia as a uniform cylinder of its mass and size, a reference beside the
+earlier readings. Any path across the motor's
 terminals other than the winding. The winding's own resistance with no
 brushes in the path, and with the leads read on their own, the share of
 the terminal resistance the brushes own at the meter's milliamp and at the
 stall pass's current. The gray disc behind the commutator, held against the
 spike and the drive-only current inductance and bemf-coast left open. The
-coil runs put that current on the iron, an iron-loss conductance across
-the winding's inductance, about half in the rotor's laminations and the
-rest arriving with the can and the magnets, and the disc sweep reads the
-disc as a varistor ring, about 7.8 V at 1 mA per pad pair. And
-whether the copper's resistance through the board, over the textbook
-copper coefficient, reads the copper's temperature, and how the heated
-copper cools. The cooling's shape is the part a brushed motor of this
-class shares. Its numbers belong to this rotor in open air and feed no
-calibration.
+disc sweep reads the disc as a varistor ring, about 7.8 V at 1 mA per pad
+pair, and the ring holds the spike, taking a third to a half more charge
+per volt at a PWM edge than the meter's slow test reads. The coil runs put
+the drive-only current on one coil with no brushes and no ring, a few
+milliamps on the bare rotor that do not scale with the rail and more with
+the can and the magnets, beside an inductance that moves with the current,
+and leave which network carries it to motor-model. And how the heated
+copper cools, read by its resistance through the board. The cooling's
+shape is the part a brushed motor of this class shares. Its numbers
+belong to this rotor in open air and feed no calibration.
 
 The coefficient itself comes from earlier work, which soaked a whole MG90 of
 the same model in a dryer box until it sat at one temperature, a K
@@ -184,10 +186,10 @@ copper's 0.393, with a fixed term of -0.04 +/- 0.11 ohm, so the loop is
 copper with nothing else in series at rest and the textbook coefficient
 holds to about 2.5 %. That motor is a different unit than mg90-b, but the
 same model wound from the same wire in the same process should give a
-similar coefficient, so the teardown takes it as settled. Its cool run
-checks that the bare copper through the board reads its own temperature
-over that coefficient, and the shape of the heating and cooling, which a
-plateau soak never sees.
+similar coefficient, so the teardown takes it from there and does not
+test it, since its cool run has no reference that read the copper hot. The
+cool run reads the shape of the heating and cooling, which a plateau soak
+never sees.
 
 Needs: a 1 mg scale, a micrometer and calipers. For `terminals` the end
 cap with its brush card, the DMM on ohms, capacitance and DC mA, and the
@@ -231,7 +233,10 @@ across the coil, and `noring` moves one lead to the coil's free wire end
 cut from the third pad, so it does not. `can` keeps those leads and puts
 the rotor back in the can with its magnets, no end cap or brushes, the
 shaft clamped, so the can's steel and the magnets return without the
-brushes.
+brushes. `coil levels` then runs the same groups at 3.7, 5.0 and 7.4 V in
+one sitting with the disc off, on bridge-states' resistor and inductor A
+as the control, on one coil bare and on the same coil back in the can, so
+a current that follows the volts and one that does not read apart.
 
 `disc iv` takes the gray disc off the rotor, the segments still fused to
 its pads and two leads on two pads, and asks whether it is a varistor or a

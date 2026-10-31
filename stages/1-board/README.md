@@ -215,18 +215,16 @@ reads the current and terminal chains from here.
   current scale, offset and range, the terminal and rail tap scales and
   offsets, and the rail sag per amp.
 - [teardown](../2-motor/teardown/teardown.ipynb) reads the current scale
-  and offset, the terminal scale and offset, both 3.3 V excesses,
-  sample-timing's tap ON lag and OFF lag, and bridge-states' DC resistance
-  of the bare resistor and of the resistor with inductor A, with that
-  wiring's fast-decay ramp at 25 %, as the two loads its own fit of the
-  fast-decay edges runs on.
+  and offset, the terminal scale and offset, the terminal's 3.3 V excess
+  and both of the current's 3.3 V deviations, sample-timing's tap ON lag
+  and OFF lag, and bridge-states' fast-decay edges and the DC resistance
+  of the resistor with one inductor and with two, for the controls' ramp.
 
-Fast decay's edges are moving to bridge-states. As of this commit,
-bemf-coast and inductance read `fast_edge_lags_ticks` from the teardown's
-result, and the teardown fits its own edges and amplifier on bridge-states'
-two wirings, until their own corrections land. No stage 2 notebook reads
-`counts_per_a_class_pct`, sample-timing's `window_scale`, ntc-curve or
-opamp-temperature yet.
+Fast decay's edges live in bridge-states, and bemf-coast, inductance and
+the teardown read `fast_edge_lags_ticks` from its result. Inductance
+reads sample-timing's `window_scale`, and no-load-current, speed-torque
+and the teardown read current-scale's `counts_per_a_class_pct`. No stage 2
+notebook reads ntc-curve or opamp-temperature yet.
 
 ## [rest-noise](rest-noise/rest-noise.ipynb)
 

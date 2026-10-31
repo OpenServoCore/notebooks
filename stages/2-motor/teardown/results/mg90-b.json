@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1",
-  "notes": "Teardown of mg90-b after every other stage 2 experiment. Masses on a 1 mg scale, dimensions by micrometer (can) and calipers (rotor), counts off the parts and the photos, all from telemetry/mg90-b/teardown/hand.csv; each quantity's value is the mean of its readings and the bounds their range. j_cylinder_upper_kg_m2 is the rotor (1.123 g, no pinion) as a uniform cylinder of the stack's 7.03 mm, an upper bound since the shaft, commutator and disc sit at a smaller radius; the pinion adds at most pinion_j_pct if it sat at the stack's radius. end_cap_* are terminals-1, the end cap on the empty can: ohms across the tabs and from each tab to the can read OL in every packet, found from the raw bits (decimals 7, reading 0), capacitance across the tabs against the open probes in air, and the current with the DPS across the tabs at 3.7, 5.0 and 7.4 V, every packet 0.000 mA. pair_zero_ohm is terminals-1's settled lead zero, leads_ohm the motor's two leads in series less it. rotor_pair_ohm is the median of the three tab pairs read by hand, zeroed, the bounds their range, rotor_pairs_by_tab in the order 1-2, 2-3, 3-1; coil_ohm is 1.5 x each pair (three coils in a delta, each pair one coil in parallel with two in series), coil_direct_ohm one coil read alone after the disc work. The hand readings carry no thermometer: teardown_room_c is the cool run's room (room-c2 and the board phase before the heat, through the stage 0 correction) with +/- 2 C as the bracket. copper_leads_ohm is rotor_pair_ohm + leads_ohm at teardown_room_c; brush_path_meter_ohm is rest-resistance's r_ohms_median_ohm less copper_leads_ohm moved to rest-resistance's room_c over alpha 0.00393, the bounds the 2 C bracket and two meter steps; terminal_over_copper_stall_pct is rest-resistance's r_term_median_ohm over copper_leads_ohm moved to its board_ntc_c (a proxy, the stall pass's copper was not measured), the bounds from r_term's range over the holes, stall_excess_v that excess times r_term_amps, the most a brush drop can be if the copper sat at the proxy. The gray disc was read by hand after the coil wires were cut at one pad: the two pairs through that pad read two sectors in parallel (the other two pads tied by their coil), so ring_sector_nf = (pair - open-probe stray) / 2 and ring_sector_kohm = 2 x pair, the bounds the two pairs; at an edge the brushes see 1.5 sectors (each brush on one segment) to 2 sectors (a brush bridging two), ring_terminal_nf with the midpoint as value, ring_terminal_kohm 2/3 to 1/2 of a sector, all on the meter's ohms, which test the part at the meter's own small voltage. ring_leak_7v4_ua is the ring's current at 7.4 V from disc-iv-1's black-free pad pair (each brush on one segment), log-log between the swept steps, the bounds the four legs; it replaces a linear reading of the on-rotor ohms (35 to 47 uA), which a varistor does not follow. ring_spike_charge_nc holds each earlier ON-edge spike (inductance fast_on_edge_spike_nc at the window volts printed in the inductance notebook, bemf-coast spinning_by_point) beside Q = C x the window's volts for the ring's two geometries on the rotor. drive_only_over_ring_current is every earlier drive-only current (inductance's fast-decay step and bemf-coast's spinning step, both read at fast decay's own ON edge, fast_on_edge_step_corrected_ma and on_edge_step_corrected_ma, bemf-coast's crest over meter at its points, its reading term at 60 and 80 % on 5.0 V) over the black-free pad pair's swept current at the same volts, the median as value, the low bound against twice the pair (a brush bridging two segments, equal sectors), the high against the pair; it replaces drive_only_over_ring_leak, a ratio per volt against a linear leak. The disc off the rotor, its segments still fused to its pads: ring_off_rotor_pair_nf and _kohm are the three pad pairs by hand, named by the leads on them, the stray off, each one sector in parallel with the other two in series; ring_off_rotor_sector_nf and _kohm solve the three sectors from them, the kohm at the meter's test voltage and not a fixed resistance; ring_brushes_one_segment_nf is the pairs, ring_brushes_bridging_nf two sectors in parallel. disc-iv-1 reads the black-free pair: ring_pair_cap_nf its pair-cap window less open-cap, ring_pair_ohm_logged_kohm its pair-ohm window; each sweep step is the meter's median over the 2.5 s before the DPS's read-back; ring_v_at_1ma_v the power law between the steps around 1 mA on each leg (up and down, both polarities; the bounds the four legs), ring_exponent_at_1ma and ring_exponent_1_2v the local d ln I / d ln V between 7 and 8 V and between 1 and 2 V, ring_pair_ua_by_v the pair at 3.7, 5.0 and 7.4 V (bounds the legs) and at 8.4 V (the 7 to 8 V power law carried on), ring_polarity_pct and ring_up_down_pct negative over positive and down over up from 1 to 8 V, ring_dps_limit_* the steps where the DPS sat on its 2 mA limit, the meter kept over the DPS's read-back. The coil runs are telemetry/mg90-b__dev-v006-2A-D/teardown/coil-ring-1, coil-noring-1 and coil-can-1, read with inductance fast-1 hole 11 and bridge-states capture-1 ra and rab, every fast-decay burst but the first of its group. fast_edge_lags_ticks, amp_tau_ticks and amp_gain are fitted on bridge-states r and ra through a tick-level model of the bridge. window_offset_ma is the window's line from 150 ticks after the commanded start to 20 before its end, read at the fast-decay ON edge, the mean over the bursts +/- its standard error, window_offset_ms the same per volt of the ON jump, off_drop_over_offset the OFF edge's drop over it against what a conductance across the inductance gives. edge_charge_nc is the fold over the window's line from 20 ticks before to 40 after the ON edge (spike) and from 40 to 150 after (tail), ring_tail_nc coil-ring-1 less coil-noring-1 in the tail. iron_loss_* fit L0 || G behind R_s (rest-resistance's hole 11 stall resistance, the coil's leads by hand) with the ring's C across the terminals (its spike charge as one residual) from 150 ticks after the ON edge to the end of the floating stretch, both duties at once, the gain held, 1 sigma from the Jacobian scaled by chi2 with a C on its lower bound held; iron_loss_chi2 against L0 alone; iron_loss_share the ratios of G and of G x L0 with propagated sigmas. The cool run is telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1: the bare rotor in still air, held by its shaft in a clip, leads on commutator tabs 1 and 2 joined to the board by clips, heated at 100 % on the 3.3 V rail; R per streamed window is the median tap difference over the median shunt above the sweep's torque-off zero in raw counts, over the window's second half; R0 the median of the ten room probes; a rise is (R / R0 - 1) x (234.5 + tc_room_c), copper's coefficient referred to the room the probes sat at, a weighted copper temperature (coil 1-2 weighs 4, the other two 1 each), with the coefficient from earlier work and not measured here; heat_rise_c is the last 100 ms heating window, heat_peak_probe_c the first probe after the drive, fast_tau_s one exponential plus offset over the 30 probes 0.2 s apart after the drive (bounds +/- one standard error), slow_tau_s the same over the cool probes after the step, cool_step_c the step at flat_window_s (a clip contact, left out), pre_step_excess_c how far the cool probes from 25 s to the flat sit over the slow fit carried back, unresolved; c_eff_j_per_k is the first window's power through the stage 1 lines over its warming rate from 10 ms, the lower bound with stage 1's 3.3 V deviations divided out, an upper bound on what the weighted reading sees; the cool run's numbers belong to this rotor in open air and feed no calibration. tc_* is the thermocouple in the winding through the stage 0 correction, room-c1's 28.6 C flat is unexplained and not used.",
+  "notes": "Teardown of mg90-b after every other stage 2 experiment. Masses on a 1 mg scale, dimensions by micrometer (can) and calipers (rotor), counts off the parts and the photos, all from telemetry/mg90-b/teardown/hand.csv; each quantity's value is the mean of its readings and the bounds their range. j_cylinder_kg_m2 is the rotor (1.123 g, no pinion) as a uniform cylinder of the stack's 7.03 mm, a reference and not a bound, since the shaft, commutator and disc sit at a smaller radius and the copper and pole tips at the rim; j_rim_kg_m2 is every gram at the stack's rim, twice the cylinder, the ceiling the mass and size set; the pinion adds at most pinion_j_pct if it sat at the stack's radius. end_cap_* are terminals-1, the end cap on the empty can: ohms across the tabs and from each tab to the can read OL in every packet, found from the raw bits (decimals 7, reading 0), capacitance across the tabs against the open probes in air, and the current with the DPS across the tabs at 3.7, 5.0 and 7.4 V, every packet 0.000 mA. pair_zero_ohm is terminals-1's settled lead zero, leads_ohm the motor's two leads in series less it. rotor_pair_ohm is the median of the three tab pairs read by hand, zeroed, the bounds their range, rotor_pairs_by_tab in the order 1-2, 2-3, 3-1; coils_by_tab solves the three coils of a delta from the three pairs (each pair one coil in parallel with the other two in series), coil_ohm their mean and range, coil_direct_ohm one coil read alone after the disc work. The hand readings carry no thermometer: teardown_room_c is the cool run's room (room-c2 and the board phase before the heat, through the stage 0 correction) with +/- 2 C as the bracket. copper_leads_ohm is rotor_pair_ohm + leads_ohm at teardown_room_c; brush_path_meter_ohm is rest-resistance's r_ohms_median_ohm less copper_leads_ohm moved to rest-resistance's room_c over alpha 0.00393, the bounds the 2 C bracket and two meter steps; terminal_over_copper_stall_pct is rest-resistance's r_term_median_ohm over copper_leads_ohm moved to its board_ntc_c (a proxy, the stall pass's copper was not measured), the bounds from r_term's range over the holes, stall_excess_v that excess times r_term_amps, the most a brush drop can be if the copper sat at the proxy. The gray disc was read by hand after the coil wires were cut at one pad: the two pairs through that pad read two sectors in parallel (the other two pads tied by their coil), so ring_sector_nf = (pair - open-probe stray) / 2 and ring_sector_kohm = 2 x pair, the bounds the two pairs; at an edge the brushes see 1.5 sectors (each brush on one segment) to 2 sectors (a brush bridging two), ring_terminal_nf with the midpoint as value, ring_terminal_kohm 2/3 to 1/2 of a sector, all on the meter's ohms and slow capacitance test, which test the part at the meter's own small voltage. ring_leak_7v4_ua is the ring's current at 7.4 V from disc-iv-1's black-free pad pair (each brush on one segment), log-log between the swept steps, the bounds the four legs; it replaces a linear reading of the on-rotor ohms (35 to 47 uA), which a varistor does not follow. The disc off the rotor, its segments still fused to its pads: ring_off_rotor_pair_nf and _kohm are the three pad pairs by hand, named by the leads on them, the stray off, each one sector in parallel with the other two in series; ring_off_rotor_sector_nf and _kohm solve the three sectors from them, the kohm at the meter's test voltage and not a fixed resistance; ring_brushes_one_segment_nf is the pairs, ring_brushes_bridging_nf two sectors in parallel. disc-iv-1 reads the black-free pair: ring_pair_cap_nf its pair-cap window less open-cap, ring_pair_ohm_logged_kohm its pair-ohm window; each sweep step is the meter's median over the 2.5 s before the DPS's read-back, on its microamp range, which has no class in stage 0; ring_v_at_1ma_v the power law between the steps around 1 mA on each leg (up and down, both polarities; the bounds the four legs), ring_exponent_at_1ma and ring_exponent_1_2v the local d ln I / d ln V between 7 and 8 V and between 1 and 2 V, ring_pair_ua_by_v the pair at 3.7, 5.0 and 7.4 V (bounds the legs) and at 8.4 V (the 7 to 8 V power law carried on), ring_polarity_pct and ring_up_down_pct negative over positive and down over up from 1 to 8 V, ring_dps_limit_* the steps where the DPS sat on its 2 mA limit, the meter kept over the DPS's read-back. The coil runs are telemetry/mg90-b__dev-v006-2A-D/teardown/coil-ring-1, coil-noring-1 (the neighboring coil) and coil-can-1, read with inductance fast-1 hole 11 and bridge-states capture-1 r, ra and rab, every fast-decay burst but the first of its group, over each burst's own pre-step zero, which already holds the in-drive offset, at bridge-states' fast_edge_lags_ticks. window_offset_ma is the line through the window from 150 ticks after the commanded start to 20 before its end, read at the fast-decay ON edge, the mean over the bursts, the bounds the band's start moved from 100 to 250 ticks, window_offset_se_ma its standard error, window_offset_quad_ma a quadratic through the band from 150 read at the same edge (bounds +/- its standard error), window_v_on_v the window's volts, window_ramp_l_mh (V_on - R i_mid) / slope by direction, the line's slope and its value at the window's middle, R held (rest-resistance's hole 11 stall resistance, the coil's leads by hand less the lead zero, bridge-states' dc_r_ohm). edge_charge_nc is the 4-tick fold over the window's line from 20 ticks before to 40 after the ON edge (spike) and from 40 to 150 after (tail), an empty bin taking the line between its neighbors; ring_tail_nc is coil-ring-1 less coil-noring-1 in the tail, ring_edge_charge_nc and ring_edge_nf the same in the spike, over the window's volts, 1.5 sectors, ring_edge_sector_nf a sector, ring_edge_over_meter_pct it over the meter's 1.5 sectors on the rotor, the bounds over the pad pairs off it; motor_less_can_nc and _nf the motor's spike less coil-can-1's, which take the line's own shortfall out. ring_spike_charge_nc holds each spike (the motor's over its line and less coil-can-1, bemf-coast spinning_by_point spike_nc over its own line) beside Q = C x the window's volts for the ring's two geometries on the meter's capacitance (ring_nc) and at the sector's edge charge (edge_nc). drive_only_over_ring_current is every earlier drive-only current (the motor's window_offset_ma, the same read as inductance's fast_on_edge_step_corrected_ma, bemf-coast's fast-decay on_edge_step_corrected_ma, its crest over meter at its points and its reading term at 60 and 80 % on 5.0 V) over the black-free pad pair's swept current at the same volts, against the pair (each brush on one segment) and twice it (a brush bridging two, equal sectors), the value the median over every reading at both, the low bound the least against twice the pair, the high the most against the pair. The levels runs are telemetry/mg90-b__dev-v006-2A-D/teardown/coil-levels-ra-1, coil-levels-bare-1 and coil-levels-can-1, the same groups at 3.7, 5.0 and 7.4 V, read the same way: coil_levels_offset_ma the line read, coil_levels_offset_quad_ma the quadratic, coil_levels_v_on_v, coil_levels_ramp_l_mh and coil_levels_i_mid_ma by direction, R the leads by hand less the lead zero, and coil_levels_offset_per_v the slope of a line through the three rails of each read on the window's volts, burst by burst (bounds +/- its standard error). The cool run is telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1: the bare rotor in still air, held by its shaft in a clip, leads on commutator tabs 1 and 2 joined to the board by clips, heated at 100 % on the 3.3 V rail; R per streamed window is the median tap difference less terminal-chain's offset over the median shunt above the sweep's torque-off zero less current-scale's in-drive offset, in counts, over the window's second half; R0 the median of the ten room probes; a rise is (R / R0 - 1) x (234.5 + tc_room_c), copper's coefficient referred to the room the probes sat at, a weighted copper temperature (coil 1-2 weighs 4, the other two 1 each), with the coefficient from earlier work and not tested here; heat_rise_c is the last 100 ms heating window, heat_peak_probe_c the first probe after the drive, fast_tau_s one exponential plus offset over the 30 probes 0.2 s apart after the drive, the bounds the forms under the exponential in fast_tau_by_form_s (an offset, the slow fit carried on, a line), slow_tau_s one exponential plus offset over the cool probes after the step (bounds +/- one standard error), cool_step_c the step at flat_window_s (a clip contact, left out), pre_step_excess_c how far the cool probes from 25 s to the flat sit over the slow fit carried back, unresolved; c_eff_j_per_k is the first window's power through the stage 1 lines over its warming rate from 10 ms, the lower bound with stage 1's 3.3 V deviations divided out, an upper bound on what the weighted reading sees; the cool run's numbers belong to this rotor in open air and feed no calibration. tc_* is the thermocouple in the winding through the stage 0 correction, room-c1's 28.6 C flat is unexplained and not used.",
   "hand_readings": "telemetry/mg90-b/teardown/hand.csv",
   "terminals": "telemetry/mg90-b/teardown/terminals-1",
   "mass_whole_g": {
@@ -119,11 +119,17 @@
       "unit": "count"
     }
   },
-  "j_cylinder_upper_kg_m2": {
+  "j_cylinder_kg_m2": {
     "value": 6.937458837500002e-09,
     "lo": null,
     "hi": null,
-    "unit": "kg m^2"
+    "unit": "kg m^2, a uniform cylinder, a reference and not a bound"
+  },
+  "j_rim_kg_m2": {
+    "value": 1.3874917675000003e-08,
+    "lo": null,
+    "hi": null,
+    "unit": "kg m^2, every gram at the stack's rim, the ceiling"
   },
   "pinion_j_pct": {
     "value": 3.2947462154942118,
@@ -193,11 +199,16 @@
     4.03
   ],
   "coil_ohm": {
-    "value": 6.025000000000001,
-    "lo": 6.015000000000001,
-    "hi": 6.045,
+    "value": 6.0250668337041615,
+    "lo": 6.004999999999503,
+    "hi": 6.065200501113479,
     "unit": "ohm"
   },
+  "coils_by_tab": [
+    6.005,
+    6.005,
+    6.0652
+  ],
   "coil_direct_ohm": {
     "value": 6.010000000000001,
     "lo": 6.000000000000001,
@@ -223,13 +234,13 @@
     "unit": "ohm"
   },
   "terminal_over_copper_stall_pct": {
-    "value": 8.605845879604846,
-    "lo": 6.85706215899522,
-    "hi": 10.447377480646015,
+    "value": 8.605845879604889,
+    "lo": 6.857062158995242,
+    "hi": 10.447377480646058,
     "unit": "%"
   },
   "stall_excess_v": {
-    "value": 0.27663481531107387,
+    "value": 0.2766348153110751,
     "lo": null,
     "hi": null,
     "unit": "V"
@@ -265,61 +276,161 @@
     "unit": "uA"
   },
   "ring_spike_charge_nc": {
-    "inductance, locked, hole 11, fast decay, 25 %": {
+    "the motor, locked, hole 11, over its line, fast decay, 25 %": {
       "measured_nc": {
-        "value": 41.87475607424918,
+        "value": 38.819363482547494,
         "lo": null,
         "hi": null,
         "unit": "nC"
       },
       "volts": {
-        "value": 4.92,
+        "value": 4.920640259029268,
         "lo": null,
         "hi": null,
         "unit": "V"
       },
       "ring_nc": {
-        "value": 40.863060000000004,
-        "lo": 35.02548,
-        "hi": 46.70064000000001,
-        "unit": "nC"
+        "value": 40.86837767136759,
+        "lo": 35.030038004029365,
+        "hi": 46.706717338705815,
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 61.242179434658254,
+        "lo": 52.4932966582785,
+        "hi": 69.991062211038,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
         "value": 1.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
       }
     },
-    "inductance, locked, hole 11, fast decay, 40 %": {
+    "the motor less coil-can-1, fast decay, 25 %": {
       "measured_nc": {
-        "value": 37.759659157203615,
+        "value": 54.89506144548922,
         "lo": null,
         "hi": null,
         "unit": "nC"
       },
       "volts": {
-        "value": 4.9,
+        "value": 4.920640259029268,
         "lo": null,
         "hi": null,
         "unit": "V"
       },
       "ring_nc": {
-        "value": 40.69695000000001,
-        "lo": 34.883100000000006,
-        "hi": 46.51080000000001,
-        "unit": "nC"
+        "value": 40.86837767136759,
+        "lo": 35.030038004029365,
+        "hi": 46.706717338705815,
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 61.242179434658254,
+        "lo": 52.4932966582785,
+        "hi": 69.991062211038,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
         "value": 1.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the edge band"
       }
     },
-    "bemf-coast, spinning, slow decay, 5 V 30 %": {
+    "the motor, locked, hole 11, over its line, fast decay, 40 %": {
       "measured_nc": {
-        "value": 11.118557235727197,
+        "value": 33.87238166082951,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 4.900508655556525,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 40.70117463872472,
+        "lo": 34.886721118906905,
+        "hi": 46.51562815854254,
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 60.991621944721295,
+        "lo": 52.278533095475396,
+        "hi": 69.7047107939672,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
+      },
+      "inside": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
+      }
+    },
+    "the motor less coil-can-1, fast decay, 40 %": {
+      "measured_nc": {
+        "value": 54.28014397962532,
+        "lo": null,
+        "hi": null,
+        "unit": "nC"
+      },
+      "volts": {
+        "value": 4.900508655556525,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "ring_nc": {
+        "value": 40.70117463872472,
+        "lo": 34.886721118906905,
+        "hi": 46.51562815854254,
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 60.991621944721295,
+        "lo": 52.278533095475396,
+        "hi": 69.7047107939672,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
+      },
+      "inside": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
+      }
+    },
+    "bemf-coast, over its line, slow decay, 5 V 30 %": {
+      "measured_nc": {
+        "value": 25.822930963867325,
         "lo": null,
         "hi": null,
         "unit": "nC"
@@ -334,18 +445,30 @@
         "value": 40.819935237188005,
         "lo": 34.988515917589716,
         "hi": 46.65135455678629,
-        "unit": "nC"
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 61.169587361879294,
+        "lo": 52.43107488161082,
+        "hi": 69.90809984214776,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
         "value": 0.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
       }
     },
-    "bemf-coast, spinning, fast decay, 5 V 30 %": {
+    "bemf-coast, over its line, fast decay, 5 V 30 %": {
       "measured_nc": {
-        "value": 39.01640570960179,
+        "value": 41.78936866475738,
         "lo": null,
         "hi": null,
         "unit": "nC"
@@ -360,18 +483,30 @@
         "value": 40.89127519778229,
         "lo": 35.04966445524197,
         "hi": 46.73288594032262,
-        "unit": "nC"
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 61.27649189091906,
+        "lo": 52.522707335073484,
+        "hi": 70.03027644676465,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
         "value": 1.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
       }
     },
-    "bemf-coast, spinning, slow decay, 7.4 V 20 %": {
+    "bemf-coast, over its line, slow decay, 7.4 V 20 %": {
       "measured_nc": {
-        "value": 35.856405972083934,
+        "value": 52.13335927636373,
         "lo": null,
         "hi": null,
         "unit": "nC"
@@ -386,18 +521,30 @@
         "value": 60.645709715808195,
         "lo": 51.982036899264166,
         "hi": 69.30938253235222,
-        "unit": "nC"
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 90.878954536035,
+        "lo": 77.89624674517285,
+        "hi": 103.86166232689713,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
         "value": 0.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the edge band"
       }
     },
-    "bemf-coast, spinning, fast decay, 7.4 V 20 %": {
+    "bemf-coast, over its line, fast decay, 7.4 V 20 %": {
       "measured_nc": {
-        "value": 66.91461127092701,
+        "value": 70.48023383906042,
         "lo": null,
         "hi": null,
         "unit": "nC"
@@ -412,18 +559,30 @@
         "value": 60.646685066831935,
         "lo": 51.982872914427375,
         "hi": 69.3104972192365,
-        "unit": "nC"
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 90.88041612139295,
+        "lo": 77.89749953262253,
+        "hi": 103.86333271016338,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
-        "value": 1.0,
+        "value": 0.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
       }
     },
-    "bemf-coast, spinning, slow decay, 7.4 V 40 %": {
+    "bemf-coast, over its line, slow decay, 7.4 V 40 %": {
       "measured_nc": {
-        "value": 28.60812465011595,
+        "value": 42.954378695822754,
         "lo": null,
         "hi": null,
         "unit": "nC"
@@ -438,18 +597,30 @@
         "value": 60.548996695010345,
         "lo": 51.89914002429458,
         "hi": 69.19885336572611,
-        "unit": "nC"
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 90.73402790789729,
+        "lo": 77.77202392105481,
+        "hi": 103.69603189473976,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
         "value": 0.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
       }
     },
-    "bemf-coast, spinning, fast decay, 7.4 V 40 %": {
+    "bemf-coast, over its line, fast decay, 7.4 V 40 %": {
       "measured_nc": {
-        "value": 40.76507668187424,
+        "value": 45.26701809429303,
         "lo": null,
         "hi": null,
         "unit": "nC"
@@ -464,20 +635,32 @@
         "value": 60.46644019764294,
         "lo": 51.828377312265374,
         "hi": 69.1045030830205,
-        "unit": "nC"
+        "unit": "nC, the meter's capacitance on the rotor, 1.5 to 2 sectors"
+      },
+      "edge_nc": {
+        "value": 90.61031514724093,
+        "lo": 77.66598441192079,
+        "hi": 103.55464588256106,
+        "unit": "nC, the sector's edge charge, 1.5 to 2 sectors"
       },
       "inside": {
         "value": 0.0,
         "lo": null,
         "hi": null,
-        "unit": "1 if inside the ring's band"
+        "unit": "1 if inside the meter's band"
+      },
+      "inside_edge": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1 if inside the edge band"
       }
     }
   },
   "drive_only_over_ring_current": {
-    "value": 54.13016580746928,
-    "lo": 15.690496265223493,
-    "hi": 118.92146163002705,
+    "value": 41.004891496829124,
+    "lo": 15.690496265223489,
+    "hi": 118.82644969047317,
     "unit": "ratio"
   },
   "ring_off_rotor_pair_nf": {
@@ -658,259 +841,529 @@
     "hi": 2.0,
     "unit": "mA"
   },
-  "fast_edge_lags_ticks": {
-    "on": {
-      "value": 8.0,
-      "lo": null,
-      "hi": null,
-      "unit": "ticks after the commanded start"
-    },
-    "off": {
-      "value": 12.0,
-      "lo": null,
-      "hi": null,
-      "unit": "ticks after the commanded end"
-    }
-  },
-  "amp_tau_ticks": {
-    "value": 2.320540212797332,
-    "lo": null,
-    "hi": null,
-    "unit": "ticks"
-  },
-  "amp_gain": {
-    "value": 1.0033573597141692,
-    "lo": null,
-    "hi": null,
-    "unit": "ratio"
-  },
   "window_offset_ma": {
     "motor, fast-1 hole 11": {
       "25 %": {
-        "value": 18.03712906767151,
-        "lo": 17.787605148722633,
-        "hi": 18.28665298662039,
-        "unit": "mA"
+        "value": 18.037129067671493,
+        "lo": 17.516293608564194,
+        "hi": 19.660661905105727,
+        "unit": "mA, a line read, bounds the band's start"
       },
       "40 %": {
-        "value": 23.234104869015052,
-        "lo": 23.09807416122891,
-        "hi": 23.370135576801193,
-        "unit": "mA"
+        "value": 23.234104869015056,
+        "lo": 22.057524888834973,
+        "hi": 26.04096237792346,
+        "unit": "mA, a line read, bounds the band's start"
       }
     },
     "coil-can-1": {
       "25 %": {
-        "value": 18.045706086639004,
-        "lo": 17.838155922412533,
-        "hi": 18.253256250865476,
-        "unit": "mA"
+        "value": 18.045706086639022,
+        "lo": 16.460163616339756,
+        "hi": 19.567869100076322,
+        "unit": "mA, a line read, bounds the band's start"
       },
       "40 %": {
-        "value": 21.605918991534686,
-        "lo": 21.241268865854103,
-        "hi": 21.97056911721527,
-        "unit": "mA"
+        "value": 21.605918991534647,
+        "lo": 20.159207132131687,
+        "hi": 23.550331761810824,
+        "unit": "mA, a line read, bounds the band's start"
       }
     },
     "coil-noring-1": {
       "25 %": {
-        "value": 7.234628860050772,
-        "lo": 6.985056962146876,
-        "hi": 7.484200757954667,
-        "unit": "mA"
+        "value": 7.234628860050777,
+        "lo": 6.963578342533288,
+        "hi": 7.289527522219813,
+        "unit": "mA, a line read, bounds the band's start"
       },
       "40 %": {
-        "value": 9.503177320714688,
-        "lo": 9.28528451055627,
-        "hi": 9.721070130873105,
-        "unit": "mA"
+        "value": 9.503177320714682,
+        "lo": 9.06183384529143,
+        "hi": 10.212092266455157,
+        "unit": "mA, a line read, bounds the band's start"
       }
     },
     "coil-ring-1": {
       "25 %": {
-        "value": 7.833964732321988,
-        "lo": 7.508783018300149,
-        "hi": 8.159146446343826,
-        "unit": "mA"
+        "value": 7.833964732321996,
+        "lo": 7.77332513005137,
+        "hi": 8.145226199601671,
+        "unit": "mA, a line read, bounds the band's start"
       },
       "40 %": {
-        "value": 9.492025109932602,
-        "lo": 9.320449383433163,
-        "hi": 9.66360083643204,
-        "unit": "mA"
+        "value": 9.492025109932582,
+        "lo": 9.212381936318966,
+        "hi": 10.78407303488924,
+        "unit": "mA, a line read, bounds the band's start"
       }
     },
     "ra": {
       "25 %": {
-        "value": 0.7273257222777221,
-        "lo": 0.4792767206415862,
-        "hi": 0.9753747239138579,
-        "unit": "mA"
+        "value": 0.7273257222777314,
+        "lo": 0.5145328481125335,
+        "hi": 0.8039181452078634,
+        "unit": "mA, a line read, bounds the band's start"
       },
       "40 %": {
-        "value": 0.7670772781876947,
-        "lo": 0.5544650945573874,
-        "hi": 0.979689461818002,
-        "unit": "mA"
+        "value": 0.7670772781877,
+        "lo": 0.628873370979929,
+        "hi": 0.8313652975569452,
+        "unit": "mA, a line read, bounds the band's start"
       }
     },
     "rab": {
       "25 %": {
         "value": 0.14428141831845775,
-        "lo": -0.11087366700937396,
-        "hi": 0.39943650364628946,
-        "unit": "mA"
+        "lo": -0.34364855856777576,
+        "hi": 0.34288005853570236,
+        "unit": "mA, a line read, bounds the band's start"
       },
       "40 %": {
-        "value": 0.454819877714026,
-        "lo": 0.3267034170408889,
-        "hi": 0.5829363383871631,
-        "unit": "mA"
+        "value": 0.4548198777140291,
+        "lo": 0.3672580543703865,
+        "hi": 0.5678213636626417,
+        "unit": "mA, a line read, bounds the band's start"
       }
     }
   },
-  "window_offset_ms": {
+  "window_offset_se_ma": {
     "motor, fast-1 hole 11": {
       "25 %": {
-        "value": 3.583804129464122,
-        "lo": 3.533750889125388,
-        "hi": 3.633857369802856,
-        "unit": "mS of the ON jump"
+        "value": 0.24952391894888254,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       },
       "40 %": {
-        "value": 4.430627573116581,
-        "lo": 4.4037350826311625,
-        "hi": 4.457520063602,
-        "unit": "mS of the ON jump"
+        "value": 0.13603070778614545,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       }
     },
     "coil-can-1": {
       "25 %": {
-        "value": 3.5987538285402483,
-        "lo": 3.557610910806703,
-        "hi": 3.6398967462737937,
-        "unit": "mS of the ON jump"
+        "value": 0.20755016422647093,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       },
       "40 %": {
-        "value": 4.084563952711057,
-        "lo": 4.016173182954539,
-        "hi": 4.152954722467575,
-        "unit": "mS of the ON jump"
+        "value": 0.364650125680589,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       }
     },
     "coil-noring-1": {
       "25 %": {
-        "value": 1.4505564252726368,
-        "lo": 1.3998963767020005,
-        "hi": 1.5012164738432732,
-        "unit": "mS of the ON jump"
+        "value": 0.24957189790389941,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       },
       "40 %": {
-        "value": 1.9057583491632404,
-        "lo": 1.86062662879175,
-        "hi": 1.9508900695347309,
-        "unit": "mS of the ON jump"
+        "value": 0.21789281015842665,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       }
     },
     "coil-ring-1": {
       "25 %": {
-        "value": 1.5852491830252857,
-        "lo": 1.515145111641233,
-        "hi": 1.6553532544093386,
-        "unit": "mS of the ON jump"
+        "value": 0.32518171402183493,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       },
       "40 %": {
-        "value": 2.1400320075366057,
-        "lo": 2.0967714753597693,
-        "hi": 2.183292539713442,
-        "unit": "mS of the ON jump"
+        "value": 0.17157572649943953,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       }
     },
     "ra": {
       "25 %": {
-        "value": 0.14653395086695192,
-        "lo": 0.09655970620657023,
-        "hi": 0.19650819552733362,
-        "unit": "mS of the ON jump"
+        "value": 0.24804900163613197,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       },
       "40 %": {
-        "value": 0.1544939286615276,
-        "lo": 0.11165011775754995,
-        "hi": 0.19733773956550527,
-        "unit": "mS of the ON jump"
+        "value": 0.21261218363030726,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       }
     },
     "rab": {
       "25 %": {
-        "value": 0.029020170270834707,
-        "lo": -0.022245955426175863,
-        "hi": 0.08028629596784528,
-        "unit": "mS of the ON jump"
+        "value": 0.25515508532783293,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       },
       "40 %": {
-        "value": 0.0912569549107876,
-        "lo": 0.06552051472321396,
-        "hi": 0.11699339509836124,
-        "unit": "mS of the ON jump"
+        "value": 0.12811646067313667,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, the line read's standard error over the bursts"
       }
     }
   },
-  "off_drop_over_offset": {
+  "window_offset_quad_ma": {
     "motor, fast-1 hole 11": {
       "25 %": {
-        "value": 1.9102761129323098,
-        "lo": null,
-        "hi": null,
-        "unit": "ratio, a conductance gives 2.22"
+        "value": 12.809764458718416,
+        "lo": 12.30705002451179,
+        "hi": 13.312478892925041,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
       },
       "40 %": {
-        "value": 1.94290236301526,
-        "lo": null,
-        "hi": null,
-        "unit": "ratio, a conductance gives 2.15"
+        "value": 14.75941215688682,
+        "lo": 14.535475692067221,
+        "hi": 14.983348621706417,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
       }
     },
     "coil-can-1": {
       "25 %": {
-        "value": 2.1078876774739,
-        "lo": null,
-        "hi": null,
-        "unit": "ratio, a conductance gives 2.23"
+        "value": 13.733759517348304,
+        "lo": 13.039631657307247,
+        "hi": 14.42788737738936,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
       },
       "40 %": {
-        "value": 2.251826741339876,
-        "lo": null,
-        "hi": null,
-        "unit": "ratio, a conductance gives 2.13"
+        "value": 15.858166474896459,
+        "lo": 15.378782349309613,
+        "hi": 16.337550600483304,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
       }
     },
     "coil-noring-1": {
       "25 %": {
-        "value": 3.27867616926487,
-        "lo": null,
-        "hi": null,
-        "unit": "ratio, a conductance gives 2.26"
+        "value": 7.316440815910025,
+        "lo": 6.74156325000671,
+        "hi": 7.89131838181334,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
       },
       "40 %": {
-        "value": 3.3077167464200303,
-        "lo": null,
-        "hi": null,
-        "unit": "ratio, a conductance gives 2.27"
+        "value": 6.0369698624634776,
+        "lo": 5.473132783314042,
+        "hi": 6.600806941612913,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
       }
     },
     "coil-ring-1": {
       "25 %": {
-        "value": 2.6532375524607987,
-        "lo": null,
-        "hi": null,
-        "unit": "ratio, a conductance gives 2.27"
+        "value": 6.0021865791593205,
+        "lo": 5.321037369859317,
+        "hi": 6.683335788459324,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
       },
       "40 %": {
-        "value": 2.8472042035299188,
+        "value": 4.796365061055665,
+        "lo": 4.441695364805453,
+        "hi": 5.151034757305878,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+      }
+    },
+    "ra": {
+      "25 %": {
+        "value": 0.15449042677637825,
+        "lo": -0.20330327428558553,
+        "hi": 0.5122841278383421,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+      },
+      "40 %": {
+        "value": 0.608625732340097,
+        "lo": 0.27405518812227186,
+        "hi": 0.943196276557922,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+      }
+    },
+    "rab": {
+      "25 %": {
+        "value": 0.500067727737215,
+        "lo": -0.03096721677471137,
+        "hi": 1.0311026722491414,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+      },
+      "40 %": {
+        "value": 0.14408325605509065,
+        "lo": -0.16183358185399283,
+        "hi": 0.4500000939641741,
+        "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+      }
+    }
+  },
+  "window_v_on_v": {
+    "motor, fast-1 hole 11": {
+      "25 %": {
+        "value": 4.92177266172461,
         "lo": null,
         "hi": null,
-        "unit": "ratio, a conductance gives 2.55"
+        "unit": "V"
+      },
+      "40 %": {
+        "value": 4.901263590686753,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "coil-can-1": {
+      "25 %": {
+        "value": 4.921269371637791,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "40 %": {
+        "value": 4.902521815903799,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "coil-noring-1": {
+      "25 %": {
+        "value": 4.929573658070297,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "40 %": {
+        "value": 4.90554155642471,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "coil-ring-1": {
+      "25 %": {
+        "value": 4.926553917549386,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "40 %": {
+        "value": 4.907554716771985,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "ra": {
+      "25 %": {
+        "value": 4.9536057597158845,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "40 %": {
+        "value": 4.938507057111328,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    "rab": {
+      "25 %": {
+        "value": 4.964552319104189,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "40 %": {
+        "value": 4.955618920063159,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    }
+  },
+  "window_ramp_l_mh": {
+    "motor, fast-1 hole 11": {
+      "25 %": {
+        "+1": {
+          "value": 0.6623837104437484,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.6505479854314946,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      },
+      "40 %": {
+        "+1": {
+          "value": 0.6943975104734912,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.6895240922016184,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      }
+    },
+    "coil-can-1": {
+      "25 %": {
+        "+1": {
+          "value": 0.650052368843785,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.7042584626490196,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      },
+      "40 %": {
+        "+1": {
+          "value": 0.6429496294038255,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.7353011150618318,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      }
+    },
+    "coil-noring-1": {
+      "25 %": {
+        "+1": {
+          "value": 0.6273424761034523,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.6157173729350681,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      },
+      "40 %": {
+        "+1": {
+          "value": 0.6221236562435971,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.6187036515580366,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      }
+    },
+    "coil-ring-1": {
+      "25 %": {
+        "+1": {
+          "value": 0.6335311849452618,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.6222569196561826,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      },
+      "40 %": {
+        "+1": {
+          "value": 0.6342500931209132,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 0.6360885677869366,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      }
+    },
+    "ra": {
+      "25 %": {
+        "+1": {
+          "value": 1.0430593655866227,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 1.0375638706737293,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      },
+      "40 %": {
+        "+1": {
+          "value": 1.0254912556294724,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 1.0184618760388442,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      }
+    },
+    "rab": {
+      "25 %": {
+        "+1": {
+          "value": 2.105561838975738,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 2.037244169915196,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
+      },
+      "40 %": {
+        "+1": {
+          "value": 2.074505126410246,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        },
+        "-1": {
+          "value": 2.0609933163039225,
+          "lo": null,
+          "hi": null,
+          "unit": "mH, (V_on - R i_mid) / slope"
+        }
       }
     }
   },
@@ -918,13 +1371,13 @@
     "motor, fast-1 hole 11": {
       "25 %": {
         "spike": {
-          "value": 39.60491019972709,
+          "value": 38.819363482547494,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": -1.981555566862447,
+          "value": -1.6647129540403742,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -932,13 +1385,13 @@
       },
       "40 %": {
         "spike": {
-          "value": 31.456508567781842,
+          "value": 33.87238166082951,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": -9.116820035538469,
+          "value": -9.812861785853157,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -948,13 +1401,13 @@
     "coil-can-1": {
       "25 %": {
         "spike": {
-          "value": -17.19185740316536,
+          "value": -16.07569796294172,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": -7.849511620803202,
+          "value": -9.124269411900316,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -962,13 +1415,13 @@
       },
       "40 %": {
         "spike": {
-          "value": -20.862067212998703,
+          "value": -20.407762318795807,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": -13.518449752746236,
+          "value": -14.959209576276079,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -978,13 +1431,13 @@
     "coil-noring-1": {
       "25 %": {
         "spike": {
-          "value": -2.4232285865247283,
+          "value": -4.377736630243031,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": -0.504895961025367,
+          "value": -1.0654671129284359,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -992,13 +1445,13 @@
       },
       "40 %": {
         "spike": {
-          "value": -7.887753701924244,
+          "value": -7.597891058193542,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": -6.15213040018304,
+          "value": -5.713784654289783,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1008,13 +1461,13 @@
     "coil-ring-1": {
       "25 %": {
         "spike": {
-          "value": 46.355516961306755,
+          "value": 46.50329433368191,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": 4.53240610140264,
+          "value": 4.725530907359938,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1022,13 +1475,13 @@
       },
       "40 %": {
         "spike": {
-          "value": 40.739140900033455,
+          "value": 46.41491448950404,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": 1.3713566521308855,
+          "value": 1.8223697379830932,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1038,13 +1491,13 @@
     "ra": {
       "25 %": {
         "spike": {
-          "value": 1.9001695036352908,
+          "value": 1.8162146653919902,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": 0.509025890606759,
+          "value": 0.3867595207028957,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1052,13 +1505,13 @@
       },
       "40 %": {
         "spike": {
-          "value": 1.0073282068367728,
+          "value": 1.1001001708289857,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "tail": {
-          "value": -0.6602423846024492,
+          "value": -0.6158502407395244,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1068,178 +1521,1134 @@
   },
   "ring_tail_nc": {
     "25 %": {
-      "value": 5.037302062428007,
+      "value": 5.790998020288374,
       "lo": null,
       "hi": null,
       "unit": "nC"
     },
     "40 %": {
-      "value": 7.523487052313926,
+      "value": 7.536154392272876,
       "lo": null,
       "hi": null,
       "unit": "nC"
     }
   },
-  "iron_loss_g_ms": {
-    "motor, fast-1 hole 11": {
-      "value": 4.615993076047104,
-      "lo": 4.382408255004791,
-      "hi": 4.849577897089416,
-      "unit": "mS"
+  "ring_edge_charge_nc": {
+    "25 %": {
+      "value": 50.881030963924935,
+      "lo": null,
+      "hi": null,
+      "unit": "nC, coil-ring-1 less coil-noring-1, 1.5 sectors"
     },
-    "coil-can-1": {
-      "value": 3.8182625999475874,
-      "lo": 3.7076505225829948,
-      "hi": 3.92887467731218,
-      "unit": "mS"
-    },
-    "coil-noring-1": {
-      "value": 1.8673331735232424,
-      "lo": 1.798072310656948,
-      "hi": 1.9365940363895366,
-      "unit": "mS"
-    },
-    "coil-ring-1": {
-      "value": 2.6137009994932257,
-      "lo": 2.4594657316015205,
-      "hi": 2.767936267384931,
-      "unit": "mS"
+    "40 %": {
+      "value": 54.01280554769758,
+      "lo": null,
+      "hi": null,
+      "unit": "nC, coil-ring-1 less coil-noring-1, 1.5 sectors"
     }
   },
-  "iron_loss_l0_mh": {
-    "motor, fast-1 hole 11": {
-      "value": 0.6847105240859868,
-      "lo": 0.6420321570113277,
-      "hi": 0.727388891160646,
-      "unit": "mH"
+  "ring_edge_nf": {
+    "25 %": {
+      "value": 10.32765140995155,
+      "lo": null,
+      "hi": null,
+      "unit": "nF, 1.5 sectors"
     },
-    "coil-can-1": {
-      "value": 0.6540844100496515,
-      "lo": 0.6244245442240951,
-      "hi": 0.6837442758752078,
-      "unit": "mH"
-    },
-    "coil-noring-1": {
-      "value": 0.6276772114413478,
-      "lo": 0.6075195825279653,
-      "hi": 0.6478348403547303,
-      "unit": "mH"
-    },
-    "coil-ring-1": {
-      "value": 0.6659878566354295,
-      "lo": 0.6157919447796196,
-      "hi": 0.7161837684912394,
-      "unit": "mH"
+    "40 %": {
+      "value": 11.008310536038891,
+      "lo": null,
+      "hi": null,
+      "unit": "nF, 1.5 sectors"
     }
   },
-  "iron_loss_g_l0_us": {
-    "motor, fast-1 hole 11": {
-      "value": 3.1606190382774986,
-      "lo": 2.906866482400529,
-      "hi": 3.414371594154469,
-      "unit": "us"
+  "ring_edge_sector_nf": {
+    "value": 7.111987315330147,
+    "lo": null,
+    "hi": null,
+    "unit": "nF"
+  },
+  "ring_edge_over_meter_pct": {
+    "value": 49.85224010388003,
+    "lo": 32.45568628004991,
+    "hi": 49.85224010388003,
+    "unit": "%, against 1.5 sectors on the rotor, bounds over that and the pad pairs off it"
+  },
+  "motor_less_can_nc": {
+    "25 %": {
+      "value": 54.89506144548922,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
     },
-    "coil-can-1": {
-      "value": 2.497466040101366,
-      "lo": 2.36307913164904,
-      "hi": 2.631852948553692,
-      "unit": "us"
-    },
-    "coil-noring-1": {
-      "value": 1.1720824791889912,
-      "lo": 1.1145778032614695,
-      "hi": 1.2295871551165132,
-      "unit": "us"
-    },
-    "coil-ring-1": {
-      "value": 1.7406931265383732,
-      "lo": 1.5740682922218476,
-      "hi": 1.9073179608548987,
-      "unit": "us"
+    "40 %": {
+      "value": 54.28014397962532,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
     }
   },
-  "iron_loss_chi2": {
-    "motor, fast-1 hole 11": {
-      "M0": {
-        "value": 898.3820536743596,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
+  "motor_less_can_nf": {
+    "25 %": {
+      "value": 11.1560810292437,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    },
+    "40 %": {
+      "value": 11.076430590134528,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    }
+  },
+  "coil_levels_offset_ma": {
+    "ra": {
+      "3.7 V": {
+        "25 %": {
+          "value": 0.12256709793953391,
+          "lo": 0.06591717073271353,
+          "hi": 0.42274471841657135,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 0.8689427545377564,
+          "lo": 0.7637750296281398,
+          "hi": 1.438384467371248,
+          "unit": "mA, a line read, bounds the band's start"
+        }
       },
-      "A1": {
-        "value": 10.279497659318604,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
+      "5.0 V": {
+        "25 %": {
+          "value": 0.563790712172636,
+          "lo": 0.563790712172636,
+          "hi": 0.9303026324509545,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 0.8763911237785518,
+          "lo": 0.7599789225327536,
+          "hi": 0.8763911237785518,
+          "unit": "mA, a line read, bounds the band's start"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": -0.9732531888410172,
+          "lo": -1.5475399939829773,
+          "hi": -0.7327529432474096,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 0.808900623060115,
+          "lo": 0.6336898076041546,
+          "hi": 1.604673450977712,
+          "unit": "mA, a line read, bounds the band's start"
+        }
       }
     },
-    "coil-can-1": {
-      "M0": {
-        "value": 269.217696151133,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
+    "bare": {
+      "3.7 V": {
+        "25 %": {
+          "value": 4.16466760572631,
+          "lo": 3.966188746229184,
+          "hi": 4.584379058073537,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 6.401083409276932,
+          "lo": 5.832952815471974,
+          "hi": 7.6046137209047835,
+          "unit": "mA, a line read, bounds the band's start"
+        }
       },
-      "A1": {
-        "value": 8.541058099107858,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
+      "5.0 V": {
+        "25 %": {
+          "value": 5.713662237752962,
+          "lo": 5.1717477130277345,
+          "hi": 6.204116081033769,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 9.13744408023319,
+          "lo": 8.162547645356575,
+          "hi": 11.001905559563246,
+          "unit": "mA, a line read, bounds the band's start"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": 8.019783508194864,
+          "lo": 6.727222656264351,
+          "hi": 10.412931408988715,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 12.449715821381451,
+          "lo": 11.302399245980855,
+          "hi": 15.727197604624008,
+          "unit": "mA, a line read, bounds the band's start"
+        }
       }
     },
-    "coil-noring-1": {
-      "M0": {
-        "value": 74.39230450530331,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
+    "can": {
+      "3.7 V": {
+        "25 %": {
+          "value": 11.272724685105846,
+          "lo": 9.788360233001217,
+          "hi": 14.08877091254788,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 16.682531810768097,
+          "lo": 14.752513536610929,
+          "hi": 20.062887669701944,
+          "unit": "mA, a line read, bounds the band's start"
+        }
       },
-      "A1": {
-        "value": 8.338626266478471,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
-      }
-    },
-    "coil-ring-1": {
-      "M0": {
-        "value": 302.74532584063155,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
+      "5.0 V": {
+        "25 %": {
+          "value": 16.608042183712183,
+          "lo": 13.984915961867555,
+          "hi": 19.873295974242165,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 22.62911837001259,
+          "lo": 20.635218761615505,
+          "hi": 26.74926307725425,
+          "unit": "mA, a line read, bounds the band's start"
+        }
       },
-      "A1": {
-        "value": 37.85010283079379,
-        "lo": null,
-        "hi": null,
-        "unit": "chi2/dof"
+      "7.4 V": {
+        "25 %": {
+          "value": 21.884579338750967,
+          "lo": 18.63436443943243,
+          "hi": 24.961304561848202,
+          "unit": "mA, a line read, bounds the band's start"
+        },
+        "40 %": {
+          "value": 27.028141721661736,
+          "lo": 24.68933646260176,
+          "hi": 30.49677181026142,
+          "unit": "mA, a line read, bounds the band's start"
+        }
       }
     }
   },
-  "iron_loss_share": {
-    "bare coil over coil in the can, G": {
-      "value": 0.48905310324881135,
-      "lo": 0.4660367125105309,
-      "hi": 0.5120694939870918,
-      "unit": "ratio"
+  "coil_levels_offset_quad_ma": {
+    "ra": {
+      "3.7 V": {
+        "25 %": {
+          "value": 0.5281379304739842,
+          "lo": 0.14263740983793677,
+          "hi": 0.9136384511100315,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": -1.1497552937780915,
+          "lo": -1.4641969501004608,
+          "hi": -0.8353136374557222,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "value": -0.665732073797701,
+          "lo": -1.2712120093035453,
+          "hi": -0.06025213829185683,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": 0.912813703637422,
+          "lo": 0.7080782082344634,
+          "hi": 1.1175491990403805,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": -0.840704174559904,
+          "lo": -1.53437935777103,
+          "hi": -0.1470289913487779,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": -2.3737409624514836,
+          "lo": -2.581106249245154,
+          "hi": -2.166375675657813,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      }
     },
-    "coil in the can over the motor, G": {
-      "value": 0.8271811800933958,
-      "lo": 0.7789492326777622,
-      "hi": 0.8754131275090294,
-      "unit": "ratio"
+    "bare": {
+      "3.7 V": {
+        "25 %": {
+          "value": 4.556951510135445,
+          "lo": 4.126806916750893,
+          "hi": 4.987096103519996,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": 2.31374675272317,
+          "lo": 2.0580161272859643,
+          "hi": 2.569477378160376,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "value": 3.2357298511565933,
+          "lo": 2.5805002076097803,
+          "hi": 3.8909594947034063,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": 2.6051804621844834,
+          "lo": 2.2242650586394044,
+          "hi": 2.9860958657295624,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": 1.6672343042650102,
+          "lo": 1.1373298654507045,
+          "hi": 2.197138743079316,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": 3.4002056853410796,
+          "lo": 3.105252586000134,
+          "hi": 3.6951587846820253,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      }
     },
-    "bare coil over the motor, G": {
-      "value": 0.40453552307368906,
-      "lo": 0.3791545758508721,
-      "hi": 0.42991647029650604,
-      "unit": "ratio"
+    "can": {
+      "3.7 V": {
+        "25 %": {
+          "value": 3.3882542986596427,
+          "lo": 2.7579329380216167,
+          "hi": 4.018575659297669,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": 6.187707878309025,
+          "lo": 5.732254021113953,
+          "hi": 6.643161735504097,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "value": 7.403256183137236,
+          "lo": 6.907200785027859,
+          "hi": 7.899311581246613,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": 10.694296154687812,
+          "lo": 10.307049088938655,
+          "hi": 11.08154322043697,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": 13.136611202363804,
+          "lo": 12.499844054782242,
+          "hi": 13.773378349945366,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        },
+        "40 %": {
+          "value": 17.78678929333241,
+          "lo": 17.04848439398249,
+          "hi": 18.52509419268233,
+          "unit": "mA, a quadratic through the band, bounds +/- its standard error"
+        }
+      }
+    }
+  },
+  "coil_levels_v_on_v": {
+    "ra": {
+      "3.7 V": {
+        "25 %": {
+          "value": 3.667699587894415,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 3.6552431582456553,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "value": 4.945678940848492,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 4.9318384634609815,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": 7.3247311812399145,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 7.299440854377281,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      }
     },
-    "motor over coil in the can, G x L0": {
-      "value": 1.265530336560339,
-      "lo": 1.143216734505593,
-      "hi": 1.387843938615085,
-      "unit": "ratio"
+    "bare": {
+      "3.7 V": {
+        "25 %": {
+          "value": 3.649077854682128,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 3.633224216947342,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "value": 4.927308852679614,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 4.907932184337099,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": 7.298434274203644,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 7.263203968126343,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      }
+    },
+    "can": {
+      "3.7 V": {
+        "25 %": {
+          "value": 3.63397915207757,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 3.611079453127325,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "value": 4.907554716771985,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 4.8754699737373,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "value": 7.26257485551782,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        },
+        "40 %": {
+          "value": 7.214762297270055,
+          "lo": null,
+          "hi": null,
+          "unit": "V"
+        }
+      }
+    }
+  },
+  "coil_levels_ramp_l_mh": {
+    "ra": {
+      "3.7 V": {
+        "25 %": {
+          "+1": {
+            "value": 1.0359742159939254,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 1.0253550623137078,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 1.0548610271185743,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 1.0380770921108964,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "+1": {
+            "value": 1.0435352170093304,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 1.0270153580895958,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 1.021147679080542,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 1.0185102858987616,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "+1": {
+            "value": 1.01987264028953,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 1.0036013625508993,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 1.0257576446950598,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 1.0253350287695429,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      }
+    },
+    "bare": {
+      "3.7 V": {
+        "25 %": {
+          "+1": {
+            "value": 0.5946706243384748,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.580421306848117,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 0.5977253539585984,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.5945543063450334,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "+1": {
+            "value": 0.5950738318121492,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.5853745880405498,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 0.6053589302143568,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.6002229422561223,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "+1": {
+            "value": 0.6066356668401309,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.5936654905926952,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 0.6133923609994185,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.6075118327397355,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      }
+    },
+    "can": {
+      "3.7 V": {
+        "25 %": {
+          "+1": {
+            "value": 0.40931510893398204,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.3459352064188562,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 0.43420295878545395,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.3455085392405713,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "+1": {
+            "value": 0.43146094724574,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.3449093889292595,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 0.461474132760053,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.3329666116912135,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "+1": {
+            "value": 0.46408793326858666,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.3261396240170664,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 0.49972345257651596,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          },
+          "-1": {
+            "value": 0.2957664786138241,
+            "lo": null,
+            "hi": null,
+            "unit": "mH, (V_on - R i_mid) / slope"
+          }
+        }
+      }
+    }
+  },
+  "coil_levels_i_mid_ma": {
+    "ra": {
+      "3.7 V": {
+        "25 %": {
+          "+1": {
+            "value": 22.078163801224967,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 21.572725496708003,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 34.162596779423026,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 34.32632853115256,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "+1": {
+            "value": 29.918633346637122,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 29.461581545712576,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 47.07444397498602,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 47.0030307487476,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "+1": {
+            "value": 43.41777374508959,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 42.961156335152985,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 68.94875613514415,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 68.63692022030799,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      }
+    },
+    "bare": {
+      "3.7 V": {
+        "25 %": {
+          "+1": {
+            "value": 40.72935586309682,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 40.49548166321837,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 61.20030185806974,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 61.4808353698829,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "+1": {
+            "value": 54.91090884830032,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 54.5058731730717,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 82.52656962197491,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 82.60019158831645,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "+1": {
+            "value": 79.61378740636731,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 79.37125938577904,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 119.94660190497521,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 119.99380366217821,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      }
+    },
+    "can": {
+      "3.7 V": {
+        "25 %": {
+          "+1": {
+            "value": 63.62390313804044,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 67.72448863592012,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 90.73325400855553,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 101.11034907372388,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      },
+      "5.0 V": {
+        "25 %": {
+          "+1": {
+            "value": 84.44776484263636,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 92.47805857039533,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 119.48942958871959,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 138.5132640845529,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      },
+      "7.4 V": {
+        "25 %": {
+          "+1": {
+            "value": 119.8150766217265,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 137.09150978977414,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        },
+        "40 %": {
+          "+1": {
+            "value": 168.12873799515376,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          },
+          "-1": {
+            "value": 212.59084500576128,
+            "lo": null,
+            "hi": null,
+            "unit": "mA"
+          }
+        }
+      }
+    }
+  },
+  "coil_levels_offset_per_v": {
+    "ra": {
+      "25 %": {
+        "line": {
+          "value": -0.3428839137137466,
+          "lo": -0.45368506013178206,
+          "hi": -0.23208276729571115,
+          "unit": "mA/V, a line through the rails of the line read, bounds +/- its standard error"
+        },
+        "quad": {
+          "value": -0.3353355608578314,
+          "lo": -0.554953182374779,
+          "hi": -0.11571793934088381,
+          "unit": "mA/V, a line through the rails of the quad read, bounds +/- its standard error"
+        }
+      },
+      "40 %": {
+        "line": {
+          "value": -0.018041878126171067,
+          "lo": -0.06297531538491241,
+          "hi": 0.026891559132570273,
+          "unit": "mA/V, a line through the rails of the line read, bounds +/- its standard error"
+        },
+        "quad": {
+          "value": -0.4680730253780113,
+          "lo": -0.6558742999354066,
+          "hi": -0.28027175082061606,
+          "unit": "mA/V, a line through the rails of the quad read, bounds +/- its standard error"
+        }
+      }
+    },
+    "bare": {
+      "25 %": {
+        "line": {
+          "value": 1.047066218875496,
+          "lo": 0.9256239150155062,
+          "hi": 1.1685085227354859,
+          "unit": "mA/V, a line through the rails of the line read, bounds +/- its standard error"
+        },
+        "quad": {
+          "value": -0.7743172464091221,
+          "lo": -0.9793013261095078,
+          "hi": -0.5693331667087365,
+          "unit": "mA/V, a line through the rails of the quad read, bounds +/- its standard error"
+        }
+      },
+      "40 %": {
+        "line": {
+          "value": 1.633750180459607,
+          "lo": 1.550637068137077,
+          "hi": 1.7168632927821372,
+          "unit": "mA/V, a line through the rails of the line read, bounds +/- its standard error"
+        },
+        "quad": {
+          "value": 0.3041498389525491,
+          "lo": 0.18587731759183534,
+          "hi": 0.42242236031326286,
+          "unit": "mA/V, a line through the rails of the quad read, bounds +/- its standard error"
+        }
+      }
+    },
+    "can": {
+      "25 %": {
+        "line": {
+          "value": 2.848874562739998,
+          "lo": 2.0200447912780275,
+          "hi": 3.6777043342019686,
+          "unit": "mA/V, a line through the rails of the line read, bounds +/- its standard error"
+        },
+        "quad": {
+          "value": 2.655960014567179,
+          "lo": 2.431194564189357,
+          "hi": 2.8807254649450007,
+          "unit": "mA/V, a line through the rails of the quad read, bounds +/- its standard error"
+        }
+      },
+      "40 %": {
+        "line": {
+          "value": 2.7911848871063736,
+          "lo": 1.3586879798349336,
+          "hi": 4.223681794377813,
+          "unit": "mA/V, a line through the rails of the line read, bounds +/- its standard error"
+        },
+        "quad": {
+          "value": 3.200538543468369,
+          "lo": 2.9950451292658835,
+          "hi": 3.406031957670854,
+          "unit": "mA/V, a line through the rails of the quad read, bounds +/- its standard error"
+        }
+      }
     }
   },
   "rise_coefficient_pct_per_c": {
@@ -1250,48 +2659,68 @@
   },
   "room_probe_spread_pct": {
     "value": 0.0,
-    "lo": -0.1681614349775873,
-    "hi": 0.22509848058525073,
+    "lo": -0.1691590426039946,
+    "hi": 0.22643915552298388,
     "unit": "%"
   },
   "heat_rise_c": {
-    "value": 41.67836552818967,
+    "value": 41.955847058834316,
     "lo": null,
     "hi": null,
     "unit": "C"
   },
   "heat_peak_probe_c": {
-    "value": 46.000444359577074,
+    "value": 46.310430819905484,
     "lo": null,
     "hi": null,
     "unit": "C"
   },
   "fast_tail_end_c": {
-    "value": 20.987464182964963,
+    "value": 21.117531250345,
     "lo": null,
     "hi": null,
     "unit": "C"
   },
   "fast_tau_s": {
-    "value": 2.1498321290259392,
-    "lo": 2.100250423499677,
-    "hi": 2.1994138345522014,
-    "unit": "s"
+    "value": 2.1487622507168473,
+    "lo": 1.7768413819271776,
+    "hi": 2.1487622507168473,
+    "unit": "s, bounds the forms under the exponential"
+  },
+  "fast_tau_by_form_s": {
+    "an offset": {
+      "value": 2.1487622507168473,
+      "lo": 2.099235201047912,
+      "hi": 2.198289300385783,
+      "unit": "s, +/- one standard error"
+    },
+    "the slow tail carried on": {
+      "value": 2.012455492105831,
+      "lo": 1.9671296275434833,
+      "hi": 2.0577813566681784,
+      "unit": "s, +/- one standard error"
+    },
+    "a line": {
+      "value": 1.7768413819271776,
+      "lo": 1.65455740546224,
+      "hi": 1.899125358392115,
+      "unit": "s, +/- one standard error"
+    }
   },
   "slow_tau_s": {
-    "value": 96.48576861820439,
-    "lo": 93.11159394136627,
-    "hi": 99.85994329504251,
+    "value": 96.47146183186096,
+    "lo": 93.09731945112382,
+    "hi": 99.8456042125981,
     "unit": "s"
   },
   "cool_step_c": {
-    "value": 4.200363917977486,
+    "value": 4.226975468329105,
     "lo": null,
     "hi": null,
     "unit": "C"
   },
   "cool_step_pct": {
-    "value": 1.5771028037383283,
+    "value": 1.5868547840825142,
     "lo": null,
     "hi": null,
     "unit": "%"
@@ -1303,33 +2732,33 @@
     "unit": "s"
   },
   "pre_step_excess_c": {
-    "value": 2.869075110770755,
-    "lo": 2.1837967643331293,
-    "hi": 3.8823941502465953,
+    "value": 2.8866534857559607,
+    "lo": 2.197541821252946,
+    "hi": 3.9070351292579453,
     "unit": "C"
   },
   "end_rise_c": {
-    "value": -0.14556633136060304,
-    "lo": -0.47249399359667704,
-    "hi": 0.14572988903626707,
+    "value": -0.1464308698534418,
+    "lo": -0.47434228678999446,
+    "hi": 0.14659637718596447,
     "unit": "C"
   },
   "heat_power_w": {
-    "value": 2.4645314685676185,
+    "value": 2.4645314685676176,
     "lo": 2.019496814376011,
-    "hi": 2.4645314685676185,
+    "hi": 2.4645314685676176,
     "unit": "W"
   },
   "heat_rate_c_per_s": {
-    "value": 17.740739935669517,
+    "value": 17.845160877012464,
     "lo": null,
     "hi": null,
     "unit": "C/s"
   },
   "c_eff_j_per_k": {
-    "value": 0.13891931664092735,
-    "lo": 0.11383385482787063,
-    "hi": 0.13891931664092735,
+    "value": 0.13810643039606016,
+    "lo": 0.11316775613816173,
+    "hi": 0.13810643039606016,
     "unit": "J/C"
   },
   "leads_board_end_ohm": {
@@ -1357,9 +2786,9 @@
     "unit": "s"
   },
   "tc_gap_after_2min_c": {
-    "value": -0.4239566799795278,
-    "lo": -2.210292534223396,
-    "hi": 0.17007453022132962,
+    "value": -0.4291939355530718,
+    "lo": -2.2335803121820126,
+    "hi": 0.17192282341464704,
     "unit": "C"
   }
 }
