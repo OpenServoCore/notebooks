@@ -91,7 +91,7 @@ Needs: motor in the rig, bar off, board, DPS, host; for `meter` and
 logging over Bluetooth; the stage 0 dmm result, the stage 1 current-scale,
 terminal-chain, rest-noise and sample-timing results, the rest-resistance
 result for the meter run's loop, the inductance result for the locked
-rotor's step, and the teardown result for fast decay's edges.
+rotor's step, and the bridge-states result for fast decay's edges.
 
 How: cycles of a 1.5 s spin at 15 to 60 % and a 0.8 s coast with the bridge
 open, both directions, three per duty, at 5.0 and 7.4 V, twenty seconds

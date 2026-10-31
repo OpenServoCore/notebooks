@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/dev-v006-2A-D/bridge-states/capture-1",
-  "notes": "the RL dummy, the bare 5 ohm resistor in series with Bourns 2300LL-102-H-RC power inductors (1 mH, 0.137 ohm nominal), A orange leads and B brown, joined with Dupont pigtails, in four wirings r, ra, rab, rb; dc_r_ohm is V/I of the 100 % laps through the current-scale and terminal-chain lines, the value the 3.7 V laps and the bounds every lap but r at 4.2 V, whose current sits against code 2047; dcr_*_ohm is the inductor plus one joint by difference of two wirings, median and range over the routes; the burst method is the inductance notebook's, unchanged, on the slow-decay bursts with the window scale k from r's own bursts over r's laps in this capture; every burst summary takes the bursts after the first of each set, the value the median and the bounds the range; l_ripple_mh is the median of the last three periods as in the inductance notebook; l_fast_ramp_mh is (V_on - R i) over the line through the fast-decay window's shunt, R the wiring's DC R, the first full window after the step on; ripple_over_fit_mg90_b is read from stages/2-motor/inductance/results/mg90-b.json, the mean of the two signs; sweep_* are the 150 ms rungs' crest and trough rows in mA over the torque-off zero less the in-drive offset, both directions averaged; return_us and return_over_window, the time the shunt reads the return and its share of the bridge's window, come from the fast-decay fold pooled per wiring, duty and sign, ramp_charge_uc is the window ramp's triangle and net_charge_uc the fold's whole period; keys are wiring_duty",
+  "notes": "the RL dummy, the bare 5 ohm resistor in series with Bourns 2300LL-102-H-RC power inductors (1 mH, 0.137 ohm nominal), A orange leads and B brown, joined with Dupont pigtails, in four wirings r, ra, rab, rb; dc_r_ohm is V/I of the 100 % laps through the current-scale and terminal-chain lines, the value the 3.7 V laps and the bounds every lap but r at 4.2 V, whose current sits against code 2047; dcr_*_ohm is the inductor plus one joint by difference of two wirings, median and range over the routes; the burst method is the inductance notebook's, unchanged, on the slow-decay bursts with the window scale k from r's own bursts over r's laps in this capture; every burst summary takes the bursts after the first of each set, the value the median and the bounds the range; l_ripple_mh is the median of the last three periods as in the inductance notebook; l_fast_ramp_mh is (V_on - R i) over the line through the fast-decay window's shunt, R the wiring's DC R, the first full window after the step on; sweep_* are the 150 ms rungs' crest and trough rows in mA over the torque-off zero less the in-drive offset, both directions averaged; return_us and return_over_window, the time the shunt reads the return and its share of the bridge's window, come from the fast-decay fold pooled per wiring, duty and sign, ramp_charge_uc is the window ramp's triangle and net_charge_uc the fold's whole period; fast_edge_lags_ticks, amp_tau_ticks and amp_gain are fitted on the fast-decay folds of r and ra at 25 and 40 %, every burst but the first of its set, through a tick-level model of the bridge, each lag the least misfit of a 2-tick scan, ON on the rising edge and the window with the amplifier's lag and gain fitted at each candidate, OFF on ra's OFF edge and return with the amplifier held; keys are wiring_duty",
   "dc_r_ohm": {
     "r": {
       "value": 5.084652395006554,
@@ -374,20 +374,6 @@
     },
     "rb_40": {
       "value": 0.901274351715321,
-      "lo": null,
-      "hi": null,
-      "unit": "ratio"
-    }
-  },
-  "ripple_over_fit_mg90_b": {
-    "25": {
-      "value": 0.7626667815573887,
-      "lo": null,
-      "hi": null,
-      "unit": "ratio"
-    },
-    "40": {
-      "value": 0.7139111015236891,
       "lo": null,
       "hi": null,
       "unit": "ratio"
@@ -876,5 +862,31 @@
       "hi": null,
       "unit": "mA"
     }
+  },
+  "fast_edge_lags_ticks": {
+    "on": {
+      "value": 8.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks after the commanded start"
+    },
+    "off": {
+      "value": 12.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks after the commanded end"
+    }
+  },
+  "amp_tau_ticks": {
+    "value": 2.3205370240103433,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "amp_gain": {
+    "value": 1.0033573595138292,
+    "lo": null,
+    "hi": null,
+    "unit": "ratio"
   }
 }

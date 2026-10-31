@@ -79,7 +79,7 @@ Run: `capture.py load`, `capture.py tap_a`, `capture.py rail`, `capture.py rail-
 ## [sample-timing](sample-timing/sample-timing.ipynb)
 
 Targets: the duty from which each crest sample reads the drive honestly,
-against the window floors the board registry carries, and the shunt's settle inside a window.
+against the window floors the board registry carries, the shunt's settle inside a window, and the window's scale, the load's V/I inside a window over its V/I at 100 % in the same sitting.
 
 Needs: board, DPS, bare load, host.
 
@@ -126,8 +126,10 @@ Run: `capture.py ammeter`, `capture.py rs1`, then the notebook.
 Targets: the burst inductance method on a load with no moving parts, the
 ripple L against the period fit, the fitted R against the DC R, and whether
 two inductors add. What the shunt and the taps read in each bridge state
-with a real inductive current, in slow and fast decay. The dummy's DC
-resistance.
+with a real inductive current, in slow and fast decay. The bridge's ON
+and OFF edges in fast decay and the shunt amplifier's lag and gain, board
+constants fitted through a tick-level model of the bridge on the resistor
+and one inductor. The dummy's DC resistance.
 
 Needs: board, DPS, bare load, two 1 mH power inductors (Bourns 2300LL-102-H-RC), A with orange leads and B with brown leads, Dupont pigtails, host.
 
