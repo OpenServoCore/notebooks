@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/dev-v006-2A-D/sample-timing/capture-1",
-  "notes": "duty ladders on the bare load at 7.4 V and 3.7 V, floors walked down from 15 % against the 7-15 % rungs. bursts folded on the PWM period, lags from the commanded edges, the settle from the commanded window start to 1 % of the plateau",
+  "notes": "duty ladders on the bare load at 7.4 V and 3.7 V, floors walked down from 15 % against the 7-15 % rungs. bursts folded on the PWM period, lags from the commanded edges, the settle from the commanded window start to 1 % of the plateau. window_scale is k, the window's V/I in the slow-decay bursts from 15 % up over the same rail's 100 % rungs, the window over the burst's own pre-step zero with no second subtraction of the in-drive offset, the edges at the mean of the two rails, the rungs over the torque-off zero less the in-drive offset; the value the mean of the two rails, the bounds the rails",
   "published_i_floor": {
     "value": 5.333333333333333,
     "lo": null,
@@ -108,5 +108,11 @@
     "lo": 65.0,
     "hi": 89.0,
     "unit": "ticks"
+  },
+  "window_scale": {
+    "value": 1.006331915441961,
+    "lo": 1.0045500774479592,
+    "hi": 1.0081137534359628,
+    "unit": "ratio"
   }
 }
