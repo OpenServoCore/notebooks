@@ -102,9 +102,11 @@ against the true mean current. `high` runs the same at 60, 80 and 100 % on
 nothing switches, as the zero of a driven bridge. `swapped` runs the 40 and 60 % cycles at
 7.4 V with the leads as wired and then swapped at the board's connector, to
 tell a direction split of the motor from one of the board. `spinning` keeps
-the meter in series and records bursts of the rotor already turning at the
-meter run's three points, slow and fast decay, both directions, for the
-current inside the PWM period.
+the meter in series and records bursts after 1.5 s at the burst's own duty
+at the meter run's three points, slow and fast decay, both directions, for
+the current inside the PWM period. Under fast decay the rotor stays still
+at 5.0 V 30 % and 7.4 V 20 %, below fast decay's onset, and turns only at
+7.4 V 40 %.
 
 Run: `uv run python stages/2-motor/bemf-coast/capture.py`, then
 `capture.py meter`, `capture.py high`, `capture.py swapped` and `capture.py spinning`, then the
