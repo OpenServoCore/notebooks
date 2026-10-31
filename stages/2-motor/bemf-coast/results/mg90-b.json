@@ -1,17 +1,29 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/bemf-coast/capture-1",
-  "notes": "cycles of a 1.5 s spin and a 0.8 s coast with the bridge open, both directions, 15 to 60 % at 5.0 and 7.4 V; ke_v_s_per_rad is the coast route, the EMF over the whole ripple cycles closest to 10 ms (at least 3) from 1 ms past the cut over the speed counted in the same rows, 6 ripple events per revolution, with the rows where the brush path opens bridged, mean over the cycles; its bounds are the span the choice of the tap difference's zero leaves (none, the rest difference, the coast's own tail), each with the cycles' sd, since the zero is open; ke_by_zero carries each read with the open rows masked, with its trend down the coast, its EMF line's intercept and its direction split beside it; ke_read_v_s_per_rad leaves those rows as read; the windows down the coast give ke_speed_trend_pct_per_100_rev_s under the rest zero; the spin route is E0 at the cut over the spin's current-ripple speed and is reported as its paired difference; terminal volts through the stage 1 terminal-chain scale with each cycle's rest difference as the zero, current through current-scale with its in-drive offset taken out (i_spin_a) and, beside it, with the open bridge's own zero (i_spin_open_zero_a); cycles is the per-cycle table no-load-current reads. Added with the meter, the high, the swapped and the spinning runs: reading_term_a_per_v is the crest sample over a DMM in series (meter-1), per volt of the terminal difference at the crest sample, the mean over every spin with the three points as the bounds; i_spin_meter_a in cycles is i_spin_a less the term by duty times the spin's own v_on_v, the mean current a series meter reads; reading_term_by_duty is that term, piecewise linear in the commanded duty through meter-1's mean at 20, 30 and 40 % and high-1's mean at 60, 80 and 100 % on 5.0 V, held at meter-1's value below 20 %, per volt and taken as the same on either rail, so the 7.4 V 60 % cycles carry the 5.0 V value; its bounds are the mean +/- the spins' sd, all of meter-1's spins at its three duties; only the 60 % cycles' i_spin_meter_a differ from the constant term; a later notebook that needs the motor's mean current takes i_spin_meter_a, and one that subtracts a drag from a crest-sampled current at the same rail and duty keeps i_spin_a, since the term is in both; i_spin_a and i_spin_open_zero_a stay as they were. meter_by_point carries meter-1 per point, the meter's burden in the loop; direction_split_by_run and coast_decel_split_by_run_pct are capture-1 and swapped-1's wired and swapped blocks by the board's direction, the speed from the coast's first window; between_window_zero_counts is the shunt between windows in the spinning bursts over current-scale's torque-off zero; spinning_by_point is spinning-1, slow decay's line through the window at the bridge's edges and at the crest sample, fast decay's mean over whole periods and its step at the ON edge. In fast decay the keys ending in _corrected read the bridge's edges at the teardown's fast_edge_lags_ticks, 8 ticks after the commanded start and 12 after its end, the step on a line from 150 ticks after the commanded start to 20 before its end and the period mean signed at the same edges, over the same zero between windows; period_mean_ma, period_mean_if_board_high_ma, on_edge_step_ma and step_ma_per_v keep the first reading at sample-timing's slow-decay lags, and a later notebook takes the _corrected keys; bounds are the two directions",
+  "notes": "cycles of a 1.5 s spin and a 0.8 s coast with the bridge open, both directions, 15 to 60 % at 5.0 and 7.4 V; ke_v_s_per_rad is the coast route, the EMF over the whole ripple cycles closest to 10 ms (at least 3) from 1 ms past the cut over the speed counted in the same rows, 6 ripple events per revolution, with the rows where the brush path opens bridged, mean over the cycles, the rest difference taken off both directions alike, which sits between no zero and the coast's own tail; its bounds are the same per-cycle read under no zero and under the tail, the zeros that keep the directions together, each end widened by the rail split at matched speed and the estimator's share in quadrature (ke_rail_split_matched_pct, ke_estimator_pct), since the zero is open; ke_by_zero carries each read with the open rows masked, with its trend down the coast, its EMF line's intercept and its direction split beside it; ke_read_v_s_per_rad leaves those rows as read; the windows down the coast give ke_speed_trend_pct_per_100_rev_s under the rest zero; the spin route is E0 at the cut over the spin's current-ripple speed and is reported as its paired difference; terminal volts through the stage 1 terminal-chain scale with each cycle's rest difference as the zero, current through current-scale with its in-drive offset taken out (i_spin_a) and, beside it, with the open bridge's own zero (i_spin_open_zero_a); cycles is the per-cycle table no-load-current reads. Added with the meter, the high, the swapped and the spinning runs: reading_term_a_per_v is the crest sample over a DMM in series (meter-1), per volt of the terminal difference at the crest sample, with the meter's own resistance in the loop, the mean over every spin with the three points, each widened by its systematics (the in-drive offset, the counts per amp and the meter's class), as the bounds; i_spin_meter_a in cycles is i_spin_a less the term by duty times the spin's own v_on_v, the term as measured with the meter in the loop carried into capture-1, which ran without one; i_spin_meter_rl_bias_ma is what a plain R-L of the loop says that carries of the meter's own resistance, i_spin_meter_a less the mean current, its bounds over the inductance the spinning ramps give (loop_l_ramp_mh); reading_term_by_duty is that term, piecewise linear in the commanded duty through meter-1's point at 20 % (7.4 V), 30 % (5.0 V) and 40 % (7.4 V) and high-1's mean at 60, 80 and 100 % on 5.0 V, held at the 20 % point below 20 %, per volt and taken as the same on either rail, so the 7.4 V 60 % cycles carry the 5.0 V value; its bounds are the mean +/- the spins' sd and the systematics in quadrature; a later notebook that needs the motor's mean current takes i_spin_meter_a with i_spin_meter_rl_bias_ma beside it, and one that subtracts a drag from a crest-sampled current at the same rail and duty keeps i_spin_a, since the term is in both; i_spin_a and i_spin_open_zero_a stay as they were. meter_by_point carries meter-1 per point, the meter's burden in the loop, loop_ohm over the bridge's own slow-decay window share; direction_split_by_run and coast_decel_split_by_run_pct are capture-1 and swapped-1's wired and swapped blocks by the board's direction, the speed from the coast's first window; between_window_zero_counts is the shunt between windows in the spinning bursts over current-scale's torque-off zero; spinning_by_point is spinning-1, slow decay's line read through the window at the bridge's edges and at the crest sample, and the crest sample itself (crest_sample_*, a quadratic through the pooled samples within 150 ticks of it, the half-width from 100 to 200 as the bounds), fast decay's mean over whole periods and its line read at the ON edge. The fast-decay period mean pools every sample of a burst's whole periods into 8-tick phase bins and takes the mean of the bin means, every bin filled; the rotor is still in fast decay at 5.0 V 30 % and 7.4 V 20 % (floating_v, the terminal difference before the ON edge) and turns at 7.4 V 40 %. In fast decay the keys ending in _corrected read the bridge's edges at bridge-states' fast_edge_lags_ticks, 8 ticks after the commanded start and 12 after its end, the line read from 150 ticks after the commanded start to 20 before its end, its bounds the band's start moved from 100 to 250 ticks, and the period mean signed at the same edges, over the same zero between windows; period_mean_ma, period_mean_if_board_high_ma, on_edge_step_ma and step_ma_per_v sign the period at sample-timing's slow-decay lags instead, and a later notebook takes the _corrected keys; spike_nc is the spike's charge from the bridge's own ON edge in each decay to the shunt's settle; other bounds are the two directions",
   "ke_v_s_per_rad": {
     "value": 0.0011683788605218186,
-    "lo": 0.0011609130609392226,
-    "hi": 0.001174512840342053,
+    "lo": 0.001160517736950206,
+    "hi": 0.0011725120516164766,
     "unit": "V s/rad"
   },
   "ke_mv_per_rev_s": {
     "value": 7.3411408896499175,
-    "lo": 7.2942318874062035,
-    "hi": 7.3796818215309505,
+    "lo": 7.291747993526839,
+    "hi": 7.367110495207639,
     "unit": "mV per rev/s"
+  },
+  "ke_rail_split_matched_pct": {
+    "value": -0.2219139098780909,
+    "lo": -0.2631766742073438,
+    "hi": -0.149063804477223,
+    "unit": "%, 7.4 V over 5.0 V less one at matched speed, the three rung pairs"
+  },
+  "ke_estimator_pct": {
+    "value": 0.10993191228043653,
+    "lo": null,
+    "hi": null,
+    "unit": "%, the pooled mean's largest move over the band-pass and window-start choices"
   },
   "ke_by_zero": {
     "none": {
@@ -276,8 +288,8 @@
     "unit": "%"
   },
   "spin_current_drift_ma": {
-    "value": -0.12655503708646948,
-    "lo": -3.6563444026836294,
+    "value": -0.12655503708646756,
+    "lo": -3.656344402683615,
     "hi": 0.6563798987950236,
     "unit": "mA"
   },
@@ -377,7 +389,7 @@
           "unit": "%, -1 over +1 less one, the coast's first window"
         },
         "current_ma": {
-          "value": -8.161650860151012,
+          "value": -8.161650860151,
           "lo": null,
           "hi": null,
           "unit": "mA, -1 less +1"
@@ -433,7 +445,7 @@
           "unit": "%, -1 over +1 less one, the coast's first window"
         },
         "current_ma": {
-          "value": -0.568201793822623,
+          "value": -0.5682017938226369,
           "lo": null,
           "hi": null,
           "unit": "mA, -1 less +1"
@@ -543,7 +555,7 @@
           "unit": "%, -1 over +1 less one, the coast's first window"
         },
         "current_ma": {
-          "value": -1.3361075389565769,
+          "value": -1.3361075389566046,
           "lo": null,
           "hi": null,
           "unit": "mA, -1 less +1"
@@ -810,48 +822,116 @@
     }
   },
   "reading_term_a_per_v": {
-    "value": 0.004287794200351055,
-    "lo": 0.004213753491509187,
-    "hi": 0.004327964803222321,
-    "unit": "A per V of the terminal difference at the crest sample"
+    "value": 0.004287794200351041,
+    "lo": 0.004076481633760655,
+    "hi": 0.004514032228630319,
+    "unit": "A per V of the terminal difference at the crest sample, the meter in the loop"
   },
   "reading_term_by_duty": {
     "20 %": {
-      "value": 0.004287794200351055,
-      "lo": 0.004204321779227722,
-      "hi": 0.004371266621474389,
-      "unit": "A per V of the terminal difference at the crest sample, mean +/- the spins' sd"
+      "value": 0.0043216643063216445,
+      "lo": 0.0041740475194048604,
+      "hi": 0.0044692810932384286,
+      "unit": "A per V of the terminal difference at the crest sample, the meter in the loop, mean +/- the spins' sd and the systematics"
     },
     "30 %": {
-      "value": 0.004287794200351055,
-      "lo": 0.004204321779227722,
-      "hi": 0.004371266621474389,
-      "unit": "A per V of the terminal difference at the crest sample, mean +/- the spins' sd"
+      "value": 0.004327964803222301,
+      "lo": 0.004135194456390813,
+      "hi": 0.004520735150053789,
+      "unit": "A per V of the terminal difference at the crest sample, the meter in the loop, mean +/- the spins' sd and the systematics"
     },
     "40 %": {
-      "value": 0.004287794200351055,
-      "lo": 0.004204321779227722,
-      "hi": 0.004371266621474389,
-      "unit": "A per V of the terminal difference at the crest sample, mean +/- the spins' sd"
+      "value": 0.004213753491509174,
+      "lo": 0.004059204725480418,
+      "hi": 0.00436830225753793,
+      "unit": "A per V of the terminal difference at the crest sample, the meter in the loop, mean +/- the spins' sd and the systematics"
     },
     "60 %": {
-      "value": 0.002782796976859741,
-      "lo": 0.002702959233775301,
-      "hi": 0.0028626347199441804,
-      "unit": "A per V of the terminal difference at the crest sample, mean +/- the spins' sd"
+      "value": 0.002782796976859721,
+      "lo": 0.002565012781049306,
+      "hi": 0.0030005811726701356,
+      "unit": "A per V of the terminal difference at the crest sample, the meter in the loop, mean +/- the spins' sd and the systematics"
     },
     "80 %": {
-      "value": 0.0015843553353811484,
-      "lo": 0.0015185637404997827,
-      "hi": 0.001650146930262514,
-      "unit": "A per V of the terminal difference at the crest sample, mean +/- the spins' sd"
+      "value": 0.0015843553353811293,
+      "lo": 0.0013617832675087986,
+      "hi": 0.00180692740325346,
+      "unit": "A per V of the terminal difference at the crest sample, the meter in the loop, mean +/- the spins' sd and the systematics"
     },
     "100 %": {
-      "value": -2.636943281782236e-05,
-      "lo": -0.0001268316511997418,
-      "hi": 7.409278556409708e-05,
-      "unit": "A per V of the terminal difference at the crest sample, mean +/- the spins' sd"
+      "value": -2.6369432817841196e-05,
+      "lo": -0.0002678081803144967,
+      "hi": 0.00021506931467881433,
+      "unit": "A per V of the terminal difference at the crest sample, the meter in the loop, mean +/- the spins' sd and the systematics"
     }
+  },
+  "i_spin_meter_rl_bias_ma": {
+    "5 V 15 %": {
+      "value": -3.22815028002185,
+      "lo": -3.489973919393388,
+      "hi": -2.204772618289852,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "5 V 20 %": {
+      "value": -2.981578047323545,
+      "lo": -3.221116515632264,
+      "hi": -2.0436017786642253,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "5 V 30 %": {
+      "value": -3.8466250280791097,
+      "lo": -4.154260062147932,
+      "hi": -2.6399571406820344,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "5 V 40 %": {
+      "value": -3.9399656920072657,
+      "lo": -4.254983528443803,
+      "hi": -2.7041922892386143,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "5 V 60 %": {
+      "value": -3.591821887919527,
+      "lo": -3.8773100446771753,
+      "hi": -2.469411785970554,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "7.4 V 15 %": {
+      "value": -4.783008039557085,
+      "lo": -5.170940590221439,
+      "hi": -3.2667144475697225,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "7.4 V 20 %": {
+      "value": -4.418291339037465,
+      "lo": -4.77325462461791,
+      "hi": -3.0283386501379077,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "7.4 V 30 %": {
+      "value": -5.707018091187404,
+      "lo": -6.163438639614004,
+      "hi": -3.916753791141774,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "7.4 V 40 %": {
+      "value": -5.848827624665074,
+      "lo": -6.316467489589517,
+      "hi": -4.014338144058525,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    },
+    "7.4 V 60 %": {
+      "value": -5.334265587669794,
+      "lo": -5.758248095098526,
+      "hi": -3.667358438900635,
+      "unit": "mA, i_spin_meter_a less the mean current by a plain R-L of the loop"
+    }
+  },
+  "loop_l_ramp_mh": {
+    "value": 0.6616561982025745,
+    "lo": 0.6356797068207277,
+    "hi": 0.8036206347621427,
+    "unit": "mH, the spinning-1 ramps through the meter run's loop"
   },
   "meter_by_point": {
     "5 V 30 %": {
@@ -862,27 +942,27 @@
         "unit": "mA"
       },
       "board_ma": {
-        "value": 70.8924949096044,
-        "lo": 70.39767575922167,
-        "hi": 71.38731405998712,
+        "value": 70.89249490960431,
+        "lo": 70.39767575922158,
+        "hi": 71.38731405998703,
         "unit": "mA"
       },
       "board_open_zero_ma": {
-        "value": 69.75589344271582,
-        "lo": 69.15496588399628,
-        "hi": 70.35682100143535,
+        "value": 69.75589344271579,
+        "lo": 69.15496588399627,
+        "hi": 70.3568210014353,
         "unit": "mA"
       },
       "gap_ma": {
-        "value": 21.310828242937728,
-        "lo": 21.068127583286937,
-        "hi": 21.553528902588518,
+        "value": 21.310828242937628,
+        "lo": 21.068127583286838,
+        "hi": 21.55352890258842,
         "unit": "mA"
       },
       "gap_ma_per_v": {
-        "value": 4.327964803222321,
-        "lo": 4.277573139035036,
-        "hi": 4.378356467409606,
+        "value": 4.327964803222302,
+        "lo": 4.277573139035017,
+        "hi": 4.378356467409587,
         "unit": "mA/V"
       },
       "v_on_v": {
@@ -890,6 +970,18 @@
         "lo": 4.9193264640062315,
         "hi": 4.928669239917357,
         "unit": "V"
+      },
+      "gap_syst_ma_per_v": {
+        "value": 0.18606742540801754,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      },
+      "window_bias_ma": {
+        "value": -0.13657391410184247,
+        "lo": -0.2421380719971722,
+        "hi": -0.031009756206512765,
+        "unit": "mA"
       },
       "meter_class_ma": {
         "value": 0.4966533333333334,
@@ -910,9 +1002,9 @@
         "unit": "rev/s"
       },
       "loop_ohm": {
-        "value": 15.239494146638776,
-        "lo": 15.161672414748821,
-        "hi": 15.317315878528731,
+        "value": 14.184272357806128,
+        "lo": 14.11075977673494,
+        "hi": 14.257784938877316,
         "unit": "ohm"
       },
       "open_zero_counts": {
@@ -930,27 +1022,27 @@
         "unit": "mA"
       },
       "board_ma": {
-        "value": 80.1860193082111,
-        "lo": 79.7556824847903,
-        "hi": 80.6163561316319,
+        "value": 80.18601930821102,
+        "lo": 79.75568248479021,
+        "hi": 80.61635613163182,
         "unit": "mA"
       },
       "board_open_zero_ma": {
-        "value": 76.62922436369782,
-        "lo": 76.09149238067994,
-        "hi": 77.1669563467157,
+        "value": 76.6292243636978,
+        "lo": 76.09149238067992,
+        "hi": 77.16695634671568,
         "unit": "mA"
       },
       "gap_ma": {
-        "value": 31.61001930821111,
-        "lo": 31.025346500475322,
-        "hi": 32.1946921159469,
+        "value": 31.610019308211022,
+        "lo": 31.025346500475237,
+        "hi": 32.19469211594681,
         "unit": "mA"
       },
       "gap_ma_per_v": {
-        "value": 4.321664306321657,
-        "lo": 4.242813499389606,
-        "hi": 4.400515113253708,
+        "value": 4.321664306321645,
+        "lo": 4.242813499389594,
+        "hi": 4.400515113253696,
         "unit": "mA/V"
       },
       "v_on_v": {
@@ -958,6 +1050,18 @@
         "lo": 7.311320625453557,
         "hi": 7.317256796504245,
         "unit": "V"
+      },
+      "gap_syst_ma_per_v": {
+        "value": 0.12479289252918019,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      },
+      "window_bias_ma": {
+        "value": -0.16225548942121024,
+        "lo": -0.30084060316777705,
+        "hi": -0.023670375674643446,
+        "unit": "mA"
       },
       "meter_class_ma": {
         "value": 0.4886080000000001,
@@ -978,9 +1082,9 @@
         "unit": "rev/s"
       },
       "loop_ohm": {
-        "value": 15.533818307354714,
-        "lo": 15.4377323954118,
-        "hi": 15.629904219297629,
+        "value": 13.933918927132629,
+        "lo": 13.845771313691051,
+        "hi": 14.022066540574206,
         "unit": "ohm"
       },
       "open_zero_counts": {
@@ -998,27 +1102,27 @@
         "unit": "mA"
       },
       "board_ma": {
-        "value": 97.78383605101573,
-        "lo": 97.14319615806298,
-        "hi": 98.42447594396847,
+        "value": 97.78383605101563,
+        "lo": 97.14319615806288,
+        "hi": 98.42447594396837,
         "unit": "mA"
       },
       "board_open_zero_ma": {
-        "value": 94.14795179443625,
-        "lo": 93.35144664466665,
-        "hi": 94.94445694420585,
+        "value": 94.14795179443621,
+        "lo": 93.35144664466662,
+        "hi": 94.9444569442058,
         "unit": "mA"
       },
       "gap_ma": {
-        "value": 30.743169384349056,
-        "lo": 30.224228730990315,
-        "hi": 31.262110037707796,
+        "value": 30.743169384348956,
+        "lo": 30.224228730990216,
+        "hi": 31.262110037707696,
         "unit": "mA"
       },
       "gap_ma_per_v": {
-        "value": 4.213753491509188,
-        "lo": 4.142748152616385,
-        "hi": 4.28475883040199,
+        "value": 4.213753491509174,
+        "lo": 4.142748152616373,
+        "hi": 4.284758830401976,
         "unit": "mA/V"
       },
       "v_on_v": {
@@ -1026,6 +1130,18 @@
         "lo": 7.294146317690711,
         "hi": 7.297668917376205,
         "unit": "V"
+      },
+      "gap_syst_ma_per_v": {
+        "value": 0.13727185774851888,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      },
+      "window_bias_ma": {
+        "value": -0.08657443584281659,
+        "lo": -0.1558383717067479,
+        "hi": -0.017310499978885244,
+        "unit": "mA"
       },
       "meter_class_ma": {
         "value": 0.6363253333333334,
@@ -1046,9 +1162,9 @@
         "unit": "rev/s"
       },
       "loop_ohm": {
-        "value": 14.780048474944882,
-        "lo": 14.684989572656542,
-        "hi": 14.875107377233222,
+        "value": 13.623687672107318,
+        "lo": 13.530851633048528,
+        "hi": 13.716523711166108,
         "unit": "ohm"
       },
       "open_zero_counts": {
@@ -1099,33 +1215,45 @@
           "unit": "mA"
         },
         "crest_ma": {
-          "value": 67.70797545225736,
+          "value": 67.70797545225734,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "crest_over_meter_ma": {
-          "value": 19.67908656336847,
-          "lo": 18.8884745839379,
-          "hi": 20.469698542799044,
+          "value": 19.679086563368458,
+          "lo": 18.888474583937885,
+          "hi": 20.46969854279903,
           "unit": "mA"
         },
         "crest_board_zero_over_meter_ma": {
-          "value": 20.771118818154772,
-          "lo": 19.539983416714122,
-          "hi": 22.00225421959542,
+          "value": 20.77111881815468,
+          "lo": 19.53998341671403,
+          "hi": 22.00225421959533,
           "unit": "mA"
         },
         "on_edge_ma": {
-          "value": 30.58122369755521,
+          "value": 30.581223697555203,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "off_edge_ma": {
-          "value": 103.93692524418577,
+          "value": 103.93692524418576,
           "lo": null,
           "hi": null,
+          "unit": "mA"
+        },
+        "crest_sample_over_meter_ma": {
+          "value": 21.515204843694832,
+          "lo": 21.494137625197226,
+          "hi": 21.54693879813462,
+          "unit": "mA"
+        },
+        "crest_sample_board_zero_over_meter_ma": {
+          "value": 22.607237098481054,
+          "lo": 22.586169879983448,
+          "hi": 22.63897105292084,
           "unit": "mA"
         },
         "v_on_v": {
@@ -1135,7 +1263,7 @@
           "unit": "V"
         },
         "spike_nc": {
-          "value": 11.118557235727197,
+          "value": 25.822930963867325,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1149,52 +1277,64 @@
           "unit": "mA"
         },
         "period_mean_ma": {
-          "value": 23.366096509117853,
-          "lo": 23.286557557921586,
-          "hi": 23.44563546031412,
+          "value": 20.907241608598266,
+          "lo": 20.75501629277034,
+          "hi": 21.059466924426193,
           "unit": "mA"
         },
         "period_mean_if_board_high_ma": {
-          "value": 30.389410495911235,
+          "value": 30.389410495911214,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "on_edge_step_ma": {
-          "value": 22.133999831163642,
-          "lo": 21.97220546852115,
-          "hi": 22.295794193806138,
+          "value": 22.13399983116364,
+          "lo": 21.972205468521143,
+          "hi": 22.295794193806135,
           "unit": "mA"
         },
         "step_ma_per_v": {
-          "value": 4.495673467739777,
-          "lo": 4.463199203819717,
-          "hi": 4.528147731659836,
+          "value": 4.495673467739776,
+          "lo": 4.463199203819715,
+          "hi": 4.5281477316598355,
           "unit": "mA/V"
         },
         "period_mean_corrected_ma": {
-          "value": 23.366096509117853,
-          "lo": 23.286557557921586,
-          "hi": 23.44563546031412,
+          "value": 22.90379165124172,
+          "lo": 22.8058975574617,
+          "hi": 23.00168574502173,
           "unit": "mA"
         },
         "period_mean_if_board_high_corrected_ma": {
-          "value": 30.64889389510561,
+          "value": 30.648893895105587,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "on_edge_step_corrected_ma": {
-          "value": 19.383028887569534,
-          "lo": 19.221436061703216,
-          "hi": 19.544621713435852,
-          "unit": "mA"
+          "value": 19.383028887569527,
+          "lo": 18.295413863053167,
+          "hi": 21.680457569505734,
+          "unit": "mA, a line read, bounds the band's start"
         },
         "step_corrected_ma_per_v": {
-          "value": 3.9369245077594908,
-          "lo": 3.903763254426943,
-          "hi": 3.970085761092039,
-          "unit": "mA/V"
+          "value": 3.93692450775949,
+          "lo": 3.7160142134141396,
+          "hi": 4.4035564915152285,
+          "unit": "mA/V, a line read, bounds the band's start"
+        },
+        "on_edge_step_quad_ma": {
+          "value": 11.308793080489673,
+          "lo": null,
+          "hi": null,
+          "unit": "mA, a quadratic through the band"
+        },
+        "floating_v": {
+          "value": -0.11114218674136932,
+          "lo": -0.11213758269085494,
+          "hi": -0.11014679079188368,
+          "unit": "V, before the ON edge, signed by the drive, bounds the two directions"
         },
         "v_on_v": {
           "value": 4.923397170282619,
@@ -1203,13 +1343,13 @@
           "unit": "V"
         },
         "spike_nc": {
-          "value": 39.01640570960179,
+          "value": 41.78936866475738,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "return_over_top": {
-          "value": 0.4672131147540983,
+          "value": 0.4672131147540984,
           "lo": null,
           "hi": null,
           "unit": "ratio"
@@ -1225,33 +1365,45 @@
           "unit": "mA"
         },
         "crest_ma": {
-          "value": 72.45671591248252,
+          "value": 72.4567159124825,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "crest_over_meter_ma": {
-          "value": 25.695743690260297,
-          "lo": 24.113197672993614,
-          "hi": 27.27828970752698,
+          "value": 25.69574369026027,
+          "lo": 24.1131976729936,
+          "hi": 27.278289707526937,
           "unit": "mA"
         },
         "crest_board_zero_over_meter_ma": {
-          "value": 30.311963321127216,
-          "lo": 28.876258444530624,
-          "hi": 31.747668197723804,
+          "value": 30.31196332112711,
+          "lo": 28.87625844453053,
+          "hi": 31.747668197723684,
           "unit": "mA"
         },
         "on_edge_ma": {
-          "value": 30.008687299832168,
+          "value": 30.00868729983216,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "off_edge_ma": {
-          "value": 113.34617759983037,
+          "value": 113.34617759983034,
           "lo": null,
           "hi": null,
+          "unit": "mA"
+        },
+        "crest_sample_over_meter_ma": {
+          "value": 27.147127683953613,
+          "lo": 27.081232048839453,
+          "hi": 27.222927601097467,
+          "unit": "mA"
+        },
+        "crest_sample_board_zero_over_meter_ma": {
+          "value": 31.763347314820454,
+          "lo": 31.697451679706294,
+          "hi": 31.839147231964308,
           "unit": "mA"
         },
         "v_on_v": {
@@ -1261,7 +1413,7 @@
           "unit": "V"
         },
         "spike_nc": {
-          "value": 35.856405972083934,
+          "value": 52.13335927636373,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1275,52 +1427,64 @@
           "unit": "mA"
         },
         "period_mean_ma": {
-          "value": 12.472319385660315,
-          "lo": 11.912487536855842,
-          "hi": 13.032151234464788,
+          "value": 13.819953954159471,
+          "lo": 13.75803593984361,
+          "hi": 13.881871968475332,
           "unit": "mA"
         },
         "period_mean_if_board_high_ma": {
-          "value": 24.101724073168675,
+          "value": 24.101724073168654,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "on_edge_step_ma": {
-          "value": 29.396769204111184,
-          "lo": 29.103462261904742,
-          "hi": 29.690076146317626,
+          "value": 29.396769204111177,
+          "lo": 29.103462261904735,
+          "hi": 29.69007614631762,
           "unit": "mA"
         },
         "step_ma_per_v": {
           "value": 4.025861703885598,
-          "lo": 3.9852034058807115,
-          "hi": 4.066520001890485,
+          "lo": 3.9852034058807106,
+          "hi": 4.066520001890484,
           "unit": "mA/V"
         },
         "period_mean_corrected_ma": {
-          "value": 12.472319385660315,
-          "lo": 11.912487536855842,
-          "hi": 13.032151234464788,
+          "value": 17.024027643579437,
+          "lo": 16.82114213422035,
+          "hi": 17.226913152938522,
           "unit": "mA"
         },
         "period_mean_if_board_high_corrected_ma": {
-          "value": 24.48656920003001,
+          "value": 24.486569200029987,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "on_edge_step_corrected_ma": {
-          "value": 23.817056476943165,
-          "lo": 22.917172079540574,
-          "hi": 24.716940874345756,
-          "unit": "mA"
+          "value": 23.81705647694316,
+          "lo": 22.98145740914318,
+          "hi": 26.500747357865418,
+          "unit": "mA, a line read, bounds the band's start"
         },
         "step_corrected_ma_per_v": {
-          "value": 3.261735993880561,
-          "lo": 3.138100594446668,
-          "hi": 3.385371393314453,
-          "unit": "mA/V"
+          "value": 3.26173599388056,
+          "lo": 3.1472865219475628,
+          "hi": 3.629249594404071,
+          "unit": "mA/V, a line read, bounds the band's start"
+        },
+        "on_edge_step_quad_ma": {
+          "value": 17.1525460063387,
+          "lo": null,
+          "hi": null,
+          "unit": "mA, a quadratic through the band"
+        },
+        "floating_v": {
+          "value": -0.07724839545017594,
+          "lo": -0.08026254385901165,
+          "hi": -0.07423424704134023,
+          "unit": "V, before the ON edge, signed by the drive, bounds the two directions"
         },
         "v_on_v": {
           "value": 7.301990857483828,
@@ -1329,7 +1493,7 @@
           "unit": "V"
         },
         "spike_nc": {
-          "value": 66.91461127092701,
+          "value": 70.48023383906042,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1351,33 +1515,45 @@
           "unit": "mA"
         },
         "crest_ma": {
-          "value": 84.59295269346345,
+          "value": 84.59295269346342,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "crest_over_meter_ma": {
-          "value": 21.303924915685663,
-          "lo": 21.146720056853205,
-          "hi": 21.46112977451812,
+          "value": 21.30392491568565,
+          "lo": 21.14672005685319,
+          "hi": 21.461129774518106,
           "unit": "mA"
         },
         "crest_board_zero_over_meter_ma": {
-          "value": 25.92014454655258,
-          "lo": 25.636825983374962,
-          "hi": 26.2034631097302,
+          "value": 25.92014454655249,
+          "lo": 25.63682598337487,
+          "hi": 26.20346310973011,
           "unit": "mA"
         },
         "on_edge_ma": {
-          "value": 26.276781874021836,
+          "value": 26.27678187402183,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "off_edge_ma": {
-          "value": 141.85782456918236,
+          "value": 141.8578245691823,
           "lo": null,
           "hi": null,
+          "unit": "mA"
+        },
+        "crest_sample_over_meter_ma": {
+          "value": 25.148153058115668,
+          "lo": 24.188127646051996,
+          "hi": 25.148153058115668,
+          "unit": "mA"
+        },
+        "crest_sample_board_zero_over_meter_ma": {
+          "value": 29.764372688982508,
+          "lo": 28.804347276918836,
+          "hi": 29.764372688982508,
           "unit": "mA"
         },
         "v_on_v": {
@@ -1387,7 +1563,7 @@
           "unit": "V"
         },
         "spike_nc": {
-          "value": 28.60812465011595,
+          "value": 42.954378695822754,
           "lo": null,
           "hi": null,
           "unit": "nC"
@@ -1401,52 +1577,64 @@
           "unit": "mA"
         },
         "period_mean_ma": {
-          "value": 41.5330988813876,
-          "lo": 40.23447254358707,
-          "hi": 42.831725219188144,
+          "value": 41.733475854593564,
+          "lo": 41.35878621065055,
+          "hi": 42.108165498536586,
           "unit": "mA"
         },
         "period_mean_if_board_high_ma": {
-          "value": 59.07543386991719,
+          "value": 59.07543386991715,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "on_edge_step_ma": {
           "value": 32.726312619499424,
-          "lo": 32.44358078314367,
-          "hi": 33.00904445585518,
+          "lo": 32.443580783143666,
+          "hi": 33.009044455855175,
           "unit": "mA"
         },
         "step_ma_per_v": {
-          "value": 4.495200050735764,
-          "lo": 4.455695641531324,
-          "hi": 4.534704459940204,
+          "value": 4.495200050735763,
+          "lo": 4.455695641531323,
+          "hi": 4.534704459940203,
           "unit": "mA/V"
         },
         "period_mean_corrected_ma": {
-          "value": 46.97233946703981,
-          "lo": 45.87867888809118,
-          "hi": 48.06600004598844,
+          "value": 44.68302490018549,
+          "lo": 44.43755546003209,
+          "hi": 44.92849434033888,
           "unit": "mA"
         },
         "period_mean_if_board_high_corrected_ma": {
-          "value": 59.459135218524644,
+          "value": 59.4591352185246,
           "lo": null,
           "hi": null,
           "unit": "mA"
         },
         "on_edge_step_corrected_ma": {
-          "value": 29.87461659833614,
-          "lo": 29.340320585258073,
-          "hi": 30.408912611414205,
-          "unit": "mA"
+          "value": 29.874616598336132,
+          "lo": 28.470548428786852,
+          "hi": 33.39974243500806,
+          "unit": "mA, a line read, bounds the band's start"
         },
         "step_corrected_ma_per_v": {
-          "value": 4.103504248469611,
-          "lo": 4.029504000396553,
-          "hi": 4.177504496542669,
-          "unit": "mA/V"
+          "value": 4.10350424846961,
+          "lo": 3.9106343816897433,
+          "hi": 4.5876945936826115,
+          "unit": "mA/V, a line read, bounds the band's start"
+        },
+        "on_edge_step_quad_ma": {
+          "value": 19.95033757262554,
+          "lo": null,
+          "hi": null,
+          "unit": "mA, a quadratic through the band"
+        },
+        "floating_v": {
+          "value": 0.5210796360959781,
+          "lo": 0.5124230466026984,
+          "hi": 0.5297362255892576,
+          "unit": "V, before the ON edge, signed by the drive, bounds the two directions"
         },
         "v_on_v": {
           "value": 7.280288988940212,
@@ -1455,13 +1643,13 @@
           "unit": "V"
         },
         "spike_nc": {
-          "value": 40.76507668187424,
+          "value": 45.26701809429303,
           "lo": null,
           "hi": null,
           "unit": "nC"
         },
         "return_over_top": {
-          "value": 0.4917127071823205,
+          "value": 0.4917127071823204,
           "lo": null,
           "hi": null,
           "unit": "ratio"
@@ -1478,7 +1666,7 @@
       "turned": true,
       "speed_rev_s": 47.97223330464839,
       "emf_v": 0.35406457607687025,
-      "i_spin_a": 0.06728265876719947,
+      "i_spin_a": 0.06728265876719938,
       "ke": 0.0011746613316605805,
       "ke_read": 0.0011746613316605805,
       "ke_spin": 0.0011691501180762021,
@@ -1489,7 +1677,7 @@
       "window_ms": 10.4,
       "stop_ms": 45.449999999999996,
       "spin_speed_rev_s": 63.93950941858349,
-      "i_spin_open_zero_a": 0.0673616344218045,
+      "i_spin_open_zero_a": 0.06736163442180448,
       "open_zero_counts": 5.170890296765492,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -1498,7 +1686,7 @@
       "rail_v": 4.9601932446243575,
       "duty_applied_pct": 15.0,
       "v_on_v": 4.934496583830846,
-      "i_spin_meter_a": 0.04612455293339747
+      "i_spin_meter_a": 0.045957421011191525
     },
     {
       "k": 0,
@@ -1508,7 +1696,7 @@
       "turned": true,
       "speed_rev_s": 51.76125446249919,
       "emf_v": 0.3805082760551297,
-      "i_spin_a": 0.06531660273476841,
+      "i_spin_a": 0.06531660273476832,
       "ke": 0.0011699827148784557,
       "ke_read": 0.0011699827148784557,
       "ke_spin": 0.001160886347235,
@@ -1519,16 +1707,16 @@
       "window_ms": 9.6,
       "stop_ms": 46.449999999999996,
       "spin_speed_rev_s": 64.94630809360119,
-      "i_spin_open_zero_a": 0.06510223546862633,
+      "i_spin_open_zero_a": 0.0651022354686263,
       "open_zero_counts": 5.503838451268393,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
       "speed_drift_pct": 0.041746389614449875,
-      "i_drift_ma": 0.002202617110000915,
+      "i_drift_ma": 0.002202617110015126,
       "rail_v": 4.959640801960206,
       "duty_applied_pct": 15.0,
       "v_on_v": 4.933024963616989,
-      "i_spin_meter_a": 0.04416480690558451
+      "i_spin_meter_a": 0.043997724827311145
     },
     {
       "k": 1,
@@ -1538,7 +1726,7 @@
       "turned": true,
       "speed_rev_s": 48.066634935520135,
       "emf_v": 0.3527407043267606,
-      "i_spin_a": 0.06751679696599784,
+      "i_spin_a": 0.06751679696599776,
       "ke": 0.0011679708138219215,
       "ke_read": 0.0011679708138219215,
       "ke_spin": 0.0011518919866663503,
@@ -1549,7 +1737,7 @@
       "window_ms": 10.35,
       "stop_ms": 49.9,
       "spin_speed_rev_s": 64.34673759811028,
-      "i_spin_open_zero_a": 0.06635297298755789,
+      "i_spin_open_zero_a": 0.06635297298755786,
       "open_zero_counts": 6.581484570475368,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -1558,7 +1746,7 @@
       "rail_v": 4.960091239671745,
       "duty_applied_pct": 15.0,
       "v_on_v": 4.934523761495535,
-      "i_spin_meter_a": 0.046358574599962815
+      "i_spin_meter_a": 0.04619144175724649
     },
     {
       "k": 1,
@@ -1568,7 +1756,7 @@
       "turned": true,
       "speed_rev_s": 48.565256424340674,
       "emf_v": 0.35525896938046647,
-      "i_spin_a": 0.06598796042991192,
+      "i_spin_a": 0.06598796042991183,
       "ke": 0.0011642319060482782,
       "ke_read": 0.0011642319060482782,
       "ke_spin": 0.001156139176381651,
@@ -1579,7 +1767,7 @@
       "window_ms": 10.25,
       "stop_ms": 47.35,
       "spin_speed_rev_s": 64.93083608620505,
-      "i_spin_open_zero_a": 0.06471811636837733,
+      "i_spin_open_zero_a": 0.06471811636837731,
       "open_zero_counts": 6.701818788586706,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
@@ -1588,7 +1776,7 @@
       "rail_v": 4.959136836897298,
       "duty_applied_pct": 15.0,
       "v_on_v": 4.932354581221347,
-      "i_spin_meter_a": 0.04483903906247608
+      "i_spin_meter_a": 0.044671979690125485
     },
     {
       "k": 2,
@@ -1598,7 +1786,7 @@
       "turned": true,
       "speed_rev_s": 49.2827028626393,
       "emf_v": 0.3628671695260289,
-      "i_spin_a": 0.0655906083032588,
+      "i_spin_a": 0.06559060830325872,
       "ke": 0.0011718534163355219,
       "ke_read": 0.0011718534163355219,
       "ke_spin": 0.0011805207537283805,
@@ -1609,7 +1797,7 @@
       "window_ms": 10.1,
       "stop_ms": 46.699999999999996,
       "spin_speed_rev_s": 64.90054415548128,
-      "i_spin_open_zero_a": 0.0654924174634326,
+      "i_spin_open_zero_a": 0.06549241746343258,
       "open_zero_counts": 5.371976647206111,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -1618,7 +1806,7 @@
       "rail_v": 4.9609406076435,
       "duty_applied_pct": 15.0,
       "v_on_v": 4.936151401636306,
-      "i_spin_meter_a": 0.04442540695126791
+      "i_spin_meter_a": 0.04425821898020754
     },
     {
       "k": 2,
@@ -1628,7 +1816,7 @@
       "turned": true,
       "speed_rev_s": 51.91766480364465,
       "emf_v": 0.38128418160564176,
-      "i_spin_a": 0.06515316854520282,
+      "i_spin_a": 0.06515316854520274,
       "ke": 0.001168836511711247,
       "ke_read": 0.001168836511711247,
       "ke_spin": 0.0011717683696393384,
@@ -1639,7 +1827,7 @@
       "window_ms": 9.6,
       "stop_ms": 52.400000000000006,
       "spin_speed_rev_s": 65.26013055091953,
-      "i_spin_open_zero_a": 0.06450298172336291,
+      "i_spin_open_zero_a": 0.0645029817233629,
       "open_zero_counts": 5.998499499833315,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -1648,7 +1836,7 @@
       "rail_v": 4.960781035539413,
       "duty_applied_pct": 15.0,
       "v_on_v": 4.93451973517484,
-      "i_spin_meter_a": 0.04399496344320232
+      "i_spin_meter_a": 0.043827830736857906
     },
     {
       "k": 3,
@@ -1658,7 +1846,7 @@
       "turned": true,
       "speed_rev_s": 76.37024792953065,
       "emf_v": 0.5642971948539517,
-      "i_spin_a": 0.0735757561123244,
+      "i_spin_a": 0.07357575611232432,
       "ke": 0.0011759905246971065,
       "ke_read": 0.0011759905246971065,
       "ke_spin": 0.0011661561907013302,
@@ -1669,7 +1857,7 @@
       "window_ms": 10.85,
       "stop_ms": 66.75,
       "spin_speed_rev_s": 93.26081275918834,
-      "i_spin_open_zero_a": 0.07329376117512326,
+      "i_spin_open_zero_a": 0.07329376117512325,
       "open_zero_counts": 5.580596766127655,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -1678,7 +1866,7 @@
       "rail_v": 4.949323152495927,
       "duty_applied_pct": 20.0,
       "v_on_v": 4.927303561910035,
-      "i_spin_meter_a": 0.052448492476197456
+      "i_spin_meter_a": 0.052281604182406224
     },
     {
       "k": 3,
@@ -1688,7 +1876,7 @@
       "turned": true,
       "speed_rev_s": 77.0887920548008,
       "emf_v": 0.5685352091432646,
-      "i_spin_a": 0.07176212118390883,
+      "i_spin_a": 0.07176212118390875,
       "ke": 0.001173778787357455,
       "ke_read": 0.001173778787357455,
       "ke_spin": 0.0011671801517013248,
@@ -1699,16 +1887,16 @@
       "window_ms": 10.75,
       "stop_ms": 66.8,
       "spin_speed_rev_s": 93.8938788508844,
-      "i_spin_open_zero_a": 0.07170983593468448,
+      "i_spin_open_zero_a": 0.07170983593468447,
       "open_zero_counts": 5.319873185382903,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.02829700308871752,
-      "i_drift_ma": 0.28722127115058527,
+      "i_drift_ma": 0.2872212711505995,
       "rail_v": 4.950274525420296,
       "duty_applied_pct": 20.0,
       "v_on_v": 4.9266100281704,
-      "i_spin_meter_a": 0.05063783127772844
+      "i_spin_meter_a": 0.05047096647399846
     },
     {
       "k": 4,
@@ -1718,7 +1906,7 @@
       "turned": true,
       "speed_rev_s": 78.09464695436762,
       "emf_v": 0.5772004807889317,
-      "i_spin_a": 0.07370130528759722,
+      "i_spin_a": 0.07370130528759712,
       "ke": 0.0011763201865328278,
       "ke_read": 0.0011763201865328278,
       "ke_spin": 0.0011623885733847016,
@@ -1729,16 +1917,16 @@
       "window_ms": 10.65,
       "stop_ms": 71.45,
       "spin_speed_rev_s": 93.25392196320904,
-      "i_spin_open_zero_a": 0.07291035124885448,
+      "i_spin_open_zero_a": 0.07291035124885446,
       "open_zero_counts": 6.158272181454322,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.035442893399184605,
-      "i_drift_ma": 0.02555035847657905,
+      "i_drift_ma": 0.02555035847659326,
       "rail_v": 4.949421117648436,
       "duty_applied_pct": 20.0,
       "v_on_v": 4.927612582023342,
-      "i_spin_meter_a": 0.05257271663682064
+      "i_spin_meter_a": 0.052405817876485405
     },
     {
       "k": 4,
@@ -1748,7 +1936,7 @@
       "turned": true,
       "speed_rev_s": 78.68059485996993,
       "emf_v": 0.5794467024202072,
-      "i_spin_a": 0.07319492361399664,
+      "i_spin_a": 0.07319492361399654,
       "ke": 0.0011721035804648434,
       "ke_read": 0.0011721035804648434,
       "ke_spin": 0.0011715268780217013,
@@ -1759,7 +1947,7 @@
       "window_ms": 10.55,
       "stop_ms": 67.15,
       "spin_speed_rev_s": 93.68707389540975,
-      "i_spin_open_zero_a": 0.07265031513162813,
+      "i_spin_open_zero_a": 0.07265031513162812,
       "open_zero_counts": 5.8786666666667315,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -1768,7 +1956,7 @@
       "rail_v": 4.949629167353765,
       "duty_applied_pct": 20.0,
       "v_on_v": 4.925838987757394,
-      "i_spin_meter_a": 0.052073939770427374
+      "i_spin_meter_a": 0.05190710108191787
     },
     {
       "k": 5,
@@ -1778,7 +1966,7 @@
       "turned": true,
       "speed_rev_s": 78.47251468481888,
       "emf_v": 0.5790650606482121,
-      "i_spin_a": 0.07376562170721077,
+      "i_spin_a": 0.07376562170721068,
       "ke": 0.001174437535793668,
       "ke_read": 0.001174437535793668,
       "ke_spin": 0.0011709520670437575,
@@ -1789,16 +1977,16 @@
       "window_ms": 10.55,
       "stop_ms": 67.55,
       "spin_speed_rev_s": 93.2905789537462,
-      "i_spin_open_zero_a": 0.07290568370779778,
+      "i_spin_open_zero_a": 0.07290568370779776,
       "open_zero_counts": 6.236569903236614,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.04975842692691579,
-      "i_drift_ma": 0.251979397389718,
+      "i_drift_ma": 0.25197939738970376,
       "rail_v": 4.952325733922836,
       "duty_applied_pct": 20.0,
       "v_on_v": 4.929918657201145,
-      "i_spin_meter_a": 0.052627145080661235
+      "i_spin_meter_a": 0.05246016821331537
     },
     {
       "k": 5,
@@ -1808,7 +1996,7 @@
       "turned": true,
       "speed_rev_s": 77.08714287058545,
       "emf_v": 0.5679733969533276,
-      "i_spin_a": 0.07285814345787003,
+      "i_spin_a": 0.07285814345786994,
       "ke": 0.0011726439754236907,
       "ke_read": 0.0011726439754236907,
       "ke_spin": 0.00116934622043027,
@@ -1819,16 +2007,16 @@
       "window_ms": 10.75,
       "stop_ms": 66.3,
       "spin_speed_rev_s": 93.83575826516345,
-      "i_spin_open_zero_a": 0.07122140795912393,
+      "i_spin_open_zero_a": 0.07122140795912392,
       "open_zero_counts": 7.118245496998043,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
       "speed_drift_pct": 0.07122780854147415,
-      "i_drift_ma": -0.09339096546622727,
+      "i_drift_ma": -0.09339096546621306,
       "rail_v": 4.951037037689827,
       "duty_applied_pct": 20.0,
       "v_on_v": 4.927148548563296,
-      "i_spin_meter_a": 0.05173154448707221
+      "i_spin_meter_a": 0.05156466144359945
     },
     {
       "k": 6,
@@ -1838,7 +2026,7 @@
       "turned": true,
       "speed_rev_s": 137.5418148941825,
       "emf_v": 1.0115035502377459,
-      "i_spin_a": 0.08462826850884626,
+      "i_spin_a": 0.08462826850884617,
       "ke": 0.0011704498017507813,
       "ke_read": 0.0011704498017507813,
       "ke_spin": 0.0011732641654334987,
@@ -1849,16 +2037,16 @@
       "window_ms": 9.65,
       "stop_ms": 101.8,
       "spin_speed_rev_s": 152.14098007681557,
-      "i_spin_open_zero_a": 0.08372427619349669,
+      "i_spin_open_zero_a": 0.08372427619349668,
       "open_zero_counts": 6.286572143452986,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.11367364659191637,
-      "i_drift_ma": -0.1105713789246181,
+      "i_drift_ma": -0.11057137892460389,
       "rail_v": 4.930058355752471,
       "duty_applied_pct": 30.0,
       "v_on_v": 4.916038923186862,
-      "i_spin_meter_a": 0.06354930532530559
+      "i_spin_meter_a": 0.06335182507802256
     },
     {
       "k": 6,
@@ -1868,7 +2056,7 @@
       "turned": true,
       "speed_rev_s": 138.78688266464928,
       "emf_v": 1.0229384189720778,
-      "i_spin_a": 0.08298049064881761,
+      "i_spin_a": 0.08298049064881753,
       "ke": 0.0011730626319448492,
       "ke_read": 0.0011730626319448492,
       "ke_spin": 0.00117624185153104,
@@ -1879,16 +2067,16 @@
       "window_ms": 9.549999999999999,
       "stop_ms": 104.95,
       "spin_speed_rev_s": 153.14662095653838,
-      "i_spin_open_zero_a": 0.08184194441135696,
+      "i_spin_open_zero_a": 0.08184194441135693,
       "open_zero_counts": 6.552793994995909,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
       "speed_drift_pct": 0.013566467452119646,
-      "i_drift_ma": -0.03524187376078203,
+      "i_drift_ma": -0.03524187376076782,
       "rail_v": 4.930808748621692,
       "duty_applied_pct": 30.0,
       "v_on_v": 4.915435981662854,
-      "i_spin_meter_a": 0.06190411275444674
+      "i_spin_meter_a": 0.06170665672768824
     },
     {
       "k": 7,
@@ -1898,7 +2086,7 @@
       "turned": true,
       "speed_rev_s": 137.9836105601765,
       "emf_v": 1.012074423751594,
-      "i_spin_a": 0.08358356721354927,
+      "i_spin_a": 0.08358356721354919,
       "ke": 0.0011673607225018948,
       "ke_read": 0.0011673607225018948,
       "ke_spin": 0.001170070200896793,
@@ -1909,16 +2097,16 @@
       "window_ms": 9.6,
       "stop_ms": 101.05,
       "spin_speed_rev_s": 152.68493420949676,
-      "i_spin_open_zero_a": 0.08270165787186322,
+      "i_spin_open_zero_a": 0.0827016578718632,
       "open_zero_counts": 6.261507671781146,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.010125470531230363,
-      "i_drift_ma": -0.11717923025470611,
+      "i_drift_ma": -0.1171792302546919,
       "rail_v": 4.929069614677145,
       "duty_applied_pct": 30.0,
       "v_on_v": 4.914946783698466,
-      "i_spin_meter_a": 0.06250928689937292
+      "i_spin_meter_a": 0.062311850523991574
     },
     {
       "k": 7,
@@ -1928,7 +2116,7 @@
       "turned": true,
       "speed_rev_s": 138.152222837376,
       "emf_v": 1.0142134066205728,
-      "i_spin_a": 0.08334370221026481,
+      "i_spin_a": 0.08334370221026471,
       "ke": 0.00116840014368603,
       "ke_read": 0.00116840014368603,
       "ke_spin": 0.0011700436777830087,
@@ -1939,7 +2127,7 @@
       "window_ms": 9.6,
       "stop_ms": 103.3,
       "spin_speed_rev_s": 152.9801579070648,
-      "i_spin_open_zero_a": 0.08241758328436911,
+      "i_spin_open_zero_a": 0.0824175832843691,
       "open_zero_counts": 6.311686143572615,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -1948,7 +2136,7 @@
       "rail_v": 4.930822887922054,
       "duty_applied_pct": 30.0,
       "v_on_v": 4.915198428741875,
-      "i_spin_meter_a": 0.06226834289393078
+      "i_spin_meter_a": 0.06207089640981632
     },
     {
       "k": 8,
@@ -1958,7 +2146,7 @@
       "turned": true,
       "speed_rev_s": 136.66479696391923,
       "emf_v": 1.0048575725152633,
-      "i_spin_a": 0.08306441036071041,
+      "i_spin_a": 0.08306441036071031,
       "ke": 0.0011702212517196312,
       "ke_read": 0.0011702212517196312,
       "ke_spin": 0.001172928111668054,
@@ -1969,16 +2157,16 @@
       "window_ms": 9.700000000000001,
       "stop_ms": 102.3,
       "spin_speed_rev_s": 152.3657219258424,
-      "i_spin_open_zero_a": 0.08251425569972046,
+      "i_spin_open_zero_a": 0.08251425569972043,
       "open_zero_counts": 5.884961653884602,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.02849637181675524,
-      "i_drift_ma": 0.42334300855169715,
+      "i_drift_ma": 0.42334300855168294,
       "rail_v": 4.930116932853972,
       "duty_applied_pct": 30.0,
       "v_on_v": 4.916108377218842,
-      "i_spin_meter_a": 0.061985149372574225
+      "i_spin_meter_a": 0.061787666335280864
     },
     {
       "k": 8,
@@ -1988,7 +2176,7 @@
       "turned": true,
       "speed_rev_s": 138.55219870047054,
       "emf_v": 1.0181768160542692,
-      "i_spin_a": 0.08039770182557242,
+      "i_spin_a": 0.08039770182557232,
       "ke": 0.001169579947027243,
       "ke_read": 0.001169579947027243,
       "ke_spin": 0.0011687566886564888,
@@ -1999,7 +2187,7 @@
       "window_ms": 9.6,
       "stop_ms": 106.39999999999999,
       "spin_speed_rev_s": 153.96844773898428,
-      "i_spin_open_zero_a": 0.08006197617666995,
+      "i_spin_open_zero_a": 0.08006197617666994,
       "open_zero_counts": 5.641581845486371,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2008,7 +2196,7 @@
       "rail_v": 4.931070325678392,
       "duty_applied_pct": 30.0,
       "v_on_v": 4.9159835612773115,
-      "i_spin_meter_a": 0.05931897602250644
+      "i_spin_meter_a": 0.05912149799914469
     },
     {
       "k": 9,
@@ -2018,7 +2206,7 @@
       "turned": true,
       "speed_rev_s": 199.34458230088765,
       "emf_v": 1.466989945058794,
-      "i_spin_a": 0.08555468926533348,
+      "i_spin_a": 0.08555468926533338,
       "ke": 0.0011712317361592794,
       "ke_read": 0.0011712317361592794,
       "ke_spin": 0.0011677576985237637,
@@ -2029,7 +2217,7 @@
       "window_ms": 10.0,
       "stop_ms": 142.3,
       "spin_speed_rev_s": 215.00995067158874,
-      "i_spin_open_zero_a": 0.085410120327799,
+      "i_spin_open_zero_a": 0.08541012032779897,
       "open_zero_counts": 5.424616410940644,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2038,7 +2226,7 @@
       "rail_v": 4.92929079373281,
       "duty_applied_pct": 40.0,
       "v_on_v": 4.910686936403634,
-      "i_spin_meter_a": 0.06449867429968228
+      "i_spin_meter_a": 0.06486226504135409
     },
     {
       "k": 9,
@@ -2048,7 +2236,7 @@
       "turned": true,
       "speed_rev_s": 198.68502928756857,
       "emf_v": 1.4626561416644375,
-      "i_spin_a": 0.08805554073208476,
+      "i_spin_a": 0.08805554073208466,
       "ke": 0.0011716481902251709,
       "ke_read": 0.0011716481902251709,
       "ke_spin": 0.0011723109015671503,
@@ -2059,7 +2247,7 @@
       "window_ms": 10.05,
       "stop_ms": 135.9,
       "spin_speed_rev_s": 214.24309098880295,
-      "i_spin_open_zero_a": 0.0877309547655843,
+      "i_spin_open_zero_a": 0.08773095476558429,
       "open_zero_counts": 5.628938156359482,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2068,7 +2256,7 @@
       "rail_v": 4.928263674556502,
       "duty_applied_pct": 40.0,
       "v_on_v": 4.907250471690836,
-      "i_spin_meter_a": 0.0670142606198988
+      "i_spin_meter_a": 0.06737759692328735
     },
     {
       "k": 10,
@@ -2078,7 +2266,7 @@
       "turned": true,
       "speed_rev_s": 198.1305854950093,
       "emf_v": 1.4599118335293473,
-      "i_spin_a": 0.0866339716492581,
+      "i_spin_a": 0.086633971649258,
       "ke": 0.0011727224456740957,
       "ke_read": 0.0011727224456740957,
       "ke_spin": 0.0011749642481098783,
@@ -2089,16 +2277,16 @@
       "window_ms": 10.05,
       "stop_ms": 136.7,
       "spin_speed_rev_s": 213.83405317519555,
-      "i_spin_open_zero_a": 0.08556154595451121,
+      "i_spin_open_zero_a": 0.08556154595451118,
       "open_zero_counts": 6.477746291048561,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.025239353821771005,
-      "i_drift_ma": -0.04273077193498409,
+      "i_drift_ma": -0.04273077193496988,
       "rail_v": 4.93016844030529,
       "duty_applied_pct": 40.0,
       "v_on_v": 4.910990923616072,
-      "i_spin_meter_a": 0.06557665324900043
+      "i_spin_meter_a": 0.06594026649810092
     },
     {
       "k": 10,
@@ -2108,7 +2296,7 @@
       "turned": true,
       "speed_rev_s": 199.65043391250637,
       "emf_v": 1.4672398197350636,
-      "i_spin_a": 0.08826060438503035,
+      "i_spin_a": 0.08826060438503025,
       "ke": 0.0011696366766447029,
       "ke_read": 0.0011696366766447029,
       "ke_spin": 0.0011629652595813026,
@@ -2119,16 +2307,16 @@
       "window_ms": 9.950000000000001,
       "stop_ms": 139.6,
       "spin_speed_rev_s": 215.04841286442766,
-      "i_spin_open_zero_a": 0.08747823245292541,
+      "i_spin_open_zero_a": 0.0874782324529254,
       "open_zero_counts": 6.14853137516684,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
       "speed_drift_pct": -0.04588601108479473,
-      "i_drift_ma": 0.1444916824193001,
+      "i_drift_ma": 0.1444916824192859,
       "rail_v": 4.928926201773471,
       "duty_applied_pct": 40.0,
       "v_on_v": 4.908109084578949,
-      "i_spin_meter_a": 0.0672156427174824
+      "i_spin_meter_a": 0.0675790425931778
     },
     {
       "k": 11,
@@ -2138,7 +2326,7 @@
       "turned": true,
       "speed_rev_s": 199.8850830249131,
       "emf_v": 1.4697486828814152,
-      "i_spin_a": 0.08564015080920342,
+      "i_spin_a": 0.08564015080920333,
       "ke": 0.0011702612543339462,
       "ke_read": 0.0011702612543339462,
       "ke_spin": 0.0011752391537212415,
@@ -2149,7 +2337,7 @@
       "window_ms": 9.950000000000001,
       "stop_ms": 135.85,
       "spin_speed_rev_s": 215.05276793303344,
-      "i_spin_open_zero_a": 0.08459294993370078,
+      "i_spin_open_zero_a": 0.08459294993370076,
       "open_zero_counts": 6.449115782449098,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2158,7 +2346,7 @@
       "rail_v": 4.930035126901876,
       "duty_applied_pct": 40.0,
       "v_on_v": 4.911705595539354,
-      "i_spin_meter_a": 0.06457976804281795
+      "i_spin_meter_a": 0.06494343420673422
     },
     {
       "k": 11,
@@ -2168,7 +2356,7 @@
       "turned": true,
       "speed_rev_s": 198.59438969367363,
       "emf_v": 1.461494017310735,
-      "i_spin_a": 0.08769188864721526,
+      "i_spin_a": 0.08769188864721518,
       "ke": 0.0011712516023892757,
       "ke_read": 0.0011712516023892757,
       "ke_spin": 0.0011700861297777357,
@@ -2179,16 +2367,16 @@
       "window_ms": 10.0,
       "stop_ms": 136.15,
       "spin_speed_rev_s": 214.25783528456523,
-      "i_spin_open_zero_a": 0.08709839173365697,
+      "i_spin_open_zero_a": 0.08709839173365694,
       "open_zero_counts": 5.934155692615377,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
       "speed_drift_pct": 0.3739219471974087,
-      "i_drift_ma": -0.8916194061484646,
+      "i_drift_ma": -0.8916194061484362,
       "rail_v": 4.928063704451379,
       "duty_applied_pct": 40.0,
       "v_on_v": 4.907520235177372,
-      "i_spin_meter_a": 0.06664945184471628
+      "i_spin_meter_a": 0.06701280812158461
     },
     {
       "k": 12,
@@ -2198,7 +2386,7 @@
       "turned": true,
       "speed_rev_s": 312.88124679079954,
       "emf_v": 2.2968857518394237,
-      "i_spin_a": 0.09492616428346477,
+      "i_spin_a": 0.09492616428346468,
       "ke": 0.0011683689095211643,
       "ke_read": 0.0011683689095211643,
       "ke_spin": 0.0011644463667311766,
@@ -2209,12 +2397,12 @@
       "window_ms": 10.05,
       "stop_ms": 186.75,
       "spin_speed_rev_s": 330.26421068564457,
-      "i_spin_open_zero_a": 0.09421484126127808,
+      "i_spin_open_zero_a": 0.09421484126127805,
       "open_zero_counts": 6.067889908256802,
       "spin_open_per_s": 65.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.07794084400714052,
-      "i_drift_ma": -0.6176138376582401,
+      "i_drift_ma": -0.6176138376582543,
       "rail_v": 4.926247814304866,
       "duty_applied_pct": 60.0,
       "v_on_v": 4.90340734858789,
@@ -2228,7 +2416,7 @@
       "turned": true,
       "speed_rev_s": 316.821006954508,
       "emf_v": 2.3207793414447546,
-      "i_spin_a": 0.0990602563373184,
+      "i_spin_a": 0.0990602563373183,
       "ke": 0.0011658428447250116,
       "ke_read": 0.0011658428447250116,
       "ke_spin": 0.001166437259202968,
@@ -2239,12 +2427,12 @@
       "window_ms": 9.950000000000001,
       "stop_ms": 187.75,
       "spin_speed_rev_s": 334.2521563019498,
-      "i_spin_open_zero_a": 0.0982401176651065,
+      "i_spin_open_zero_a": 0.09824011766510647,
       "open_zero_counts": 6.19139713237746,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.08234118542445046,
-      "i_drift_ma": -0.10176091048444391,
+      "i_drift_ma": -0.10176091048441549,
       "rail_v": 4.926108441201297,
       "duty_applied_pct": 60.0,
       "v_on_v": 4.899407198977856,
@@ -2258,7 +2446,7 @@
       "turned": true,
       "speed_rev_s": 312.45627892340406,
       "emf_v": 2.283775170274339,
-      "i_spin_a": 0.09429599552827939,
+      "i_spin_a": 0.09429599552827929,
       "ke": 0.001163279894749046,
       "ke_read": 0.00115969341394697,
       "ke_spin": 0.0011505718637578588,
@@ -2269,7 +2457,7 @@
       "window_ms": 10.05,
       "stop_ms": 187.45000000000002,
       "spin_speed_rev_s": 329.74211983649576,
-      "i_spin_open_zero_a": 0.0933718691983127,
+      "i_spin_open_zero_a": 0.09337186919831267,
       "open_zero_counts": 6.309424520433595,
       "spin_open_per_s": 115.0,
       "coast_open_rows": 1,
@@ -2288,7 +2476,7 @@
       "turned": true,
       "speed_rev_s": 317.00048167081326,
       "emf_v": 2.327335371167125,
-      "i_spin_a": 0.09894638103272883,
+      "i_spin_a": 0.09894638103272872,
       "ke": 0.0011684743398544901,
       "ke_read": 0.0011684743398544901,
       "ke_spin": 0.0011653415578957859,
@@ -2299,16 +2487,16 @@
       "window_ms": 9.9,
       "stop_ms": 188.4,
       "spin_speed_rev_s": 334.3952892098469,
-      "i_spin_open_zero_a": 0.09770760561301271,
+      "i_spin_open_zero_a": 0.0977076056130127,
       "open_zero_counts": 6.6665554628857535,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.06690221515153194,
-      "i_drift_ma": 0.14537272926339995,
+      "i_drift_ma": 0.14537272926338574,
       "rail_v": 4.925547918936939,
       "duty_applied_pct": 60.0,
       "v_on_v": 4.899140455231842,
-      "i_spin_meter_a": 0.08531306778469841
+      "i_spin_meter_a": 0.0853130677846984
     },
     {
       "k": 14,
@@ -2318,7 +2506,7 @@
       "turned": true,
       "speed_rev_s": 310.3656808405529,
       "emf_v": 2.278957015390799,
-      "i_spin_a": 0.09260218297065072,
+      "i_spin_a": 0.09260218297065062,
       "ke": 0.0011686449130299795,
       "ke_read": 0.0011686449130299795,
       "ke_spin": 0.0011696213000711466,
@@ -2329,12 +2517,12 @@
       "window_ms": 10.149999999999999,
       "stop_ms": 184.65,
       "spin_speed_rev_s": 326.44274030235175,
-      "i_spin_open_zero_a": 0.09204894361747598,
+      "i_spin_open_zero_a": 0.09204894361747595,
       "open_zero_counts": 5.888462820940276,
       "spin_open_per_s": 160.0,
       "coast_open_rows": 1,
       "speed_drift_pct": 0.15516226061362826,
-      "i_drift_ma": -0.7784048866918454,
+      "i_drift_ma": -0.778404886691817,
       "rail_v": 4.926434655059651,
       "duty_applied_pct": 60.0,
       "v_on_v": 4.903868362307415,
@@ -2348,7 +2536,7 @@
       "turned": true,
       "speed_rev_s": 321.23651883727916,
       "emf_v": 2.3538034285740217,
-      "i_spin_a": 0.09191078145980588,
+      "i_spin_a": 0.09191078145980579,
       "ke": 0.001166179524296141,
       "ke_read": 0.001166179524296141,
       "ke_spin": 0.001166533744373056,
@@ -2359,12 +2547,12 @@
       "window_ms": 9.85,
       "stop_ms": 199.15,
       "spin_speed_rev_s": 337.8070611727023,
-      "i_spin_open_zero_a": 0.09164185756263094,
+      "i_spin_open_zero_a": 0.09164185756263092,
       "open_zero_counts": 5.565760960160105,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.0463427330559707,
-      "i_drift_ma": 0.141848541887299,
+      "i_drift_ma": 0.14184854188731322,
       "rail_v": 4.926620485864412,
       "duty_applied_pct": 60.0,
       "v_on_v": 4.902306149877931,
@@ -2378,7 +2566,7 @@
       "turned": true,
       "speed_rev_s": 92.40003331484262,
       "emf_v": 0.6802990743900318,
-      "i_spin_a": 0.08424501313169755,
+      "i_spin_a": 0.08424501313169745,
       "ke": 0.0011717848639847,
       "ke_read": 0.0011717848639847,
       "ke_spin": 0.0011677215787959112,
@@ -2389,16 +2577,16 @@
       "window_ms": 10.8,
       "stop_ms": 77.75,
       "spin_speed_rev_s": 105.84793617599604,
-      "i_spin_open_zero_a": 0.08143235167652334,
+      "i_spin_open_zero_a": 0.08143235167652331,
       "open_zero_counts": 8.45293724966632,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.07272433916920562,
-      "i_drift_ma": 0.3405246052137443,
+      "i_drift_ma": 0.3405246052137585,
       "rail_v": 7.358868993864934,
       "duty_applied_pct": 15.0,
       "v_on_v": 7.312238256836194,
-      "i_spin_meter_a": 0.052891640342450204
+      "i_spin_meter_a": 0.05264397405780887
     },
     {
       "k": 15,
@@ -2408,7 +2596,7 @@
       "turned": true,
       "speed_rev_s": 92.73177689716839,
       "emf_v": 0.6813479338467742,
-      "i_spin_a": 0.0837091163888223,
+      "i_spin_a": 0.0837091163888222,
       "ke": 0.0011693930092314998,
       "ke_read": 0.0011693930092314998,
       "ke_spin": 0.001166030238671662,
@@ -2419,16 +2607,16 @@
       "window_ms": 8.95,
       "stop_ms": 76.8,
       "spin_speed_rev_s": 105.84357526644789,
-      "i_spin_open_zero_a": 0.07983772574102733,
+      "i_spin_open_zero_a": 0.07983772574102731,
       "open_zero_counts": 9.654609101516826,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.027595990607431897,
-      "i_drift_ma": 0.18590088408826944,
+      "i_drift_ma": 0.18590088408825522,
       "rail_v": 7.357832785138392,
       "duty_applied_pct": 15.0,
       "v_on_v": 7.307467066813154,
-      "i_spin_meter_a": 0.05237620148048452
+      "i_spin_meter_a": 0.052128696796554866
     },
     {
       "k": 16,
@@ -2438,7 +2626,7 @@
       "turned": true,
       "speed_rev_s": 91.27066967176188,
       "emf_v": 0.6699263758951745,
-      "i_spin_a": 0.08533663017143854,
+      "i_spin_a": 0.08533663017143844,
       "ke": 0.0011681966902927618,
       "ke_read": 0.0011681966902927618,
       "ke_spin": 0.0011670190130458119,
@@ -2449,16 +2637,16 @@
       "window_ms": 9.05,
       "stop_ms": 73.35,
       "spin_speed_rev_s": 105.63548468241567,
-      "i_spin_open_zero_a": 0.08180098685177062,
+      "i_spin_open_zero_a": 0.0818009868517706,
       "open_zero_counts": 9.27353137516684,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.02812268363208137,
-      "i_drift_ma": 0.080615786227753,
+      "i_drift_ma": 0.0806157862277388,
       "rail_v": 7.359261864424997,
       "duty_applied_pct": 15.0,
       "v_on_v": 7.311679604839824,
-      "i_spin_meter_a": 0.053985652766981244
+      "i_spin_meter_a": 0.053738005403942225
     },
     {
       "k": 16,
@@ -2468,7 +2656,7 @@
       "turned": true,
       "speed_rev_s": 93.33410024696501,
       "emf_v": 0.6900163639730674,
-      "i_spin_a": 0.08431087138328805,
+      "i_spin_a": 0.08431087138328795,
       "ke": 0.0011766279939488798,
       "ke_read": 0.0011766279939488798,
       "ke_spin": 0.0011694749243066664,
@@ -2479,7 +2667,7 @@
       "window_ms": 8.9,
       "stop_ms": 76.75,
       "spin_speed_rev_s": 105.82542302822357,
-      "i_spin_open_zero_a": 0.08046967929287756,
+      "i_spin_open_zero_a": 0.08046967929287754,
       "open_zero_counts": 9.620333333333292,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2488,7 +2676,7 @@
       "rail_v": 7.360724272062456,
       "duty_applied_pct": 15.0,
       "v_on_v": 7.310405274340001,
-      "i_spin_meter_a": 0.05296535804575723
+      "i_spin_meter_a": 0.052717753844427284
     },
     {
       "k": 17,
@@ -2498,7 +2686,7 @@
       "turned": true,
       "speed_rev_s": 90.4997588385133,
       "emf_v": 0.6662130635570085,
-      "i_spin_a": 0.08466813587853808,
+      "i_spin_a": 0.08466813587853798,
       "ke": 0.0011716175112321966,
       "ke_read": 0.0011716175112321966,
       "ke_spin": 0.001157210936908982,
@@ -2509,16 +2697,16 @@
       "window_ms": 9.15,
       "stop_ms": 75.25,
       "spin_speed_rev_s": 105.28439780706076,
-      "i_spin_open_zero_a": 0.08207562121100319,
+      "i_spin_open_zero_a": 0.08207562121100316,
       "open_zero_counts": 8.203067689229783,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.02697548196970434,
-      "i_drift_ma": -0.1427295887311999,
+      "i_drift_ma": -0.14272958873118569,
       "rail_v": 7.361064625221173,
       "duty_applied_pct": 15.0,
       "v_on_v": 7.313035468333714,
-      "i_spin_meter_a": 0.05331134481045522
+      "i_spin_meter_a": 0.053063651524175984
     },
     {
       "k": 17,
@@ -2528,7 +2716,7 @@
       "turned": true,
       "speed_rev_s": 92.00877040852016,
       "emf_v": 0.6794416172050814,
-      "i_spin_a": 0.08414259143608017,
+      "i_spin_a": 0.08414259143608008,
       "ke": 0.0011752846108084329,
       "ke_read": 0.0011752846108084329,
       "ke_spin": 0.0011679297811893106,
@@ -2539,16 +2727,16 @@
       "window_ms": 9.0,
       "stop_ms": 80.15,
       "spin_speed_rev_s": 105.19368608625943,
-      "i_spin_open_zero_a": 0.08163857613217138,
+      "i_spin_open_zero_a": 0.08163857613217135,
       "open_zero_counts": 8.102619723010093,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.13650060417425003,
-      "i_drift_ma": -0.3594671123602353,
+      "i_drift_ma": -0.3594671123602211,
       "rail_v": 7.360876774516362,
       "duty_applied_pct": 15.0,
       "v_on_v": 7.309703687958975,
-      "i_spin_meter_a": 0.05280008635656496
+      "i_spin_meter_a": 0.05255250591804009
     },
     {
       "k": 18,
@@ -2558,7 +2746,7 @@
       "turned": true,
       "speed_rev_s": 134.94402538917743,
       "emf_v": 0.9890985465399084,
-      "i_spin_a": 0.09210152810153624,
+      "i_spin_a": 0.09210152810153614,
       "ke": 0.0011665571886775854,
       "ke_read": 0.0011665571886775854,
       "ke_spin": 0.0011680982789916221,
@@ -2569,16 +2757,16 @@
       "window_ms": 9.799999999999999,
       "stop_ms": 103.85,
       "spin_speed_rev_s": 149.30726768397443,
-      "i_spin_open_zero_a": 0.08880217276123495,
+      "i_spin_open_zero_a": 0.08880217276123492,
       "open_zero_counts": 9.005341345351326,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.04671053655850299,
-      "i_drift_ma": -0.37620700239661176,
+      "i_drift_ma": -0.37620700239662597,
       "rail_v": 7.348052429087875,
       "duty_applied_pct": 20.0,
       "v_on_v": 7.3026938636297665,
-      "i_spin_meter_a": 0.060789079706125286
+      "i_spin_meter_a": 0.06054173669109328
     },
     {
       "k": 18,
@@ -2588,7 +2776,7 @@
       "turned": true,
       "speed_rev_s": 133.1735953039814,
       "emf_v": 0.9755775042891334,
-      "i_spin_a": 0.09227377275954221,
+      "i_spin_a": 0.09227377275954211,
       "ke": 0.001165906663572883,
       "ke_read": 0.001165906663572883,
       "ke_spin": 0.001166388582420112,
@@ -2599,16 +2787,16 @@
       "window_ms": 10.0,
       "stop_ms": 106.80000000000001,
       "spin_speed_rev_s": 149.2137192913255,
-      "i_spin_open_zero_a": 0.08916926259019624,
+      "i_spin_open_zero_a": 0.08916926259019621,
       "open_zero_counts": 8.78418945963972,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.015610604600113653,
-      "i_drift_ma": -0.19294925884055658,
+      "i_drift_ma": -0.1929492588405708,
       "rail_v": 7.348765453806138,
       "duty_applied_pct": 20.0,
       "v_on_v": 7.299699287613195,
-      "i_spin_meter_a": 0.06097416448980762
+      "i_spin_meter_a": 0.06072692290138263
     },
     {
       "k": 19,
@@ -2618,7 +2806,7 @@
       "turned": true,
       "speed_rev_s": 136.7774260698051,
       "emf_v": 1.0042141913733509,
-      "i_spin_a": 0.09109977783988538,
+      "i_spin_a": 0.09109977783988528,
       "ke": 0.0011685089935712892,
       "ke_read": 0.0011685089935712892,
       "ke_spin": 0.0011674918502530137,
@@ -2629,16 +2817,16 @@
       "window_ms": 9.700000000000001,
       "stop_ms": 102.95,
       "spin_speed_rev_s": 150.30585122878173,
-      "i_spin_open_zero_a": 0.08737467541993597,
+      "i_spin_open_zero_a": 0.08737467541993596,
       "open_zero_counts": 9.488569998331286,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.08160709227051921,
-      "i_drift_ma": 0.19999763359264477,
+      "i_drift_ma": 0.19999763359265899,
       "rail_v": 7.349887508284879,
       "duty_applied_pct": 20.0,
       "v_on_v": 7.3049949059067005,
-      "i_spin_meter_a": 0.05977746304874462
+      "i_spin_meter_a": 0.05953004209716685
     },
     {
       "k": 19,
@@ -2648,7 +2836,7 @@
       "turned": true,
       "speed_rev_s": 133.52675745376033,
       "emf_v": 0.9786387219830288,
-      "i_spin_a": 0.09270041969375895,
+      "i_spin_a": 0.09270041969375885,
       "ke": 0.0011664717474972866,
       "ke_read": 0.0011664717474972866,
       "ke_spin": 0.0011565241718954253,
@@ -2659,16 +2847,16 @@
       "window_ms": 9.950000000000001,
       "stop_ms": 102.75,
       "spin_speed_rev_s": 148.89713453321815,
-      "i_spin_open_zero_a": 0.08910611451668475,
+      "i_spin_open_zero_a": 0.08910611451668474,
       "open_zero_counts": 9.340113371123607,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.053495943535619706,
-      "i_drift_ma": 0.44448813280826016,
+      "i_drift_ma": 0.4444881328082886,
       "rail_v": 7.350286438545098,
       "duty_applied_pct": 20.0,
       "v_on_v": 7.300967578631978,
-      "i_spin_meter_a": 0.061395373253149664
+      "i_spin_meter_a": 0.06114808870757347
     },
     {
       "k": 20,
@@ -2678,7 +2866,7 @@
       "turned": true,
       "speed_rev_s": 135.14573272545258,
       "emf_v": 0.9901274418650176,
-      "i_spin_a": 0.0918856716247512,
+      "i_spin_a": 0.0918856716247511,
       "ke": 0.0011660277648860781,
       "ke_read": 0.0011660277648860781,
       "ke_spin": 0.0011662437371839152,
@@ -2689,16 +2877,16 @@
       "window_ms": 9.85,
       "stop_ms": 102.6,
       "spin_speed_rev_s": 149.38517442548286,
-      "i_spin_open_zero_a": 0.08872602493105627,
+      "i_spin_open_zero_a": 0.08872602493105625,
       "open_zero_counts": 8.846770155232889,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.03914836233893659,
-      "i_drift_ma": 0.15154005717147356,
+      "i_drift_ma": 0.15154005717148777,
       "rail_v": 7.346999051210893,
       "duty_applied_pct": 20.0,
       "v_on_v": 7.302275126277533,
-      "i_spin_meter_a": 0.06057501868893062
+      "i_spin_meter_a": 0.060327689856577105
     },
     {
       "k": 20,
@@ -2708,7 +2896,7 @@
       "turned": true,
       "speed_rev_s": 133.35183160549136,
       "emf_v": 0.9784768598445545,
-      "i_spin_a": 0.0931775065597959,
+      "i_spin_a": 0.0931775065597958,
       "ke": 0.0011678086987661868,
       "ke_read": 0.0011678086987661868,
       "ke_spin": 0.0011718328766726262,
@@ -2719,16 +2907,16 @@
       "window_ms": 9.950000000000001,
       "stop_ms": 102.85,
       "spin_speed_rev_s": 148.42123873369454,
-      "i_spin_open_zero_a": 0.08921299099991468,
+      "i_spin_open_zero_a": 0.08921299099991467,
       "open_zero_counts": 9.760307127357692,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.01805407594619446,
-      "i_drift_ma": 0.022466694522506714,
+      "i_drift_ma": 0.022466694522478292,
       "rail_v": 7.349746115281256,
       "duty_applied_pct": 20.0,
       "v_on_v": 7.299819070653858,
-      "i_spin_meter_a": 0.06187738468503425
+      "i_spin_meter_a": 0.061630139039544986
     },
     {
       "k": 21,
@@ -2738,7 +2926,7 @@
       "turned": true,
       "speed_rev_s": 224.66525485984698,
       "emf_v": 1.6499693564555808,
-      "i_spin_a": 0.10135428205743587,
+      "i_spin_a": 0.10135428205743577,
       "ke": 0.0011688535425465657,
       "ke_read": 0.0011688535425465657,
       "ke_spin": 0.001163283553060433,
@@ -2749,16 +2937,16 @@
       "window_ms": 9.549999999999999,
       "stop_ms": 149.15,
       "spin_speed_rev_s": 239.0014230298209,
-      "i_spin_open_zero_a": 0.09787443514795692,
+      "i_spin_open_zero_a": 0.0978744351479569,
       "open_zero_counts": 9.210201700283278,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.0914503636608055,
-      "i_drift_ma": -0.43083190672579974,
+      "i_drift_ma": -0.43083190672578553,
       "rail_v": 7.320490892881903,
       "duty_applied_pct": 30.0,
       "v_on_v": 7.2953196572777,
-      "i_spin_meter_a": 0.0700734527412535
+      "i_spin_meter_a": 0.0697803953524821
     },
     {
       "k": 21,
@@ -2768,7 +2956,7 @@
       "turned": true,
       "speed_rev_s": 225.4355547866787,
       "emf_v": 1.656061538030055,
-      "i_spin_a": 0.10091640177595779,
+      "i_spin_a": 0.10091640177595769,
       "ke": 0.0011691606503297892,
       "ke_read": 0.0011691606503297892,
       "ke_spin": 0.0011674295263294505,
@@ -2779,16 +2967,16 @@
       "window_ms": 9.549999999999999,
       "stop_ms": 157.20000000000002,
       "spin_speed_rev_s": 241.31545543160436,
-      "i_spin_open_zero_a": 0.0966112090256292,
+      "i_spin_open_zero_a": 0.09661120902562917,
       "open_zero_counts": 10.146980313646964,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.06656964696115653,
-      "i_drift_ma": -0.60087394762175,
+      "i_drift_ma": -0.6008739476217784,
       "rail_v": 7.319693032361466,
       "duty_applied_pct": 30.0,
       "v_on_v": 7.292381449750853,
-      "i_spin_meter_a": 0.06964817088896846
+      "i_spin_meter_a": 0.06935523152976478
     },
     {
       "k": 22,
@@ -2798,7 +2986,7 @@
       "turned": true,
       "speed_rev_s": 223.8952569511937,
       "emf_v": 1.6435107286903405,
-      "i_spin_a": 0.10050363132953438,
+      "i_spin_a": 0.10050363132953428,
       "ke": 0.0011682822586663822,
       "ke_read": 0.0011682822586663822,
       "ke_spin": 0.001164572869898785,
@@ -2809,7 +2997,7 @@
       "window_ms": 9.65,
       "stop_ms": 150.75,
       "spin_speed_rev_s": 239.00976985924058,
-      "i_spin_open_zero_a": 0.09714334397481825,
+      "i_spin_open_zero_a": 0.09714334397481822,
       "open_zero_counts": 9.074499999999944,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2818,7 +3006,7 @@
       "rail_v": 7.319242594649928,
       "duty_applied_pct": 30.0,
       "v_on_v": 7.2942234914686095,
-      "i_spin_meter_a": 0.06922750214675086
+      "i_spin_meter_a": 0.06893448879162085
     },
     {
       "k": 22,
@@ -2828,7 +3016,7 @@
       "turned": true,
       "speed_rev_s": 223.10902054709666,
       "emf_v": 1.6368031334859399,
-      "i_spin_a": 0.10169855111173676,
+      "i_spin_a": 0.10169855111173666,
       "ke": 0.0011676144197298377,
       "ke_read": 0.0011676144197298377,
       "ke_spin": 0.0011701953922811264,
@@ -2839,16 +3027,16 @@
       "window_ms": 9.700000000000001,
       "stop_ms": 151.54999999999998,
       "spin_speed_rev_s": 238.63725162372214,
-      "i_spin_open_zero_a": 0.09816214660788206,
+      "i_spin_open_zero_a": 0.09816214660788203,
       "open_zero_counts": 9.274395329441177,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
       "speed_drift_pct": 0.36946897775032017,
-      "i_drift_ma": -0.5387601451182888,
+      "i_drift_ma": -0.5387601451183173,
       "rail_v": 7.319221385699385,
       "duty_applied_pct": 30.0,
       "v_on_v": 7.291086987647556,
-      "i_spin_meter_a": 0.07043587061184653
+      "i_spin_meter_a": 0.07014298325196593
     },
     {
       "k": 23,
@@ -2858,7 +3046,7 @@
       "turned": true,
       "speed_rev_s": 223.66442314009797,
       "emf_v": 1.641382828634154,
-      "i_spin_a": 0.10005099351341917,
+      "i_spin_a": 0.10005099351341906,
       "ke": 0.0011679738199563917,
       "ke_read": 0.0011679738199563917,
       "ke_spin": 0.0011669825032195366,
@@ -2869,7 +3057,7 @@
       "window_ms": 9.65,
       "stop_ms": 149.95,
       "spin_speed_rev_s": 238.9523635542906,
-      "i_spin_open_zero_a": 0.09658833671736547,
+      "i_spin_open_zero_a": 0.09658833671736544,
       "open_zero_counts": 9.190690690690644,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2878,7 +3066,7 @@
       "rail_v": 7.319106251396436,
       "duty_applied_pct": 30.0,
       "v_on_v": 7.293921517416518,
-      "i_spin_meter_a": 0.06877615913322485
+      "i_spin_meter_a": 0.06848315790857457
     },
     {
       "k": 23,
@@ -2888,7 +3076,7 @@
       "turned": true,
       "speed_rev_s": 224.1132302610296,
       "emf_v": 1.64242428707158,
-      "i_spin_a": 0.10187696309765093,
+      "i_spin_a": 0.10187696309765083,
       "ke": 0.0011663744422280016,
       "ke_read": 0.0011663744422280016,
       "ke_spin": 0.0011659418773960473,
@@ -2899,16 +3087,16 @@
       "window_ms": 9.6,
       "stop_ms": 149.65,
       "spin_speed_rev_s": 239.39943275299868,
-      "i_spin_open_zero_a": 0.09845497952605164,
+      "i_spin_open_zero_a": 0.09845497952605163,
       "open_zero_counts": 9.144526034712953,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.014896767515115705,
-      "i_drift_ma": 0.12290603474080797,
+      "i_drift_ma": 0.12290603474082218,
       "rail_v": 7.319445594605129,
       "duty_applied_pct": 30.0,
       "v_on_v": 7.291204757527872,
-      "i_spin_meter_a": 0.0706137776247509
+      "i_spin_meter_a": 0.07032088553398322
     },
     {
       "k": 24,
@@ -2918,7 +3106,7 @@
       "turned": true,
       "speed_rev_s": 305.81484586254595,
       "emf_v": 2.2380148722160316,
-      "i_spin_a": 0.1085361354064661,
+      "i_spin_a": 0.108536135406466,
       "ke": 0.0011647280517782794,
       "ke_read": 0.0011594733971300685,
       "ke_spin": 0.001165783311770862,
@@ -2929,16 +3117,16 @@
       "window_ms": 9.75,
       "stop_ms": 186.5,
       "spin_speed_rev_s": 321.9089829010356,
-      "i_spin_open_zero_a": 0.1055453561005743,
+      "i_spin_open_zero_a": 0.10554535610057428,
       "open_zero_counts": 8.655103402268196,
       "spin_open_per_s": 135.0,
       "coast_open_rows": 2,
       "speed_drift_pct": -0.06280838110094278,
-      "i_drift_ma": -0.3127716296271501,
+      "i_drift_ma": -0.3127716296271785,
       "rail_v": 7.316172346571286,
       "duty_applied_pct": 40.0,
       "v_on_v": 7.28723581190322,
-      "i_spin_meter_a": 0.07728996795559696
+      "i_spin_meter_a": 0.07782952006060812
     },
     {
       "k": 24,
@@ -2948,7 +3136,7 @@
       "turned": true,
       "speed_rev_s": 311.1772713109918,
       "emf_v": 2.2787586744698856,
-      "i_spin_a": 0.11183719766929863,
+      "i_spin_a": 0.11183719766929853,
       "ke": 0.0011654954927378292,
       "ke_read": 0.0011654954927378292,
       "ke_spin": 0.0011586686409454068,
@@ -2959,7 +3147,7 @@
       "window_ms": 10.149999999999999,
       "stop_ms": 191.85,
       "spin_speed_rev_s": 329.4761642005505,
-      "i_spin_open_zero_a": 0.10868128195262794,
+      "i_spin_open_zero_a": 0.10868128195262791,
       "open_zero_counts": 8.842535446205147,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
@@ -2968,7 +3156,7 @@
       "rail_v": 7.318281122225301,
       "duty_applied_pct": 40.0,
       "v_on_v": 7.285228691036988,
-      "i_spin_meter_a": 0.08059963633963912
+      "i_spin_meter_a": 0.08113903983599861
     },
     {
       "k": 25,
@@ -2978,7 +3166,7 @@
       "turned": true,
       "speed_rev_s": 303.9554942765491,
       "emf_v": 2.2260212403197897,
-      "i_spin_a": 0.10898502877349447,
+      "i_spin_a": 0.10898502877349438,
       "ke": 0.001165572889766909,
       "ke_read": 0.001165572889766909,
       "ke_spin": 0.0011748202201892679,
@@ -2989,7 +3177,7 @@
       "window_ms": 9.799999999999999,
       "stop_ms": 184.35000000000002,
       "spin_speed_rev_s": 318.5486604730416,
-      "i_spin_open_zero_a": 0.10548448339056407,
+      "i_spin_open_zero_a": 0.10548448339056404,
       "open_zero_counts": 9.233694745621278,
       "spin_open_per_s": 125.0,
       "coast_open_rows": 0,
@@ -2998,7 +3186,7 @@
       "rail_v": 7.315533048204911,
       "duty_applied_pct": 40.0,
       "v_on_v": 7.290246493202569,
-      "i_spin_meter_a": 0.07772595214081088
+      "i_spin_meter_a": 0.07826572715879954
     },
     {
       "k": 25,
@@ -3008,7 +3196,7 @@
       "turned": true,
       "speed_rev_s": 312.49925055847865,
       "emf_v": 2.2955808320320363,
-      "i_spin_a": 0.11075593292997497,
+      "i_spin_a": 0.11075593292997488,
       "ke": 0.0011691325212203516,
       "ke_read": 0.0011691325212203516,
       "ke_spin": 0.0011635774417979492,
@@ -3019,16 +3207,16 @@
       "window_ms": 10.1,
       "stop_ms": 196.3,
       "spin_speed_rev_s": 329.6448798203361,
-      "i_spin_open_zero_a": 0.10740798023107503,
+      "i_spin_open_zero_a": 0.107407980231075,
       "open_zero_counts": 9.060500000000047,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 1,
       "speed_drift_pct": -0.07257449566884233,
-      "i_drift_ma": -0.2246669452251382,
+      "i_drift_ma": -0.22466694522512398,
       "rail_v": 7.319597087109008,
       "duty_applied_pct": 40.0,
       "v_on_v": 7.291358764294438,
-      "i_spin_meter_a": 0.07949208710775445
+      "i_spin_meter_a": 0.08003194447908317
     },
     {
       "k": 26,
@@ -3038,7 +3226,7 @@
       "turned": true,
       "speed_rev_s": 305.4355916915396,
       "emf_v": 2.2303545389971724,
-      "i_spin_a": 0.10757425251450725,
+      "i_spin_a": 0.10757425251450715,
       "ke": 0.0011621826643154695,
       "ke_read": 0.0011621826643154695,
       "ke_spin": 0.0011628720588199703,
@@ -3049,16 +3237,16 @@
       "window_ms": 9.75,
       "stop_ms": 186.70000000000002,
       "spin_speed_rev_s": 321.46893554015816,
-      "i_spin_open_zero_a": 0.10441784117894429,
+      "i_spin_open_zero_a": 0.10441784117894426,
       "open_zero_counts": 8.84309798030381,
       "spin_open_per_s": 150.0,
       "coast_open_rows": 0,
       "speed_drift_pct": 0.17836308101810694,
-      "i_drift_ma": -0.7828101209119183,
+      "i_drift_ma": -0.7828101209119325,
       "rail_v": 7.317909460615781,
       "duty_applied_pct": 40.0,
       "v_on_v": 7.289693880687242,
-      "i_spin_meter_a": 0.07631754537056192
+      "i_spin_meter_a": 0.07685727947272822
     },
     {
       "k": 26,
@@ -3068,7 +3256,7 @@
       "turned": true,
       "speed_rev_s": 311.8751443482918,
       "emf_v": 2.2794556169731752,
-      "i_spin_a": 0.11113191967066065,
+      "i_spin_a": 0.11113191967066055,
       "ke": 0.0011632431618042599,
       "ke_read": 0.0011632431618042599,
       "ke_spin": 0.0011601197816952403,
@@ -3079,16 +3267,16 @@
       "window_ms": 10.1,
       "stop_ms": 189.75,
       "spin_speed_rev_s": 329.9200560405667,
-      "i_spin_open_zero_a": 0.10814589388754905,
+      "i_spin_open_zero_a": 0.10814589388754903,
       "open_zero_counts": 8.649708090075137,
       "spin_open_per_s": 0.0,
       "coast_open_rows": 0,
       "speed_drift_pct": -0.18023036374562595,
-      "i_drift_ma": 0.6206975016122556,
+      "i_drift_ma": 0.6206975016122271,
       "rail_v": 7.316342018175631,
       "duty_applied_pct": 40.0,
       "v_on_v": 7.283674531248892,
-      "i_spin_meter_a": 0.07990102225832696
+      "i_spin_meter_a": 0.08044031068359409
     },
     {
       "k": 27,
@@ -3098,7 +3286,7 @@
       "turned": true,
       "speed_rev_s": 461.9129683084666,
       "emf_v": 3.363820673002328,
-      "i_spin_a": 0.11835914693215795,
+      "i_spin_a": 0.11835914693215784,
       "ke": 0.0011590250209764755,
       "ke_read": 0.0011391197754799436,
       "ke_spin": 0.0011568047371020326,
@@ -3109,7 +3297,7 @@
       "window_ms": 10.05,
       "stop_ms": 241.85000000000002,
       "spin_speed_rev_s": 480.9761873067237,
-      "i_spin_open_zero_a": 0.11506581957825758,
+      "i_spin_open_zero_a": 0.11506581957825755,
       "open_zero_counts": 8.998499499833315,
       "spin_open_per_s": 495.0,
       "coast_open_rows": 11,
@@ -3118,7 +3306,7 @@
       "rail_v": 7.316216784372424,
       "duty_applied_pct": 60.0,
       "v_on_v": 7.2782047745853475,
-      "i_spin_meter_a": 0.09810538068847571
+      "i_spin_meter_a": 0.09810538068847574
     },
     {
       "k": 27,
@@ -3128,7 +3316,7 @@
       "turned": true,
       "speed_rev_s": 491.41593534063367,
       "emf_v": 3.5815046988373616,
-      "i_spin_a": 0.1094306182148577,
+      "i_spin_a": 0.1094306182148576,
       "ke": 0.0011599423940774338,
       "ke_read": 0.0011521616090896451,
       "ke_spin": 0.0011572140626383677,
@@ -3139,7 +3327,7 @@
       "window_ms": 9.799999999999999,
       "stop_ms": 274.75,
       "spin_speed_rev_s": 509.88140140256905,
-      "i_spin_open_zero_a": 0.10562404695650839,
+      "i_spin_open_zero_a": 0.10562404695650836,
       "open_zero_counts": 9.581038224002668,
       "spin_open_per_s": 175.0,
       "coast_open_rows": 3,
@@ -3148,7 +3336,7 @@
       "rail_v": 7.318618445533941,
       "duty_applied_pct": 60.0,
       "v_on_v": 7.281402679796993,
-      "i_spin_meter_a": 0.08916795285022021
+      "i_spin_meter_a": 0.08916795285022025
     },
     {
       "k": 28,
@@ -3158,7 +3346,7 @@
       "turned": true,
       "speed_rev_s": 462.71657703967554,
       "emf_v": 3.3853002425712804,
-      "i_spin_a": 0.1177322821026375,
+      "i_spin_a": 0.1177322821026374,
       "ke": 0.0011644001840228288,
       "ke_read": 0.0011460331583409836,
       "ke_spin": 0.0011613807259125693,
@@ -3169,16 +3357,16 @@
       "window_ms": 10.0,
       "stop_ms": 242.85000000000002,
       "spin_speed_rev_s": 480.5487369253231,
-      "i_spin_open_zero_a": 0.11465895993498088,
+      "i_spin_open_zero_a": 0.11465895993498085,
       "open_zero_counts": 8.748790658882399,
       "spin_open_per_s": 535.0,
       "coast_open_rows": 10,
       "speed_drift_pct": -0.004896826612721394,
-      "i_drift_ma": -0.4118893995793087,
+      "i_drift_ma": -0.4118893995792945,
       "rail_v": 7.316969197141697,
       "duty_applied_pct": 60.0,
       "v_on_v": 7.2789838676397425,
-      "i_spin_meter_a": 0.0974763478011588
+      "i_spin_meter_a": 0.09747634780115885
     },
     {
       "k": 28,
@@ -3188,7 +3376,7 @@
       "turned": true,
       "speed_rev_s": 489.8378481350501,
       "emf_v": 3.5738423640462056,
-      "i_spin_a": 0.10825221806098066,
+      "i_spin_a": 0.10825221806098057,
       "ke": 0.0011611897288760745,
       "ke_read": 0.0011560336616270005,
       "ke_spin": 0.0011720155841035223,
@@ -3199,7 +3387,7 @@
       "window_ms": 9.799999999999999,
       "stop_ms": 281.25,
       "spin_speed_rev_s": 507.83103773039846,
-      "i_spin_open_zero_a": 0.10455996580774306,
+      "i_spin_open_zero_a": 0.10455996580774304,
       "open_zero_counts": 9.451284617951387,
       "spin_open_per_s": 200.0,
       "coast_open_rows": 2,
@@ -3208,7 +3396,7 @@
       "rail_v": 7.319061813595297,
       "duty_applied_pct": 60.0,
       "v_on_v": 7.28255320093546,
-      "i_spin_meter_a": 0.08798635102959723
+      "i_spin_meter_a": 0.08798635102959729
     },
     {
       "k": 29,
@@ -3218,7 +3406,7 @@
       "turned": true,
       "speed_rev_s": 456.8168019373937,
       "emf_v": 3.316948724017237,
-      "i_spin_a": 0.11914702307242282,
+      "i_spin_a": 0.11914702307242271,
       "ke": 0.0011556247125123205,
       "ke_read": 0.0011450753106107476,
       "ke_spin": 0.001151327409739062,
@@ -3229,16 +3417,16 @@
       "window_ms": 9.799999999999999,
       "stop_ms": 238.95,
       "spin_speed_rev_s": 476.24836650570484,
-      "i_spin_open_zero_a": 0.11598222455955587,
+      "i_spin_open_zero_a": 0.11598222455955584,
       "open_zero_counts": 8.852617539179619,
       "spin_open_per_s": 420.0,
       "coast_open_rows": 7,
       "speed_drift_pct": -0.045327327361921466,
-      "i_drift_ma": -3.6563444026836294,
+      "i_drift_ma": -3.656344402683615,
       "rail_v": 7.318026614818782,
       "duty_applied_pct": 60.0,
       "v_on_v": 7.278163504798228,
-      "i_spin_meter_a": 0.09889337167417941
+      "i_spin_meter_a": 0.09889337167417946
     },
     {
       "k": 29,
@@ -3248,7 +3436,7 @@
       "turned": true,
       "speed_rev_s": 482.28062842115105,
       "emf_v": 3.5160751387302196,
-      "i_spin_a": 0.11307066325092692,
+      "i_spin_a": 0.11307066325092682,
       "ke": 0.0011603218243357795,
       "ke_read": 0.0011567110676044814,
       "ke_spin": 0.0011501840710547641,
@@ -3259,16 +3447,16 @@
       "window_ms": 10.0,
       "stop_ms": 261.79999999999995,
       "spin_speed_rev_s": 502.0447627347998,
-      "i_spin_open_zero_a": 0.10963904380124835,
+      "i_spin_open_zero_a": 0.10963904380124832,
       "open_zero_counts": 9.155462885738189,
       "spin_open_per_s": 195.0,
       "coast_open_rows": 3,
       "speed_drift_pct": -0.08828905857701796,
-      "i_drift_ma": -0.3070448251409772,
+      "i_drift_ma": -0.307044825140963,
       "rail_v": 7.319375908053343,
       "duty_applied_pct": 60.0,
       "v_on_v": 7.28108359388195,
-      "i_spin_meter_a": 0.09280888583760917
+      "i_spin_meter_a": 0.09280888583760923
     }
   ]
 }
