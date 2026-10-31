@@ -6,6 +6,8 @@ path.
   uv run python stages/2-motor/teardown/capture.py terminals [N]       writes telemetry/<motor>/teardown/terminals-N
   uv run python stages/2-motor/teardown/capture.py cool winding [N]    writes telemetry/<motor>__<board>/teardown/cool-winding-N
   uv run python stages/2-motor/teardown/capture.py cool core [N]       writes telemetry/<motor>__<board>/teardown/cool-core-N
+  uv run python stages/2-motor/teardown/capture.py coil ring [N]       writes telemetry/<motor>__<board>/teardown/coil-ring-N
+  uv run python stages/2-motor/teardown/capture.py coil noring [N]     writes telemetry/<motor>__<board>/teardown/coil-noring-N
 
 `terminals` looks for a path across the motor's terminals that is not the
 winding, on the end cap with its brush card seated back on the empty can
@@ -45,6 +47,17 @@ method, and the shape of the heating, whether the copper runs seconds ahead
 of the iron, is the part a brushed motor of this class shares. The numbers
 themselves belong to this rotor in open air and feed no calibration.
 
+`coil` runs inductance's `fast` groups into one coil of the bare rotor:
+fast decay at 25 and 40 %, both signs, then slow decay forward, five bursts
+each on a 5 V rail. The rotor keeps its laminations and loses the brushes,
+the magnets and the can, so the drive-only current the motor showed at
+every ON edge either stays on one coil and its iron or goes with the parts
+that are gone. `ring` has the leads on the gray disc's two pads at the
+coil's ends, so one ring sector sits across the coil and two more in
+series through the third pad. `noring` moves one lead to the coil's free
+wire end, cut from the third pad, so no sector sits across it. The capacitive
+spike at the ON edge says which.
+
 The masses, the photos and the counts of the teardown go into the notebook
 by hand.
 """
@@ -72,6 +85,15 @@ ROOM_PROBES = 10
 PROBE_MS = 5                 # at 100 %, 25 times the winding's L/R, about 15 mJ into the copper
 TAIL = 30                    # probes 0.2 s apart closing each heat, the copper's first six seconds of cooling
 COOL = [(60, 1000), (108, 5000)]   # probes and their spacing in ms: once a second to a minute, then every 5 s to 10 min
+BURST_V = 5.0                # inductance's rail, so the coil's bursts sit beside the motor's
+COIL_GROUPS = [              # inductance fast-1's groups: (folder, duty %, direction, decay)
+    ("f1-fwd-25", 25, "fwd", "fast"),
+    ("f2-fwd-40", 40, "fwd", "fast"),
+    ("f3-rev-40", 40, "rev", "fast"),
+    ("f4-rev-25", 25, "rev", "fast"),
+    ("f5-fwd-25", 25, "fwd", "slow"),
+    ("f6-fwd-40", 40, "fwd", "slow"),
+]
 
 args = sys.argv[1:]
 n = [a for a in args if a.isdigit()]
@@ -167,8 +189,28 @@ if "terminals" in args:
     print("wrote", out)
     sys.exit()
 
+if "coil" in args and ({"ring", "noring"} & set(args)):
+    wiring = "noring" if "noring" in args else "ring"
+    board = boards.BOARDS[boards.DEFAULT]
+    out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"coil-{wiring}")
+    print("motor", motor.key, "board", board.key, "coil", wiring)
+    leads = {"ring": "the leads soldered to the gray disc's two pads at one coil's ends",
+             "noring": "one lead on the coil's free wire end, cut from the third pad, the other on its pad"}[wiring]
+    capture.prompt(f"The bare rotor held by its shaft, touching nothing metal, {leads}. {OHMS} "
+                   "Read the leads' free ends into the notebook by hand, then the leads on the board's motor connector.")
+    bench.power_up(BURST_V + bench.DIODE_V)
+    try:
+        dps_read, vsys = bench.set_vsys(BURST_V)
+        print(f"VSYS {BURST_V} V: rail reads {vsys:.3f} V, DPS {dps_read:.3f} V")
+        for group, pct, dirs, decay in COIL_GROUPS:
+            osc.bursts(out / group, [pct], repeats=5, chans="diff", dirs=dirs, decay=decay)
+    finally:
+        bench.power_down()
+    print("wrote", out)
+    sys.exit()
+
 if "cool" not in args or not ({"winding", "core"} & set(args)):
-    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N]")
+    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N] | coil ring [N] | coil noring [N]")
 place = "winding" if "winding" in args else "core"
 board = boards.BOARDS[boards.DEFAULT]
 out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"cool-{place}")
