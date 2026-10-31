@@ -184,7 +184,9 @@ cap with its brush card, the DMM on ohms, capacitance and DC mA, and the
 DPS. For `cool winding` the rotor with leads on commutator tabs 1 and 2,
 held by its shaft in still air, the thermocouple taped in the winding, the
 DMM on ohms and on temperature, and the board on the DPS. For `coil` the
-bare rotor with leads on one coil, and the board on the DPS. The stage 0
+bare rotor with leads on one coil, and the board on the DPS. For `disc iv`
+the disc off the rotor with two leads on its pads, the DMM on capacitance,
+ohms and DC current, and the DPS. The stage 0
 thermocouple result, the stage 1 current-scale and terminal-chain results,
 and the rest-resistance, inductance, bemf-coast, speed-torque and
 no-load-current results.
@@ -220,6 +222,13 @@ the rotor back in the can with its magnets, no end cap or brushes, the
 shaft clamped, so the can's steel and the magnets return without the
 brushes.
 
+`disc iv` takes the gray disc off the rotor, the segments still fused to
+its pads and two leads on two pads, and asks whether it is a varistor or a
+capacitor ring with a leak. The meter reads ohms and capacitance across the
+leads, then the DPS steps them from 0 to 20 V and back with 2 mA as its
+limit, both ways round, the meter on DC current in series. A leak follows
+the volts in a straight line, and a varistor turns up at its knee.
+
 `cool core`, with the tip on the iron, was not run. The tip in the winding
 lagged the copper by tens of seconds, too slow to resolve the copper's 2 s
 exchange with the iron. The plateau soak and the coil unwind were not done
@@ -229,4 +238,5 @@ the coils' turns stay open.
 Run: `uv run python stages/2-motor/teardown/capture.py terminals` once the
 rotor is out, then `capture.py cool winding` with the rotor at room, then
 `capture.py coil ring`, `capture.py coil noring` and `capture.py coil can`
-once the disc's pads are read, then the notebook.
+once the disc's pads are read, `capture.py disc iv` once the disc is off the
+rotor, then the notebook.
