@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1",
-  "notes": "Teardown of mg90-b after every other stage 2 experiment. Masses on a 1 mg scale, dimensions by micrometer (can) and calipers (rotor), counts off the parts and the photos, all from telemetry/mg90-b/teardown/hand.csv; each quantity's value is the mean of its readings and the bounds their range. j_cylinder_upper_kg_m2 is the rotor (1.123 g, no pinion) as a uniform cylinder of the stack's 7.03 mm, an upper bound since the shaft, commutator and disc sit at a smaller radius; the pinion adds at most pinion_j_pct if it sat at the stack's radius. end_cap_* are terminals-1, the end cap on the empty can: ohms across the tabs and from each tab to the can read OL in every packet, found from the raw bits (decimals 7, reading 0), capacitance across the tabs against the open probes in air, and the current with the DPS across the tabs at 3.7, 5.0 and 7.4 V, every packet 0.000 mA. pair_zero_ohm is terminals-1's settled lead zero, leads_ohm the motor's two leads in series less it. rotor_pair_ohm is the median of the three tab pairs read by hand, zeroed, the bounds their range, rotor_pairs_by_tab in the order 1-2, 2-3, 3-1; coil_ohm is 1.5 x each pair (three coils in a delta, each pair one coil in parallel with two in series), coil_direct_ohm one coil read alone after the disc work. The hand readings carry no thermometer: teardown_room_c is the cool run's room (room-c2 and the board phase before the heat, through the stage 0 correction) with +/- 2 C as the bracket. copper_leads_ohm is rotor_pair_ohm + leads_ohm at teardown_room_c; brush_path_meter_ohm is rest-resistance's r_ohms_median_ohm less copper_leads_ohm moved to rest-resistance's room_c over alpha 0.00393, the bounds the 2 C bracket and two meter steps; terminal_over_copper_stall_pct is rest-resistance's r_term_median_ohm over copper_leads_ohm moved to its board_ntc_c (a proxy, the stall pass's copper was not measured), the bounds from r_term's range over the holes, stall_excess_v that excess times r_term_amps, the most a brush drop can be if the copper sat at the proxy. The gray disc was read by hand after the coil wires were cut at one pad: the two pairs through that pad read two sectors in parallel (the other two pads tied by their coil), so ring_sector_nf = (pair - open-probe stray) / 2 and ring_sector_kohm = 2 x pair, the bounds the two pairs; at an edge the brushes see 1.5 sectors (each brush on one segment) to 2 sectors (a brush bridging two), ring_terminal_nf with the midpoint as value, ring_terminal_kohm 2/3 to 1/2 of a sector, ring_leak_7v4_ua the leakage at 7.4 V. ring_spike_charge_nc holds each earlier ON-edge spike (inductance fast_on_edge_spike_nc at the window volts printed in the inductance notebook, bemf-coast spinning_by_point) beside Q = C x the window's volts for the ring's two geometries. drive_only_over_ring_leak is every earlier drive-only current per volt (inductance's fast-decay step, bemf-coast's spinning step, crest over meter and reading term by duty below 100 %) over the ring's largest leakage per volt. The cool run is telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1: the bare rotor in still air, held by its shaft in a clip, leads on commutator tabs 1 and 2 joined to the board by clips, heated at 100 % on the 3.3 V rail; R per streamed window is the median tap difference over the median shunt above the sweep's torque-off zero in raw counts, over the window's second half; R0 the median of the ten room probes; a rise is (R / R0 - 1) x (234.5 + tc_room_c), copper's coefficient referred to the room the probes sat at, a weighted copper temperature (coil 1-2 weighs 4, the other two 1 each), with the coefficient from earlier work and not measured here; heat_rise_c is the last 100 ms heating window, heat_peak_probe_c the first probe after the drive, fast_tau_s one exponential plus offset over the 30 probes 0.2 s apart after the drive (bounds +/- one standard error), slow_tau_s the same over the cool probes after the step, cool_step_c the step at flat_window_s (a clip contact, left out), pre_step_excess_c how far the cool probes from 25 s to the flat sit over the slow fit carried back, unresolved; c_eff_j_per_k is the first window's power through the stage 1 lines over its warming rate from 10 ms, the lower bound with stage 1's 3.3 V deviations divided out, an upper bound on what the weighted reading sees; the cool run's numbers belong to this rotor in open air and feed no calibration. tc_* is the thermocouple in the winding through the stage 0 correction, room-c1's 28.6 C flat is unexplained and not used.",
+  "notes": "Teardown of mg90-b after every other stage 2 experiment. Masses on a 1 mg scale, dimensions by micrometer (can) and calipers (rotor), counts off the parts and the photos, all from telemetry/mg90-b/teardown/hand.csv; each quantity's value is the mean of its readings and the bounds their range. j_cylinder_upper_kg_m2 is the rotor (1.123 g, no pinion) as a uniform cylinder of the stack's 7.03 mm, an upper bound since the shaft, commutator and disc sit at a smaller radius; the pinion adds at most pinion_j_pct if it sat at the stack's radius. end_cap_* are terminals-1, the end cap on the empty can: ohms across the tabs and from each tab to the can read OL in every packet, found from the raw bits (decimals 7, reading 0), capacitance across the tabs against the open probes in air, and the current with the DPS across the tabs at 3.7, 5.0 and 7.4 V, every packet 0.000 mA. pair_zero_ohm is terminals-1's settled lead zero, leads_ohm the motor's two leads in series less it. rotor_pair_ohm is the median of the three tab pairs read by hand, zeroed, the bounds their range, rotor_pairs_by_tab in the order 1-2, 2-3, 3-1; coil_ohm is 1.5 x each pair (three coils in a delta, each pair one coil in parallel with two in series), coil_direct_ohm one coil read alone after the disc work. The hand readings carry no thermometer: teardown_room_c is the cool run's room (room-c2 and the board phase before the heat, through the stage 0 correction) with +/- 2 C as the bracket. copper_leads_ohm is rotor_pair_ohm + leads_ohm at teardown_room_c; brush_path_meter_ohm is rest-resistance's r_ohms_median_ohm less copper_leads_ohm moved to rest-resistance's room_c over alpha 0.00393, the bounds the 2 C bracket and two meter steps; terminal_over_copper_stall_pct is rest-resistance's r_term_median_ohm over copper_leads_ohm moved to its board_ntc_c (a proxy, the stall pass's copper was not measured), the bounds from r_term's range over the holes, stall_excess_v that excess times r_term_amps, the most a brush drop can be if the copper sat at the proxy. The gray disc was read by hand after the coil wires were cut at one pad: the two pairs through that pad read two sectors in parallel (the other two pads tied by their coil), so ring_sector_nf = (pair - open-probe stray) / 2 and ring_sector_kohm = 2 x pair, the bounds the two pairs; at an edge the brushes see 1.5 sectors (each brush on one segment) to 2 sectors (a brush bridging two), ring_terminal_nf with the midpoint as value, ring_terminal_kohm 2/3 to 1/2 of a sector, all on the meter's ohms, which test the part at the meter's own small voltage. ring_leak_7v4_ua is the ring's current at 7.4 V from disc-iv-1's black-free pad pair (each brush on one segment), log-log between the swept steps, the bounds the four legs; it replaces a linear reading of the on-rotor ohms (35 to 47 uA), which a varistor does not follow. ring_spike_charge_nc holds each earlier ON-edge spike (inductance fast_on_edge_spike_nc at the window volts printed in the inductance notebook, bemf-coast spinning_by_point) beside Q = C x the window's volts for the ring's two geometries on the rotor. drive_only_over_ring_current is every earlier drive-only current (inductance's fast-decay step, bemf-coast's spinning step and crest over meter at their points, its reading term at 60 and 80 % on 5.0 V) over the black-free pad pair's swept current at the same volts, the median as value, the low bound against twice the pair (a brush bridging two segments, equal sectors), the high against the pair; it replaces drive_only_over_ring_leak, a ratio per volt against a linear leak. The disc off the rotor, its segments still fused to its pads: ring_off_rotor_pair_nf and _kohm are the three pad pairs by hand, named by the leads on them, the stray off, each one sector in parallel with the other two in series; ring_off_rotor_sector_nf and _kohm solve the three sectors from them, the kohm at the meter's test voltage and not a fixed resistance; ring_brushes_one_segment_nf is the pairs, ring_brushes_bridging_nf two sectors in parallel. disc-iv-1 reads the black-free pair: ring_pair_cap_nf its pair-cap window less open-cap, ring_pair_ohm_logged_kohm its pair-ohm window; each sweep step is the meter's median over the 2.5 s before the DPS's read-back; ring_v_at_1ma_v the power law between the steps around 1 mA on each leg (up and down, both polarities; the bounds the four legs), ring_exponent_at_1ma and ring_exponent_1_2v the local d ln I / d ln V between 7 and 8 V and between 1 and 2 V, ring_pair_ua_by_v the pair at 3.7, 5.0 and 7.4 V (bounds the legs) and at 8.4 V (the 7 to 8 V power law carried on), ring_polarity_pct and ring_up_down_pct negative over positive and down over up from 1 to 8 V, ring_dps_limit_* the steps where the DPS sat on its 2 mA limit, the meter kept over the DPS's read-back. The coil runs are telemetry/mg90-b__dev-v006-2A-D/teardown/coil-ring-1, coil-noring-1 and coil-can-1, read with inductance fast-1 hole 11 and bridge-states capture-1 ra and rab, every fast-decay burst but the first of its group. fast_edge_lags_ticks, amp_tau_ticks and amp_gain are fitted on bridge-states r and ra through a tick-level model of the bridge. window_offset_ma is the window's line from 150 ticks after the commanded start to 20 before its end, read at the fast-decay ON edge, the mean over the bursts +/- its standard error, window_offset_ms the same per volt of the ON jump, off_drop_over_offset the OFF edge's drop over it against what a conductance across the inductance gives. edge_charge_nc is the fold over the window's line from 20 ticks before to 40 after the ON edge (spike) and from 40 to 150 after (tail), ring_tail_nc coil-ring-1 less coil-noring-1 in the tail. iron_loss_* fit L0 || G behind R_s (rest-resistance's hole 11 stall resistance, the coil's leads by hand) with the ring's C across the terminals (its spike charge as one residual) from 150 ticks after the ON edge to the end of the floating stretch, both duties at once, the gain held, 1 sigma from the Jacobian scaled by chi2 with a C on its lower bound held; iron_loss_chi2 against L0 alone; iron_loss_share the ratios of G and of G x L0 with propagated sigmas. The cool run is telemetry/mg90-b__dev-v006-2A-D/teardown/cool-winding-1: the bare rotor in still air, held by its shaft in a clip, leads on commutator tabs 1 and 2 joined to the board by clips, heated at 100 % on the 3.3 V rail; R per streamed window is the median tap difference over the median shunt above the sweep's torque-off zero in raw counts, over the window's second half; R0 the median of the ten room probes; a rise is (R / R0 - 1) x (234.5 + tc_room_c), copper's coefficient referred to the room the probes sat at, a weighted copper temperature (coil 1-2 weighs 4, the other two 1 each), with the coefficient from earlier work and not measured here; heat_rise_c is the last 100 ms heating window, heat_peak_probe_c the first probe after the drive, fast_tau_s one exponential plus offset over the 30 probes 0.2 s apart after the drive (bounds +/- one standard error), slow_tau_s the same over the cool probes after the step, cool_step_c the step at flat_window_s (a clip contact, left out), pre_step_excess_c how far the cool probes from 25 s to the flat sit over the slow fit carried back, unresolved; c_eff_j_per_k is the first window's power through the stage 1 lines over its warming rate from 10 ms, the lower bound with stage 1's 3.3 V deviations divided out, an upper bound on what the weighted reading sees; the cool run's numbers belong to this rotor in open air and feed no calibration. tc_* is the thermocouple in the winding through the stage 0 correction, room-c1's 28.6 C flat is unexplained and not used.",
   "hand_readings": "telemetry/mg90-b/teardown/hand.csv",
   "terminals": "telemetry/mg90-b/teardown/terminals-1",
   "mass_whole_g": {
@@ -259,9 +259,9 @@
     "unit": "kohm"
   },
   "ring_leak_7v4_ua": {
-    "value": 40.851735015772874,
-    "lo": 35.01577287066247,
-    "hi": 46.68769716088328,
+    "value": 801.0478172777437,
+    "lo": 799.3242097913344,
+    "hi": 802.9212565873917,
     "unit": "uA"
   },
   "ring_spike_charge_nc": {
@@ -474,11 +474,773 @@
       }
     }
   },
-  "drive_only_over_ring_leak": {
-    "value": 679.6153807556424,
-    "lo": 251.12032065791203,
-    "hi": 712.5642446367547,
+  "drive_only_over_ring_current": {
+    "value": 55.26823677369956,
+    "lo": 19.042732396408034,
+    "hi": 111.6300974003838,
     "unit": "ratio"
+  },
+  "ring_off_rotor_pair_nf": {
+    "white-black": {
+      "value": 7.709,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    },
+    "white-free": {
+      "value": 8.054,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    },
+    "black-free": {
+      "value": 7.912,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    }
+  },
+  "ring_off_rotor_pair_kohm": {
+    "white-black": {
+      "value": 225.2,
+      "lo": null,
+      "hi": null,
+      "unit": "kohm on the meter's ohms"
+    },
+    "white-free": {
+      "value": 284.3,
+      "lo": null,
+      "hi": null,
+      "unit": "kohm on the meter's ohms"
+    },
+    "black-free": {
+      "value": 279.1,
+      "lo": null,
+      "hi": null,
+      "unit": "kohm on the meter's ohms"
+    }
+  },
+  "ring_off_rotor_sector_nf": {
+    "white-black": {
+      "value": 5.016900011186771,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    },
+    "white-free": {
+      "value": 5.478309826583702,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    },
+    "black-free": {
+      "value": 5.29326887836376,
+      "lo": null,
+      "hi": null,
+      "unit": "nF"
+    }
+  },
+  "ring_off_rotor_sector_kohm": {
+    "white-black": {
+      "value": 300.13790656416313,
+      "lo": null,
+      "hi": null,
+      "unit": "kohm on the meter's ohms"
+    },
+    "white-free": {
+      "value": 461.3938181818183,
+      "lo": null,
+      "hi": null,
+      "unit": "kohm on the meter's ohms"
+    },
+    "black-free": {
+      "value": 440.56701388888894,
+      "lo": null,
+      "hi": null,
+      "unit": "kohm on the meter's ohms"
+    }
+  },
+  "ring_brushes_one_segment_nf": {
+    "value": 7.891666666666667,
+    "lo": 7.709,
+    "hi": 8.054,
+    "unit": "nF"
+  },
+  "ring_brushes_bridging_nf": {
+    "value": 10.525652477422822,
+    "lo": 10.310168889550532,
+    "hi": 10.771578704947462,
+    "unit": "nF"
+  },
+  "ring_pair_cap_nf": {
+    "value": 8.12,
+    "lo": null,
+    "hi": null,
+    "unit": "nF"
+  },
+  "ring_pair_ohm_logged_kohm": {
+    "value": 292.2,
+    "lo": null,
+    "hi": null,
+    "unit": "kohm"
+  },
+  "ring_v_at_1ma_v": {
+    "value": 7.8171716598344485,
+    "lo": 7.812101381843331,
+    "hi": 7.8227988510247,
+    "unit": "V"
+  },
+  "ring_exponent_at_1ma": {
+    "value": 4.044156709181015,
+    "lo": 4.03129899849305,
+    "hi": 4.051011063066535,
+    "unit": "d ln I / d ln V, 7 to 8 V"
+  },
+  "ring_exponent_1_2v": {
+    "value": 1.84764108977376,
+    "lo": 1.8318772411916735,
+    "hi": 1.852895705967789,
+    "unit": "d ln I / d ln V, 1 to 2 V"
+  },
+  "ring_pair_ua_by_v": {
+    "3.7 V": {
+      "value": 83.70544828102186,
+      "lo": 83.62734724832985,
+      "hi": 83.94945918726246,
+      "unit": "uA"
+    },
+    "5.0 V": {
+      "value": 207.99999999999997,
+      "lo": 207.70000000000007,
+      "hi": 208.30000000000004,
+      "unit": "uA"
+    },
+    "7.4 V": {
+      "value": 801.0478172777437,
+      "lo": 799.3242097913344,
+      "hi": 802.9212565873917,
+      "unit": "uA"
+    },
+    "8.4 V": {
+      "value": 1338.0047690653764,
+      "lo": null,
+      "hi": null,
+      "unit": "uA"
+    }
+  },
+  "ring_polarity_pct": {
+    "value": 0.0,
+    "lo": -1.9999999999999907,
+    "hi": 0.3746002740977472,
+    "unit": "%"
+  },
+  "ring_up_down_pct": {
+    "value": -0.21407989184296095,
+    "lo": -1.9999999999999907,
+    "hi": 0.0,
+    "unit": "%"
+  },
+  "ring_dps_limit_v": {
+    "value": 8.323,
+    "lo": 8.27,
+    "hi": 8.393,
+    "unit": "V"
+  },
+  "ring_dps_limit_meter_ma": {
+    "value": 1.3026999999999997,
+    "lo": 1.2787,
+    "hi": 1.3392,
+    "unit": "mA"
+  },
+  "ring_dps_limit_dps_ma": {
+    "value": 2.0,
+    "lo": 2.0,
+    "hi": 2.0,
+    "unit": "mA"
+  },
+  "fast_edge_lags_ticks": {
+    "on": {
+      "value": 8.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks after the commanded start"
+    },
+    "off": {
+      "value": 12.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks after the commanded end"
+    }
+  },
+  "amp_tau_ticks": {
+    "value": 2.320540212797332,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "amp_gain": {
+    "value": 1.0033573597141692,
+    "lo": null,
+    "hi": null,
+    "unit": "ratio"
+  },
+  "window_offset_ma": {
+    "motor, fast-1 hole 11": {
+      "25 %": {
+        "value": 18.03712906767151,
+        "lo": 17.787605148722633,
+        "hi": 18.28665298662039,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 23.234104869015052,
+        "lo": 23.09807416122891,
+        "hi": 23.370135576801193,
+        "unit": "mA"
+      }
+    },
+    "coil-can-1": {
+      "25 %": {
+        "value": 18.045706086639004,
+        "lo": 17.838155922412533,
+        "hi": 18.253256250865476,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 21.605918991534686,
+        "lo": 21.241268865854103,
+        "hi": 21.97056911721527,
+        "unit": "mA"
+      }
+    },
+    "coil-noring-1": {
+      "25 %": {
+        "value": 7.234628860050772,
+        "lo": 6.985056962146876,
+        "hi": 7.484200757954667,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 9.503177320714688,
+        "lo": 9.28528451055627,
+        "hi": 9.721070130873105,
+        "unit": "mA"
+      }
+    },
+    "coil-ring-1": {
+      "25 %": {
+        "value": 7.833964732321988,
+        "lo": 7.508783018300149,
+        "hi": 8.159146446343826,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 9.492025109932602,
+        "lo": 9.320449383433163,
+        "hi": 9.66360083643204,
+        "unit": "mA"
+      }
+    },
+    "ra": {
+      "25 %": {
+        "value": 0.7273257222777221,
+        "lo": 0.4792767206415862,
+        "hi": 0.9753747239138579,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 0.7670772781876947,
+        "lo": 0.5544650945573874,
+        "hi": 0.979689461818002,
+        "unit": "mA"
+      }
+    },
+    "rab": {
+      "25 %": {
+        "value": 0.14428141831845775,
+        "lo": -0.11087366700937396,
+        "hi": 0.39943650364628946,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 0.454819877714026,
+        "lo": 0.3267034170408889,
+        "hi": 0.5829363383871631,
+        "unit": "mA"
+      }
+    }
+  },
+  "window_offset_ms": {
+    "motor, fast-1 hole 11": {
+      "25 %": {
+        "value": 3.583804129464122,
+        "lo": 3.533750889125388,
+        "hi": 3.633857369802856,
+        "unit": "mS of the ON jump"
+      },
+      "40 %": {
+        "value": 4.430627573116581,
+        "lo": 4.4037350826311625,
+        "hi": 4.457520063602,
+        "unit": "mS of the ON jump"
+      }
+    },
+    "coil-can-1": {
+      "25 %": {
+        "value": 3.5987538285402483,
+        "lo": 3.557610910806703,
+        "hi": 3.6398967462737937,
+        "unit": "mS of the ON jump"
+      },
+      "40 %": {
+        "value": 4.084563952711057,
+        "lo": 4.016173182954539,
+        "hi": 4.152954722467575,
+        "unit": "mS of the ON jump"
+      }
+    },
+    "coil-noring-1": {
+      "25 %": {
+        "value": 1.4505564252726368,
+        "lo": 1.3998963767020005,
+        "hi": 1.5012164738432732,
+        "unit": "mS of the ON jump"
+      },
+      "40 %": {
+        "value": 1.9057583491632404,
+        "lo": 1.86062662879175,
+        "hi": 1.9508900695347309,
+        "unit": "mS of the ON jump"
+      }
+    },
+    "coil-ring-1": {
+      "25 %": {
+        "value": 1.5852491830252857,
+        "lo": 1.515145111641233,
+        "hi": 1.6553532544093386,
+        "unit": "mS of the ON jump"
+      },
+      "40 %": {
+        "value": 2.1400320075366057,
+        "lo": 2.0967714753597693,
+        "hi": 2.183292539713442,
+        "unit": "mS of the ON jump"
+      }
+    },
+    "ra": {
+      "25 %": {
+        "value": 0.14653395086695192,
+        "lo": 0.09655970620657023,
+        "hi": 0.19650819552733362,
+        "unit": "mS of the ON jump"
+      },
+      "40 %": {
+        "value": 0.1544939286615276,
+        "lo": 0.11165011775754995,
+        "hi": 0.19733773956550527,
+        "unit": "mS of the ON jump"
+      }
+    },
+    "rab": {
+      "25 %": {
+        "value": 0.029020170270834707,
+        "lo": -0.022245955426175863,
+        "hi": 0.08028629596784528,
+        "unit": "mS of the ON jump"
+      },
+      "40 %": {
+        "value": 0.0912569549107876,
+        "lo": 0.06552051472321396,
+        "hi": 0.11699339509836124,
+        "unit": "mS of the ON jump"
+      }
+    }
+  },
+  "off_drop_over_offset": {
+    "motor, fast-1 hole 11": {
+      "25 %": {
+        "value": 1.9102761129323098,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.22"
+      },
+      "40 %": {
+        "value": 1.94290236301526,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.15"
+      }
+    },
+    "coil-can-1": {
+      "25 %": {
+        "value": 2.1078876774739,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.23"
+      },
+      "40 %": {
+        "value": 2.251826741339876,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.13"
+      }
+    },
+    "coil-noring-1": {
+      "25 %": {
+        "value": 3.27867616926487,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.26"
+      },
+      "40 %": {
+        "value": 3.3077167464200303,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.27"
+      }
+    },
+    "coil-ring-1": {
+      "25 %": {
+        "value": 2.6532375524607987,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.27"
+      },
+      "40 %": {
+        "value": 2.8472042035299188,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio, a conductance gives 2.55"
+      }
+    }
+  },
+  "edge_charge_nc": {
+    "motor, fast-1 hole 11": {
+      "25 %": {
+        "spike": {
+          "value": 39.60491019972709,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": -1.981555566862447,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      },
+      "40 %": {
+        "spike": {
+          "value": 31.456508567781842,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": -9.116820035538469,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      }
+    },
+    "coil-can-1": {
+      "25 %": {
+        "spike": {
+          "value": -17.19185740316536,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": -7.849511620803202,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      },
+      "40 %": {
+        "spike": {
+          "value": -20.862067212998703,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": -13.518449752746236,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      }
+    },
+    "coil-noring-1": {
+      "25 %": {
+        "spike": {
+          "value": -2.4232285865247283,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": -0.504895961025367,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      },
+      "40 %": {
+        "spike": {
+          "value": -7.887753701924244,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": -6.15213040018304,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      }
+    },
+    "coil-ring-1": {
+      "25 %": {
+        "spike": {
+          "value": 46.355516961306755,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": 4.53240610140264,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      },
+      "40 %": {
+        "spike": {
+          "value": 40.739140900033455,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": 1.3713566521308855,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      }
+    },
+    "ra": {
+      "25 %": {
+        "spike": {
+          "value": 1.9001695036352908,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": 0.509025890606759,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      },
+      "40 %": {
+        "spike": {
+          "value": 1.0073282068367728,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        },
+        "tail": {
+          "value": -0.6602423846024492,
+          "lo": null,
+          "hi": null,
+          "unit": "nC"
+        }
+      }
+    }
+  },
+  "ring_tail_nc": {
+    "25 %": {
+      "value": 5.037302062428007,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
+    },
+    "40 %": {
+      "value": 7.523487052313926,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
+    }
+  },
+  "iron_loss_g_ms": {
+    "motor, fast-1 hole 11": {
+      "value": 4.615993076047104,
+      "lo": 4.382408255004791,
+      "hi": 4.849577897089416,
+      "unit": "mS"
+    },
+    "coil-can-1": {
+      "value": 3.8182625999475874,
+      "lo": 3.7076505225829948,
+      "hi": 3.92887467731218,
+      "unit": "mS"
+    },
+    "coil-noring-1": {
+      "value": 1.8673331735232424,
+      "lo": 1.798072310656948,
+      "hi": 1.9365940363895366,
+      "unit": "mS"
+    },
+    "coil-ring-1": {
+      "value": 2.6137009994932257,
+      "lo": 2.4594657316015205,
+      "hi": 2.767936267384931,
+      "unit": "mS"
+    }
+  },
+  "iron_loss_l0_mh": {
+    "motor, fast-1 hole 11": {
+      "value": 0.6847105240859868,
+      "lo": 0.6420321570113277,
+      "hi": 0.727388891160646,
+      "unit": "mH"
+    },
+    "coil-can-1": {
+      "value": 0.6540844100496515,
+      "lo": 0.6244245442240951,
+      "hi": 0.6837442758752078,
+      "unit": "mH"
+    },
+    "coil-noring-1": {
+      "value": 0.6276772114413478,
+      "lo": 0.6075195825279653,
+      "hi": 0.6478348403547303,
+      "unit": "mH"
+    },
+    "coil-ring-1": {
+      "value": 0.6659878566354295,
+      "lo": 0.6157919447796196,
+      "hi": 0.7161837684912394,
+      "unit": "mH"
+    }
+  },
+  "iron_loss_g_l0_us": {
+    "motor, fast-1 hole 11": {
+      "value": 3.1606190382774986,
+      "lo": 2.906866482400529,
+      "hi": 3.414371594154469,
+      "unit": "us"
+    },
+    "coil-can-1": {
+      "value": 2.497466040101366,
+      "lo": 2.36307913164904,
+      "hi": 2.631852948553692,
+      "unit": "us"
+    },
+    "coil-noring-1": {
+      "value": 1.1720824791889912,
+      "lo": 1.1145778032614695,
+      "hi": 1.2295871551165132,
+      "unit": "us"
+    },
+    "coil-ring-1": {
+      "value": 1.7406931265383732,
+      "lo": 1.5740682922218476,
+      "hi": 1.9073179608548987,
+      "unit": "us"
+    }
+  },
+  "iron_loss_chi2": {
+    "motor, fast-1 hole 11": {
+      "M0": {
+        "value": 898.3820536743596,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      },
+      "A1": {
+        "value": 10.279497659318604,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      }
+    },
+    "coil-can-1": {
+      "M0": {
+        "value": 269.217696151133,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      },
+      "A1": {
+        "value": 8.541058099107858,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      }
+    },
+    "coil-noring-1": {
+      "M0": {
+        "value": 74.39230450530331,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      },
+      "A1": {
+        "value": 8.338626266478471,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      }
+    },
+    "coil-ring-1": {
+      "M0": {
+        "value": 302.74532584063155,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      },
+      "A1": {
+        "value": 37.85010283079379,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2/dof"
+      }
+    }
+  },
+  "iron_loss_share": {
+    "bare coil over coil in the can, G": {
+      "value": 0.48905310324881135,
+      "lo": 0.4660367125105309,
+      "hi": 0.5120694939870918,
+      "unit": "ratio"
+    },
+    "coil in the can over the motor, G": {
+      "value": 0.8271811800933958,
+      "lo": 0.7789492326777622,
+      "hi": 0.8754131275090294,
+      "unit": "ratio"
+    },
+    "bare coil over the motor, G": {
+      "value": 0.40453552307368906,
+      "lo": 0.3791545758508721,
+      "hi": 0.42991647029650604,
+      "unit": "ratio"
+    },
+    "motor over coil in the can, G x L0": {
+      "value": 1.265530336560339,
+      "lo": 1.143216734505593,
+      "hi": 1.387843938615085,
+      "unit": "ratio"
+    }
   },
   "rise_coefficient_pct_per_c": {
     "value": 0.3855061967892839,
