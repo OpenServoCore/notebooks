@@ -158,7 +158,11 @@ terminals other than the winding. The winding's own resistance with no
 brushes in the path, and with the leads read on their own, the share of
 the terminal resistance the brushes own at the meter's milliamp and at the
 stall pass's current. The gray disc behind the commutator, held against the
-spike and the drive-only current inductance and bemf-coast left open. And
+spike and the drive-only current inductance and bemf-coast left open. The
+coil runs put that current on the iron, an iron-loss conductance across
+the winding's inductance, about half in the rotor's laminations and the
+rest arriving with the can and the magnets, and the disc sweep reads the
+disc as a varistor ring, about 7.8 V at 1 mA per pad pair. And
 whether the copper's resistance through the board, over the textbook
 copper coefficient, reads the copper's temperature, and how the heated
 copper cools. The cooling's shape is the part a brushed motor of this
