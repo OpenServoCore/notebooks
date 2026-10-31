@@ -1,0 +1,343 @@
+# The constants table of this stage's TL;DR. The hand-written parts live here,
+# the numbers come from each experiment's results file. After a change to
+# either, run `uv run python -m oscnb.tldr` to rewrite the README's table.
+
+pair = "dev-v006-2A-D"
+
+[[constant]]
+label = "Tap A floor at rest"
+experiment = "rest-noise"
+key = "tap_a_noise"
+decimals = 2
+bounds = "range, lowest to highest of the nine streams"
+confidence = "measured, at the ADC's quantization"
+
+[[constant]]
+label = "Tap B floor at rest"
+experiment = "rest-noise"
+key = "tap_b_noise"
+decimals = 2
+bounds = "range, lowest to highest of the nine streams"
+confidence = "measured, at the ADC's quantization"
+
+[[constant]]
+label = "Current scale"
+experiment = "current-scale"
+key = "counts_per_a"
+decimals = 1
+bounds = "statistical, one standard error of the line"
+confidence = "measured from 3.7 V up, the bounds are not its accuracy, see the next row"
+
+[[constant]]
+label = "Current scale, absolute uncertainty"
+experiment = "current-scale"
+key = "counts_per_a_class_pct"
+unit = "% of reading"
+scale = 1.0
+decimals = 0
+confidence = "class, the DMM's 20 A jack, so no spread to give as bounds"
+
+[[constant]]
+label = "In-drive offset over the torque-off zero"
+experiment = "current-scale"
+key = "drive_offset_counts"
+decimals = 1
+signed = true
+bounds = "statistical, one standard error of the line"
+confidence = "measured, most likely the driver's own current through the shunt"
+
+[[constant]]
+label = "Current range graded"
+experiment = "current-scale"
+key = "amps_range"
+decimals = 2
+bounds = "range, lowest to highest lap current"
+confidence = "the scale is not graded outside it"
+
+[[constant]]
+label = "Rest zero, torque-off"
+experiment = "current-scale"
+key = "rest_zero_counts"
+decimals = 0
+bounds = "range, lowest to highest lap rest from 3.7 V up"
+confidence = "measured, it follows VDD, so each drive takes its own"
+
+[[constant]]
+label = "Current at a 3.3 V rail over the line, bare load"
+experiment = "current-scale"
+key = "deviation_3v3_bare_pct"
+decimals = 1
+signed = true
+confidence = "not graded, one level with the regulator in dropout, no spread"
+
+[[constant]]
+label = "Terminal difference scale"
+experiment = "terminal-chain"
+key = "terminal_counts_per_v"
+decimals = 2
+bounds = "statistical, one standard error of the line"
+confidence = "measured from 3.7 V up, inside the meter's 0.1 % class"
+
+[[constant]]
+label = "Terminal difference offset"
+experiment = "terminal-chain"
+key = "terminal_offset_counts"
+decimals = 1
+signed = true
+bounds = "statistical, one standard error of the line"
+confidence = "measured"
+
+[[constant]]
+label = "Rail tap scale at rest"
+experiment = "terminal-chain"
+key = "rail_counts_per_v"
+decimals = 2
+bounds = "statistical, one standard error of the fine-grid line"
+confidence = "measured at rest, under a lap the tap reads 0.9 to 1.4 % low"
+
+[[constant]]
+label = "Rail tap offset at rest"
+experiment = "terminal-chain"
+key = "rail_offset_counts"
+decimals = 1
+signed = true
+bounds = "statistical, one standard error of the fine-grid line"
+confidence = "good to about a count, it moves with the join"
+
+[[constant]]
+label = "Rail range graded"
+experiment = "terminal-chain"
+key = "rail_range_v"
+decimals = 3
+bounds = "range, lowest to highest meter reading"
+confidence = "nothing under the low end is graded"
+
+[[constant]]
+label = "Rail sag per amp, dev board"
+experiment = "terminal-chain"
+key = "rail_sag_v_per_a"
+decimals = 3
+bounds = "statistical, one standard error of the line"
+confidence = "measured at the connector, the feed diode and the DPS leads"
+
+[[constant]]
+label = "Terminal difference at a 3.3 V rail over the meter"
+experiment = "terminal-chain"
+key = "terminal_error_3v3_pct"
+decimals = 1
+signed = true
+confidence = "not graded, one level with the reference in dropout, no spread"
+
+[[constant]]
+label = "VDD at a 3.3 V rail, at rest"
+experiment = "terminal-chain"
+key = "vdd_3v3_v"
+decimals = 2
+confidence = "read from the chip's 1.2 V reference, one level, no spread"
+
+[[constant]]
+label = "VDD at a 3.3 V rail, under the lap"
+experiment = "terminal-chain"
+key = "vdd_3v3_under_lap_v"
+decimals = 2
+confidence = "about, by the rail tap's route, one level, no spread"
+
+[[constant]]
+label = "Shunt ON edge lag, slow decay, 7.4 V"
+experiment = "sample-timing"
+key = "on_edge_lag_7v4"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the median, half-plateau crossing"
+
+[[constant]]
+label = "Shunt ON edge lag, slow decay, 3.7 V"
+experiment = "sample-timing"
+key = "on_edge_lag_3v7"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the median, half-plateau crossing"
+
+[[constant]]
+label = "Tap ON edge lag, slow decay, 7.4 V"
+experiment = "sample-timing"
+key = "tap_on_edge_lag_7v4"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the bridge's own edge"
+
+[[constant]]
+label = "Tap ON edge lag, slow decay, 3.7 V"
+experiment = "sample-timing"
+key = "tap_on_edge_lag_3v7"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the bridge's own edge"
+
+[[constant]]
+label = "OFF edge lag, slow decay, 7.4 V"
+experiment = "sample-timing"
+key = "off_edge_lag_7v4"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the median"
+
+[[constant]]
+label = "OFF edge lag, slow decay, 3.7 V"
+experiment = "sample-timing"
+key = "off_edge_lag_3v7"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the median"
+
+[[constant]]
+label = "Shunt settle to 1 %, from the commanded start, 7.4 V"
+experiment = "sample-timing"
+key = "shunt_settle_7v4"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the median"
+
+[[constant]]
+label = "Shunt settle to 1 %, from the commanded start, 3.7 V"
+experiment = "sample-timing"
+key = "shunt_settle_3v7"
+decimals = 0
+bounds = "range, lowest to highest of the 24 bursts"
+confidence = "measured, the median"
+
+[[constant]]
+label = "Window scale k, slow decay"
+experiment = "sample-timing"
+key = "window_scale"
+decimals = 4
+bounds = "range, the two rails"
+confidence = "a ratio inside one capture, the rails' split not resolved"
+
+[[constant]]
+label = "NTC beta, the design conversion"
+experiment = "ntc-curve"
+key = "beta_nominal"
+decimals = 0
+confidence = "the part's nominal, so no bounds, within 0.2 C of the thermocouple once the rig is out"
+
+[[constant]]
+label = "Current gain drift with board temperature"
+experiment = "opamp-temperature"
+key = "gain_drift_pct_per_c"
+decimals = 4
+signed = true
+bounds = "statistical, one standard error of the line"
+confidence = "high confidence it is the temperature's, a bound more than a correction"
+
+[[constant]]
+label = "Bridge ON edge lag, fast decay"
+experiment = "bridge-states"
+key = "fast_edge_lags_ticks.on"
+unit = "ticks"
+scale = 1.0
+decimals = 0
+confidence = "least misfit of a 2-tick scan, known to about 4 ticks, no bounds in the file"
+
+[[constant]]
+label = "Bridge OFF edge lag, fast decay"
+experiment = "bridge-states"
+key = "fast_edge_lags_ticks.off"
+unit = "ticks"
+scale = 1.0
+decimals = 0
+confidence = "least misfit of a 2-tick scan, known to about 2 ticks, no bounds in the file"
+
+[[constant]]
+label = "Shunt amplifier lag"
+experiment = "bridge-states"
+key = "amp_tau_ticks"
+decimals = 1
+confidence = "fitted at the scan's minimum, no bounds in the file"
+
+[[constant]]
+label = "Shunt amplifier gain"
+experiment = "bridge-states"
+key = "amp_gain"
+decimals = 4
+confidence = "fitted at the scan's minimum, no bounds in the file"
+
+[[constant]]
+label = "DC resistance, bare resistor"
+experiment = "bridge-states"
+key = "dc_r_ohm.r"
+decimals = 4
+bounds = "range, the laps but 4.2 V"
+confidence = "measured, the 3.7 V laps"
+
+[[constant]]
+label = "DC resistance, resistor and inductor A"
+experiment = "bridge-states"
+key = "dc_r_ohm.ra"
+decimals = 4
+bounds = "range, every lap"
+confidence = "measured, the 3.7 V laps"
+
+[[constant]]
+label = "Window scale k on the resistor"
+experiment = "bridge-states"
+key = "window_scale"
+decimals = 4
+bounds = "range, lowest to highest of the twenty bursts"
+confidence = "a ratio inside one capture, over the burst's own zero, inside sample-timing's range"
+
+[[constant]]
+label = "L by the period fit, inductor A at 25 %"
+experiment = "bridge-states"
+key = "l_fit_mh.ra_25"
+decimals = 3
+bounds = "range, the bursts after the first of each set"
+confidence = "measured, no outside reference for the part"
+
+[[constant]]
+label = "L by the fast-decay ramp, inductor A at 25 %"
+experiment = "bridge-states"
+key = "l_fast_ramp_mh.ra_25"
+decimals = 3
+bounds = "range, the bursts after the first of each set"
+confidence = "measured, within 4 % of the fit"
+
+[[constant]]
+label = "Ripple L over the fit, inductor A at 25 %"
+experiment = "bridge-states"
+key = "ripple_over_fit.ra_25"
+decimals = 2
+confidence = "the method's own gap, high confidence, a ratio of medians with no bounds"
+
+[[constant]]
+label = "Ripple L over the fit, inductor A at 40 %"
+experiment = "bridge-states"
+key = "ripple_over_fit.ra_40"
+decimals = 2
+confidence = "the method's own gap, high confidence, a ratio of medians with no bounds"
+
+[[constant]]
+label = "First burst after a sign change, L jump, slow decay"
+experiment = "bridge-states"
+key = "first_burst_l_jump_pct.slow"
+decimals = 1
+signed = true
+bounds = "range, lowest to highest of the twelve sets"
+confidence = "moderate confidence, the cores' history or the set boundary is open"
+
+[[constant]]
+label = "First burst after a sign change, L jump, fast decay"
+experiment = "bridge-states"
+key = "first_burst_l_jump_pct.fast"
+decimals = 1
+signed = true
+bounds = "range, lowest to highest of the sets"
+confidence = "measured, within the other bursts' scatter"
+
+[[constant]]
+label = "First burst after a sign change, leftover volt-seconds"
+experiment = "bridge-states"
+key = "first_burst_leftover_uvs"
+decimals = 0
+bounds = "range, lowest to highest of the first bursts"
+confidence = "measured"
