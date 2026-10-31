@@ -1,26 +1,32 @@
 {
   "capture": "telemetry/dev-v006-2A-D/current-scale/capture-1",
-  "notes": "DC laps at 100 % duty on the bare 5 ohm and series 15 ohm loads, the DMM in series on its 20 A range; counts over the lap's own torque-off zero = drive_offset_counts + counts_per_a x amps, one line through both loads over the 3.7 V and up laps, 0.23 to 1.31 A; the 3.3 V level sits off the line and is reported apart; the rs1 pass, the meter on DC mV across the shunt pads, grades the amplifier alone as amp_counts_per_mv; shunt_mohm is the chain over the amplifier and carries the 20 A jack's class",
+  "notes": "DC laps at 100 % duty on the bare 5 ohm and series 15 ohm loads, the DMM in series on its 20 A range; counts over the lap's own torque-off zero = drive_offset_counts + counts_per_a x amps, one line through both loads over the 3.7 V and up laps, 0.23 to 1.31 A; the 3.3 V level sits off the line and is reported apart; the rs1 pass, the meter on DC mV across the shunt pads, grades the amplifier alone as amp_counts_per_mv; shunt_mohm is the chain over the amplifier and carries the 20 A jack's class; the bounds on counts_per_a and drive_offset_counts are the line's standard errors, its statistical spread, and the scale's absolute uncertainty is the meter's class on the 20 A jack, counts_per_a_class_pct of the reading",
   "counts_per_a": {
-    "value": 1135.0134295210348,
-    "lo": 1133.7767129182596,
-    "hi": 1136.25014612381,
+    "value": 1135.013429521035,
+    "lo": 1133.7767129182598,
+    "hi": 1136.2501461238103,
     "unit": "counts/A"
   },
+  "counts_per_a_class_pct": {
+    "value": 2.0,
+    "lo": null,
+    "hi": null,
+    "unit": "% of the reading, the absolute uncertainty on counts_per_a: the DMM's class on the 20 A jack"
+  },
   "drive_offset_counts": {
-    "value": 5.260528725347414,
-    "lo": 4.391093512591281,
-    "hi": 6.129963938103547,
+    "value": 5.260528725347501,
+    "lo": 4.391093512591364,
+    "hi": 6.129963938103638,
     "unit": "counts"
   },
   "residual_rms_counts": {
-    "value": 2.1862638217713735,
+    "value": 2.1862638217713846,
     "lo": null,
     "hi": null,
     "unit": "counts"
   },
   "scale_over_nominal_pct": {
-    "value": 2.3962566760698634,
+    "value": 2.3962566760698856,
     "lo": null,
     "hi": null,
     "unit": "%"
@@ -32,51 +38,51 @@
     "unit": "A"
   },
   "amp_counts_per_mv": {
-    "value": 18.653571127819404,
-    "lo": 18.634283961919227,
-    "hi": 18.67285829371958,
+    "value": 18.6535711278194,
+    "lo": 18.634283961919223,
+    "hi": 18.672858293719578,
     "unit": "counts/mV"
   },
   "amp_offset_counts": {
-    "value": 1.5531064969753396,
-    "lo": 0.39806968279774924,
-    "hi": 2.70814331115293,
+    "value": 1.5531064969753703,
+    "lo": 0.39806968279777166,
+    "hi": 2.708143311152969,
     "unit": "counts"
   },
   "amp_over_nominal_pct": {
-    "value": 0.9709210895705978,
+    "value": 0.9709210895705755,
     "lo": null,
     "hi": null,
     "unit": "%"
   },
   "shunt_mohm": {
-    "value": 60.84697786518251,
+    "value": 60.84697786518253,
     "lo": null,
     "hi": null,
     "unit": "mOhm"
   },
   "counts_per_a_bare": {
-    "value": 1136.4715660468223,
-    "lo": 1134.7147243315862,
-    "hi": 1138.2284077620584,
+    "value": 1136.471566046822,
+    "lo": 1134.714724331586,
+    "hi": 1138.2284077620582,
     "unit": "counts/A"
   },
   "drive_offset_bare_counts": {
-    "value": 3.410286002206511,
-    "lo": 1.739344194759507,
-    "hi": 5.081227809653515,
+    "value": 3.4102860022065458,
+    "lo": 1.7393441947595392,
+    "hi": 5.081227809653552,
     "unit": "counts"
   },
   "counts_per_a_series": {
-    "value": 1153.6802827443964,
-    "lo": 1148.7593525686686,
-    "hi": 1158.6012129201242,
+    "value": 1153.6802827443967,
+    "lo": 1148.7593525686689,
+    "hi": 1158.6012129201245,
     "unit": "counts/A"
   },
   "drive_offset_series_counts": {
-    "value": -0.9105506133194108,
-    "lo": -2.719723017436616,
-    "hi": 0.898621790797794,
+    "value": -0.9105506133194297,
+    "lo": -2.7197230174366265,
+    "hi": 0.8986217907977669,
     "unit": "counts"
   },
   "counts_per_a_every_lap": {
@@ -86,15 +92,15 @@
     "unit": "counts/A"
   },
   "drive_offset_every_lap_counts": {
-    "value": 10.443142628185662,
-    "lo": 5.81159742119417,
-    "hi": 15.074687835177153,
+    "value": 10.44314262818554,
+    "lo": 5.81159742119405,
+    "hi": 15.07468783517703,
     "unit": "counts"
   },
   "direction_counts": {
-    "value": 1.209174525901131,
-    "lo": 0.30197113962359357,
-    "hi": 2.1670180993008166,
+    "value": 1.2091745259011308,
+    "lo": 0.3019711396235931,
+    "hi": 2.167018099300817,
     "unit": "counts"
   },
   "rest_zero_counts": {
@@ -116,13 +122,13 @@
     "unit": "V"
   },
   "deviation_3v3_bare_pct": {
-    "value": 8.355681600451458,
+    "value": 8.355681600451437,
     "lo": null,
     "hi": null,
     "unit": "%"
   },
   "deviation_3v3_series_pct": {
-    "value": 3.465291075365684,
+    "value": 3.4652910753656396,
     "lo": null,
     "hi": null,
     "unit": "%"
