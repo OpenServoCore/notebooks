@@ -60,11 +60,12 @@ from the ADC free running through a duty step into the locked rotor, and
 whether the rise is one pole on the burst's time scale.
 
 Needs: motor in the rig, bar, board, DPS, host; the stage 1 current-scale,
-terminal-chain and sample-timing results, the sample-timing resistor bursts
-and current-scale laps for the window's scale, the rest-resistance result
-for the comparison and the inertia bound, the bemf-coast result for the
-leftover volts, and the bridge-states result and its fast-decay bursts on
-one inductor for the method check.
+terminal-chain and sample-timing results, sample-timing's window scale and
+its resistor bursts for the window's own slope, the rest-resistance result
+for the comparison, the ripple and the inertia bound, the bemf-coast result
+for the leftover volts, the bridge-states result for fast decay's edges and,
+with its fast-decay bursts on one inductor, for the method check, and the
+teardown result for comparison.
 
 How: at each of the twelve holes, five groups of bursts on a 5 V rail in
 an order that puts a different change before each group's first capture:
