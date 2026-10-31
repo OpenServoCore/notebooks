@@ -1,0 +1,175 @@
+# The constants table of this stage's TL;DR. The hand-written parts live here,
+# the numbers come from each experiment's results.json. After a change to
+# either, run `uv run python -m oscnb.tldr` to rewrite the README's table.
+
+[[constant]]
+label = "DMM log lag behind the host clock"
+experiment = "dmm"
+key = "lag_s"
+unit = "ms"
+scale = 1e3
+sig = 2
+bounds = "range, lowest to highest of the steps"
+confidence = "measured, to about one packet interval"
+
+[[constant]]
+label = "DMM packet interval"
+experiment = "dmm"
+key = "packet_interval_s"
+sig = 3
+bounds = "spread, 5th to 95th percentile"
+confidence = "measured, same on DC V and temperature"
+
+[[constant]]
+label = "DMM class, DC V, 22 V range"
+experiment = "dmm"
+key = "accuracy.dc_v_22v"
+class = true
+unit = "mV"
+scale = 1e3
+bounds = "instrument class, from the manual"
+confidence = "manual, not measured"
+
+[[constant]]
+label = "DMM class, DC mV, 220 mV range"
+experiment = "dmm"
+key = "accuracy.dc_mv_220mv"
+class = true
+unit = "uV"
+scale = 1e6
+bounds = "instrument class, from the manual"
+confidence = "manual, not measured"
+
+[[constant]]
+label = "DMM class, DC A, 20 A range"
+experiment = "dmm"
+key = "accuracy.dc_a_20a"
+class = true
+unit = "mA"
+scale = 1e3
+bounds = "instrument class, from the manual"
+confidence = "manual, not measured"
+
+[[constant]]
+label = "DMM class, DC mA, 220 mA range"
+experiment = "dmm"
+key = "accuracy.dc_a_220ma"
+class = true
+unit = "uA"
+scale = 1e6
+bounds = "instrument class, from the manual"
+confidence = "manual, not measured"
+
+[[constant]]
+label = "DMM class, ohms, 220 ohm range"
+experiment = "dmm"
+key = "accuracy.ohm_220"
+class = true
+unit = "mohm"
+scale = 1e3
+bounds = "instrument class, from the manual"
+confidence = "manual, not measured"
+
+[[constant]]
+label = "DMM class, temperature"
+experiment = "dmm"
+key = "accuracy.temp_c"
+class = true
+bounds = "instrument class, from the manual"
+confidence = "manual, not measured"
+
+[[constant]]
+label = "Leads and ammeter in series, at 1 A"
+experiment = "power-resistors"
+key = "leads"
+sig = 3
+bounds = "range, lowest to highest over 0.25 to 2 A"
+confidence = "measured, contacts differ by some milliohms per wiring"
+
+[[constant]]
+label = "Bare load, cold, leads excluded"
+experiment = "power-resistors"
+key = "bare.r_cold"
+decimals = 3
+bounds = "statistical, two standard errors of the fit"
+confidence = "measured, to a few milliohms"
+
+[[constant]]
+label = "Bare load, highest power fitted"
+experiment = "power-resistors"
+key = "bare.power_max"
+sig = 3
+confidence = "the line is not measured above it"
+
+[[constant]]
+label = "Series load, cold, leads excluded"
+experiment = "power-resistors"
+key = "series.r_cold"
+decimals = 3
+bounds = "statistical, two standard errors of the fit"
+confidence = "measured"
+
+[[constant]]
+label = "Series load, highest power fitted"
+experiment = "power-resistors"
+key = "series.power_max"
+sig = 3
+confidence = "the line is not measured above it"
+
+[[constant]]
+label = "Thermocouple offset at 0 C"
+experiment = "thermocouple"
+key = "offset_c"
+decimals = 1
+bounds = "range, lowest reading to the last minute in packed ice"
+confidence = "measured, to about 0.1 C at best"
+
+[[constant]]
+label = "Thermocouple slope"
+experiment = "thermocouple"
+key = "slope"
+decimals = 3
+bounds = "range, follows the offset's range"
+confidence = "upper estimate of the error"
+
+[[constant]]
+label = "Thermocouple settle in air, within 1 C"
+experiment = "thermocouple"
+key = "settle_air_1c_s"
+sig = 2
+confidence = "a guide, not a constant"
+
+[[constant]]
+label = "Camera tag angle error, 90 % of frames"
+experiment = "camera-tag"
+key = "angle_error_deg"
+sig = 2
+confidence = "carried until stage 3 measures its own"
+
+[[constant]]
+label = "Camera tag noise floor, sd per frame"
+experiment = "camera-tag"
+key = "noise_deg"
+sig = 2
+confidence = "measured, still plate"
+
+[[constant]]
+label = "Camera frame against the host log, residual rms"
+experiment = "clock-sync"
+key = "residual_rms_s"
+unit = "ms"
+scale = 1e3
+sig = 2
+confidence = "measured, on one clip"
+
+[[constant]]
+label = "Camera clock rate against the host, minus one"
+experiment = "clock-sync"
+key = "rate"
+unit = "ppm"
+subtract = 1.0
+scale = 1e6
+decimals = 0
+signed = true
+bounds = "statistical, one standard error"
+confidence = "a check on the time base, not a rate measurement"
