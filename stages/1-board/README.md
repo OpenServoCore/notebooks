@@ -119,11 +119,11 @@ the edges are in timer ticks after the commanded edge, about 0.02 us each.
   before it. The OFF edge does not move with the decay. The window's scale
   k is a ratio inside one capture, 1.0063, and a ratio across two captures
   with two wirings is not k.
-- On a fixed load the burst method behaves. One 1 mH inductor reads 1.03 to
-  1.06 mH by the period fit, two in series add to within 2 %, and the
-  fast-decay ramp agrees with the fit within 4 %. The ripple reads 2 to 5 %
-  under the fit at 25 % and 5 to 10 % under it at 40 %, a gap of the
-  method's own, with high confidence.
+- On a fixed load the burst method behaves. One 1 mH inductor reads 1.01 to
+  1.05 mH by the period fit, two in series add to within 2 %, and the
+  fast-decay ramp agrees with the fit within 3 %. The ripple reads 0.4 to
+  3 % under the fit at 25 % and 4 to 9 % under it at 40 %, a gap of the
+  method's own, with high confidence at 40 % and moderate at 25 %.
 - The board NTC's nominal beta of 3950 K is the design conversion. Once the
   rig's two effects are out it reads within 0.2 C of the thermocouple,
   inside the meter's class, and the refitted 4331 K is a correction toward
