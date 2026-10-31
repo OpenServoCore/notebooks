@@ -1,58 +1,100 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/inductance/capture-1",
-  "notes": "capture-1: duty steps into the locked rotor at twelve holes 30 degrees apart on a 5 V rail, five groups per hole in the order g1 25 % forward (after the bar move, a 20 s rest and the last hole's reverse), g2 40 % forward, g3 40 % reverse, g4 25 % reverse, five bursts each, and g5 25 % reverse three bursts after a 20 s rest; reversal-1: hole 11 with nothing moved, six groups of five at 25 %, the first keeping capture-1's last sign and each later one reversing it after none, 5, 20, 50 s and none; capture-1 hole 9 g5 is excluded from every fit and from the edge pool (a pin screw of the bar was being unscrewed during it), its files kept; the winding current per period is the window's level at the middle of the bridge's window (the shunt reads its zero between windows under slow decay), the applied volts the period mean of the tap difference with the edge correction pooled per run, duty and sign; R and L by least squares of L (i[n+1] - i[n]) = T (V[n] - R (i[n] + i[n+1]) / 2) over the burst's period pairs, both divided by the window's scale k, the window's V/I over the 100 % laps on the bare resistor load from stage 1; l_ripple_mh is (V_on - R i) over the window's own slope, the median of the last three periods, l_ripple_first_mh of the first three; early_* is the same fit over the first three pairs; R and L move with the fit's length (R down, L up), so the burst is not one pole and r_burst_ohm is not the winding's resistance; every summary takes capture-1's bursts after the first of each group, the value the median over them and the bounds the range of the group medians (hole x group); *_first_capture and *_other_captures carry capture-1's first bursts and the others apart with their full range; *_first_jump_pct_by_change is each group's first burst over the median of its others, median over the holes (hole 0's g1 follows the power-up and is included); reversal_* the same for reversal-1 in run order; leftover_* is the volt-seconds a first burst applies beyond the group's others' R and L, and the rotor angle those volt-seconds equal at bemf-coast's Ke; *_by_hole lists run hole 0 to 11; steps-1: hole 11, thirteen groups of five, every forward group 25 % after a reverse group at 10, 25 or 40 %, rising then falling, steps_* keyed by the old step's duty, the median of its two forward groups with their range, the old step read by its last window current as the plain mean of the settled shunt samples (a 10 % window is too short for the line); steps_reverse_25_after_25 the two reverse 25 % groups after forward 25 %; leftover_per_amp_uvs_per_a is the leftover over the old and the new step's last window currents added, over steps-1's 25 % reversals, capture-1's g3 by hole and reversal-1's reversals; travel_bound_uvs is the most a rotor free from rest one period before the grid could add, no friction or stop, Kt = Ke, the smallest J of rest-resistance's run-ups, driven by the first burst's measured currents, keyed by the new step; fast-1: hole 11, f1 to f4 in fast decay (window on the trough, the grid from the first full window), f5 and f6 slow at the same seat; fast_l_ramp_mh is (V_on - R i_mid) over the line through the window's shunt from the shunt's settle, R rest-resistance's at hole 11, divided by k, median and range over the bursts after the first, keyed duty_sign; *_over_fit and *_over_ripple against capture-1's hole 11 groups at the same duty; fast_l_ramp_late_start_pct is the move with the line from 150 ticks; fast_on_edge_step_ma is that line at the bridge's ON edge, kept as it was for the notebooks that read it, at slow decay's ON lag from sample-timing and with the in-drive offset taken off the burst's own zero a second time; fast_on_edge_step_corrected_ma is the same windows read as the teardown reads them, one line per burst from 150 ticks after the commanded start to 20 before its end, read at the teardown's fast-decay ON lag (fast_edge_lags_ticks) over the burst's own zero with nothing more taken off, the mean over the bursts after the first with its standard error as the bounds; fast_on_edge_spike_* the pooled fold's peak and its charge over the window's line from the commanded start to the settle; fast_return_over_top is the return's largest reading over the window's top in the pooled forward fold, *_ra the same for bridge-states' ra; fast_zero_before_window_us is the time the fold reads its zero from the return's end to the next commanded start; ripple_over_fit is the ripple L over the fit, the mean of the two signs' medians with the range of the group medians, *_inductors bridge-states' three inductive wirings; window_scale_bridge_states is bridge-states' k from its own resistor wiring, k_bound_pct how much higher R, L and the ripple L read at it, *_bridge_states_k those quantities at it; drive_offset_twice_pct is the move of R, L, tau and the ripple L with the in-drive offset not taken off the window level a second time, k read again; fast_l_ramp_first_jump_pct and fast_slow_first_burst are each fast-1 group's first burst over its others, f5 the slow 25 % group after the fast reverse groups",
+  "notes": "capture-1: duty steps into the locked rotor at twelve holes 30 degrees apart on a 5 V rail, five groups per hole in the order g1 25 % forward (after the bar move, a 20 s rest and the last hole's reverse), g2 40 % forward, g3 40 % reverse, g4 25 % reverse, five bursts each, and g5 25 % reverse three bursts after a 20 s rest; reversal-1: hole 11 with nothing moved, six groups of five at 25 %, the first keeping capture-1's last sign and each later one reversing it after none, 5, 20, 50 s and none; capture-1 hole 9 g5 is excluded from every fit and from the edge pool (a pin screw of the bar was being unscrewed during it), its files kept; the winding current per period is the window's level at the middle of the bridge's window (the shunt reads its zero between windows under slow decay) over the burst's own pre-step zero, which holds the in-drive offset, nothing more taken off; the applied volts the period mean of the tap difference with the edge correction pooled per run, duty and sign, the two-part model averaged over each bin; R and L by least squares of L (i[n+1] - i[n]) = T (V[n] - R (i[n] + i[n+1]) / 2) over the burst's period pairs, both divided by the window's scale k, sample-timing's window_scale, its bursts over its own 100 % rungs on the bare load; l_ripple_mh is (V_on - R i) over the window's own slope, R rest-resistance's at the hole, the median of the last three periods, l_ripple_first_mh of the first three; early_* is the same fit over the first three pairs; R and L move with the fit's length (R down, L up), so the burst is not one pole and r_burst_ohm is not the winding's resistance; every summary takes capture-1's bursts after the first of each group, the value the median over them and the bounds the range of the group medians (hole x group); l_mh, tau_us and r_burst_ohm pool both duties, two populations, and stay for the notebooks that read them, *_by_duty carry each duty on its own; *_first_capture and *_other_captures carry capture-1's first bursts and the others apart with their full range; *_first_jump_pct_by_change is each group's first burst over the median of its others, median over the holes (hole 0's g1 follows the power-up and is included); reversal_* the same for reversal-1 in run order; leftover_* is the volt-seconds a first burst applies beyond the group's others' R and L, and the rotor angle those volt-seconds equal at bemf-coast's Ke; *_by_hole lists run hole 0 to 11; steps-1: hole 11, thirteen groups of five, every forward group 25 % after a reverse group at 10, 25 or 40 %, rising then falling, steps_* keyed by the old step's duty, the median of its two forward groups with their range, the old step read by its last window current as the plain mean of the settled shunt samples (a 10 % window is too short for the line); steps_reverse_25_after_25 the two reverse 25 % groups after forward 25 %; leftover_per_amp_uvs_per_a is the leftover over the old and the new step's last window currents added, over steps-1's 25 % reversals, capture-1's g3 by hole and reversal-1's reversals; travel_bound_uvs is the most a rotor free from rest one period before the grid could add, no friction or stop, Kt = Ke, the smallest J of rest-resistance's run-ups, driven by the first burst's measured currents, keyed by the new step; travel_bound_preloaded_uvs_by_old_step adds the old step's torque, Kt times its last window current, held through the burst, keyed by the old step; steps_excess_share_pairs_1_4_pct is the share of the first burst's leftover over its group's others' that sits in pairs 1 to 4; fast-1: hole 11, f1 to f4 in fast decay (window on the trough, the grid from the first full window), f5 and f6 slow at the same seat; fast_l_ramp_mh is (V_on - R i_mid) over the line through the window's shunt from the shunt's settle at the window's middle over the burst's own zero, R rest-resistance's at hole 11, divided by k, median and range over the bursts after the first, keyed duty_sign; *_over_fit and *_over_ripple against capture-1's hole 11 groups at the same duty; fast_l_ramp_late_start_pct is the move with the line from 150 ticks; fast_on_edge_step_ma is that line at the bridge's ON edge, kept as it was for the notebooks that read it, at slow decay's ON lag from sample-timing and with the in-drive offset taken off the burst's own zero a second time; fast_on_edge_step_corrected_ma is a line read, one line per burst from 150 ticks after the commanded start to 20 before its end, read at bridge-states' fast-decay ON lag (fast_edge_lags_ticks) over the burst's own zero with nothing more taken off, the mean over the bursts after the first, the bounds the same mean with the band's start at 100, 150, 200 and 250 ticks; fast_on_edge_step_quad_ma a quadratic through the band from 150 ticks, read at the same edge; fast_on_edge_spike_* the pooled fold's peak and its charge over the window's line from the commanded start to the settle; fast_return_over_top is the return's largest reading over the window's top in the pooled forward fold, *_ra the same for bridge-states' ra; fast_zero_before_window_us is the time the fold reads its zero from the return's end to the next commanded start; ripple_over_fit is the ripple L over the fit, the mean of the two signs' medians with the range of the group medians, *_inductors bridge-states' three inductive wirings; window_scale_bridge_states is bridge-states' k from its own resistor wiring, k_bound_pct how much higher R, L and the ripple L read at it, *_bridge_states_k those quantities at it; drive_offset_twice_pct is the move of R, L, tau and the ripple L with the in-drive offset taken off the window level a second time, at the same k; fast_l_ramp_first_jump_pct and fast_slow_first_burst are each fast-1 group's first burst over its others, f5 the slow 25 % group after the fast reverse groups",
   "l_mh": {
-    "value": 0.8140564150729208,
-    "lo": 0.7507260782160581,
-    "hi": 0.8939847219303474,
+    "value": 0.8333467325075281,
+    "lo": 0.767909055987211,
+    "hi": 0.9197855189315653,
     "unit": "mH"
   },
   "l_ripple_mh": {
-    "value": 0.6059834358863097,
-    "lo": 0.5853980400340996,
-    "hi": 0.6433753682271801,
+    "value": 0.620445214950398,
+    "lo": 0.5904405412834264,
+    "hi": 0.6677670521318113,
     "unit": "mH"
   },
   "l_ripple_first_mh": {
-    "value": 0.6749006674217869,
-    "lo": 0.625637237693947,
-    "hi": 0.7555799843747848,
+    "value": 0.6930314480791595,
+    "lo": 0.6440136872721474,
+    "hi": 0.781890110985903,
     "unit": "mH"
   },
   "tau_us": {
-    "value": 193.69458905019437,
-    "lo": 169.47446901092468,
-    "hi": 220.2557962109846,
+    "value": 193.8971059567216,
+    "lo": 169.68437462299545,
+    "hi": 220.44675621954,
     "unit": "us"
   },
   "r_burst_ohm": {
-    "value": 4.217893856147809,
-    "lo": 3.952754984872131,
-    "hi": 4.559514021768004,
+    "value": 4.308247767758328,
+    "lo": 4.041814246730966,
+    "hi": 4.6508030666945945,
     "unit": "ohm"
   },
   "early_l_mh": {
-    "value": 0.7558905820912359,
-    "lo": 0.6955520875729924,
-    "hi": 0.8440051876407844,
+    "value": 0.7718095685720815,
+    "lo": 0.7095133225674753,
+    "hi": 0.8675594880105777,
     "unit": "mH"
   },
   "early_r_ohm": {
-    "value": 4.621293047277293,
-    "lo": 4.331247424501274,
-    "hi": 5.125744488256821,
+    "value": 4.714941076322624,
+    "lo": 4.449371267381064,
+    "hi": 5.21685897814598,
     "unit": "ohm"
   },
+  "l_mh_by_duty": {
+    "25": {
+      "value": 0.8078254279350913,
+      "lo": 0.767909055987211,
+      "hi": 0.8384621870413134,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8827628343621413,
+      "lo": 0.8366933847997808,
+      "hi": 0.9197855189315653,
+      "unit": "mH"
+    }
+  },
+  "tau_us_by_duty": {
+    "25": {
+      "value": 187.38299503346184,
+      "lo": 169.68437462299545,
+      "hi": 204.40160668387318,
+      "unit": "us"
+    },
+    "40": {
+      "value": 201.340338803904,
+      "lo": 186.33693286552773,
+      "hi": 220.44675621954,
+      "unit": "us"
+    }
+  },
+  "r_burst_ohm_by_duty": {
+    "25": {
+      "value": 4.2894870402334,
+      "lo": 4.041814246730966,
+      "hi": 4.6508030666945945,
+      "unit": "ohm"
+    },
+    "40": {
+      "value": 4.390131046068637,
+      "lo": 4.1041408228009395,
+      "hi": 4.647092177496969,
+      "unit": "ohm"
+    }
+  },
   "window_scale": {
-    "value": 1.0442498269597322,
-    "lo": 1.0390851179311764,
-    "hi": 1.049059846011722,
+    "value": 1.006331915441961,
+    "lo": 1.0045500774479592,
+    "hi": 1.0081137534359628,
     "unit": "ratio"
   },
   "applied_volts_drop_pct": {
-    "value": -5.365579144882638,
-    "lo": -6.4065965340457,
-    "hi": -4.678392768936773,
+    "value": -5.35127726479997,
+    "lo": -6.396282774158291,
+    "hi": -4.665920601895179,
     "unit": "%"
   },
   "captures": {
@@ -62,298 +104,298 @@
     "unit": "captures"
   },
   "l_first_capture_mh": {
-    "value": 0.8299702684890321,
-    "lo": 0.75639843713828,
-    "hi": 0.9893234367107976,
+    "value": 0.8488812999463851,
+    "lo": 0.7742083322341535,
+    "hi": 1.0171276035186143,
     "unit": "mH"
   },
   "l_other_captures_mh": {
-    "value": 0.8140564150729208,
-    "lo": 0.7411092171375571,
-    "hi": 0.9015389165616597,
+    "value": 0.8333467325075281,
+    "lo": 0.7578087873654038,
+    "hi": 0.9267687636338503,
     "unit": "mH"
   },
   "tau_first_capture_us": {
-    "value": 195.74683558529318,
-    "lo": 175.18684791139592,
-    "hi": 244.83499330682906,
+    "value": 195.99147790754841,
+    "lo": 175.4192984205261,
+    "hi": 245.04864872480857,
     "unit": "us"
   },
   "tau_other_captures_us": {
-    "value": 193.69458905019437,
-    "lo": 167.20169520875785,
-    "hi": 222.55901750177665,
+    "value": 193.8971059567216,
+    "lo": 167.40104028710974,
+    "hi": 222.7532409482744,
     "unit": "us"
   },
   "l_mh_by_hole": [
-    0.8133,
-    0.8053,
-    0.824,
-    0.7634,
-    0.8004,
-    0.8105,
-    0.8208,
-    0.7697,
-    0.813,
-    0.8234,
-    0.8181,
-    0.7728
+    0.8326,
+    0.8241,
+    0.8433,
+    0.7805,
+    0.8177,
+    0.8278,
+    0.8387,
+    0.7878,
+    0.8306,
+    0.8452,
+    0.8358,
+    0.7904
   ],
   "l_ripple_mh_by_hole": [
-    0.6032,
-    0.6153,
-    0.6191,
-    0.5998,
-    0.6052,
-    0.6068,
-    0.6215,
-    0.6017,
-    0.6075,
-    0.6052,
-    0.6121,
-    0.6014
+    0.6129,
+    0.626,
+    0.6277,
+    0.6237,
+    0.6247,
+    0.6355,
+    0.6395,
+    0.6019,
+    0.6291,
+    0.6113,
+    0.6292,
+    0.6157
   ],
   "tau_us_by_hole": [
-    205.4707,
-    198.7165,
-    206.9417,
-    181.6682,
-    187.9499,
-    179.4904,
-    192.0972,
-    192.9311,
-    188.3884,
-    204.8275,
-    193.2599,
-    184.6189
+    205.7118,
+    198.9688,
+    207.1945,
+    181.9001,
+    188.1939,
+    179.7174,
+    192.337,
+    193.1668,
+    188.6235,
+    205.035,
+    193.4961,
+    184.8472
   ],
   "r_burst_ohm_by_hole": [
-    3.9869,
-    4.0893,
-    4.0062,
-    4.3531,
-    4.2946,
-    4.5097,
-    4.3662,
-    4.0274,
-    4.3665,
-    4.0352,
-    4.2865,
-    4.2225
+    4.0778,
+    4.1791,
+    4.1049,
+    4.4717,
+    4.4121,
+    4.6139,
+    4.4845,
+    4.117,
+    4.4852,
+    4.1435,
+    4.4039,
+    4.313
   ],
   "l_mh_25_by_hole": [
-    0.7944,
-    0.7908,
-    0.8139,
-    0.7573,
-    0.7857,
-    0.7923,
-    0.8144,
-    0.7672,
-    0.7973,
-    0.7873,
-    0.8045,
-    0.7554
+    0.8132,
+    0.8093,
+    0.8331,
+    0.7742,
+    0.8028,
+    0.8096,
+    0.8324,
+    0.7853,
+    0.8149,
+    0.8059,
+    0.8228,
+    0.7726
   ],
   "l_mh_40_by_hole": [
-    0.8593,
-    0.8533,
-    0.8886,
-    0.8183,
-    0.8502,
-    0.8697,
-    0.8888,
-    0.8201,
-    0.8631,
-    0.8533,
-    0.8782,
-    0.8194
+    0.8841,
+    0.8777,
+    0.9144,
+    0.8413,
+    0.8742,
+    0.8939,
+    0.9138,
+    0.8437,
+    0.8873,
+    0.8779,
+    0.903,
+    0.8426
   ],
   "l_mh_by_duty_sign": {
-    "25_rev": 0.7861,
-    "25_fwd": 0.8006,
-    "40_rev": 0.8539,
-    "40_fwd": 0.8608
+    "25_rev": 0.8043,
+    "25_fwd": 0.8178,
+    "40_rev": 0.8785,
+    "40_fwd": 0.8852
   },
   "l_ripple_mh_by_duty_sign": {
-    "25_rev": 0.6008,
-    "25_fwd": 0.6093,
-    "40_rev": 0.6026,
-    "40_fwd": 0.6216
+    "25_rev": 0.6147,
+    "25_fwd": 0.6268,
+    "40_rev": 0.6143,
+    "40_fwd": 0.6427
   },
   "tau_us_by_duty_sign": {
-    "25_rev": 188.2431,
-    "25_fwd": 184.1872,
-    "40_rev": 201.8063,
-    "40_fwd": 200.8411
+    "25_rev": 188.4677,
+    "25_fwd": 184.4116,
+    "40_rev": 201.9896,
+    "40_fwd": 201.0207
   },
   "r_burst_ohm_by_duty_sign": {
-    "25_rev": 4.1919,
-    "25_fwd": 4.3101,
-    "40_rev": 4.2577,
-    "40_fwd": 4.3308
+    "25_rev": 4.2822,
+    "25_fwd": 4.4008,
+    "40_rev": 4.3747,
+    "40_fwd": 4.449
   },
   "l_first_jump_pct_by_change": {
     "g1_bar_move_and_reversal": {
-      "value": 7.729045633501441,
-      "lo": 0.2279512651322202,
-      "hi": 12.930417472897249,
+      "value": 7.708930883845044,
+      "lo": 0.22107257307066863,
+      "hi": 12.883144441563488,
       "unit": "%"
     },
     "g2_duty_25_to_40": {
-      "value": -1.3369187347961553,
-      "lo": -2.4034769504779563,
-      "hi": -0.16513757814129448,
+      "value": -1.356345413843968,
+      "lo": -2.4220821060026765,
+      "hi": -0.18469322079388562,
       "unit": "%"
     },
     "g3_reversal": {
-      "value": 11.093083411652138,
-      "lo": 9.289528133050041,
-      "hi": 13.277702904207933,
+      "value": 11.095048964310505,
+      "lo": 9.27585358564822,
+      "hi": 13.272716244512894,
       "unit": "%"
     },
     "g4_duty_40_to_25": {
-      "value": 0.8114448179531997,
-      "lo": -0.802407732107846,
-      "hi": 3.5926606910771763,
+      "value": 0.807996116862264,
+      "lo": -0.8187723254767132,
+      "hi": 3.597882420960663,
       "unit": "%"
     },
     "g5_rest_20s": {
-      "value": 0.23984431072165968,
-      "lo": -1.7553815552445617,
-      "hi": 2.444752396018357,
+      "value": 0.2374160607767406,
+      "lo": -1.7670453122349161,
+      "hi": 2.4626437913540133,
       "unit": "%"
     }
   },
   "tau_first_jump_pct_by_change": {
     "g1_bar_move_and_reversal": {
-      "value": 5.572453343927575,
-      "lo": -0.3750146335777971,
-      "hi": 10.462355680663894,
+      "value": 5.563275859398564,
+      "lo": -0.3670121510283342,
+      "hi": 10.458010055474777,
       "unit": "%"
     },
     "g2_duty_25_to_40": {
-      "value": -3.0228160040282726,
-      "lo": -4.910059785391074,
-      "hi": -1.3294829331217173,
+      "value": -3.01939058148995,
+      "lo": -4.910609704975122,
+      "hi": -1.3287556811660939,
       "unit": "%"
     },
     "g3_reversal": {
-      "value": 11.173585041939837,
-      "lo": 8.23126900201614,
-      "hi": 12.815760743705873,
+      "value": 11.173835593855463,
+      "lo": 8.22922281784213,
+      "hi": 12.816610548060513,
       "unit": "%"
     },
     "g4_duty_40_to_25": {
-      "value": 1.262183070098244,
-      "lo": -1.600109731721866,
-      "hi": 4.081590693678372,
+      "value": 1.2612642320724565,
+      "lo": -1.6073222234428863,
+      "hi": 4.0741291256359835,
       "unit": "%"
     },
     "g5_rest_20s": {
-      "value": -0.03812443386065345,
-      "lo": -2.657648710303784,
-      "hi": 3.4256866202823977,
+      "value": -0.04276632818297488,
+      "lo": -2.651242108269858,
+      "hi": 3.4289553107072823,
       "unit": "%"
     }
   },
   "r_first_jump_pct_by_change": {
     "g1_bar_move_and_reversal": {
-      "value": 2.0555011802126932,
-      "lo": 0.6058050659195402,
-      "hi": 3.2707906350022853,
+      "value": 2.0183543394454717,
+      "lo": 0.5908107867371504,
+      "hi": 3.2114234731765334,
       "unit": "%"
     },
     "g2_duty_25_to_40": {
-      "value": 1.6840960428071816,
-      "lo": 0.5199029114667519,
-      "hi": 2.9986972714394877,
+      "value": 1.665410371157272,
+      "lo": 0.513120632733699,
+      "hi": 2.9651678315066654,
       "unit": "%"
     },
     "g3_reversal": {
-      "value": 0.19972248787706315,
-      "lo": -0.9916301063976452,
-      "hi": 0.9776843884033326,
+      "value": 0.19749026341183695,
+      "lo": -0.9814372401004801,
+      "hi": 0.9669601907160263,
       "unit": "%"
     },
     "g4_duty_40_to_25": {
-      "value": -0.1618048678908912,
-      "lo": -1.212553377101755,
-      "hi": 0.5277530863760926,
+      "value": -0.15975544130558683,
+      "lo": -1.1920727948111054,
+      "hi": 0.5233652267367495,
       "unit": "%"
     },
     "g5_rest_20s": {
-      "value": 0.0974915863336312,
-      "lo": -0.9483225876188994,
-      "hi": 2.1932361934270395,
+      "value": 0.10008612311129816,
+      "lo": -0.9341561441196466,
+      "hi": 2.1543415575999703,
       "unit": "%"
     }
   },
   "l_ripple_first_jump_pct_by_change": {
     "g1_bar_move_and_reversal": {
-      "value": 0.6862180493136916,
-      "lo": -4.145214763650074,
-      "hi": 6.080702280372741,
+      "value": 1.2609491943274764,
+      "lo": -4.107829772362493,
+      "hi": 6.527196525983658,
       "unit": "%"
     },
     "g2_duty_25_to_40": {
-      "value": -0.3973119698446437,
-      "lo": -1.8186432425486787,
-      "hi": 1.6513489618874555,
+      "value": 0.6343671422292863,
+      "lo": -1.309658645580758,
+      "hi": 2.3121784619673624,
       "unit": "%"
     },
     "g3_reversal": {
-      "value": 1.2836812118919183,
-      "lo": -0.46576386779653145,
-      "hi": 4.132318121122536,
+      "value": 1.713674882478644,
+      "lo": -0.4504035416531327,
+      "hi": 4.575478885937634,
       "unit": "%"
     },
     "g4_duty_40_to_25": {
-      "value": 0.8839875555866072,
-      "lo": -1.958121297148241,
-      "hi": 2.857806478818703,
+      "value": 0.8970475605692863,
+      "lo": -2.1663289183546874,
+      "hi": 2.7845536882851185,
       "unit": "%"
     },
     "g5_rest_20s": {
-      "value": -0.8232838798192921,
-      "lo": -4.134052762706819,
-      "hi": 3.0429245505545266,
+      "value": -0.41761551267636143,
+      "lo": -4.278260548101098,
+      "hi": 3.2514697444717244,
       "unit": "%"
     }
   },
   "reversal_l_first_jump_pct": {
     "r0_no_reversal": {
-      "value": -1.033065960633639,
+      "value": -1.0357418735373103,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r1_reversal_no_rest": {
-      "value": 12.583125271868202,
+      "value": 12.56390654316033,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r2_reversal_after_5s": {
-      "value": 12.35062056104872,
+      "value": 12.359445492892762,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r3_reversal_after_20s": {
-      "value": 11.919764810129664,
+      "value": 11.927236810253294,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r4_reversal_after_50s": {
-      "value": 13.389913475317572,
+      "value": 13.395602150057462,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r5_reversal_no_rest": {
-      "value": 11.809066390864453,
+      "value": 11.802541607497608,
       "lo": null,
       "hi": null,
       "unit": "%"
@@ -361,37 +403,37 @@
   },
   "reversal_tau_first_jump_pct": {
     "r0_no_reversal": {
-      "value": -1.261070339821646,
+      "value": -1.257432185864038,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r1_reversal_no_rest": {
-      "value": 11.444869806130576,
+      "value": 11.447531399543776,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r2_reversal_after_5s": {
-      "value": 13.012147364143889,
+      "value": 13.008206109100563,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r3_reversal_after_20s": {
-      "value": 12.56579451675497,
+      "value": 12.568999634545474,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r4_reversal_after_50s": {
-      "value": 13.711399374826394,
+      "value": 13.710951844892993,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r5_reversal_no_rest": {
-      "value": 11.459177481156257,
+      "value": 11.463857526430466,
       "lo": null,
       "hi": null,
       "unit": "%"
@@ -399,37 +441,37 @@
   },
   "reversal_r_first_jump_pct": {
     "r0_no_reversal": {
-      "value": 0.17374674496895004,
+      "value": 0.17054800926390445,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r1_reversal_no_rest": {
-      "value": 0.9548203256267707,
+      "value": 0.9371389206169534,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r2_reversal_after_5s": {
-      "value": -0.7141459418569251,
+      "value": -0.7022886119895877,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r3_reversal_after_20s": {
-      "value": -0.5636051983195278,
+      "value": -0.552887769942545,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r4_reversal_after_50s": {
-      "value": -0.1410897140183609,
+      "value": -0.14269383890384013,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "r5_reversal_no_rest": {
-      "value": 0.3132390593024059,
+      "value": 0.30318827894864064,
       "lo": null,
       "hi": null,
       "unit": "%"
@@ -437,101 +479,101 @@
   },
   "reversal_l_group_mh": {
     "r0_no_reversal": {
-      "value": 0.7728670843576575,
-      "lo": 0.755431275230913,
-      "hi": 0.7802578922225231,
+      "value": 0.7910145458488884,
+      "lo": 0.7730262590763328,
+      "hi": 0.7986202947198305,
       "unit": "mH"
     },
     "r1_reversal_no_rest": {
-      "value": 0.7573275173825933,
-      "lo": 0.748628557265457,
-      "hi": 0.7645122164315076,
+      "value": 0.7749412416756404,
+      "lo": 0.7659223254514285,
+      "hi": 0.7823534470686214,
       "unit": "mH"
     },
     "r2_reversal_after_5s": {
-      "value": 0.7662639771963409,
-      "lo": 0.758623316994652,
-      "hi": 0.7725487724202033,
+      "value": 0.7842502818075265,
+      "lo": 0.7762363297011455,
+      "hi": 0.7906621687183094,
       "unit": "mH"
     },
     "r3_reversal_after_20s": {
-      "value": 0.7659303320911038,
-      "lo": 0.7646163045574935,
-      "hi": 0.7674160774725963,
+      "value": 0.7838491632520763,
+      "lo": 0.7824482042869487,
+      "hi": 0.7852976822936217,
       "unit": "mH"
     },
     "r4_reversal_after_50s": {
-      "value": 0.7681845028784007,
-      "lo": 0.7636572964468367,
-      "hi": 0.7729645901423596,
+      "value": 0.786269831568772,
+      "lo": 0.7816199830150162,
+      "hi": 0.7911550237079845,
       "unit": "mH"
     },
     "r5_reversal_no_rest": {
-      "value": 0.7602140342395963,
-      "lo": 0.752850364518813,
-      "hi": 0.7672627747911046,
+      "value": 0.7779657377621709,
+      "lo": 0.7703268662013891,
+      "hi": 0.7852782411579925,
       "unit": "mH"
     }
   },
   "leftover_flux_uvs_by_change": {
     "g1": {
-      "value": 16.44054756453891,
-      "lo": 2.214655445482007,
-      "hi": 24.375913495987554,
+      "value": 16.1893954192102,
+      "lo": 2.172429024454733,
+      "hi": 24.00370979911147,
       "unit": "uV s"
     },
     "g2": {
-      "value": 3.1342665061053534,
-      "lo": 0.8379635378631081,
-      "hi": 11.114140802495701,
+      "value": 3.1098169742949486,
+      "lo": 0.821308801656917,
+      "hi": 11.015986098142355,
       "unit": "uV s"
     },
     "g3": {
-      "value": 27.178674327998223,
-      "lo": 23.474105243990692,
-      "hi": 33.846998919833354,
+      "value": 26.918829941777517,
+      "lo": 23.243882046912777,
+      "hi": 33.538464559818955,
       "unit": "uV s"
     },
     "g4": {
-      "value": 0.8761552943408981,
-      "lo": -2.9212400468294484,
-      "hi": 3.5538462677967635,
+      "value": 0.8665047260509751,
+      "lo": -2.8838833120364806,
+      "hi": 3.4989403839928537,
       "unit": "uV s"
     },
     "g5": {
-      "value": 0.7326309335850245,
-      "lo": -0.7326662843780876,
-      "hi": 7.380628691224036,
+      "value": 0.7146426203496716,
+      "lo": -0.7163254634681939,
+      "hi": 7.27927897094451,
       "unit": "uV s"
     }
   },
   "leftover_rotor_angle_mrad_by_change": {
     "g1": {
-      "value": 14.071247024442288,
+      "value": 13.856289227947629,
       "lo": null,
       "hi": null,
       "unit": "mrad"
     },
     "g2": {
-      "value": 2.682577211903282,
+      "value": 2.6616511812838257,
       "lo": null,
       "hi": null,
       "unit": "mrad"
     },
     "g3": {
-      "value": 23.26186757252673,
+      "value": 23.039470202118423,
       "lo": null,
       "hi": null,
       "unit": "mrad"
     },
     "g4": {
-      "value": 0.7498897180916058,
+      "value": 0.7416299244441814,
       "lo": null,
       "hi": null,
       "unit": "mrad"
     },
     "g5": {
-      "value": 0.6270491176619016,
+      "value": 0.6116531584887624,
       "lo": null,
       "hi": null,
       "unit": "mrad"
@@ -539,31 +581,31 @@
   },
   "even_over_odd_holes_pct": {
     "L at 25 %": {
-      "value": 3.378177396501831,
+      "value": 3.356482164658827,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "L at 40 %": {
-      "value": 3.787495694412267,
+      "value": 3.7814212100544053,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "tau at 25 %": {
-      "value": 2.19251265632344,
+      "value": 2.190289773075448,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "R": {
-      "value": 0.2749883664407513,
+      "value": 0.5025831831008971,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "ripple L": {
-      "value": 1.0544375194164362,
+      "value": 1.3072536904629035,
       "lo": null,
       "hi": null,
       "unit": "%"
@@ -589,13 +631,13 @@
       "unit": "permutation p"
     },
     "R": {
-      "value": 0.8982683982683982,
+      "value": 0.8398268398268398,
       "lo": null,
       "hi": null,
       "unit": "permutation p"
     },
     "ripple L": {
-      "value": 0.12337662337662338,
+      "value": 0.19913419913419914,
       "lo": null,
       "hi": null,
       "unit": "permutation p"
@@ -603,213 +645,253 @@
   },
   "steps_old_step_current_ma": {
     "10": {
-      "value": 99.98954049604868,
-      "lo": 95.80456798695293,
-      "hi": 105.49608327117463,
+      "value": 104.62431272739335,
+      "lo": 100.43934021829762,
+      "hi": 110.13085550251932,
       "unit": "mA"
     },
     "25": {
-      "value": 243.732333097937,
-      "lo": 228.8426414339963,
-      "hi": 248.2256720024397,
+      "value": 248.36710532928163,
+      "lo": 233.47741366534095,
+      "hi": 252.86044423378434,
       "unit": "mA"
     },
     "40": {
-      "value": 382.04689819972316,
-      "lo": 375.292205728902,
-      "hi": 383.8089918877635,
+      "value": 386.6816704310678,
+      "lo": 379.92697796024663,
+      "hi": 388.44376411910815,
       "unit": "mA"
     }
   },
   "steps_l_first_jump_pct_by_old_step": {
     "10": {
-      "value": 9.424290044329332,
-      "lo": 8.406869761233926,
-      "hi": 10.441710327424737,
+      "value": 9.434536546009998,
+      "lo": 8.406465246842277,
+      "hi": 10.462607845177718,
       "unit": "%"
     },
     "25": {
-      "value": 12.316901313550089,
-      "lo": 11.948902838006248,
-      "hi": 12.68489978909393,
+      "value": 12.318303542713194,
+      "lo": 11.95810488834599,
+      "hi": 12.678502197080398,
       "unit": "%"
     },
     "40": {
-      "value": 11.732510184867696,
-      "lo": 11.402146491465604,
-      "hi": 12.062873878269787,
+      "value": 11.719455865330453,
+      "lo": 11.387648745199265,
+      "hi": 12.05126298546164,
       "unit": "%"
     }
   },
   "steps_tau_first_jump_pct_by_old_step": {
     "10": {
-      "value": 10.04433714713684,
-      "lo": 8.457368751759088,
-      "hi": 11.631305542514593,
+      "value": 10.044387468885397,
+      "lo": 8.457762301948101,
+      "hi": 11.63101263582269,
       "unit": "%"
     },
     "25": {
-      "value": 12.6847981469289,
-      "lo": 12.606137196770973,
-      "hi": 12.763459097086827,
+      "value": 12.678831203815966,
+      "lo": 12.600189241235139,
+      "hi": 12.757473166396792,
       "unit": "%"
     },
     "40": {
-      "value": 10.66463674063909,
-      "lo": 10.113003876627902,
-      "hi": 11.216269604650275,
+      "value": 10.668332205669484,
+      "lo": 10.120158348548959,
+      "hi": 11.21650606279001,
       "unit": "%"
     }
   },
   "steps_r_first_jump_pct_by_old_step": {
     "10": {
-      "value": -0.5567192914031571,
-      "lo": -1.0655273104155705,
-      "hi": -0.047911272390743775,
+      "value": -0.5470114698315098,
+      "lo": -1.0465538088130666,
+      "hi": -0.04746913084995308,
       "unit": "%"
     },
     "25": {
-      "value": -0.3268568471137323,
-      "lo": -0.7231052108221725,
-      "hi": 0.06939151659470788,
+      "value": -0.3203239653070622,
+      "lo": -0.7096566264155668,
+      "hi": 0.06900869580144242,
       "unit": "%"
     },
     "40": {
-      "value": 0.9441768278268592,
-      "lo": 0.5385908027295105,
-      "hi": 1.3497628529242078,
+      "value": 0.9279086155508542,
+      "lo": 0.5317811977465281,
+      "hi": 1.3240360333551804,
       "unit": "%"
     }
   },
   "steps_l_ripple_first_jump_pct_by_old_step": {
     "10": {
-      "value": 3.000748818504295,
-      "lo": 2.16381634280145,
-      "hi": 3.8376812942071403,
+      "value": 2.8892819028156436,
+      "lo": 1.9053486249135165,
+      "hi": 3.8732151807177706,
       "unit": "%"
     },
     "25": {
-      "value": 1.8980507170678673,
-      "lo": 1.3774871748902573,
-      "hi": 2.4186142592454773,
+      "value": 2.007596332713024,
+      "lo": 1.6192925086850662,
+      "hi": 2.395900156740982,
       "unit": "%"
     },
     "40": {
-      "value": -0.2865473458194545,
-      "lo": -3.219858170137191,
-      "hi": 2.646763478498282,
+      "value": 0.07265589501781466,
+      "lo": -2.7338160805603584,
+      "hi": 2.8791278705959877,
       "unit": "%"
     }
   },
   "steps_leftover_uvs_by_old_step": {
     "10": {
-      "value": 12.24291211446773,
-      "lo": 12.156206092587539,
-      "hi": 12.329618136347921,
+      "value": 12.079240627311368,
+      "lo": 11.998611186956394,
+      "hi": 12.15987006766634,
       "unit": "uV s"
     },
     "25": {
-      "value": 17.039594407340992,
-      "lo": 15.339655325601147,
-      "hi": 18.739533489080838,
+      "value": 16.803953938569745,
+      "lo": 15.129797178944346,
+      "hi": 18.478110698195145,
       "unit": "uV s"
     },
     "40": {
-      "value": 19.68219525580955,
-      "lo": 19.100471010729123,
-      "hi": 20.263919500889976,
+      "value": 19.416166429842683,
+      "lo": 18.842148007605857,
+      "hi": 19.990184852079505,
       "unit": "uV s"
     }
   },
   "steps_late_current_pct_by_old_step": {
     "10": {
-      "value": -1.9477428850082967,
-      "lo": -2.0807848518005434,
-      "hi": -1.81470091821605,
+      "value": -1.9086938636054762,
+      "lo": -2.0390672149864786,
+      "hi": -1.7783205122244738,
       "unit": "%"
     },
     "25": {
-      "value": -3.018427858113726,
-      "lo": -3.521157976418743,
-      "hi": -2.515697739808709,
+      "value": -2.9579393820050814,
+      "lo": -3.450685257867403,
+      "hi": -2.46519350614276,
       "unit": "%"
     },
     "40": {
-      "value": -3.5897336344559383,
-      "lo": -3.650191029483274,
-      "hi": -3.5292762394286026,
+      "value": -3.5177302001795194,
+      "lo": -3.5770081476373283,
+      "hi": -3.458452252721711,
       "unit": "%"
     }
   },
   "steps_reverse_25_after_25": {
     "l_first_jump_pct": {
-      "value": 12.625392974608285,
-      "lo": 12.524509253414596,
-      "hi": 12.726276695801975,
+      "value": 12.629375001665576,
+      "lo": 12.527457859821943,
+      "hi": 12.73129214350921,
       "unit": "%"
     },
     "leftover_uvs": {
-      "value": 17.182532383343442,
-      "lo": 16.967674974266842,
-      "hi": 17.39738979242004,
+      "value": 16.949618033736996,
+      "lo": 16.733427433409886,
+      "hi": 17.165808634064103,
       "unit": "uV s"
     }
   },
   "leftover_per_amp_uvs_per_a": {
-    "value": 35.76063759665323,
-    "lo": 30.53225148634171,
-    "hi": 47.26190239101993,
+    "value": 34.46957000008029,
+    "lo": 29.679545306456475,
+    "hi": 46.227460799127385,
     "unit": "uV s/A"
   },
   "travel_bound_uvs": {
     "25": {
-      "value": 2.876485063303755,
-      "lo": 2.8611445881977513,
-      "hi": 2.9023091427226837,
+      "value": 3.4426012253399927,
+      "lo": 3.4248575901407787,
+      "hi": 3.4724707724953925,
       "unit": "uV s"
     },
     "40": {
-      "value": 4.4542772376663216,
-      "lo": 4.4454044192303455,
-      "hi": 4.463150056102298,
+      "value": 5.267562223523667,
+      "lo": 5.257299434892354,
+      "hi": 5.27782501215498,
       "unit": "uV s"
+    }
+  },
+  "travel_bound_preloaded_uvs_by_old_step": {
+    "10": {
+      "value": 6.389252118684701,
+      "lo": 6.379556416804672,
+      "hi": 6.3989478205647305,
+      "unit": "uV s"
+    },
+    "25": {
+      "value": 10.410761639782162,
+      "lo": 10.40755617667065,
+      "hi": 10.413967102893677,
+      "unit": "uV s"
+    },
+    "40": {
+      "value": 14.219740474352156,
+      "lo": 14.212655335965016,
+      "hi": 14.226825612739296,
+      "unit": "uV s"
+    }
+  },
+  "steps_excess_share_pairs_1_4_pct": {
+    "10": {
+      "value": 81.28619701577747,
+      "lo": 75.93834800456865,
+      "hi": 86.63404602698628,
+      "unit": "%"
+    },
+    "25": {
+      "value": 77.66221684097954,
+      "lo": 77.14366044331962,
+      "hi": 78.18077323863946,
+      "unit": "%"
+    },
+    "40": {
+      "value": 67.06544664735058,
+      "lo": 65.06060452809167,
+      "hi": 69.0702887666095,
+      "unit": "%"
     }
   },
   "fast_l_ramp_mh": {
     "25_rev": {
-      "value": 0.6200010434531958,
-      "lo": 0.6170514006765851,
-      "hi": 0.6258974114184932,
+      "value": 0.6418874022747885,
+      "lo": 0.6388271102860023,
+      "hi": 0.6480040762778455,
       "unit": "mH"
     },
     "25_fwd": {
-      "value": 0.6277450963606088,
-      "lo": 0.6270410548508011,
-      "hi": 0.6285635760690812,
+      "value": 0.6498945381614925,
+      "lo": 0.6491558943639711,
+      "hi": 0.6507284175689158,
       "unit": "mH"
     },
     "40_rev": {
-      "value": 0.6515479057004381,
-      "lo": 0.6455699503674793,
-      "hi": 0.6542659568845416,
+      "value": 0.675148482756144,
+      "lo": 0.668930041611244,
+      "hi": 0.6779683760095091,
       "unit": "mH"
     },
     "40_fwd": {
-      "value": 0.6543063280202187,
-      "lo": 0.6524226038030888,
-      "hi": 0.6586179542913658,
+      "value": 0.6780073803713574,
+      "lo": 0.676052119165512,
+      "hi": 0.6824841098556335,
       "unit": "mH"
     }
   },
   "fast_l_ramp_over_fit": {
     "25": {
-      "value": 0.8293500109515444,
+      "value": 0.8394655522632308,
       "lo": null,
       "hi": null,
       "unit": "ratio"
     },
     "40": {
-      "value": 0.7973189210118371,
+      "value": 0.8033640013390401,
       "lo": null,
       "hi": null,
       "unit": "ratio"
@@ -817,13 +899,13 @@
   },
   "fast_l_ramp_over_ripple": {
     "25": {
-      "value": 1.0531300506047367,
+      "value": 1.0656086434607577,
       "lo": null,
       "hi": null,
       "unit": "ratio"
     },
     "40": {
-      "value": 1.0753860046674424,
+      "value": 1.0922586205708988,
       "lo": null,
       "hi": null,
       "unit": "ratio"
@@ -831,13 +913,13 @@
   },
   "fast_l_ramp_late_start_pct": {
     "25": {
-      "value": 0.4952832322663969,
+      "value": 0.49238186821434216,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "40": {
-      "value": 1.82485826325276,
+      "value": 1.8248054126267288,
       "lo": null,
       "hi": null,
       "unit": "%"
@@ -845,41 +927,55 @@
   },
   "fast_on_edge_step_ma": {
     "25": {
-      "value": 17.53520435163265,
-      "lo": 16.59888028975447,
-      "hi": 18.042865237477873,
+      "value": 17.535204351632565,
+      "lo": 16.598880289754387,
+      "hi": 18.042865237477788,
       "unit": "mA"
     },
     "40": {
-      "value": 21.53669603159305,
-      "lo": 20.44411793541216,
-      "hi": 22.009835130040393,
+      "value": 21.536696031592967,
+      "lo": 20.444117935412077,
+      "hi": 22.00983513004031,
       "unit": "mA"
     }
   },
   "fast_on_edge_step_corrected_ma": {
     "25": {
-      "value": 18.037129067671504,
-      "lo": 17.787605148722626,
-      "hi": 18.28665298662038,
-      "unit": "mA"
+      "value": 18.0371290676715,
+      "lo": 17.51629360856419,
+      "hi": 19.660661905105734,
+      "unit": "mA, a line read, bounds the band's start"
     },
     "40": {
-      "value": 23.234104869015084,
-      "lo": 23.09807416122895,
-      "hi": 23.370135576801218,
-      "unit": "mA"
+      "value": 23.23410486901508,
+      "lo": 22.057524888835,
+      "hi": 26.040962377923485,
+      "unit": "mA, a line read, bounds the band's start"
+    }
+  },
+  "fast_on_edge_step_quad_ma": {
+    "25": {
+      "value": 12.8097644587184,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, a quadratic through the band"
+    },
+    "40": {
+      "value": 14.759412156886771,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, a quadratic through the band"
     }
   },
   "fast_on_edge_spike_ma": {
     "25": {
-      "value": 138.3243545111643,
+      "value": 138.32435451116427,
       "lo": null,
       "hi": null,
       "unit": "mA"
     },
     "40": {
-      "value": 140.96749504322474,
+      "value": 140.96749504322472,
       "lo": null,
       "hi": null,
       "unit": "mA"
@@ -887,13 +983,13 @@
   },
   "fast_on_edge_spike_nc": {
     "25": {
-      "value": 41.87475607424918,
+      "value": 41.87475607424917,
       "lo": null,
       "hi": null,
       "unit": "nC"
     },
     "40": {
-      "value": 37.759659157203615,
+      "value": 37.75965915720361,
       "lo": null,
       "hi": null,
       "unit": "nC"
@@ -901,7 +997,7 @@
   },
   "fast_return_over_top": {
     "25": {
-      "value": 0.46280991735537186,
+      "value": 0.4628099173553719,
       "lo": null,
       "hi": null,
       "unit": "ratio"
@@ -915,7 +1011,7 @@
   },
   "fast_return_over_top_ra": {
     "25": {
-      "value": 0.8148148148148148,
+      "value": 0.8148148148148149,
       "lo": null,
       "hi": null,
       "unit": "ratio"
@@ -943,53 +1039,53 @@
   },
   "fast_slow_l_mh": {
     "25": {
-      "value": 0.7603781540714567,
-      "lo": 0.7579288282947468,
-      "hi": 0.7685203909707764,
+      "value": 0.7783506856700015,
+      "lo": 0.775855439910869,
+      "hi": 0.7867997442542531,
       "unit": "mH"
     },
     "40": {
-      "value": 0.8282859794047499,
-      "lo": 0.8246715654682181,
-      "hi": 0.8367292501987906,
+      "value": 0.8522259164077761,
+      "lo": 0.8485159797581893,
+      "hi": 0.860941598160804,
       "unit": "mH"
     }
   },
   "fast_slow_l_ripple_mh": {
     "25": {
-      "value": 0.5969976980741398,
-      "lo": 0.5928781614300324,
-      "hi": 0.5998143144020612,
+      "value": 0.6023890328882544,
+      "lo": 0.5985297229224561,
+      "hi": 0.6062506224650116,
       "unit": "mH"
     },
     "40": {
-      "value": 0.6094979545421075,
-      "lo": 0.5987305512676644,
-      "hi": 0.6153947310476636,
+      "value": 0.6085515819982972,
+      "lo": 0.5974364496418463,
+      "hi": 0.6129329220089152,
       "unit": "mH"
     }
   },
   "fast_l_ramp_first_jump_pct": {
     "f1-fwd-25": {
-      "value": -0.7805355284231319,
+      "value": -0.7773355442102003,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "f2-fwd-40": {
-      "value": 0.03796645412297295,
+      "value": 0.035683814839693184,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "f3-rev-40": {
-      "value": -0.5302563454338216,
+      "value": -0.5313072319836354,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "f4-rev-25": {
-      "value": -1.3106551694891388,
+      "value": -1.3143712729168144,
       "lo": null,
       "hi": null,
       "unit": "%"
@@ -998,13 +1094,13 @@
   "fast_slow_first_burst": {
     "f5-fwd-25": {
       "l_first_jump_pct": {
-        "value": 9.10775037484819,
+        "value": 9.143636548964484,
         "lo": null,
         "hi": null,
         "unit": "%"
       },
       "leftover_uvs": {
-        "value": 8.070909652206055,
+        "value": 7.960993200385084,
         "lo": null,
         "hi": null,
         "unit": "uV s"
@@ -1012,13 +1108,13 @@
     },
     "f6-fwd-40": {
       "l_first_jump_pct": {
-        "value": -2.178643389334889,
+        "value": -2.189717968945215,
         "lo": null,
         "hi": null,
         "unit": "%"
       },
       "leftover_uvs": {
-        "value": 1.0529982716139266,
+        "value": 1.0532890983788943,
         "lo": null,
         "hi": null,
         "unit": "uV s"
@@ -1027,83 +1123,83 @@
   },
   "ripple_over_fit": {
     "25": {
-      "value": 0.7626058400382942,
-      "lo": 0.7327648938910009,
-      "hi": 0.7929215305590794,
+      "value": 0.7653376007066657,
+      "lo": 0.7454767173243674,
+      "hi": 0.8108789093341381,
       "unit": "ratio"
     },
     "40": {
-      "value": 0.7138952193707209,
-      "lo": 0.6763554128509367,
-      "hi": 0.7533016555065839,
+      "value": 0.7126198085588593,
+      "lo": 0.6543520530175883,
+      "hi": 0.7699618515734367,
       "unit": "ratio"
     }
   },
   "ripple_over_fit_inductors": {
     "25": {
-      "value": 0.9629557665992493,
-      "lo": 0.9519411307952006,
-      "hi": 0.9760047904205683,
+      "value": 0.9817553109449711,
+      "lo": 0.9701855238874252,
+      "hi": 0.9956539164799828,
       "unit": "ratio"
     },
     "40": {
-      "value": 0.901274351715321,
-      "lo": 0.9006993106873309,
-      "hi": 0.9493868643070472,
+      "value": 0.9115575179059159,
+      "lo": 0.9111624559269715,
+      "hi": 0.9594763551607993,
       "unit": "ratio"
     }
   },
   "window_scale_bridge_states": {
-    "value": 1.0106425651385904,
-    "lo": 1.009057289094339,
-    "hi": 1.0136089347050754,
+    "value": 1.0052500035278729,
+    "lo": 1.0036944884427073,
+    "hi": 1.0082051890964487,
     "unit": "ratio"
   },
   "k_bound_pct": {
-    "value": 3.3253360763143114,
+    "value": 0.10762615372208462,
     "lo": null,
     "hi": null,
     "unit": "%"
   },
   "l_mh_bridge_states_k": {
-    "value": 0.8411265267248916,
-    "lo": 0.7756902433292763,
-    "hi": 0.9237127184054355,
+    "value": 0.8342436315428946,
+    "lo": 0.7687355269682536,
+    "hi": 0.9207754487080841,
     "unit": "mH"
   },
   "l_ripple_mh_bridge_states_k": {
-    "value": 0.6261344216963262,
-    "lo": 0.6048644922493904,
-    "hi": 0.6647697614529586,
+    "value": 0.6211129762712018,
+    "lo": 0.5910760097280255,
+    "hi": 0.6684857441258442,
     "unit": "mH"
   },
   "r_burst_ohm_bridge_states_k": {
-    "value": 4.358153002206937,
-    "lo": 4.0841973723923966,
-    "hi": 4.711133186438466,
+    "value": 4.312884569123583,
+    "lo": 4.046164295945314,
+    "hi": 4.655808547152467,
     "unit": "ohm"
   },
   "drive_offset_twice_pct": {
     "R": {
-      "value": -1.3175155635717362,
+      "value": 1.8797319286220082,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "L": {
-      "value": -1.074000084218285,
+      "value": 1.6294404607962276,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "tau": {
-      "value": 0.12472473021654107,
+      "value": -0.1242890501722771,
       "lo": null,
       "hi": null,
       "unit": "%"
     },
     "ripple L": {
-      "value": 0.46805063153221305,
+      "value": 0.5862147208061774,
       "lo": null,
       "hi": null,
       "unit": "%"
