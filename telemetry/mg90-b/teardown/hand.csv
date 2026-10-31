@@ -41,3 +41,5 @@ gray disc pad pair ohm,162,kohm,"hands off; the other pair through that pad; the
 remaining pad pair ohm,6.07,ohm,"the pair whose coil is still attached, one coil alone (the others cut off at the third pad)"
 gray disc pad pair cap,9.611,nF,"hands off; the pair that read 155 kohm, through the pad whose coil wires were cut"
 gray disc pad pair cap,9.555,nF,"hands off; the pair that read 162 kohm; open probes read 0.090-0.092"
+coil ring leads ohm,5.95,ohm,"coil-ring-1: the leads soldered to the gray disc's two pads at the intact coil's ends, read at their free ends; one ring sector across the coil, two more in series through the third pad"
+coil noring leads ohm,6.08,ohm,"coil-noring-1: one lead moved to a coil wire end cut from the third pad, its enamel already off, the other on that coil's pad; one coil alone with no ring sector across it"

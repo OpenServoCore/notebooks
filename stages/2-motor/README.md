@@ -183,7 +183,8 @@ Needs: a 1 mg scale, a micrometer and calipers. For `terminals` the end
 cap with its brush card, the DMM on ohms, capacitance and DC mA, and the
 DPS. For `cool winding` the rotor with leads on commutator tabs 1 and 2,
 held by its shaft in still air, the thermocouple taped in the winding, the
-DMM on ohms and on temperature, and the board on the DPS. The stage 0
+DMM on ohms and on temperature, and the board on the DPS. For `coil` the
+bare rotor with leads on one coil, and the board on the DPS. The stage 0
 thermocouple result, the stage 1 current-scale and terminal-chain results,
 and the rest-resistance, inductance, bemf-coast, speed-torque and
 no-load-current results.
@@ -208,6 +209,14 @@ target, so the second heat did not run. Last, the coil wires are cut
 loose at one pad of the gray disc and its pad pairs read by hand on ohms
 and capacitance.
 
+`coil` then asks whether the drive-only current needs the brushes, the
+magnets or the can. It runs inductance's `fast` groups, fast decay at 25
+and 40 % both ways and slow decay forward, five bursts each on a 5 V rail,
+into one coil of the bare rotor, which keeps only its laminations. `ring`
+has the leads on the disc's two pads at the coil's ends, so the ring sits
+across the coil, and `noring` moves one lead to the coil's free wire end
+cut from the third pad, so it does not.
+
 `cool core`, with the tip on the iron, was not run. The tip in the winding
 lagged the copper by tens of seconds, too slow to resolve the copper's 2 s
 exchange with the iron. The plateau soak and the coil unwind were not done
@@ -216,4 +225,5 @@ the coils' turns stay open.
 
 Run: `uv run python stages/2-motor/teardown/capture.py terminals` once the
 rotor is out, then `capture.py cool winding` with the rotor at room, then
-the notebook.
+`capture.py coil ring` and `capture.py coil noring` once the disc's pads are
+read, then the notebook.
