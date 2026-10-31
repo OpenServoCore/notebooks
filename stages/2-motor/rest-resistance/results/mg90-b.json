@@ -1,10 +1,10 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/rest-resistance/capture-1",
-  "notes": "stall pass alone: 100 % laps of 300 ms into the rotor locked at twelve holes 30 degrees apart, rails [3.3, 3.7, 4.2] V, direction +1 then -1 a second later; current and terminal volts through the stage 1 current-scale and terminal-chain results; each lap is read as V/I at the drive's first row, a line through V/I over 60 ms to the end extrapolated back, so the lap's own warming and the early fall are out; r_term_* is that V/I on the direction +1 laps at the graded levels (3.7 and 4.2 V), per hole the mean of the two, the brush drop included, median over the holes with the range over the holes as the bounds; direction -1 starts warm from the +1 lap and is reported apart; the 3.3 V level is not graded in stage 1 and enters no number; r_stall_ohm and v0_brush_v are the brush drop and the resistance under it: the values are the line V = V0 + R I through each hole's two graded +1 laps at the start, median over the holes (v0_graded_lines_v and r_stall_graded_lines_ohm carry those with their range), and the bounds are the bracket the speed-torque run-ups' first milliseconds add, V0 from 0 to 0.5 V with R = r_term - V0 / I to match; r_runup_ohm is the run-ups' V/I at about 1 A with the EMF of the moving rotor taken out by a fit of the current on the volts and the charge, j_runup_kg_m2 the inertia that fit's EMF term gives with the drag left out; hole_map_body_* is one warming body with a free time constant against the hole map, and hole_map_angle_* what the map keeps once it is taken out; the copper's temperature is not measured, board_ntc_c is the board's; the ohms pass is the dataset telemetry/mg90-b__dev-v006-2A-D/rest-resistance/ohms-1, a day after the stall pass on a new bar seat, so its hole k is not the stall pass's hole k and the two compare only over the whole turn: the meter on its manual 220 ohm range across the motor leads' free ends at its milliamp, the motor off the board and unpowered, each hole the median of the second half of its 40 s window less ohms_lead_zero_ohm, the mean of the shorted-probe windows before and after the holes; r_ohms_median_ohm is the median over the twelve holes with their range as the bounds, r_ohms_by_hole per hole from hole 0, the lead zero off; ohms_room_c1_c and ohms_room_c2_c are the thermocouple taped on the can before and after the holes through the stage 0 correction, the window's median with its range as the bounds, the second read 3.4 min after the end zero's prompt after a refused first attempt, the motor still unpowered; room_c is their mean with the two as the bounds, the copper's temperature at the ohms pass's sitting (ohms-1), not at capture-1's stall pass, which recorded no copper temperature",
+  "notes": "stall pass alone: 100 % laps of 300 ms into the rotor locked at twelve holes 30 degrees apart, rails [3.3, 3.7, 4.2] V, direction +1 then -1 a second later; current and terminal volts through the stage 1 current-scale and terminal-chain results; each lap is read as V/I at the drive's first row, a line through V/I over 60 ms to the end extrapolated back, so the lap's own warming and the early fall are out; r_term_* is that V/I on the direction +1 laps at the graded levels (3.7 and 4.2 V), per hole the mean of the two, the brush drop included, median over the holes with the range over the holes as the bounds; direction -1 starts warm from the +1 lap and is reported apart; the 3.3 V level is not graded in stage 1 and enters no number; r_stall_ohm and v0_brush_v are the brush drop and the resistance under it: the values are the line V = V0 + R I through each hole's two graded +1 laps at the start, median over the holes (v0_graded_lines_v and r_stall_graded_lines_ohm carry those with their range), and the bounds are the bracket the speed-torque run-ups' first milliseconds add, V0 from 0 to 0.5 V with R = r_term - V0 / I to match; r_runup_ohm is the run-ups' V/I at about 1 A with the EMF of the moving rotor and L di/dt taken out by a fit of the current on the volts less L di/dt and the charge, L the rise's time constant times the run-ups' own R, runup_rise_tau_us over the rises that only climb; j_runup_kg_m2 the inertia that fit's EMF term gives with Kt taken equal to Ke and the drag left in, which reads it high, its low bound the same fit with each run-up's own current over its last 20 ms, at top speed, held through the window as the drag, less a standard deviation; v0_mean_v is the mean and standard error of the graded lines' V0 widened either way by the most the stage 1 resistor laps' V/I step between 3.7 and 4.2 V moves it; direction_gap_offset_ohm's bounds are two standard errors; hole_map_body_* is one warming body with a free time constant against the hole map, and hole_map_angle_* what the map keeps once it is taken out; the copper's temperature is not measured, board_ntc_c is the board's; the ohms pass is the dataset telemetry/mg90-b__dev-v006-2A-D/rest-resistance/ohms-1, a day after the stall pass on a new bar seat, so its hole k is not the stall pass's hole k and the two compare only over the whole turn: the meter on its manual 220 ohm range across the motor leads' free ends at its milliamp, the motor off the board and unpowered, each hole the median of the second half of its 40 s window less ohms_lead_zero_ohm, the mean of the shorted-probe windows before and after the holes; r_ohms_median_ohm is the median over the twelve holes with their range as the bounds, r_ohms_by_hole per hole from hole 0, the lead zero off; ohms_room_c1_c and ohms_room_c2_c are the thermocouple taped on the can before and after the holes through the stage 0 correction, the window's median with its range as the bounds, the second read 3.4 min after the end zero's prompt after a refused first attempt, the motor still unpowered; room_c is their mean with the two as the bounds, the copper's temperature at the ohms pass's sitting (ohms-1), not at capture-1's stall pass, which recorded no copper temperature",
   "r_term_median_ohm": {
-    "value": 4.455291999475676,
-    "lo": 4.383552379419841,
-    "hi": 4.530836376874988,
+    "value": 4.455291999475678,
+    "lo": 4.383552379419842,
+    "hi": 4.53083637687499,
     "unit": "ohm"
   },
   "r_term_by_hole": [
@@ -36,75 +36,75 @@
     4.5608
   ],
   "r_term_angle_pct": {
-    "value": 3.3058214247793427,
-    "lo": -1.6102114084616148,
+    "value": 3.305821424779365,
+    "lo": -1.610211408461637,
     "hi": 1.695610016317728,
     "unit": "%"
   },
   "r_term_lap_scatter_pct": {
-    "value": 0.23777200400468124,
+    "value": 0.23777200400468415,
     "lo": null,
     "hi": null,
     "unit": "%"
   },
   "r_term_amps": {
-    "value": 0.7835925564566736,
-    "lo": 0.7727446404676683,
-    "hi": 0.7960396423102305,
+    "value": 0.7835925564566731,
+    "lo": 0.7727446404676679,
+    "hi": 0.7960396423102303,
     "unit": "A"
   },
   "r_stall_ohm": {
-    "value": 4.4014509997014954,
-    "lo": 3.817205284792028,
-    "hi": 4.455291999475676,
+    "value": 4.401450999701486,
+    "lo": 3.8172052847920295,
+    "hi": 4.455291999475678,
     "unit": "ohm"
   },
   "v0_brush_v": {
-    "value": 0.05962971791831151,
+    "value": 0.059629717918308844,
     "lo": 0.0,
     "hi": 0.5,
     "unit": "V"
   },
   "r_stall_graded_lines_ohm": {
-    "value": 4.4014509997014954,
-    "lo": 4.152925003773717,
-    "hi": 4.829194137836801,
+    "value": 4.401450999701486,
+    "lo": 4.152925003773695,
+    "hi": 4.829194137836802,
     "unit": "ohm"
   },
   "v0_graded_lines_v": {
-    "value": 0.05962971791831151,
+    "value": 0.059629717918308844,
     "lo": -0.24642379667552383,
-    "hi": 0.18315077079436767,
+    "hi": 0.18315077079438496,
     "unit": "V"
   },
   "r_runup_ohm": {
-    "value": 4.145144305015822,
-    "lo": 4.086853106187942,
-    "hi": 4.203435503843702,
+    "value": 4.182014507294717,
+    "lo": 4.112557673959253,
+    "hi": 4.251471340630181,
     "unit": "ohm"
   },
   "r_runup_amps": {
-    "value": 0.9091279955432826,
-    "lo": 0.895430823373668,
-    "hi": 0.9196172535628752,
+    "value": 0.9091279955432824,
+    "lo": 0.8954308233736678,
+    "hi": 0.919617253562875,
     "unit": "A"
   },
   "v0_runup_lever_v": {
-    "value": 1.5564665025979134,
-    "lo": 1.352913241719314,
-    "hi": 1.7600197634765127,
+    "value": 1.347236236329945,
+    "lo": 1.143682975451344,
+    "hi": 1.550789497208546,
     "unit": "V"
   },
   "j_runup_kg_m2": {
-    "value": 5.954190704540123e-09,
-    "lo": 5.731823072871537e-09,
-    "hi": 6.17655833620871e-09,
+    "value": 5.903965663642599e-09,
+    "lo": 4.955517185412914e-09,
+    "hi": 6.201404480868519e-09,
     "unit": "kg m^2"
   },
   "runup_rise_tau_us": {
-    "value": 188.7032544042252,
-    "lo": 72.13497825291688,
-    "hi": 239.2375226721602,
+    "value": 212.0169160030784,
+    "lo": 188.30248591070514,
+    "hi": 239.2375215845438,
     "unit": "us"
   },
   "hole_map_body_tau_s": {
@@ -114,21 +114,21 @@
     "unit": "s"
   },
   "hole_map_body_share": {
-    "value": 0.6167208381708837,
+    "value": 0.6167208381708833,
     "lo": null,
     "hi": null,
     "unit": ""
   },
   "hole_map_body_span_pct": {
-    "value": 2.1429154863331137,
+    "value": 2.142915486333121,
     "lo": null,
     "hi": null,
     "unit": "%"
   },
   "hole_map_angle_pct": {
-    "value": 0.5893717239361542,
-    "lo": -0.9905839968992951,
-    "hi": 0.872757742881284,
+    "value": 0.5893717239361567,
+    "lo": -0.9905839968992887,
+    "hi": 0.8727577428812896,
     "unit": "%"
   },
   "hole_map_angle_by_hole": [
@@ -146,93 +146,93 @@
     -0.118
   ],
   "v0_mean_v": {
-    "value": 0.04488922631691949,
-    "lo": 0.01362244872286203,
-    "hi": 0.07615600391097695,
+    "value": 0.04488922631691932,
+    "lo": -0.13485361028019557,
+    "hi": 0.22463206291403423,
     "unit": "V"
   },
   "v0_all_rails_v": {
-    "value": 0.4079278790723464,
-    "lo": 0.14512509081619993,
+    "value": 0.40792787907234607,
+    "lo": 0.14512509081620506,
     "hi": 0.6331878761146436,
     "unit": "V"
   },
   "v0_all_rails_scaled_v": {
-    "value": -0.14636596934760876,
-    "lo": -0.45728802163631477,
-    "hi": 0.08225373592424533,
+    "value": -0.14636596934761376,
+    "lo": -0.4572880216363132,
+    "hi": 0.08225373592424123,
     "unit": "V"
   },
   "r_stall_all_rails_ohm": {
-    "value": 3.9651928629548205,
-    "lo": 3.6304686224752536,
-    "hi": 4.342515023229497,
+    "value": 3.965192862954831,
+    "lo": 3.630468622475256,
+    "hi": 4.342515023229492,
     "unit": "ohm"
   },
   "direction_gap_pct": {
-    "value": 1.190392809911715,
-    "lo": -1.1305559937422764,
-    "hi": 2.204390727229464,
+    "value": 1.1903928099117187,
+    "lo": -1.130555993742314,
+    "hi": 2.2043907272294425,
     "unit": "%"
   },
   "direction_gap_kept": {
-    "value": 0.5903232090546155,
-    "lo": 0.5646957321303758,
-    "hi": 0.6159506859788553,
+    "value": 0.5903232090546184,
+    "lo": 0.5646957321303789,
+    "hi": 0.6159506859788579,
     "unit": ""
   },
   "direction_gap_offset_ohm": {
-    "value": 0.0015903725296211022,
-    "lo": -0.012067795330319035,
-    "hi": 0.015248540389561239,
+    "value": 0.0015903725296239576,
+    "lo": -0.02572596319025582,
+    "hi": 0.028906708249503737,
     "unit": "ohm"
   },
   "copper_tau_s": {
-    "value": 1.8972269140555271,
-    "lo": 1.7498785843791398,
-    "hi": 2.0636070815904586,
+    "value": 1.897226914055545,
+    "lo": 1.7498785843791569,
+    "hi": 2.063607081590477,
     "unit": "s"
   },
   "warming_pct_per_j": {
-    "value": 2.864060242279899,
+    "value": 2.8640602422798893,
     "lo": 1.9214753809617044,
-    "hi": 3.475033358608472,
+    "hi": 3.4750333586084725,
     "unit": "%/J"
   },
   "copper_heat_capacity_max_j_per_c": {
-    "value": 0.13721778410888358,
+    "value": 0.13419915704875598,
     "lo": null,
     "hi": null,
     "unit": "J/C"
   },
   "copper_mass_max_g": {
-    "value": 0.35640982885424305,
+    "value": 0.3485692390876779,
     "lo": null,
     "hi": null,
     "unit": "g"
   },
   "early_excess_pct": {
-    "value": 0.8630167438241068,
-    "lo": -0.8302174413682306,
-    "hi": 2.222219622194377,
+    "value": 0.8630167438240979,
+    "lo": -0.8302174413682084,
+    "hi": 2.2222196221943102,
     "unit": "%"
   },
   "v_over_i_3v3_excess_pct": {
-    "value": 2.4509763131989715,
-    "lo": 1.224594687694891,
+    "value": 2.4509763131989937,
+    "lo": 1.2245946876949132,
     "hi": 4.111818887434837,
     "unit": "%"
   },
   "v_over_i_3v3_stage1_pct": {
-    "value": 3.9412220770681072,
+    "value": 3.9412220770681294,
     "lo": null,
     "hi": null,
     "unit": "%"
   },
   "lap_joules": {
-    "value": 0.9340108077197572,
-    "lo": 0.6542368943814497,
-    "hi": 0.9340108077197572,
+    "value": 0.9340108077197569,
+    "lo": 0.6542368943814496,
+    "hi": 0.9340108077197569,
     "unit": "J"
   },
   "board_ntc_c": {
