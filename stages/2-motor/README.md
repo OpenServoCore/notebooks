@@ -188,7 +188,8 @@ cap with its brush card, the DMM on ohms, capacitance and DC mA, and the
 DPS. For `cool winding` the rotor with leads on commutator tabs 1 and 2,
 held by its shaft in still air, the thermocouple taped in the winding, the
 DMM on ohms and on temperature, and the board on the DPS. For `coil` the
-bare rotor with leads on one coil, and the board on the DPS. For `disc iv`
+bare rotor with leads on one coil, and the board on the DPS, and for
+`coil levels ra` bridge-states' bare load and inductor A. For `disc iv`
 the disc off the rotor with two leads on its pads, the DMM on capacitance,
 ohms and DC current, and the DPS. The stage 0
 thermocouple result, the stage 1 current-scale and terminal-chain results,
@@ -243,4 +244,5 @@ Run: `uv run python stages/2-motor/teardown/capture.py terminals` once the
 rotor is out, then `capture.py cool winding` with the rotor at room, then
 `capture.py coil ring`, `capture.py coil noring` and `capture.py coil can`
 once the disc's pads are read, `capture.py disc iv` once the disc is off the
-rotor, then the notebook.
+rotor, then `capture.py coil levels ra`, `capture.py coil levels bare` and
+`capture.py coil levels can` with the disc off, then the notebook.

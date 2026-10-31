@@ -9,6 +9,7 @@ path.
   uv run python stages/2-motor/teardown/capture.py coil ring [N]       writes telemetry/<motor>__<board>/teardown/coil-ring-N
   uv run python stages/2-motor/teardown/capture.py coil noring [N]     writes telemetry/<motor>__<board>/teardown/coil-noring-N
   uv run python stages/2-motor/teardown/capture.py coil can [N]        writes telemetry/<motor>__<board>/teardown/coil-can-N
+  uv run python stages/2-motor/teardown/capture.py coil levels bare|can|ra [N]   writes telemetry/<motor>__<board>/teardown/coil-levels-<wiring>-N
   uv run python stages/2-motor/teardown/capture.py disc iv [N]         writes telemetry/<motor>/teardown/disc-iv-N
 
 `terminals` looks for a path across the motor's terminals that is not the
@@ -63,6 +64,15 @@ the rotor back into the can with its magnets, no end cap and no brushes,
 the shaft clamped so it cannot turn: the can's steel and the magnets come
 back, the brushes stay out.
 
+`coil levels` runs the same groups at 3.7, 5.0 and 7.4 V in one sitting,
+rising, into one folder per level, so a current in proportion to the volts
+shows as one per volt at every level and a fixed board term does not.
+`bare` has the leads on one coil's two wire ends with the disc off, so no
+ring sector and no closed loop through the other coils sits across it, and
+`can` the same coil back in the can with its magnets, the shaft clamped.
+`ra` is bridge-states' resistor and inductor A in place of the coil, the
+control that carries the board's own edges and nothing of the iron.
+
 `disc iv` asks whether the gray disc is a varistor or only a capacitor ring
 with a leak, once it is off the rotor with the commutator's segments still
 fused to its pads and two leads on two of its pads. The meter reads the
@@ -100,6 +110,7 @@ PROBE_MS = 5                 # at 100 %, 25 times the winding's L/R, about 15 mJ
 TAIL = 30                    # probes 0.2 s apart closing each heat, the copper's first six seconds of cooling
 COOL = [(60, 1000), (108, 5000)]   # probes and their spacing in ms: once a second to a minute, then every 5 s to 10 min
 BURST_V = 5.0                # inductance's rail, so the coil's bursts sit beside the motor's
+LEVELS_V = [3.7, 5.0, 7.4]   # rising, since a step down of the DPS can reset the servo
 DISC_V_MAX = 20              # well over the 7.4 V the bridge drives, where a low-voltage varistor's knee would sit
 DISC_STEP_V = 1
 DISC_STEP_S = 5
@@ -250,7 +261,7 @@ if "disc" in args and "iv" in args:
     print("wrote", out)
     sys.exit()
 
-if "coil" in args and ({"ring", "noring", "can"} & set(args)):
+if "coil" in args and "levels" not in args and ({"ring", "noring", "can"} & set(args)):
     wiring = next(w for w in ("noring", "ring", "can") if w in args)
     board = boards.BOARDS[boards.DEFAULT]
     out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"coil-{wiring}")
@@ -272,8 +283,32 @@ if "coil" in args and ({"ring", "noring", "can"} & set(args)):
     print("wrote", out)
     sys.exit()
 
+if "coil" in args and "levels" in args and ({"bare", "can", "ra"} & set(args)):
+    wiring = next(w for w in ("bare", "can", "ra") if w in args)
+    board = boards.BOARDS[boards.DEFAULT]
+    out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"coil-levels-{wiring}")
+    print("motor", motor.key, "board", board.key, "coil levels", wiring)
+    leads = {"bare": "the bare rotor held by its shaft, touching nothing metal, the disc off, the leads on one coil's two "
+                     "wire ends and the other coils' ends apart",
+             "can": "the leads as for bare, the rotor back in the can with its magnets, no end cap or brushes, the shaft clamped",
+             "ra": "bridge-states' ra in place of the coil, MOT_A to the bare load to inductor A to MOT_B"}[wiring]
+    capture.prompt(f"{leads[0].upper()}{leads[1:]}. {OHMS} Read the leads' free ends into the notebook by hand, "
+                   "then the leads on the board's motor connector.")
+    bench.power_up(LEVELS_V[0] + bench.DIODE_V)
+    try:
+        for volts in LEVELS_V:
+            dps_read, vsys = bench.set_vsys(volts)
+            print(f"VSYS {volts} V: rail reads {vsys:.3f} V, DPS {dps_read:.3f} V")
+            for group, pct, dirs, decay in COIL_GROUPS:
+                osc.bursts(out / f"{volts:.1f}".replace(".", "v") / group, [pct], repeats=5, chans="diff", dirs=dirs, decay=decay)
+    finally:
+        bench.power_down()
+    print("wrote", out)
+    sys.exit()
+
 if "cool" not in args or not ({"winding", "core"} & set(args)):
-    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N] | coil ring [N] | coil noring [N] | coil can [N] | disc iv [N]")
+    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N] | coil ring [N] | coil noring [N] | coil can [N] "
+             "| coil levels bare|can|ra [N] | disc iv [N]")
 place = "winding" if "winding" in args else "core"
 board = boards.BOARDS[boards.DEFAULT]
 out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"cool-{place}")
