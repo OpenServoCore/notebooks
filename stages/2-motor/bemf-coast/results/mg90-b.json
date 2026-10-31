@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/bemf-coast/capture-1",
-  "notes": "cycles of a 1.5 s spin and a 0.8 s coast with the bridge open, both directions, 15 to 60 % at 5.0 and 7.4 V; ke_v_s_per_rad is the coast route, the EMF over the whole ripple cycles closest to 10 ms (at least 3) from 1 ms past the cut over the speed counted in the same rows, 6 ripple events per revolution, with the rows where the brush path opens bridged, mean over the cycles; its bounds are the span the choice of the tap difference's zero leaves (none, the rest difference, the coast's own tail), each with the cycles' sd, since the zero is open; ke_by_zero carries each read with the open rows masked, with its trend down the coast, its EMF line's intercept and its direction split beside it; ke_read_v_s_per_rad leaves those rows as read; the windows down the coast give ke_speed_trend_pct_per_100_rev_s under the rest zero; the spin route is E0 at the cut over the spin's current-ripple speed and is reported as its paired difference; terminal volts through the stage 1 terminal-chain scale with each cycle's rest difference as the zero, current through current-scale with its in-drive offset taken out (i_spin_a) and, beside it, with the open bridge's own zero (i_spin_open_zero_a); cycles is the per-cycle table no-load-current reads. Added with the meter, the high, the swapped and the spinning runs: reading_term_a_per_v is the crest sample over a DMM in series (meter-1), per volt of the terminal difference at the crest sample, the mean over every spin with the three points as the bounds; i_spin_meter_a in cycles is i_spin_a less the term by duty times the spin's own v_on_v, the mean current a series meter reads; reading_term_by_duty is that term, piecewise linear in the commanded duty through meter-1's mean at 20, 30 and 40 % and high-1's mean at 60, 80 and 100 % on 5.0 V, held at meter-1's value below 20 %, per volt and taken as the same on either rail, so the 7.4 V 60 % cycles carry the 5.0 V value; its bounds are the mean +/- the spins' sd, all of meter-1's spins at its three duties; only the 60 % cycles' i_spin_meter_a differ from the constant term; a later notebook that needs the motor's mean current takes i_spin_meter_a, and one that subtracts a drag from a crest-sampled current at the same rail and duty keeps i_spin_a, since the term is in both; i_spin_a and i_spin_open_zero_a stay as they were. meter_by_point carries meter-1 per point, the meter's burden in the loop; direction_split_by_run and coast_decel_split_by_run_pct are capture-1 and swapped-1's wired and swapped blocks by the board's direction, the speed from the coast's first window; between_window_zero_counts is the shunt between windows in the spinning bursts over current-scale's torque-off zero; spinning_by_point is spinning-1, slow decay's line through the window at the bridge's edges and at the crest sample, fast decay's mean over whole periods and its step at the ON edge",
+  "notes": "cycles of a 1.5 s spin and a 0.8 s coast with the bridge open, both directions, 15 to 60 % at 5.0 and 7.4 V; ke_v_s_per_rad is the coast route, the EMF over the whole ripple cycles closest to 10 ms (at least 3) from 1 ms past the cut over the speed counted in the same rows, 6 ripple events per revolution, with the rows where the brush path opens bridged, mean over the cycles; its bounds are the span the choice of the tap difference's zero leaves (none, the rest difference, the coast's own tail), each with the cycles' sd, since the zero is open; ke_by_zero carries each read with the open rows masked, with its trend down the coast, its EMF line's intercept and its direction split beside it; ke_read_v_s_per_rad leaves those rows as read; the windows down the coast give ke_speed_trend_pct_per_100_rev_s under the rest zero; the spin route is E0 at the cut over the spin's current-ripple speed and is reported as its paired difference; terminal volts through the stage 1 terminal-chain scale with each cycle's rest difference as the zero, current through current-scale with its in-drive offset taken out (i_spin_a) and, beside it, with the open bridge's own zero (i_spin_open_zero_a); cycles is the per-cycle table no-load-current reads. Added with the meter, the high, the swapped and the spinning runs: reading_term_a_per_v is the crest sample over a DMM in series (meter-1), per volt of the terminal difference at the crest sample, the mean over every spin with the three points as the bounds; i_spin_meter_a in cycles is i_spin_a less the term by duty times the spin's own v_on_v, the mean current a series meter reads; reading_term_by_duty is that term, piecewise linear in the commanded duty through meter-1's mean at 20, 30 and 40 % and high-1's mean at 60, 80 and 100 % on 5.0 V, held at meter-1's value below 20 %, per volt and taken as the same on either rail, so the 7.4 V 60 % cycles carry the 5.0 V value; its bounds are the mean +/- the spins' sd, all of meter-1's spins at its three duties; only the 60 % cycles' i_spin_meter_a differ from the constant term; a later notebook that needs the motor's mean current takes i_spin_meter_a, and one that subtracts a drag from a crest-sampled current at the same rail and duty keeps i_spin_a, since the term is in both; i_spin_a and i_spin_open_zero_a stay as they were. meter_by_point carries meter-1 per point, the meter's burden in the loop; direction_split_by_run and coast_decel_split_by_run_pct are capture-1 and swapped-1's wired and swapped blocks by the board's direction, the speed from the coast's first window; between_window_zero_counts is the shunt between windows in the spinning bursts over current-scale's torque-off zero; spinning_by_point is spinning-1, slow decay's line through the window at the bridge's edges and at the crest sample, fast decay's mean over whole periods and its step at the ON edge. In fast decay the keys ending in _corrected read the bridge's edges at the teardown's fast_edge_lags_ticks, 8 ticks after the commanded start and 12 after its end, the step on a line from 150 ticks after the commanded start to 20 before its end and the period mean signed at the same edges, over the same zero between windows; period_mean_ma, period_mean_if_board_high_ma, on_edge_step_ma and step_ma_per_v keep the first reading at sample-timing's slow-decay lags, and a later notebook takes the _corrected keys; bounds are the two directions",
   "ke_v_s_per_rad": {
     "value": 0.0011683788605218186,
     "lo": 0.0011609130609392226,
@@ -1172,6 +1172,30 @@
           "hi": 4.528147731659836,
           "unit": "mA/V"
         },
+        "period_mean_corrected_ma": {
+          "value": 23.366096509117853,
+          "lo": 23.286557557921586,
+          "hi": 23.44563546031412,
+          "unit": "mA"
+        },
+        "period_mean_if_board_high_corrected_ma": {
+          "value": 30.64889389510561,
+          "lo": null,
+          "hi": null,
+          "unit": "mA"
+        },
+        "on_edge_step_corrected_ma": {
+          "value": 19.383028887569534,
+          "lo": 19.221436061703216,
+          "hi": 19.544621713435852,
+          "unit": "mA"
+        },
+        "step_corrected_ma_per_v": {
+          "value": 3.9369245077594908,
+          "lo": 3.903763254426943,
+          "hi": 3.970085761092039,
+          "unit": "mA/V"
+        },
         "v_on_v": {
           "value": 4.923397170282619,
           "lo": null,
@@ -1274,6 +1298,30 @@
           "hi": 4.066520001890485,
           "unit": "mA/V"
         },
+        "period_mean_corrected_ma": {
+          "value": 12.472319385660315,
+          "lo": 11.912487536855842,
+          "hi": 13.032151234464788,
+          "unit": "mA"
+        },
+        "period_mean_if_board_high_corrected_ma": {
+          "value": 24.48656920003001,
+          "lo": null,
+          "hi": null,
+          "unit": "mA"
+        },
+        "on_edge_step_corrected_ma": {
+          "value": 23.817056476943165,
+          "lo": 22.917172079540574,
+          "hi": 24.716940874345756,
+          "unit": "mA"
+        },
+        "step_corrected_ma_per_v": {
+          "value": 3.261735993880561,
+          "lo": 3.138100594446668,
+          "hi": 3.385371393314453,
+          "unit": "mA/V"
+        },
         "v_on_v": {
           "value": 7.301990857483828,
           "lo": null,
@@ -1374,6 +1422,30 @@
           "value": 4.495200050735764,
           "lo": 4.455695641531324,
           "hi": 4.534704459940204,
+          "unit": "mA/V"
+        },
+        "period_mean_corrected_ma": {
+          "value": 46.97233946703981,
+          "lo": 45.87867888809118,
+          "hi": 48.06600004598844,
+          "unit": "mA"
+        },
+        "period_mean_if_board_high_corrected_ma": {
+          "value": 59.459135218524644,
+          "lo": null,
+          "hi": null,
+          "unit": "mA"
+        },
+        "on_edge_step_corrected_ma": {
+          "value": 29.87461659833614,
+          "lo": 29.340320585258073,
+          "hi": 30.408912611414205,
+          "unit": "mA"
+        },
+        "step_corrected_ma_per_v": {
+          "value": 4.103504248469611,
+          "lo": 4.029504000396553,
+          "hi": 4.177504496542669,
           "unit": "mA/V"
         },
         "v_on_v": {

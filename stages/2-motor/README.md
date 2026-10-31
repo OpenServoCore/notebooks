@@ -90,8 +90,8 @@ Needs: motor in the rig, bar off, board, DPS, host; for `meter` and
 `spinning` the DMM on its 220.00 mA range in series with one motor lead,
 logging over Bluetooth; the stage 0 dmm result, the stage 1 current-scale,
 terminal-chain, rest-noise and sample-timing results, the rest-resistance
-result for the meter run's loop, and the inductance result for the locked
-rotor's step.
+result for the meter run's loop, the inductance result for the locked
+rotor's step, and the teardown result for fast decay's edges.
 
 How: cycles of a 1.5 s spin at 15 to 60 % and a 0.8 s coast with the bridge
 open, both directions, three per duty, at 5.0 and 7.4 V, twenty seconds
