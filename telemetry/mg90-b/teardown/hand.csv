@@ -43,3 +43,4 @@ gray disc pad pair cap,9.611,nF,"hands off; the pair that read 155 kohm, through
 gray disc pad pair cap,9.555,nF,"hands off; the pair that read 162 kohm; open probes read 0.090-0.092"
 coil ring leads ohm,5.95,ohm,"coil-ring-1: the leads soldered to the gray disc's two pads at the intact coil's ends, read at their free ends; one ring sector across the coil, two more in series through the third pad"
 coil noring leads ohm,6.08,ohm,"coil-noring-1: one lead moved to a coil wire end cut from the third pad, its enamel already off, the other on that coil's pad; one coil alone with no ring sector across it"
+coil can,,,"coil-can-1: coil-noring-1's leads unchanged, the rotor slid back into the can with its two magnets, no end cap or brushes, the shaft clamped"

@@ -215,7 +215,10 @@ and 40 % both ways and slow decay forward, five bursts each on a 5 V rail,
 into one coil of the bare rotor, which keeps only its laminations. `ring`
 has the leads on the disc's two pads at the coil's ends, so the ring sits
 across the coil, and `noring` moves one lead to the coil's free wire end
-cut from the third pad, so it does not.
+cut from the third pad, so it does not. `can` keeps those leads and puts
+the rotor back in the can with its magnets, no end cap or brushes, the
+shaft clamped, so the can's steel and the magnets return without the
+brushes.
 
 `cool core`, with the tip on the iron, was not run. The tip in the winding
 lagged the copper by tens of seconds, too slow to resolve the copper's 2 s
@@ -225,5 +228,5 @@ the coils' turns stay open.
 
 Run: `uv run python stages/2-motor/teardown/capture.py terminals` once the
 rotor is out, then `capture.py cool winding` with the rotor at room, then
-`capture.py coil ring` and `capture.py coil noring` once the disc's pads are
-read, then the notebook.
+`capture.py coil ring`, `capture.py coil noring` and `capture.py coil can`
+once the disc's pads are read, then the notebook.

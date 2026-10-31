@@ -8,6 +8,7 @@ path.
   uv run python stages/2-motor/teardown/capture.py cool core [N]       writes telemetry/<motor>__<board>/teardown/cool-core-N
   uv run python stages/2-motor/teardown/capture.py coil ring [N]       writes telemetry/<motor>__<board>/teardown/coil-ring-N
   uv run python stages/2-motor/teardown/capture.py coil noring [N]     writes telemetry/<motor>__<board>/teardown/coil-noring-N
+  uv run python stages/2-motor/teardown/capture.py coil can [N]        writes telemetry/<motor>__<board>/teardown/coil-can-N
 
 `terminals` looks for a path across the motor's terminals that is not the
 winding, on the end cap with its brush card seated back on the empty can
@@ -56,7 +57,10 @@ that are gone. `ring` has the leads on the gray disc's two pads at the
 coil's ends, so one ring sector sits across the coil and two more in
 series through the third pad. `noring` moves one lead to the coil's free
 wire end, cut from the third pad, so no sector sits across it. The capacitive
-spike at the ON edge says which.
+spike at the ON edge says which. `can` keeps `noring`'s leads and slides
+the rotor back into the can with its magnets, no end cap and no brushes,
+the shaft clamped so it cannot turn: the can's steel and the magnets come
+back, the brushes stay out.
 
 The masses, the photos and the counts of the teardown go into the notebook
 by hand.
@@ -189,13 +193,15 @@ if "terminals" in args:
     print("wrote", out)
     sys.exit()
 
-if "coil" in args and ({"ring", "noring"} & set(args)):
-    wiring = "noring" if "noring" in args else "ring"
+if "coil" in args and ({"ring", "noring", "can"} & set(args)):
+    wiring = next(w for w in ("noring", "ring", "can") if w in args)
     board = boards.BOARDS[boards.DEFAULT]
     out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"coil-{wiring}")
     print("motor", motor.key, "board", board.key, "coil", wiring)
     leads = {"ring": "the leads soldered to the gray disc's two pads at one coil's ends",
-             "noring": "one lead on the coil's free wire end, cut from the third pad, the other on its pad"}[wiring]
+             "noring": "one lead on the coil's free wire end, cut from the third pad, the other on its pad",
+             "can": "the leads as for noring, the rotor back in the can with its magnets, no end cap or brushes, "
+                    "the shaft clamped"}[wiring]
     capture.prompt(f"The bare rotor held by its shaft, touching nothing metal, {leads}. {OHMS} "
                    "Read the leads' free ends into the notebook by hand, then the leads on the board's motor connector.")
     bench.power_up(BURST_V + bench.DIODE_V)
@@ -210,7 +216,7 @@ if "coil" in args and ({"ring", "noring"} & set(args)):
     sys.exit()
 
 if "cool" not in args or not ({"winding", "core"} & set(args)):
-    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N] | coil ring [N] | coil noring [N]")
+    sys.exit("usage: capture.py terminals [N] | cool winding [N] | cool core [N] | coil ring [N] | coil noring [N] | coil can [N]")
 place = "winding" if "winding" in args else "core"
 board = boards.BOARDS[boards.DEFAULT]
 out = capture.dataset(f"{motor.key}__{board.key}", "teardown", ["", *n], name=f"cool-{place}")
