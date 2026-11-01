@@ -265,7 +265,7 @@ impl ServoLimits {
 
     /// Winding R, vcounts per ccount, once identified and with a rail read.
     pub fn r_vpc(&self) -> Option<f64> {
-        (self.r_q12 != 0 && self.vbus != 0).then(|| self.r_q12 as f64 / 4096.0)
+        (self.r_q12 != 0 && self.vbus != 0).then_some(self.r_q12 as f64 / 4096.0)
     }
 
     /// Soft limits inside the pot and in order: `osc cal` has run.
