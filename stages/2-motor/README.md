@@ -307,3 +307,36 @@ the same speeds at up to eleven times the current.
 
 Run: no capture of its own, the notebook reads the datasets above. Its fits
 run on every core, and the simulator needs numba, which `uv sync` installs.
+
+## [identification](identification/identification.ipynb)
+
+Targets: whether the board alone recovers each motor constant a back-EMF
+speed estimate needs, and how close each board-only route lands to this
+stage's bench references, at what cost in maneuvers, seconds and motor
+revolutions against a servo's travel of about 157 motor revolutions. The
+routes are $R$ from one, two and three locked seats, $R$ against the board
+NTC with the winding's self-heat bounded and a low-speed reference rung as
+a relative thermometer, $K_e$ from the coasts of one repeat, $L$ from a few
+bursts at one seat, the reading term $\Delta$ and $c = J/(K_t K_e)$ from the
+100 % anchor, and the brush drop's two speed tables by mechanical direction
+from three rungs. It scores no speed. The compensation notebook takes these
+constants into the estimator.
+
+Needs: no bench. rest-resistance's stall pass and inductance's capture-1
+through their own cells, bemf-coast's capture-1, meter-1, high-1 and
+swapped-1, and speed-torque's run-ups through its own cells. The stage 1
+current-scale, terminal-chain, sample-timing, bridge-states and ntc-curve
+results, and the rest-resistance, inductance, bemf-coast, speed-torque,
+teardown and motor-model results.
+
+How: each route reads the captures as a servo's board could, one seat for
+an end stop, one repeat of capture-1's twenty spins for an ident run, the
+last 50 ms before each cut and the first 15 ms of coast for a short spin,
+and one speed-torque run-up each way for the anchor. Every route is graded
+against the bench reference, held out where the data allow, and costed by
+the board's own rough speed. The notebook ends with what the next motor's
+capture must record so every route runs on it.
+
+Run: no capture of its own. `identification.py` beside the notebook holds
+the routes and the pieces the compensation notebook also reads, and its
+reductions run on every core.
