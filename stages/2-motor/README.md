@@ -257,3 +257,44 @@ rotor is out, then `capture.py cool winding` with the rotor at room, then
 once the disc's pads are read, `capture.py disc iv` once the disc is off the
 rotor, then `capture.py coil levels ra`, `capture.py coil levels bare` and
 `capture.py coil levels can` with the disc off, then the notebook.
+
+## [motor-model](motor-model/motor-model.ipynb)
+
+Targets: one model of the current inside the PWM window that draws every
+locked-rotor burst of stage 2, the one coil bare and in the can and the
+motor at one seat, in fast and slow decay, and the board's crest sample
+against the motor's mean current that the model predicts on the free motor,
+by duty and rail. On the motor at hole 11 the model that holds up is an
+inductance that rises with the current from its last reversal, the Rayleigh
+law of soft iron, a loss across it, and a slow series rung. The rung is
+what makes inductance's period fit read more than the window does, and what
+makes it slide with the fit's length. The window offset at the ON edge is
+mostly a loss at the edge, about 12 mA at 4.95 V, and the rest is the
+ramp's shape. On the free motor the crest sample reads a loss in the window
+that a meter averages away, falling with one less the duty to zero at
+100 %, about 19 mA over the mean at 5.0 V and 29 mA at 7.4 V up to 30 %,
+high confidence. Whether that loss sits across the inductance or in the
+rung is moderate at most, and the spinning motor needs a third or more
+loss than the locked one, for a reason these data leave open. The 20 mA
+speed-torque found at 100 % is drag, high confidence.
+
+Needs: no bench. The teardown's levels and coil runs and hand readings,
+inductance's fast-1, capture-1 and reversal-1 at hole 11, bridge-states'
+fast-decay controls, bemf-coast's capture-1, meter-1 and high-1 and its
+result for spinning-1, and speed-torque's run-ups. The stage 1
+current-scale, terminal-chain, sample-timing and bridge-states results,
+and the rest-resistance, bemf-coast, speed-torque and teardown results. The
+inductance, teardown, bemf-coast and no-load-current results for comparison
+only.
+
+How: a tick-level simulator of one branch through the bridge, a series
+resistance into an inductance that depends on the current with a
+conductance across it and an optional rung, through the bridge's four
+modes and the amplifier's lag. Each candidate network is fitted to a set's
+fast decay and held out by rail, by duty and by decay mode, then the
+motor's model is run to steady state on the spinning motor with its loss
+refitted to the meter runs and to capture-1, whose mean current comes from
+the coast's deceleration through speed-torque's inertia.
+
+Run: no capture of its own, the notebook reads the datasets above. Its fits
+run on every core, and the simulator needs numba, which `uv sync` installs.

@@ -1,0 +1,844 @@
+{
+  "capture": "telemetry/mg90-b__dev-v006-2A-D/inductance/fast-1",
+  "notes": "motor-model fits one window-current model to stage 2's locked-rotor bursts and carries it to the spinning motor. Every fit is the simulator in motor_model.py (tick-level RK4, 4 substeps a tick; Rs in series with L(i) || G and a rung Lb || Rb; the bridge's ON, return, float and brake modes; the shunt through bridge-states' amplifier lag and gain), weights 1 / each burst's rest sd, band ON+60 (coils, controls, slow decay) or ON+150 (the motor's fast decay) to OFF-30. The coils' series R is the hand ohms less teardown's pair_zero_ohm, the motor's fast decay rest-resistance's stall R at hole 11, its slow decay one R per capture fitted. floor_edge_ma: the control ra's ideal R-L carries no edge term, the bounds its per-rail edge current as a G with the shape held. bare_*, can_* and motor_* parameters: the value at the joint fast + slow fit, rule 2 (bare Rayleigh + G, can quad per sign + Rayleigh + G + rung, motor Rayleigh + G + rung), the bounds the union of that fit's Jacobian error, its rail and duty held-out refits, the band-start and R variants of the fast-decay fits (bare RG and RSG, can QG and QRG, motor RGb), and the alternative joint fits (bare RSG rule 2, can QRG and QRGb rule 1, motor RSGb rule 2) with their refits. motor_g_locked_ms is the joint fast + slow fit's G; motor_g_locked_fast_ms is the fast-decay-only fit's, the L model g_spin_ms holds, its bounds the fast-decay G across the forms that carry one. can_l_change_0p2a_pct_by_sign is the incremental L at 0.2 A over L0 from zero current. bare_edge_* and can_edge_line are the rail test, the fast fit's shape held and L0 and a G refitted per rail, the edge current G V against V_on as a line, errors from its own scatter. window_model_chi2: the joint fit's chi2/dof, hi the largest held-out test chi2/n of either decay. offset_shares_line_ma: the line read at the fast-decay ON edge taken apart into Shapley shares on fast-1's folds at hole 11, the value Rayleigh + G + rung's, the bounds the other passing forms'. edge_current_ma: the model's current from ON+10 to ON+60 over a plain R-L, the bounds the forms. ripple_over_fit_* and l_slide_*: inductance's estimators on hole 11's slow-decay bursts, the edge volt-ticks left out of both, data against the model with each capture's R from its slow-decay R refit. g_spin_ms: the locked motor's fast-decay Rayleigh + G + rung shape held and G refitted to the 18 spinning points, the bounds the other L forms with a G; a rung-only form, its loss in the rung, reads 1.38 mS and is left out of the bounds. crest_less_mean_ma and crest_less_meter_ma: the crest sample (31 ticks after the crest, sample-timing's crest_sample_ticks) less the period mean in slow decay at the speed where the drive meets capture-1's coast drag (a + b sqrt w), with no meter and with meter_loop_ohm added, the bounds the L forms with their own spinning G and G's error. coast_over_meter: the meter runs' mean current over the coast's pinned drag at the cut, J alpha / Kt with speed-torque's J and Kt = bemf-coast's Ke, mean and sd. drag_100_*: speed-torque's 100 % run-ups, the board and the coast's 5 ms windows; drag_100_curve_forms_ma capture-1's coast drag extrapolated to that speed by four forms. delta_*: three coils in a delta in the measured coil states, coupling 0 to 0.95, the median and range over every case.",
+  "floor_edge_ma": {
+    "value": 0.0,
+    "lo": -0.15846783942310372,
+    "hi": 0.12107890463186317,
+    "unit": "mA"
+  },
+  "bare_l0_mh": {
+    "value": 0.5718341886082395,
+    "lo": 0.5591181335830239,
+    "hi": 0.5802634493489854,
+    "unit": "mH"
+  },
+  "bare_rayleigh_per_a": {
+    "value": 0.5552465018113014,
+    "lo": 0.3879546457145771,
+    "hi": 1.00378654287111,
+    "unit": "1/A"
+  },
+  "bare_edge_ma_by_rail": {
+    "3v7": {
+      "value": 2.2846922243745884,
+      "lo": 2.2112385895412525,
+      "hi": 2.3581458592079243,
+      "unit": "mA"
+    },
+    "5v0": {
+      "value": 2.886583807357079,
+      "lo": 2.8096463130323373,
+      "hi": 2.9635213016818205,
+      "unit": "mA"
+    },
+    "7v4": {
+      "value": 2.650823784845366,
+      "lo": 2.57345917499534,
+      "hi": 2.7281883946953918,
+      "unit": "mA"
+    }
+  },
+  "bare_edge_slope_ms": {
+    "value": 0.07491015787925953,
+    "lo": -0.07009428259037631,
+    "hi": 0.21991459834889537,
+    "unit": "mS"
+  },
+  "can_l0_mh": {
+    "value": 0.34078612114444934,
+    "lo": 0.3184363957869188,
+    "hi": 0.34801242586131115,
+    "unit": "mH"
+  },
+  "can_l_change_0p2a_pct_by_sign": {
+    "+1": {
+      "value": 52.25985229336487,
+      "lo": 49.209840118153416,
+      "hi": 59.469123218206875,
+      "unit": "%"
+    },
+    "-1": {
+      "value": -12.23625829883831,
+      "lo": -13.350475620801316,
+      "hi": -9.958894666369499,
+      "unit": "%"
+    }
+  },
+  "can_g_ms": {
+    "value": 1.452907307285527,
+    "lo": 1.067593819091513,
+    "hi": 1.7111111342932337,
+    "unit": "mS"
+  },
+  "can_edge_line": {
+    "slope_ms": {
+      "value": 1.090737174698153,
+      "lo": 0.834149499864885,
+      "hi": 1.3473248495314207,
+      "unit": "mS"
+    },
+    "intercept_ma": {
+      "value": 2.275179781288003,
+      "lo": 0.8529657955141947,
+      "hi": 3.697393767061811,
+      "unit": "mA"
+    }
+  },
+  "motor_l0_mh": {
+    "value": 0.5047787576638627,
+    "lo": 0.5007369202611112,
+    "hi": 0.5424946635346205,
+    "unit": "mH"
+  },
+  "motor_rayleigh_per_a": {
+    "value": 2.911519258489968,
+    "lo": 2.122482853488643,
+    "hi": 3.36717983872986,
+    "unit": "1/A"
+  },
+  "motor_g_locked_ms": {
+    "value": 2.2866259207347435,
+    "lo": 2.1418536788685585,
+    "hi": 2.689327068611417,
+    "unit": "mS"
+  },
+  "motor_g_locked_fast_ms": {
+    "value": 2.4931640747711086,
+    "lo": 1.7745108590058212,
+    "hi": 3.998787202019548,
+    "unit": "mS"
+  },
+  "motor_rung_l_mh": {
+    "value": 0.23966098210805026,
+    "lo": 0.22394555172339867,
+    "hi": 0.2492879802865492,
+    "unit": "mH"
+  },
+  "motor_rung_r_ohm": {
+    "value": 6.084046966699098,
+    "lo": 4.008681981611591,
+    "hi": 6.994043414189281,
+    "unit": "ohm"
+  },
+  "motor_r_slow_ohm_by_capture": {
+    "capture-1": {
+      "value": 4.444519640368074,
+      "lo": 4.441528909547981,
+      "hi": 4.447510371188167,
+      "unit": "ohm"
+    },
+    "fast-1": {
+      "value": 4.1962576207902975,
+      "lo": 4.193058863704179,
+      "hi": 4.199456377876416,
+      "unit": "ohm"
+    },
+    "reversal-1": {
+      "value": 4.303667112698654,
+      "lo": 4.300413062018152,
+      "hi": 4.3069211633791555,
+      "unit": "ohm"
+    }
+  },
+  "window_model_chi2": {
+    "bare": {
+      "value": 2.6366436723552105,
+      "lo": null,
+      "hi": 6.5322584983006315,
+      "unit": "chi2/dof"
+    },
+    "can": {
+      "value": 1.8023208879138857,
+      "lo": null,
+      "hi": 16.255311344194805,
+      "unit": "chi2/dof"
+    },
+    "motor": {
+      "value": 1.942631493842509,
+      "lo": null,
+      "hi": 3.553935976089305,
+      "unit": "chi2/dof"
+    }
+  },
+  "offset_shares_line_ma": {
+    "25": {
+      "loss": {
+        "value": 11.99682889407065,
+        "lo": 11.99682889407065,
+        "hi": 13.272724939045649,
+        "unit": "mA"
+      },
+      "rl_curvature": {
+        "value": 1.8981817172564561,
+        "lo": 1.750606062673544,
+        "hi": 1.8981817172564561,
+        "unit": "mA"
+      },
+      "l_of_i": {
+        "value": 2.890288653988011,
+        "lo": 2.2942762717678744,
+        "hi": 3.62963602542864,
+        "unit": "mA"
+      },
+      "rung": {
+        "value": 1.180181405984158,
+        "lo": 1.180181405984158,
+        "hi": 1.322539104949192,
+        "unit": "mA"
+      }
+    },
+    "40": {
+      "loss": {
+        "value": 11.911518218564577,
+        "lo": 11.911518218564577,
+        "hi": 13.540268703040862,
+        "unit": "mA"
+      },
+      "rl_curvature": {
+        "value": 4.016305395712621,
+        "lo": 3.714762082302016,
+        "hi": 4.016305395712621,
+        "unit": "mA"
+      },
+      "l_of_i": {
+        "value": 4.547455025254756,
+        "lo": 3.66389991649232,
+        "hi": 5.753059399420401,
+        "unit": "mA"
+      },
+      "rung": {
+        "value": 2.4333624317465055,
+        "lo": 2.4333624317465055,
+        "hi": 2.595066688515179,
+        "unit": "mA"
+      }
+    }
+  },
+  "edge_current_ma": {
+    "value": 12.06812826922165,
+    "lo": 7.854102263265997,
+    "hi": 12.780666395307001,
+    "unit": "mA"
+  },
+  "ripple_over_fit_model": {
+    "25": {
+      "model": {
+        "value": 0.7883582348395954,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "data": {
+        "value": 0.7703989257568699,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      }
+    },
+    "40": {
+      "model": {
+        "value": 0.7611151534852533,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "data": {
+        "value": 0.7319401820092928,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      }
+    }
+  },
+  "l_slide_model_pct": {
+    "25": {
+      "model": {
+        "value": 8.385511640505916,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "data": {
+        "value": 8.115670503069072,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    },
+    "40": {
+      "model": {
+        "value": 7.313079586863369,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "data": {
+        "value": 5.567810680585317,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    }
+  },
+  "g_spin_ms": {
+    "value": 3.3489216285122403,
+    "lo": 2.972521792649384,
+    "hi": 4.505838661436172,
+    "unit": "mS"
+  },
+  "reading_term_rms_ma": {
+    "value": 1.291826323716571,
+    "lo": 0.9858552607162573,
+    "hi": 1.3947062989169543,
+    "unit": "mA"
+  },
+  "crest_less_mean_ma": {
+    "3.7 V": {
+      "10 %": {
+        "value": 13.57828877545385,
+        "lo": 13.34955115052886,
+        "hi": 16.401675447870204,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 13.976087946259408,
+        "lo": 13.762184470522612,
+        "hi": 15.92427072057757,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 14.214968000402028,
+        "lo": 14.01002086623565,
+        "hi": 15.735352050837829,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 14.169347358069452,
+        "lo": 13.691106903173605,
+        "hi": 15.266224514305133,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 13.434693258001733,
+        "lo": 12.348848635405435,
+        "hi": 14.19441017327475,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 12.090756642023948,
+        "lo": 10.729760650517662,
+        "hi": 12.580698447050032,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 10.256895022644613,
+        "lo": 8.940609693530035,
+        "hi": 10.535785003606676,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 8.067618590008223,
+        "lo": 7.005049450792853,
+        "hi": 8.197909935762105,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 5.656903614067026,
+        "lo": 4.947220055875526,
+        "hi": 5.719107962570945,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 3.1418732919891355,
+        "lo": 2.791855969884544,
+        "hi": 3.2610022439671837,
+        "unit": "mA"
+      }
+    },
+    "5 V": {
+      "10 %": {
+        "value": 18.383318878749126,
+        "lo": 18.074457426996865,
+        "hi": 22.123694111875235,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 18.978265987756803,
+        "lo": 18.689522912090816,
+        "hi": 21.47222394541217,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 19.35230152558888,
+        "lo": 19.083160097500976,
+        "hi": 20.73397288253736,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 19.35143251901828,
+        "lo": 18.556861924589846,
+        "hi": 19.970656210635337,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 18.36226743222594,
+        "lo": 16.625992311348327,
+        "hi": 18.672442025334085,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 16.50732638250902,
+        "lo": 14.434965359400877,
+        "hi": 16.669115571469064,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 13.966353532105202,
+        "lo": 12.01517872695333,
+        "hi": 14.095300684237394,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 10.938612483919627,
+        "lo": 9.398431375420785,
+        "hi": 11.035594758902008,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 7.621192179560225,
+        "lo": 6.617227787181754,
+        "hi": 7.686768994784195,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 4.186268609636002,
+        "lo": 3.704895482496937,
+        "hi": 4.220744240729999,
+        "unit": "mA"
+      }
+    },
+    "7.4 V": {
+      "10 %": {
+        "value": 27.32748820608415,
+        "lo": 26.87080909711056,
+        "hi": 32.680385923459156,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 28.34206758078329,
+        "lo": 27.915290810578895,
+        "hi": 31.706831632392,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 29.00524753682581,
+        "lo": 28.410493955149885,
+        "hi": 30.607313282613536,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 29.116937753790097,
+        "lo": 27.376397553189534,
+        "hi": 29.459036474042804,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 27.64250996475009,
+        "lo": 24.511614748003097,
+        "hi": 27.93197847192164,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 24.806627192147083,
+        "lo": 21.263875477157114,
+        "hi": 25.045848544756957,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 20.915201842927004,
+        "lo": 17.679243942970032,
+        "hi": 21.10596370879864,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 16.295344665735293,
+        "lo": 13.804531493538121,
+        "hi": 16.438891307976967,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 11.266304783803683,
+        "lo": 9.687658969299157,
+        "hi": 11.363403992790268,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 6.108154140386844,
+        "lo": 5.377793111228343,
+        "hi": 6.159201444628167,
+        "unit": "mA"
+      }
+    },
+    "8.4 V": {
+      "10 %": {
+        "value": 31.07944040170943,
+        "lo": 30.525344970971805,
+        "hi": 37.07733865751967,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 32.284997617404,
+        "lo": 31.44765529374209,
+        "hi": 35.969353092708026,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 33.07846531438074,
+        "lo": 32.04841401884398,
+        "hi": 34.71910665464286,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 33.24085901224001,
+        "lo": 31.048782458260604,
+        "hi": 33.62903187252043,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 31.556216826478348,
+        "lo": 27.794575434922592,
+        "hi": 31.88472133220222,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 28.299675010262995,
+        "lo": 24.106319695824652,
+        "hi": 28.57120990542483,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 23.83360671066191,
+        "lo": 20.03618222654452,
+        "hi": 24.050179150884084,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 18.539859989118142,
+        "lo": 15.637220642672112,
+        "hi": 18.70285619438311,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 12.789107113913317,
+        "lo": 10.963770688729205,
+        "hi": 12.899373959536028,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 6.907201106699674,
+        "lo": 6.071590625896434,
+        "hi": 6.965168086008504,
+        "unit": "mA"
+      }
+    }
+  },
+  "crest_less_meter_ma": {
+    "3.7 V": {
+      "10 %": {
+        "value": 14.384598177861156,
+        "lo": 14.176823603263577,
+        "hi": 16.634828639240627,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 15.248568737938694,
+        "lo": 15.057809132629309,
+        "hi": 17.133228648618104,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 15.828668066022939,
+        "lo": 15.653885594225333,
+        "hi": 17.465050096977627,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 16.189659276394227,
+        "lo": 15.319931334068475,
+        "hi": 17.392838920712503,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 15.597678219115629,
+        "lo": 14.132191876880114,
+        "hi": 16.458375690288012,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 14.210294351737968,
+        "lo": 12.53928902252764,
+        "hi": 14.799858535820277,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 12.191572352600815,
+        "lo": 10.601556988589337,
+        "hi": 12.57004873195411,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 9.699932847697738,
+        "lo": 8.378560724333767,
+        "hi": 9.925644884017274,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 6.87903861026971,
+        "lo": 5.929589933559683,
+        "hi": 7.019384830690477,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 3.8436429007248663,
+        "lo": 3.3139035549671263,
+        "hi": 3.9996434391925035,
+        "unit": "mA"
+      }
+    },
+    "5 V": {
+      "10 %": {
+        "value": 19.45042223037995,
+        "lo": 19.16967183732492,
+        "hi": 22.465007183735867,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 20.62609096119744,
+        "lo": 20.368319886109475,
+        "hi": 22.385584334470742,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 21.415550827838537,
+        "lo": 21.179306589266982,
+        "hi": 22.588439974352912,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 21.89319152471092,
+        "lo": 20.660095050711817,
+        "hi": 22.63450961598878,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 21.060670302203043,
+        "lo": 19.04877457049395,
+        "hi": 21.48419606497325,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 19.14521008735229,
+        "lo": 16.891864136351046,
+        "hi": 19.332200773866575,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 16.381710512867436,
+        "lo": 14.27046417635492,
+        "hi": 16.484276857852187,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 12.994426945099164,
+        "lo": 11.264821714387082,
+        "hi": 13.070294506362501,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 9.184387613539727,
+        "lo": 7.954874965494369,
+        "hi": 9.234891294848154,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 5.1075851984656495,
+        "lo": 4.420529520960329,
+        "hi": 5.133670903059304,
+        "unit": "mA"
+      }
+    },
+    "7.4 V": {
+      "10 %": {
+        "value": 28.81637777350039,
+        "lo": 28.400894397371392,
+        "hi": 33.215689333954806,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 30.58243703418534,
+        "lo": 30.20084593285424,
+        "hi": 33.08422379393055,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 31.76034686902246,
+        "lo": 31.410406577852385,
+        "hi": 32.6745680796996,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 32.43070550044141,
+        "lo": 30.507032508040197,
+        "hi": 32.72326941069142,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 31.116725449571057,
+        "lo": 28.112752055857612,
+        "hi": 31.35838704836747,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 28.19185593237281,
+        "lo": 24.91388688664233,
+        "hi": 28.38755379531799,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 24.031068141229532,
+        "lo": 21.029913593429832,
+        "hi": 24.184460070437723,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 18.98441512202878,
+        "lo": 16.579250572624538,
+        "hi": 19.09810448739986,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 13.36093085775839,
+        "lo": 11.679930989067486,
+        "hi": 13.436682613649381,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 7.392921110980041,
+        "lo": 6.449942005725589,
+        "hi": 7.431981957316154,
+        "unit": "mA"
+      }
+    },
+    "8.4 V": {
+      "10 %": {
+        "value": 32.72463058438379,
+        "lo": 32.25299340504982,
+        "hi": 37.692698807725776,
+        "unit": "mA"
+      },
+      "15 %": {
+        "value": 34.73941082302122,
+        "lo": 34.1903311115855,
+        "hi": 37.53966944584041,
+        "unit": "mA"
+      },
+      "20 %": {
+        "value": 36.07762109069599,
+        "lo": 35.321245645724396,
+        "hi": 37.07200959739983,
+        "unit": "mA"
+      },
+      "30 %": {
+        "value": 36.817401769859316,
+        "lo": 34.606991510548085,
+        "hi": 37.14991738295954,
+        "unit": "mA"
+      },
+      "40 %": {
+        "value": 35.28935219224786,
+        "lo": 31.886182145173827,
+        "hi": 35.564276981069334,
+        "unit": "mA"
+      },
+      "50 %": {
+        "value": 31.933362975351848,
+        "lo": 28.252964449194664,
+        "hi": 32.15621411472002,
+        "unit": "mA"
+      },
+      "60 %": {
+        "value": 27.184965284446605,
+        "lo": 23.84280357761625,
+        "hi": 27.359795699418683,
+        "unit": "mA"
+      },
+      "70 %": {
+        "value": 21.447146979459056,
+        "lo": 18.79001409655531,
+        "hi": 21.576817507930947,
+        "unit": "mA"
+      },
+      "80 %": {
+        "value": 15.07394635379785,
+        "lo": 13.228492527719574,
+        "hi": 15.160377219736155,
+        "unit": "mA"
+      },
+      "90 %": {
+        "value": 8.329326705039932,
+        "lo": 7.292083751879183,
+        "hi": 8.373870548816278,
+        "unit": "mA"
+      }
+    }
+  },
+  "meter_loop_ohm": {
+    "value": 8.869233817621971,
+    "lo": 8.247403590290995,
+    "hi": 9.491064044952948,
+    "unit": "ohm"
+  },
+  "coast_over_meter": {
+    "value": 0.9839305344680253,
+    "lo": 0.9534686749292797,
+    "hi": 1.0143923940067707,
+    "unit": "ratio"
+  },
+  "full_duty_term_ma": {
+    "value": 0.0,
+    "lo": -0.6223669497339015,
+    "hi": 0.3634741159717215,
+    "unit": "mA"
+  },
+  "drag_100_drive_ma": {
+    "value": 109.8545485879719,
+    "lo": 107.52510642769448,
+    "hi": 112.18399074824933,
+    "unit": "mA"
+  },
+  "drag_100_coast_ma": {
+    "value": 109.59960259103413,
+    "lo": 108.14888607034933,
+    "hi": 111.05031911171892,
+    "unit": "mA"
+  },
+  "drag_100_curve_forms_ma": {
+    "value": 101.56325398361277,
+    "lo": 95.63661126787966,
+    "hi": 107.07080418593983,
+    "unit": "mA"
+  },
+  "delta_l_term_mh": {
+    "value": 0.40349188465180374,
+    "lo": 0.22756912326631085,
+    "hi": 0.6397746431859709,
+    "unit": "mH"
+  },
+  "delta_g_term_ms": {
+    "value": 2.2062584804822727,
+    "lo": 0.7229286531638425,
+    "hi": 5.178214915448738,
+    "unit": "mS"
+  }
+}
