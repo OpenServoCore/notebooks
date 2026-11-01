@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D/inductance/fast-1",
-  "notes": "motor-model fits one window-current model to stage 2's locked-rotor bursts and carries it to the spinning motor. Every fit is the simulator in motor_model.py (tick-level RK4, 4 substeps a tick; Rs in series with L(i) || G and a rung Lb || Rb; the bridge's ON, return, float and brake modes; the shunt through bridge-states' amplifier lag and gain), weights 1 / each burst's rest sd, band ON+60 (coils, controls, slow decay) or ON+150 (the motor's fast decay) to OFF-30. The coils' series R is the hand ohms less teardown's pair_zero_ohm, the motor's fast decay rest-resistance's stall R at hole 11, its slow decay one R per capture fitted. floor_edge_ma: the control ra's ideal R-L carries no edge term, the bounds its per-rail edge current as a G with the shape held. bare_*, can_* and motor_* parameters: the value at the joint fast + slow fit, rule 2 (bare Rayleigh + G, can quad per sign + Rayleigh + G + rung, motor Rayleigh + G + rung), the bounds the union of that fit's Jacobian error, its rail and duty held-out refits, the band-start and R variants of the fast-decay fits (bare RG and RSG, can QG and QRG, motor RGb), and the alternative joint fits (bare RSG rule 2, can QRG and QRGb rule 1, motor RSGb rule 2) with their refits. motor_g_locked_ms is the joint fast + slow fit's G; motor_g_locked_fast_ms is the fast-decay-only fit's, the L model g_spin_ms holds, its bounds the fast-decay G across the forms that carry one. can_l_change_0p2a_pct_by_sign is the incremental L at 0.2 A over L0 from zero current. bare_edge_* and can_edge_line are the rail test, the fast fit's shape held and L0 and a G refitted per rail, the edge current G V against V_on as a line, errors from its own scatter. window_model_chi2: the joint fit's chi2/dof, hi the largest held-out test chi2/n of either decay. offset_shares_line_ma: the line read at the fast-decay ON edge taken apart into Shapley shares on fast-1's folds at hole 11, the value Rayleigh + G + rung's, the bounds the other passing forms'. edge_current_ma: the model's current from ON+10 to ON+60 over a plain R-L, the bounds the forms. ripple_over_fit_* and l_slide_*: inductance's estimators on hole 11's slow-decay bursts, the edge volt-ticks left out of both, data against the model with each capture's R from its slow-decay R refit. g_spin_ms: the locked motor's fast-decay Rayleigh + G + rung shape held and G refitted to the 18 spinning points, the bounds the other L forms with a G; a rung-only form, its loss in the rung, reads 1.38 mS and is left out of the bounds. crest_less_mean_ma and crest_less_meter_ma: the crest sample (31 ticks after the crest, sample-timing's crest_sample_ticks) less the period mean in slow decay at the speed where the drive meets capture-1's coast drag (a + b sqrt w), with no meter and with meter_loop_ohm added, the bounds the L forms with their own spinning G and G's error. coast_over_meter: the meter runs' mean current over the coast's pinned drag at the cut, J alpha / Kt with speed-torque's J and Kt = bemf-coast's Ke, mean and sd. drag_100_*: speed-torque's 100 % run-ups, the board and the coast's 5 ms windows; drag_100_curve_forms_ma capture-1's coast drag extrapolated to that speed by four forms. delta_*: three coils in a delta in the measured coil states, coupling 0 to 0.95, the median and range over every case.",
+  "notes": "motor-model fits one window-current model to stage 2's locked-rotor bursts and carries it to the spinning motor. Every fit is the simulator in motor_model.py (tick-level RK4, 4 substeps a tick; Rs in series with L(i) || G and a rung Lb || Rb; the bridge's ON, return, float and brake modes; the shunt through bridge-states' amplifier lag and gain), weights 1 / each burst's rest sd, band ON+60 (coils, controls, slow decay) or ON+150 (the motor's fast decay) to OFF-30. The coils' series R is the hand ohms less teardown's pair_zero_ohm, the motor's fast decay rest-resistance's stall R at hole 11, its slow decay one R per capture fitted. floor_edge_ma: the control ra's ideal R-L carries no edge term, the bounds its per-rail edge current as a G with the shape held. bare_*, can_* and motor_* parameters: the value at the joint fast + slow fit, rule 2 (bare Rayleigh + G, can quad per sign + Rayleigh + G + rung, motor Rayleigh + G + rung), the bounds the union of that fit's Jacobian error, its rail and duty held-out refits, the band-start and R variants of the fast-decay fits (bare RG and RSG, can QG and QRG, motor RGb), and the alternative joint fits (bare RSG rule 2, can QRG and QRGb rule 1, motor RSGb rule 2) with their refits. motor_g_locked_ms is the joint fast + slow fit's G; motor_g_locked_fast_ms is the fast-decay-only fit's, the L model g_spin_ms holds, its bounds the fast-decay G across the forms that carry one. can_l_change_0p2a_pct_by_sign is the incremental L at 0.2 A over L0 from zero current. bare_edge_* and can_edge_line are the rail test, the fast fit's shape held and L0 and a G refitted per rail, the edge current G V against V_on as a line, errors from its own scatter. window_model_chi2: the joint fit's chi2/dof, hi the largest held-out test chi2/n of either decay. offset_shares_line_ma: the line read at the fast-decay ON edge taken apart into Shapley shares on fast-1's folds at hole 11, the value Rayleigh + G + rung's, the bounds the other passing forms'. edge_current_ma: the model's current from ON+10 to ON+60 over a plain R-L, the bounds the forms. ripple_over_fit_* and l_slide_*: inductance's estimators on hole 11's slow-decay bursts, the edge volt-ticks left out of both, data against the model with each capture's R from its slow-decay R refit. g_spin_ms: the locked motor's fast-decay Rayleigh + G + rung shape held and G refitted to the 18 spinning points, the bounds the other L forms with a G; a rung-only form, its loss in the rung, reads 1.38 mS and is left out of the bounds. crest_less_mean_ma and crest_less_meter_ma: the crest sample (31 ticks after the crest, sample-timing's crest_sample_ticks) less the period mean in slow decay at the speed where the drive meets capture-1's coast drag (a + b sqrt w), with no meter and with the meter's R of the same-rail-and-duty pairing (8.87 ohm) added, the bounds the L forms with their own spinning G and G's error. coast_over_meter: the meter runs' mean current over the coast's pinned drag at the cut, J alpha / Kt with speed-torque's J and Kt = bemf-coast's Ke, mean and sd. drag_100_*: speed-torque's 100 % run-ups, the board and the coast's 5 ms windows; drag_100_curve_forms_ma capture-1's coast drag extrapolated to that speed by four forms. delta_*: three coils in a delta in the measured coil states, coupling 0 to 0.95, the median and range over every case. meter_loop_ohm: each meter point's loop R by the meter's current less the locked R less capture-1's brush drop at the point's own speed (speed-torque's at high-1's 100 % point), mean and sd over the six points. brush_drop_mv: V_b = V_mean - E0 - R_locked i per rung and direction, the period-mean voltage by the share construction at sample-timing's slow-decay tap lags at the rail, bemf-coast's E0 at the cut, the crest current less crest_less_mean_ma (route b), mean +/- se over three spins; the 100 % rows from speed-torque's run-ups over their last 50 ms. brush_drop_fit: a power law over the rungs above 200 rev/s, V_b = A (w / 300 rev/s)^n, bounds +/- one se. running_r_incremental_ohm: speed-torque's run-up turn windows against the free spins at the same speed and direction, (y - (V - E)_free) / (i - i_free), mean +/- se over the six run-ups, about 0.1 ohm systematic beside it. running_r_low_speed_ohm: capture-1's rungs under 160 rev/s pooled, route a the pinned drag x coast_over_meter, route b the crest less its term, bounds the stat and rung-common systematics together. full_duty_chord_ohm: (V - E0) / i over the 100 % run-ups' last 50 ms, mean +/- se.",
   "floor_edge_ma": {
     "value": 0.0,
     "lo": -0.15846783942310372,
@@ -794,9 +794,217 @@
     }
   },
   "meter_loop_ohm": {
-    "value": 8.869233817621971,
-    "lo": 8.247403590290995,
-    "hi": 9.491064044952948,
+    "value": 9.504064835674948,
+    "lo": 8.934961993794625,
+    "hi": 10.07316767755527,
+    "unit": "ohm"
+  },
+  "brush_drop_mv": {
+    "+1": {
+      "5 V 15 %": {
+        "value": -8.951253565395094,
+        "lo": -10.794304569736921,
+        "hi": -7.108202561053266,
+        "unit": "mV at 64 rev/s"
+      },
+      "5 V 20 %": {
+        "value": -4.682549187103377,
+        "lo": -6.19663805359609,
+        "hi": -3.168460320610664,
+        "unit": "mV at 93 rev/s"
+      },
+      "7.4 V 15 %": {
+        "value": -23.580947913350546,
+        "lo": -27.29843141529557,
+        "hi": -19.86346441140552,
+        "unit": "mV at 106 rev/s"
+      },
+      "7.4 V 20 %": {
+        "value": -13.786918508578458,
+        "lo": -14.863497777404227,
+        "hi": -12.710339239752688,
+        "unit": "mV at 150 rev/s"
+      },
+      "5 V 30 %": {
+        "value": 0.3559352085216368,
+        "lo": -1.3846949854421329,
+        "hi": 2.0965654024854063,
+        "unit": "mV at 152 rev/s"
+      },
+      "5 V 40 %": {
+        "value": 18.27553560315592,
+        "lo": 15.256856258947273,
+        "hi": 21.294214947364566,
+        "unit": "mV at 215 rev/s"
+      },
+      "7.4 V 30 %": {
+        "value": 23.05190192945857,
+        "lo": 22.559816292882466,
+        "hi": 23.543987566034673,
+        "unit": "mV at 239 rev/s"
+      },
+      "7.4 V 40 %": {
+        "value": 106.41551990513851,
+        "lo": 102.18775707306185,
+        "hi": 110.64328273721517,
+        "unit": "mV at 321 rev/s"
+      },
+      "5 V 60 %": {
+        "value": 125.16053119010655,
+        "lo": 114.26254311434377,
+        "hi": 136.05851926586934,
+        "unit": "mV at 329 rev/s"
+      },
+      "7.4 V 60 %": {
+        "value": 356.15703686542184,
+        "lo": 339.0861473884086,
+        "hi": 373.22792634243507,
+        "unit": "mV at 479 rev/s"
+      },
+      "100 %": {
+        "value": 421.03160400810503,
+        "lo": 398.04306598837894,
+        "hi": 444.0201420278311,
+        "unit": "mV at 543 rev/s"
+      }
+    },
+    "-1": {
+      "5 V 15 %": {
+        "value": -6.038097861242069,
+        "lo": -7.795632911725464,
+        "hi": -4.280562810758674,
+        "unit": "mV at 65 rev/s"
+      },
+      "5 V 20 %": {
+        "value": -5.574618717078169,
+        "lo": -7.950799488739062,
+        "hi": -3.1984379454172776,
+        "unit": "mV at 94 rev/s"
+      },
+      "7.4 V 15 %": {
+        "value": -23.499360058656084,
+        "lo": -25.3940917497113,
+        "hi": -21.604628367600867,
+        "unit": "mV at 106 rev/s"
+      },
+      "7.4 V 20 %": {
+        "value": -10.938875075324816,
+        "lo": -14.91234070995552,
+        "hi": -6.965409440694112,
+        "unit": "mV at 149 rev/s"
+      },
+      "5 V 30 %": {
+        "value": 0.6648372282914705,
+        "lo": -3.2222117675296515,
+        "hi": 4.551886224112593,
+        "unit": "mV at 153 rev/s"
+      },
+      "5 V 40 %": {
+        "value": 13.874059760346853,
+        "lo": 12.03611534592843,
+        "hi": 15.712004174765276,
+        "unit": "mV at 215 rev/s"
+      },
+      "7.4 V 30 %": {
+        "value": 7.979741223489693,
+        "lo": 4.156523443298784,
+        "hi": 11.802959003680602,
+        "unit": "mV at 240 rev/s"
+      },
+      "7.4 V 40 %": {
+        "value": 40.38652291110115,
+        "lo": 39.119219876404955,
+        "hi": 41.65382594579735,
+        "unit": "mV at 330 rev/s"
+      },
+      "5 V 60 %": {
+        "value": 52.426742804990134,
+        "lo": 49.923563430800236,
+        "hi": 54.92992217918003,
+        "unit": "mV at 335 rev/s"
+      },
+      "7.4 V 60 %": {
+        "value": 186.28765243000797,
+        "lo": 160.0294746504047,
+        "hi": 212.54583020961124,
+        "unit": "mV at 507 rev/s"
+      },
+      "100 %": {
+        "value": 320.37701367805676,
+        "lo": 303.03916826684707,
+        "hi": 337.71485908926644,
+        "unit": "mV at 558 rev/s"
+      }
+    }
+  },
+  "brush_drop_fit": {
+    "both directions": {
+      "mv_at_300_rev_s": {
+        "value": 44.9809979070349,
+        "lo": 38.552369709139,
+        "hi": 52.481603283469454,
+        "unit": "mV"
+      },
+      "exponent": {
+        "value": 3.551204271061269,
+        "lo": 3.1277424131623057,
+        "hi": 3.974666128960232,
+        "unit": ""
+      }
+    },
+    "+1": {
+      "mv_at_300_rev_s": {
+        "value": 65.9056677836784,
+        "lo": 58.71177671504821,
+        "hi": 73.98101861392492,
+        "unit": "mV"
+      },
+      "exponent": {
+        "value": 3.5433766325395535,
+        "lo": 3.2159129713918295,
+        "hi": 3.8708402936872774,
+        "unit": ""
+      }
+    },
+    "-1": {
+      "mv_at_300_rev_s": {
+        "value": 30.418280163977485,
+        "lo": 26.058623329195058,
+        "hi": 35.50731581040921,
+        "unit": "mV"
+      },
+      "exponent": {
+        "value": 3.627532358308086,
+        "lo": 3.215106653828817,
+        "hi": 4.039958062787355,
+        "unit": ""
+      }
+    }
+  },
+  "running_r_incremental_ohm": {
+    "value": 4.57869301424857,
+    "lo": 4.563516836698061,
+    "hi": 4.593869191799079,
+    "unit": "ohm"
+  },
+  "running_r_low_speed_ohm": {
+    "route a": {
+      "value": 4.315783929322778,
+      "lo": 4.1820140079984,
+      "hi": 4.449553850647157,
+      "unit": "ohm"
+    },
+    "route b": {
+      "value": 4.298118937925728,
+      "lo": 4.122282447308039,
+      "hi": 4.473955428543417,
+      "unit": "ohm"
+    }
+  },
+  "full_duty_chord_ohm": {
+    "value": 7.874899889966031,
+    "lo": 7.650632404521936,
+    "hi": 8.099167375410126,
     "unit": "ohm"
   },
   "coast_over_meter": {
