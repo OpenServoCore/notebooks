@@ -340,3 +340,36 @@ capture must record so every route runs on it.
 Run: no capture of its own. `identification.py` beside the notebook holds
 the routes and the pieces the compensation notebook also reads, and its
 reductions run on every core.
+
+## [compensation](compensation/compensation.ipynb)
+
+Targets: how accurate a back-EMF speed estimate from the board's own signals
+is against the ripple tach, with the reading term $\Delta$ and the brush drop
+$V_b$ compensated. The signals are the duty, the terminal volts over the
+window, the crest current sample and the rail. It is asked twice, with this stage's
+reference constants and with the constants identification recovered
+board-only, and the gap between the two is the price of identifying without a
+meter. Beside it, the reading term's table per volt and whether it holds
+across rails, the brush drop as a speed table against a power law, whether it
+follows the motor's rotation or the board's drive sign, how it moved between
+two sittings, the estimate's error budget by speed band, and how few rungs an
+ident needs for $V_b$.
+
+Needs: no bench. bemf-coast's capture-1, swapped-1, meter-1 and high-1,
+speed-torque's run-ups through its own cells, and for the identified constants
+rest-resistance's stall pass and inductance's capture-1 through their own
+cells. The stage 1 current-scale, terminal-chain, sample-timing, bridge-states
+and ntc-curve results, and the rest-resistance, inductance, bemf-coast,
+speed-torque, motor-model and identification results.
+
+How: the estimate is solved by fixed point per spin over the last 200 ms
+before the cut, four ways, with neither term, either one alone and both.
+capture-1 is scored by the fold that left its repeat out of $V_b$, with
+$\Delta$ at a $G$ fitted on the meter runs alone, and swapped-1 and
+speed-torque's one-turn windows were never in a fit. The same estimate then
+runs on identification's 36 board-only passes, and on each identified
+constant alone in the reference set, to split the price by constant.
+
+Run: no capture of its own. `compensation.py` beside the notebook holds the
+estimator and its scoring on top of identification's module, and the grid's
+steady states run on every core.
