@@ -274,27 +274,36 @@ ramp's shape. On the free motor the crest sample reads a loss in the window
 that a meter averages away, falling with one less the duty to zero at
 100 %, about 19 mA over the mean at 5.0 V and 29 mA at 7.4 V up to 30 %,
 high confidence. Whether that loss sits across the inductance or in the
-rung is moderate at most, and the spinning motor needs a third or more
-loss than the locked one, for a reason these data leave open. The 20 mA
-speed-torque found at 100 % is drag, high confidence.
+rung is moderate at most, and the spinning motor needs a third or more loss
+than the locked one, for a reason these data leave open. The 20 mA
+speed-torque found at 100 % is drag, high confidence. On the turning motor
+the terminal volts carry a brush drop beyond R i and the EMF, a voltage set
+by the speed and the direction and not by the current, within a few
+millivolts below 160 rev/s, about 45 mV at 300 rev/s and 0.37 V at 550
+rev/s, high confidence that it is in the motor and does not scale with the
+current. Below 160 rev/s the running resistance is the resistance at rest
+within 3 to 4 %.
 
 Needs: no bench. The teardown's levels and coil runs and hand readings,
 inductance's fast-1, capture-1 and reversal-1 at hole 11, bridge-states'
 fast-decay controls, bemf-coast's capture-1, meter-1 and high-1 and its
-result for spinning-1, and speed-torque's run-ups. The stage 1
-current-scale, terminal-chain, sample-timing and bridge-states results,
-and the rest-resistance, bemf-coast, speed-torque and teardown results. The
-inductance, teardown, bemf-coast and no-load-current results for comparison
-only.
+result for spinning-1 and its bursts, speed-torque's run-ups, and the
+teardown's photo of the brushes. The stage 1 current-scale, terminal-chain,
+sample-timing and bridge-states results, and the rest-resistance,
+bemf-coast, speed-torque and teardown results. The inductance, teardown,
+bemf-coast and no-load-current results for comparison only.
 
 How: a tick-level simulator of one branch through the bridge, a series
 resistance into an inductance that depends on the current with a
-conductance across it and an optional rung, through the bridge's four
-modes and the amplifier's lag. Each candidate network is fitted to a set's
-fast decay and held out by rail, by duty and by decay mode, then the
-motor's model is run to steady state on the spinning motor with its loss
-refitted to the meter runs and to capture-1, whose mean current comes from
-the coast's deceleration through speed-torque's inertia.
+conductance across it and an optional rung, through the bridge's four modes
+and the amplifier's lag. Each candidate network is fitted to a set's fast
+decay and held out by rail, by duty and by decay mode, then the motor's
+model is run to steady state on the spinning motor with its loss refitted
+to the meter runs and to capture-1, whose mean current comes from the
+coast's deceleration through speed-torque's inertia. The brush drop is the
+voltage before each coast's cut less the EMF at the cut, over the free
+spins and the 100 % run-ups, set against speed-torque's run-ups, which pass
+the same speeds at up to eleven times the current.
 
 Run: no capture of its own, the notebook reads the datasets above. Its fits
 run on every core, and the simulator needs numba, which `uv sync` installs.
