@@ -1,0 +1,1111 @@
+{
+  "capture": "telemetry/mg90-b__dev-v006-2A-D",
+  "notes": "identification reads stage 2's mg90-b captures as a servo's board alone could and grades each route against stage 2's bench references; it scores no speed. Each route key is a quantity, value and bounds, with reference, error_pct (or error_ma), spread and cost beside it. r_one_seat_ohm, r_two_seats_ohm, r_three_seats_ohm: rest-resistance's stall pass, a seat's R the mean of its two graded 100 % laps (3.7 and 4.2 V, direction +1, the line through V/I back to the lap's start), every combination of k of the 12 holes; value the median, bounds the lowest and highest; reference the 12-hole mean; error_pct sd over the combinations with the extremes as bounds; error_angle_part_pct the same with rest-resistance's one-body heat taken out; spread_pct the laps' own scatter about a hole's mean. r_board_ntc_move_pct: copper's 0.39 %/C times the board NTC (nominal beta, at each folder's rest baseline) less T_ref, the board at the stall pass's graded laps, over capture-1, speed-torque and swapped-1's folders; self_heat_bound_pct the winding's rise bounded by rest-resistance's warming_pct_per_j for a spin's own joules and its one-body map (0.716 %/J held, tau 90 s) for heat carried. r_reference_rung: capture-1's 5 V 15 % running R at the cut, (V_mean - E0)/i_hat, the per-spin sd with direction means out, the spins per check for 0.5 % on a change, and the trend over the sitting. ke_v_s_per_rad: one repeat's 20 coasts (e_win over the ripple count), the three repeats as the value and bounds; error_pct held out on the other two repeats. l_mh, l_ripple_mh: inductance's capture-1 bursts at one seat, 4 bursts at 25 % forward with the group's first thrown out, the 12 holes as value and bounds; error_pct against the 12-hole median of the same design. c_a_s_per_v: c = i100 / (Ke (alpha_drive + alpha_coast)) from one speed-torque run-up per direction, the three passes, by the coast's 5 ms windows and its pinned read. delta_f_ma_per_v: the reading term per volt by the 100 % anchor, crest less anchor over 50 ms windows of one capture-1 repeat with that pass's c, the three passes; error_ma the mean over capture-1's rungs at their own v_on against the published no-meter grid. v_b_mv: the speed table by mechanical direction from one repeat of 7.4 V 30/40/60 % both ways, 50 ms windows, reference R, Ke and Delta; value the median over the three passes, bounds the range; reference the full-data table (all repeats, 200 ms). Costs by the board's rough speed, (D v_on - R i)/Ke, a short spin the spin-up to 95 % of speed, the window and 15 ms of coast; the anchor run-up's revs by speed-torque's turn-window tach.",
+  "servo_travel_motor_revs": {
+    "value": 157.44948148148148,
+    "lo": null,
+    "hi": null,
+    "unit": "rev"
+  },
+  "r_one_seat_ohm": {
+    "value": 4.455291999475678,
+    "lo": 4.383552379419842,
+    "hi": 4.53083637687499,
+    "unit": "ohm",
+    "reference": {
+      "value": 4.462861025769084,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "error_pct": {
+      "value": 0.9099137365201843,
+      "lo": -1.7770807984229031,
+      "hi": 1.5231339428543267,
+      "unit": "%"
+    },
+    "error_95th_pct": {
+      "value": 1.637410027860186,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "error_angle_part_pct": {
+      "value": 0.5642804650415595,
+      "lo": -0.9905839968992858,
+      "hi": 0.8727577428812916,
+      "unit": "%"
+    },
+    "error_vs_dmm_pct": {
+      "value": 8.665658523797038,
+      "lo": 6.9159116931668985,
+      "hi": 10.50820431402415,
+      "unit": "%"
+    },
+    "spread_pct": {
+      "value": 0.23777200400468415,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 2.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 0.6,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      },
+      "amps": {
+        "value": 0.7866295180078098,
+        "lo": 0.7228418288913251,
+        "hi": 0.8504172071242946,
+        "unit": "A"
+      },
+      "joules_per_lap": {
+        "value": 0.8193211156992593,
+        "lo": 0.7046314236787617,
+        "hi": 0.9340108077197569,
+        "unit": "J"
+      },
+      "hold_200ms_bias_pct": {
+        "value": 0.009689724790106399,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    }
+  },
+  "r_two_seats_ohm": {
+    "value": 4.467546694545659,
+    "lo": 4.395154098996082,
+    "hi": 4.520332980243692,
+    "unit": "ohm",
+    "reference": {
+      "value": 4.462861025769084,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "error_pct": {
+      "value": 0.6134637160153251,
+      "lo": -1.5171193183487919,
+      "hi": 1.2877827506337036,
+      "unit": "%"
+    },
+    "error_95th_pct": {
+      "value": 1.1016060353945811,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "error_angle_part_pct": {
+      "value": 0.3804378119217146,
+      "lo": -0.8813979952101425,
+      "hi": 0.7330660045038462,
+      "unit": "%"
+    },
+    "error_vs_dmm_pct": {
+      "value": 8.96455352550388,
+      "lo": 7.198880463319091,
+      "hi": 10.252023908382757,
+      "unit": "%"
+    },
+    "spread_pct": {
+      "value": 0.23777200400468415,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 4.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 1.2,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      },
+      "amps": {
+        "value": 0.7866295180078098,
+        "lo": 0.7228418288913251,
+        "hi": 0.8504172071242946,
+        "unit": "A"
+      },
+      "joules_per_lap": {
+        "value": 0.8193211156992593,
+        "lo": 0.7046314236787617,
+        "hi": 0.9340108077197569,
+        "unit": "J"
+      },
+      "hold_200ms_bias_pct": {
+        "value": 0.009689724790106399,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    }
+  },
+  "r_three_seats_ohm": {
+    "value": 4.463387170468865,
+    "lo": 4.4112205037504415,
+    "hi": 4.512646585565393,
+    "unit": "ohm",
+    "reference": {
+      "value": 4.462861025769084,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "error_pct": {
+      "value": 0.4751869511259745,
+      "lo": -1.1571169642178858,
+      "hi": 1.1155525459753513,
+      "unit": "%"
+    },
+    "error_95th_pct": {
+      "value": 0.8703007233203082,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "error_angle_part_pct": {
+      "value": 0.29468586196807706,
+      "lo": -0.7634940913606392,
+      "hi": 0.6581379436041646,
+      "unit": "%"
+    },
+    "error_vs_dmm_pct": {
+      "value": 8.86310171875282,
+      "lo": 7.590743993913218,
+      "hi": 10.064550867448618,
+      "unit": "%"
+    },
+    "spread_pct": {
+      "value": 0.23777200400468415,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 6.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 1.7999999999999998,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      },
+      "amps": {
+        "value": 0.7866295180078098,
+        "lo": 0.7228418288913251,
+        "hi": 0.8504172071242946,
+        "unit": "A"
+      },
+      "joules_per_lap": {
+        "value": 0.8193211156992593,
+        "lo": 0.7046314236787617,
+        "hi": 0.9340108077197569,
+        "unit": "J"
+      },
+      "hold_200ms_bias_pct": {
+        "value": 0.009689724790106399,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    }
+  },
+  "r_board_ntc_move_pct": {
+    "value": -0.0731907523455638,
+    "lo": -0.5954241415129653,
+    "hi": 0.2632866799615399,
+    "unit": "%",
+    "t_ref_c": {
+      "value": 25.671971239338035,
+      "lo": 25.517992150152566,
+      "hi": 25.77749450223945,
+      "unit": "C"
+    },
+    "board_span_all_tel_c": {
+      "value": 2.3128517648196407,
+      "lo": null,
+      "hi": null,
+      "unit": "C"
+    },
+    "self_heat_bound_pct": {
+      "value": 0.3661155880237813,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "self_heat_bound_runup_pct": {
+      "value": 0.21625050757917655,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      }
+    }
+  },
+  "r_reference_rung": {
+    "spin_sd_pct": {
+      "50 ms": {
+        "value": 1.417330473397295,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "200 ms": {
+        "value": 1.5987867367672641,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    },
+    "spins_per_check": {
+      "50 ms": {
+        "value": 17.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "200 ms": {
+        "value": 21.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      }
+    },
+    "trend_pct_per_min": {
+      "value": -0.9640292663853788,
+      "lo": -1.3882332486425002,
+      "hi": -0.5398252841282574,
+      "unit": "%/min"
+    },
+    "ntc_predicts_pct": {
+      "value": 0.17072732470399615,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "rev_s": {
+      "value": 64.72067765048347,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "ke_v_s_per_rad": {
+    "value": 0.0011683249068785366,
+    "lo": 0.0011680184571452733,
+    "hi": 0.0011687932175416446,
+    "unit": "V s/rad",
+    "reference": {
+      "value": 0.0011683788605218186,
+      "lo": 0.001160517736950206,
+      "hi": 0.0011725120516164766,
+      "unit": "V s/rad"
+    },
+    "error_pct": {
+      "value": 0.04090257067107459,
+      "lo": -0.046262536682972755,
+      "hi": 0.05320583774719445,
+      "unit": "%"
+    },
+    "spread_per_coast_pct": {
+      "value": 0.37343790762795415,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "four_coasts_rms_pct": {
+      "value": 0.1720429167549596,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "speed_trend_pct_per_100_rev_s": {
+      "value": -0.2220955079914523,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 20.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 1.603,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 265.2723130608655,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      },
+      "largest_maneuver_revs": {
+        "value": 31.356725595536243,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      }
+    }
+  },
+  "l_mh": {
+    "value": 0.8198832293869498,
+    "lo": 0.7713190636973213,
+    "hi": 0.8384621870413134,
+    "unit": "mH",
+    "reference": {
+      "value": 0.8333467325075281,
+      "lo": 0.767909055987211,
+      "hi": 0.9197855189315653,
+      "unit": "mH"
+    },
+    "error_pct": {
+      "value": 2.835150697143855,
+      "lo": -5.923302727626389,
+      "hi": 2.266049235847345,
+      "unit": "%"
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 5.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 0.75,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      }
+    }
+  },
+  "l_ripple_mh": {
+    "value": 0.6220269414894477,
+    "lo": 0.5987862091398262,
+    "hi": 0.6553948660340182,
+    "unit": "mH",
+    "reference": {
+      "value": 0.620445214950398,
+      "lo": 0.5904405412834264,
+      "hi": 0.6677670521318113,
+      "unit": "mH"
+    },
+    "error_pct": {
+      "value": 2.772906689466047,
+      "lo": -3.736290311472912,
+      "hi": 5.364385739413602,
+      "unit": "%"
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 5.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 0.75,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      }
+    }
+  },
+  "c_a_s_per_v": {
+    "win": {
+      "value": 0.0044330923493196145,
+      "lo": 0.004428276758349016,
+      "hi": 0.0045514688406381384,
+      "unit": "A s/V",
+      "reference": {
+        "value": 0.0045821658913141146,
+        "lo": null,
+        "hi": null,
+        "unit": "A s/V"
+      },
+      "error_pct": {
+        "value": -3.2533423173761955,
+        "lo": -3.3584365257663173,
+        "hi": -0.6699244724894138,
+        "unit": "%"
+      }
+    },
+    "pin": {
+      "value": 0.004708692299290074,
+      "lo": 0.00449595385193716,
+      "hi": 0.004802857274055881,
+      "unit": "A s/V",
+      "reference": {
+        "value": 0.0045821658913141146,
+        "lo": null,
+        "hi": null,
+        "unit": "A s/V"
+      },
+      "error_pct": {
+        "value": 2.761279512289172,
+        "lo": -1.8814691877563128,
+        "hi": 4.816311499330617,
+        "unit": "%"
+      }
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 2.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 0.6,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 305.43414274867456,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      },
+      "largest_maneuver_revs": {
+        "value": 163.2759677652425,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      }
+    }
+  },
+  "delta_f_ma_per_v": {
+    "15 %": {
+      "value": 3.4792883924076023,
+      "lo": 3.463844067317283,
+      "hi": 3.9039267635345363,
+      "unit": "mA/V",
+      "reference": {
+        "value": 3.8116088734890594,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      }
+    },
+    "20 %": {
+      "value": 3.6199168826233388,
+      "lo": 3.4750168416138183,
+      "hi": 4.205441525632773,
+      "unit": "mA/V",
+      "reference": {
+        "value": 3.892471032853239,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      }
+    },
+    "30 %": {
+      "value": 3.305632359328406,
+      "lo": 3.2961708975976998,
+      "hi": 3.965962038631792,
+      "unit": "mA/V",
+      "reference": {
+        "value": 3.897951570601733,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      }
+    },
+    "40 %": {
+      "value": 3.3376382536242377,
+      "lo": 3.3125285276517813,
+      "hi": 3.8723690891550486,
+      "unit": "mA/V",
+      "reference": {
+        "value": 3.6989046157967445,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      }
+    },
+    "60 %": {
+      "value": 2.657236999895664,
+      "lo": 2.5853964995148315,
+      "hi": 2.665036791369033,
+      "unit": "mA/V",
+      "reference": {
+        "value": 2.8072793139923036,
+        "lo": null,
+        "hi": null,
+        "unit": "mA/V"
+      }
+    },
+    "error_ma": {
+      "value": -2.216500648445533,
+      "lo": -2.273415793668857,
+      "hi": 0.6076070531475812,
+      "unit": "mA"
+    },
+    "anchor_over_dmm": {
+      "value": 1.0452522536599822,
+      "lo": 1.0070029834472631,
+      "hi": 1.0675200765532735,
+      "unit": ""
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 22.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 3.203,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 789.952772410662,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      },
+      "largest_maneuver_revs": {
+        "value": 163.2759677652425,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      }
+    }
+  },
+  "v_b_mv": {
+    "rungs": [
+      "7.4 V 30 %",
+      "7.4 V 40 %",
+      "7.4 V 60 %"
+    ],
+    "table": {
+      "+1": {
+        "150 rev/s": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "unit": "mV"
+        },
+        "200 rev/s": {
+          "value": 18.970906301555956,
+          "lo": 18.202174452693065,
+          "hi": 19.862642870357938,
+          "unit": "mV"
+        },
+        "250 rev/s": {
+          "value": 30.234311605265233,
+          "lo": 30.142225029188477,
+          "hi": 31.43596906778739,
+          "unit": "mV"
+        },
+        "300 rev/s": {
+          "value": 84.46342860532377,
+          "lo": 77.38436002984066,
+          "hi": 87.85103498477147,
+          "unit": "mV"
+        },
+        "350 rev/s": {
+          "value": 149.12015855072366,
+          "lo": 140.86953726141323,
+          "hi": 162.30279472896868,
+          "unit": "mV"
+        },
+        "400 rev/s": {
+          "value": 219.87234173649614,
+          "lo": 217.09494587933554,
+          "hi": 250.3267300812313,
+          "unit": "mV"
+        },
+        "450 rev/s": {
+          "value": 293.3203544972578,
+          "lo": 290.6245249222686,
+          "hi": 338.3506654334939,
+          "unit": "mV"
+        },
+        "500 rev/s": {
+          "value": 369.54576311518014,
+          "lo": 361.3767081080411,
+          "hi": 426.37460078575646,
+          "unit": "mV"
+        },
+        "550 rev/s": {
+          "value": 445.77117173310245,
+          "lo": 432.1288912938136,
+          "hi": 514.3985361380192,
+          "unit": "mV"
+        },
+        "600 rev/s": {
+          "value": 521.9965803510247,
+          "lo": 502.881074479586,
+          "hi": 602.4224714902816,
+          "unit": "mV"
+        },
+        "650 rev/s": {
+          "value": 598.221988968947,
+          "lo": 573.6332576653585,
+          "hi": 690.4464068425443,
+          "unit": "mV"
+        }
+      },
+      "-1": {
+        "150 rev/s": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "unit": "mV"
+        },
+        "200 rev/s": {
+          "value": 8.074008635138297,
+          "lo": 0.0,
+          "hi": 12.406110701728146,
+          "unit": "mV"
+        },
+        "250 rev/s": {
+          "value": 11.046847059374974,
+          "lo": 2.4871755608431747,
+          "hi": 15.27495061248318,
+          "unit": "mV"
+        },
+        "300 rev/s": {
+          "value": 25.068919439877213,
+          "lo": 24.81468914161645,
+          "hi": 27.898832686402642,
+          "unit": "mV"
+        },
+        "350 rev/s": {
+          "value": 53.1491371851874,
+          "lo": 48.079767790683064,
+          "hi": 57.29133171707382,
+          "unit": "mV"
+        },
+        "400 rev/s": {
+          "value": 90.11069510712323,
+          "lo": 79.26667716107346,
+          "hi": 116.63310203464145,
+          "unit": "mV"
+        },
+        "450 rev/s": {
+          "value": 127.07225302905908,
+          "lo": 110.45358653146386,
+          "hi": 175.97487235220908,
+          "unit": "mV"
+        },
+        "500 rev/s": {
+          "value": 164.0338109509949,
+          "lo": 141.64049590185425,
+          "hi": 235.3166426697767,
+          "unit": "mV"
+        },
+        "550 rev/s": {
+          "value": 200.99536887293073,
+          "lo": 172.82740527224465,
+          "hi": 294.6584129873444,
+          "unit": "mV"
+        },
+        "600 rev/s": {
+          "value": 237.95692679486658,
+          "lo": 204.01431464263504,
+          "hi": 354.00018330491196,
+          "unit": "mV"
+        },
+        "650 rev/s": {
+          "value": 274.9184847168024,
+          "lo": 235.20122401302544,
+          "hi": 413.34195362247965,
+          "unit": "mV"
+        }
+      }
+    },
+    "reference": {
+      "+1": {
+        "150 rev/s": {
+          "value": 0.0,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "200 rev/s": {
+          "value": 13.256741122184122,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "250 rev/s": {
+          "value": 31.299840863930008,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "300 rev/s": {
+          "value": 82.37049518123449,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "350 rev/s": {
+          "value": 156.70751103828806,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "400 rev/s": {
+          "value": 233.08078818648372,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "450 rev/s": {
+          "value": 309.45406533467934,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "500 rev/s": {
+          "value": 385.827342482875,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "550 rev/s": {
+          "value": 462.20061963107065,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "600 rev/s": {
+          "value": 538.5738967792663,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "650 rev/s": {
+          "value": 614.947173927462,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        }
+      },
+      "-1": {
+        "150 rev/s": {
+          "value": 0.0,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "200 rev/s": {
+          "value": 9.88755458749974,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "250 rev/s": {
+          "value": 8.615021490412259,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "300 rev/s": {
+          "value": 26.6667155342692,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "350 rev/s": {
+          "value": 62.832922335654196,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "400 rev/s": {
+          "value": 101.62276444726541,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "450 rev/s": {
+          "value": 140.4126065588766,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "500 rev/s": {
+          "value": 179.20244867048783,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "550 rev/s": {
+          "value": 217.99229078209902,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "600 rev/s": {
+          "value": 256.78213289371024,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "650 rev/s": {
+          "value": 295.5719750053214,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        }
+      }
+    },
+    "error_rms_200_500_mv": {
+      "+1": {
+        "value": 13.17244876047936,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "-1": {
+        "value": 20.96973764417844,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "single_repeat_sd_mv": {
+      "+1": {
+        "150 rev/s": {
+          "value": 0.0,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "200 rev/s": {
+          "value": 3.255153812175014,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "250 rev/s": {
+          "value": 1.466418353350529,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "300 rev/s": {
+          "value": 5.672939164601455,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "350 rev/s": {
+          "value": 19.99759196447883,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "400 rev/s": {
+          "value": 22.369397789741328,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "450 rev/s": {
+          "value": 28.877777253931562,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "500 rev/s": {
+          "value": 37.423413384321265,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "550 rev/s": {
+          "value": 46.90573001344305,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "600 rev/s": {
+          "value": 56.85800678363894,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "650 rev/s": {
+          "value": 67.07136610563978,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        }
+      },
+      "-1": {
+        "150 rev/s": {
+          "value": 0.0,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "200 rev/s": {
+          "value": 3.6289697521415336,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "250 rev/s": {
+          "value": 6.101202756887049,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "300 rev/s": {
+          "value": 0.8696474790859019,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "350 rev/s": {
+          "value": 6.22147814948613,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "400 rev/s": {
+          "value": 19.768237957835247,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "450 rev/s": {
+          "value": 33.39390301202175,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "500 rev/s": {
+          "value": 47.0299412036703,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "550 rev/s": {
+          "value": 60.66935854029371,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "600 rev/s": {
+          "value": 74.31029435136416,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        },
+        "650 rev/s": {
+          "value": 87.95204211561955,
+          "lo": null,
+          "hi": null,
+          "unit": "mV"
+        }
+      }
+    },
+    "cost": {
+      "maneuvers": {
+        "value": 6.0,
+        "lo": null,
+        "hi": null,
+        "unit": "count"
+      },
+      "seconds": {
+        "value": 0.7988500000000001,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "motor_revs": {
+        "value": 243.20107729702607,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      },
+      "largest_maneuver_revs": {
+        "value": 57.63240890130091,
+        "lo": null,
+        "hi": null,
+        "unit": "rev"
+      }
+    }
+  }
+}
