@@ -114,5 +114,25 @@
     "lo": 1.0045500774479592,
     "hi": 1.0081137534359628,
     "unit": "ratio"
+  },
+  "crest_sample_ticks": {
+    "low_tap": {
+      "value": -37.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks from the crest"
+    },
+    "shunt": {
+      "value": 31.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks from the crest"
+    },
+    "high_tap": {
+      "value": 83.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks from the crest"
+    }
   }
 }
