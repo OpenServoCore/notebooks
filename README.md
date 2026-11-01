@@ -83,7 +83,8 @@ sagging supply.
 
 One folder with three files. A `capture.py` that drives the bench and
 writes a dataset under `telemetry/`, one notebook that reads the dataset and
-writes its result, and the `results.json` it wrote. Each stage folder has a
+writes its result, and the `results.json` it wrote. A notebook with no
+capture of its own may keep a module beside it that only it imports. Each stage folder has a
 README listing its experiments and how they chain.
 
 Every notebook has the same sections, in the order a reader asks the
@@ -94,7 +95,8 @@ data, with the code. Results, the numbers in words and the write to the
 result file. Limitations, what the experiment does not cover. Open questions,
 each with the measurement that would settle it. Conclusion, the highlight:
 under which conditions the thing measured can be relied on, and what later
-experiments should take from it. Every code cell has a
+experiments should take from it. References last, when a method leans on
+published work, numbered and cited in the text as [1]. Every code cell has a
 sentence above saying what it does, and every figure a sentence below saying
 what it shows.
 
