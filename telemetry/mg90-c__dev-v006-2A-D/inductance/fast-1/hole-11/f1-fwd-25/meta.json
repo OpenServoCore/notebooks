@@ -1,0 +1,37 @@
+{
+  "chans": "Diff",
+  "decay": "fast",
+  "dirs": [
+    1
+  ],
+  "duty_pct": [
+    25
+  ],
+  "fw": 65,
+  "model": 257,
+  "plant": {
+    "data_flags": [],
+    "lut_band": null,
+    "lut_crc": "0x0000",
+    "lut_nonzero_points": 0,
+    "lut_state": "IDENTITY",
+    "plant_stamp": "0x98a1",
+    "stamp_computed": "0x98a1",
+    "stamp_verdict": "match"
+  },
+  "pwm_period_ticks": 1200,
+  "rail_mv": 4995.0,
+  "repeats": 5,
+  "rest_ms": 150,
+  "sense": {
+    "gain_milli": 14884,
+    "shunt_r_mohm": 60,
+    "vdd_mv": 3300,
+    "vmotor_div_bot": 1600,
+    "vmotor_div_top": 6400
+  },
+  "settle_ms": 200,
+  "spin_ms": 0,
+  "tick_hz": 20000,
+  "vbus_counts": 0
+}
