@@ -162,11 +162,15 @@ def cut_phase(eb, f):
     return float((-phi / (2 * np.pi)) % 1.0)
 
 
-def dropout_rate(ic_ma, n_rows, frac=0.25):
+def dropout_rate(ic_ma, n_rows):
     """the spin's current dropouts as bemf-coast counts them: rows of the window whose crest sample over the zero sits
-    under a quarter of the window's mean, per second"""
-    x = ic_ma[-n_rows:]
-    return float((x < frac * x.mean()).sum() / (n_rows / FS))
+    under tel.DROPOUT_FRAC of the window's mean, per second"""
+    return float(tel.dropout_rows(ic_ma[-n_rows:]).sum() / (n_rows / FS))
+
+
+# the crest over the window mean, in bands either side of the dropout threshold, for the threshold's separation check
+ROW_BANDS = (("rows_under_0p10", -np.inf, 0.10), ("rows_0p10_to_thr", 0.10, tel.DROPOUT_FRAC),
+             ("rows_thr_to_0p40", tel.DROPOUT_FRAC, 0.40), ("rows_0p40_to_0p60", 0.40, 0.60))
 
 
 def free_peak(x, lo=150.0, hi=6000.0):
@@ -193,14 +197,18 @@ def reduce_folder(folder, run):
             n = int(L * FS)
             row[f"v_on_{int(L * 1e3)}"] = float(vd[-n:].mean())
             row[f"i_crest_{int(L * 1e3)}"] = float(ic[-n:].mean())
+            row[f"dropouts_{int(L * 1e3)}"] = dropout_rate(ic, n)
         n200 = int(0.2 * FS)
+        q = ic[-n200:] / ic[-n200:].mean()
+        for name, lo_, hi_ in ROW_BANDS:
+            row[name] = int(((q >= lo_) & (q < hi_)).sum())
         row["v_on_sd_200"] = float(vd[-n200:].std(ddof=1))
         row["i_crest_sd_200"] = float(ic[-n200:].std(ddof=1))
         # the 200 ms means' own standard errors from 20 blocks of 10 ms, which carries the ripple's correlation
         row["v_on_se_200"] = float(vd[-n200:].reshape(20, -1).mean(axis=1).std(ddof=1) / np.sqrt(20))
         row["i_crest_se_200"] = float(ic[-n200:].reshape(20, -1).mean(axis=1).std(ddof=1) / np.sqrt(20))
         row["spin_rows"] = len(sp)
-        row["dropouts_per_s"] = dropout_rate(ic, n200)
+        row["dropouts_per_s"] = row["dropouts_200"]
         z = mm.cut_row(co)
         row["cut_row"] = z
         ca, cb = co["vmotor_a"].to_numpy(float), co["vmotor_b"].to_numpy(float)

@@ -19,6 +19,18 @@ from . import boards
 FRAME_ROWS = 16
 SETTLE_ROWS = 40      # 2 ms after a rung opens, for the rail and the taps to settle
 RAW = ["current_raw", "vmotor_a", "vmotor_b", "vbus_raw", "ntc_raw", "vref_raw"]
+# A driven row whose crest current over the zero sits under this share of the window's mean is a dropout, a moment the
+# motor's path stood open. One fixed fraction, so every notebook and the firmware count the same rows: a coefficient
+# calibrated against the count only means something if the count's definition never moves. The commutation ripple's
+# troughs sit 15 to 35 % under the mean, an open path reads near the zero, so the quarter sits in the gap between them.
+DROPOUT_FRAC = 0.25
+
+
+def dropout_rows(i_over_zero, ref=None):
+    """the dropout rows of a driven window: the crest current over the zero under DROPOUT_FRAC of the window's mean, or
+    of a running reference where the mean itself moves (a run-up)"""
+    x = np.asarray(i_over_zero, float)
+    return x < DROPOUT_FRAC * (x.mean() if ref is None else np.asarray(ref, float))
 
 
 def load(folder, board=None):
