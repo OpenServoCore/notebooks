@@ -6,6 +6,7 @@ board on the DPS and the `osc` and `osc-lab` tools; no meter.
 
   uv run python stages/2-motor/bemf-coast/capture.py [N]            writes telemetry/<motor>__<board>/bemf-coast/capture-N
   uv run python stages/2-motor/bemf-coast/capture.py meter [N]      writes telemetry/<motor>__<board>/bemf-coast/meter-N
+  uv run python stages/2-motor/bemf-coast/capture.py threshold 70% [N]  writes telemetry/<motor>__<board>/bemf-coast/threshold-70-N
   uv run python stages/2-motor/bemf-coast/capture.py high [N]       writes telemetry/<motor>__<board>/bemf-coast/high-N
   uv run python stages/2-motor/bemf-coast/capture.py swapped [N]    writes telemetry/<motor>__<board>/bemf-coast/swapped-N
   uv run python stages/2-motor/bemf-coast/capture.py spinning [N]   writes telemetry/<motor>__<board>/bemf-coast/spinning-N
@@ -44,6 +45,13 @@ the registry's `rated_v`: on mg90-c the 7.4 V 80 and 100 % spins, 625 to
 780 rev/s, raised the dropout rate of the 5 V 100 % run-up that followed
 two to four times and slowed it 2 to 3 %, where 7.4 V 60 % and 5 V 100 %
 left it unchanged, so `cycles` refuses a rung over that line.
+
+`threshold` is the one deliberate exception to that line, a sacrificial run
+on a motor whose other captures are done: three cycles of one second at
+7.4 V and the duty given as `70%` or `75%`, between the 67 % that reads
+like 5 V at 100 % and the 80 % that changed mg90-c's brushes, each run
+bracketed by speed-torque run-ups on 5 V, so the duty the change starts
+at is bracketed too. It writes `threshold-<duty>-N`.
 
 `ref` is three cycles of 30 % on 5.0 V, run at the start and the end of a
 sitting, so a drift of the coast's drag or the brush drop through the
@@ -102,17 +110,18 @@ BURST_SPIN_MS = 1500
 BURST_REST_MS = 1500         # the rotor coasts to a stop between captures
 
 
-def cycles(out, plan, spin_ms, coast_ms, folder="cycles", kick=None):
+def cycles(out, plan, spin_ms, coast_ms, folder="cycles", kick=None, over_rating=False):
     """Run `plan`, (rail volts, duty %) pairs, REPEATS cycles each, into
     `out/<folder>/K` with one row per cycle in `out/<folder>.csv`. With
     `kick`, duty by rail, each spin opens with KICK_MS at that duty and
-    drops to the rung's duty chained, no torque-off between."""
+    drops to the rung's duty chained, no torque-off between. `over_rating`
+    lets a rung past the motor's rated voltage, for `threshold` alone."""
     with open(out / f"{folder}.csv", "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["k", "volts_set", "dps_read", "vsys_read", "duty_pct", "repeat", "t_start", "t_end", "folder", "kick_pct"])
         k, level = 0, None
         for v, d in plan:
-            if v * max(d, kick[v] if kick else 0) / 100 > motor.rated_v:
+            if not over_rating and v * max(d, kick[v] if kick else 0) / 100 > motor.rated_v:
                 raise SystemExit(f"{v} V at {d} % is {v * d / 100:.2f} V effective, over the motor's rated {motor.rated_v} V")
             if v != level:
                 dps_read, vsys = bench.set_vsys(v)
@@ -129,12 +138,15 @@ def cycles(out, plan, spin_ms, coast_ms, folder="cycles", kick=None):
                 capture.hold(REST_S, f"cycle {k - 1} done ({v} V, {d} %), the motor resting")
 
 
-mode = next((a for a in sys.argv[1:] if a in ("meter", "high", "high7", "swapped", "spinning", "ref", "low")), None)
+mode = next((a for a in sys.argv[1:] if a in ("meter", "high", "high7", "swapped", "spinning", "ref", "low", "threshold")), None)
+threshold_pct = next((int(a[:-1]) for a in sys.argv[1:] if a.endswith("%") and a[:-1].isdigit()), None)
+if mode == "threshold" and threshold_pct is None:
+    raise SystemExit("threshold needs the duty as 70% or 75%")
 nometer = "nometer" in sys.argv[1:]
 n = [a for a in sys.argv[1:] if a.isdigit()]
 motor = motors.selected()
 board = boards.BOARDS[boards.DEFAULT]
-out = capture.dataset(f"{motor.key}__{board.key}", "bemf-coast", ["", *n], name=(mode or "capture") + ("-nometer" if nometer else ""))
+out = capture.dataset(f"{motor.key}__{board.key}", "bemf-coast", ["", *n], name=(mode or "capture") + (f"-{threshold_pct}" if mode == "threshold" else "") + ("-nometer" if nometer else ""))
 print("motor", motor.key, "board", board.key)
 if mode in ("meter", "high", "high7"):
     plan = {"meter": METER, "high": HIGH, "high7": HIGH7}[mode]
@@ -149,6 +161,11 @@ if mode in ("meter", "high", "high7"):
         bench.power_up(plan[0][0] + bench.DIODE_V)
         with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect="DC A"):
             cycles(out, plan, spin_ms, METER_COAST_MS)
+elif mode == "threshold":
+    capture.prompt(f"Bar OFF, rotor free, no meter. This run puts 7.4 V at {threshold_pct} % on the motor, over its rated "
+                   f"{motor.rated_v} V, and may change its brushes for good.")
+    bench.power_up(7.4 + bench.DIODE_V)
+    cycles(out, [(7.4, threshold_pct)], HIGH7_SPIN_MS, METER_COAST_MS, over_rating=True)
 elif mode == "ref":
     capture.prompt("Motor leads on the board's motor connector, the bar OFF the pinion, the rotor free.")
     bench.power_up(REF[0][0] + bench.DIODE_V)
