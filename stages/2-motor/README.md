@@ -273,14 +273,14 @@ mostly a loss at the edge, about 12 mA at 4.95 V, and the rest is the
 ramp's shape. On the free motor the crest sample reads a loss in the window
 that a meter averages away, falling with one less the duty to zero at
 100 %, high confidence, about 19 mA over the mean at 5.0 V and 29 mA at
-7.4 V up to 30 % by the board's current zero, and about 25 to 26 mA at
-7.4 V by the open bridge's zero, which these data do not tell apart.
-Whether that loss sits across the inductance or in the rung is moderate at
-most. By the board's zero the spinning motor needs about a third more loss
-than the locked one, about 2.4 sigma once the coast scale and the locked
-fit's range are carried, and by the open bridge's zero its meter points
-need none, so the gap rests on the zero, low to moderate confidence, and a
-DMM in series at 7.4 V decides it. The 20 mA speed-torque found at 100 %
+7.4 V up to 30 % by the board's current zero, and about 25 to 26.5 mA at
+7.4 V by the zero a driven bridge sits on, which the current dropouts read
+as the open bridge's. Whether that loss sits across the inductance or in
+the rung is moderate at most. By the board's zero the spinning motor needs
+about a third more loss than the locked one, and by the driven zero its
+meter points need none and all its points 12 % more, so the gap is mostly
+the zero, high confidence at 7.4 V and moderate at 5 V, and a DMM in series
+at 7.4 V confirms it. The 20 mA speed-torque found at 100 %
 is not a window current, high confidence, and a drag of the run-up's first
 few hundred milliseconds rather than of the settled drive, moderate
 confidence. On the turning motor the terminal volts carry a

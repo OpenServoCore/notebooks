@@ -9,8 +9,8 @@ through `carry`, so the section never reads a result file the notebook is about 
 
 The per-spin reduction is motor-model's `reduce_spins` (bemf-coast's coast read) widened: the pre-cut means over
 several windows, the EMF at the cut by several reads, the coast's drag three ways, the spin's speed by its current
-ripple (seeded by the coast and, independently, by a rough EMF speed), the dropout rate and the cut's phase in the
-6/rev ripple.
+ripple (seeded by the coast and, independently, by a rough EMF speed), the dropout rate, the dropout rows' raw crest
+(the zero a driven bridge sits on) and the cut's phase in the 6/rev ripple.
 """
 import contextlib
 import io
@@ -202,6 +202,14 @@ def reduce_folder(folder, run):
         q = ic[-n200:] / ic[-n200:].mean()
         for name, lo_, hi_ in ROW_BANDS:
             row[name] = int(((q >= lo_) & (q < hi_)).sum())
+        # the brush path open for the period, so the raw crest over the torque-off zero is the zero a driven bridge
+        # sits on, read with no in-drive offset removed; partial periods read above the floor, hence the 10th percentile
+        raw0 = sp["current_raw"].to_numpy(float)[-n200:] - zero_i
+        deep = raw0[q < 0.10]
+        for name, pct in (("med", 50), ("p10", 10), ("p90", 90)):
+            row[f"deep_zero_{name}_counts"] = float(np.percentile(deep, pct)) if len(deep) else np.nan
+        drop = raw0[q < tel.DROPOUT_FRAC]
+        row["dropout_zero_med_counts"] = float(np.median(drop)) if len(drop) else np.nan
         row["v_on_sd_200"] = float(vd[-n200:].std(ddof=1))
         row["i_crest_sd_200"] = float(ic[-n200:].std(ddof=1))
         # the 200 ms means' own standard errors from 20 blocks of 10 ms, which carries the ripple's correlation
