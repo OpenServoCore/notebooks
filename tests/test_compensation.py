@@ -30,6 +30,15 @@ def test_fixed_point_meets_a_power_law_drop():
     assert w * 2 * np.pi * ke + A * (w / 300) ** n * 1e-3 == pytest.approx(u, rel=1e-6)
 
 
+def test_solve_meets_a_steep_law_where_a_fixed_point_would_run_away():
+    # a w^4 law whose slope passes 2 pi Ke near 600 rev/s: the fixed point in w diverges there, the root is still one
+    A, n, ke = 65.8, 4.02, cp.KE
+    w_true = np.array([550.0, 620.0, 700.0])
+    u = w_true * 2 * np.pi * ke + A * (w_true / 300) ** n * 1e-3
+    assert cp.solve_w(u, lambda w: A * (w / 300) ** n, ke) == pytest.approx(w_true, rel=1e-8)
+    assert cp.solve_w(np.array([-0.1]), lambda w: A * (w / 300) ** n, ke) == pytest.approx([-0.1 / cp.KE_REV])
+
+
 def test_f_table_is_the_rail_mean_per_volt_flat_below_and_zero_at_full_duty():
     GR = pd.DataFrame(dict(loop=["no meter"] * 4 + ["meter"] * 2, rail=[5.0, 5.0, 7.4, 7.4, 5.0, 7.4],
                            duty=[20, 60, 20, 60, 20, 20], pub=[20.0, 15.0, 29.6, 22.2, 99.0, 99.0], b=[100.0, 50.0, 148.0, 74.0, 0.0, 0.0]))

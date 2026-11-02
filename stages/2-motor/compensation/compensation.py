@@ -3,17 +3,18 @@
 The estimator reads only what a servo's board can read, the applied duty, the terminal volts over the window, the crest
 current sample and the rail tap, and turns them into a speed,
 
-    w_hat = (V_mean - R (i_crest - Delta(D) V_window) - V_b(w_hat, mech dir)) / Ke
+    w_hat = (V_mean - R (i_crest - Delta(D) V_window) - k_d dropouts - V_b(w_hat, mech dir)) / Ke
 
-solved by fixed point. V_mean is the share construction, the reading term Delta comes from a table f(D) per volt of the
-window, and V_b from a table or a power law by mechanical direction. The truth is the ripple tach, which never enters
-the estimator.
+the one root of a monotone equation, found by bisection. V_mean is the share construction, the reading term Delta comes
+from a table f(D) per volt of the window, the dropout term is a coefficient on the rate at which the crest sample sits
+near zero (off before the solve, since it does not depend on w_hat), and the speed part of V_b is a table or a power law
+by mechanical direction. The truth is the ripple tach, which never enters the estimator.
 
 The pieces this notebook shares with identification come from identification.py (the reductions, the published f(D),
 the share construction, the V_b fit and its evaluation, the tach gate, the mechanical direction, the anchor), and
-motor-model's modules come through it. What is new here is the estimator and its scoring, the reading-term grid as a
-line in G (motor-model's steady states rebuilt at two values of G, so a grid at a held-out G is a line), and the
-pass machinery that scores a set of constants on every held-out capture.
+motor-model's modules come through it. What is new here is the estimator and its scoring, the dropout rate around a
+run-up's turn windows, the reading-term grid as a line in G (motor-model's steady states rebuilt at two values of G, so
+a grid at a held-out G is a line), and the pass machinery that scores a set of constants on every held-out capture.
 """
 import functools
 import sys
@@ -69,8 +70,13 @@ vb_fit = idn.vb_fit
 
 
 def vb_eval(fit, mech, rev_s, form):
-    """V_b in mV by mechanical direction, the table or the power law; the form is always named"""
+    """the speed part of V_b in mV by mechanical direction, the table or the power law; the form is always named"""
     return idn.vb_eval(fit, mech, rev_s, form)
+
+
+def vb_total(fit, mech, rev_s, dropouts, form):
+    """V_b in mV, the speed part plus k_d times the dropout rate"""
+    return idn.vb_total(fit, mech, rev_s, dropouts, form)
 
 
 # ---------------------------------------------------------------- reductions
@@ -90,9 +96,29 @@ def windows():
     settled windows, the period-fit L the windows carry, and the full table"""
     REV, RUNS_ST, L_H, T_OFF, VPC, SETTLED = idn.runup_windows()
     REV, _ = bd.runup_y(REV, RUNS_ST, L_H, T_OFF, VPC)
+    REV["dropouts_per_s"] = window_dropouts(REV, RUNS_ST)
     RU = REV[(REV["t"] < SETTLED) & (REV["rev_s"] >= 150)].copy()
     RS = REV[REV["t"] >= SETTLED].copy()
     return dict(REV=REV, RU=RU, RS=RS, L_H=L_H, SETTLED=SETTLED)
+
+
+DROPOUT_SPAN_S = 0.05   # the shortest stretch a dropout rate is read over: a one-turn window holds 0 to 3 dropout rows
+
+
+def window_dropouts(REV, RUNS, span_s=DROPOUT_SPAN_S):
+    """the dropout rows per second around each turn window, from speed-torque's own open-row mask of its run-up (the
+    same quarter, against a 2 ms running mean since the run-up's current moves), over the turn or `span_s` centered on
+    it, whichever is longer, clipped to the run"""
+    masks = {(r["k"], r["dir"]): np.asarray(r["open"]) for r in RUNS}
+    out = np.zeros(len(REV))
+    for j, (k, d, t, w) in enumerate(zip(REV["k"], REV["dir"], REV["t"], REV["w"])):
+        m = masks[(k, d)]
+        half = max(np.pi / w, span_s / 2)
+        a, b = max(int(np.ceil((t - half) * FS)), 0), min(int(np.floor((t + half) * FS)), len(m))
+        if b <= a:
+            continue
+        out[j] = m[a:b].sum() / ((b - a) / FS)
+    return out
 
 
 def tag_mech(T, run, mapping="mech"):
@@ -219,31 +245,38 @@ def published_vb():
     the mechanical one"""
     f = MM["brush_drop_fit"]
     return {m: dict(power=(f[k]["mv_at_300_rev_s"]["value"], f[k]["exponent"]["value"], np.nan), table=None)
-            for m, k in ((1, "+1"), (-1, "-1"))}
+            for m, k in ((1, "+1"), (-1, "-1"))} | {"k_d": 0.0}
 
 
 # ---------------------------------------------------------------- the estimator
 
 def solve_w(u, vb_fn, ke=KE, iters=60):
-    """w = (u - V_b(w)) / (2 pi Ke) by fixed point, u = V_mean - R i in volts, w in rev/s, vb_fn(w) in mV; starts from
-    the uncompensated speed and stops when no element moves by 1e-6 rev/s"""
+    """w from 2 pi Ke w + V_b(w)/1000 = u, u = V_mean - R i less any term that does not depend on w, in volts, w in
+    rev/s, vb_fn(w) in mV. The left side rises with w wherever V_b does not fall faster than Ke, so with V_b >= 0 the
+    root sits between 0 and u/(2 pi Ke) and bisection finds it; a fixed point in w runs away where V_b is steep, which
+    a power law is past its fitted range. A u at or under 0 reads as the plain estimate, a speed at or under zero"""
     ke_rev = 2 * np.pi * ke
-    w = np.asarray(u, float) / ke_rev
+    u = np.asarray(u, float)
+    hi = np.maximum(u, 0.0) / ke_rev
+    lo = np.zeros_like(hi)
     for _ in range(iters):
-        wn = (u - vb_fn(np.maximum(w, 0.0)) * 1e-3) / ke_rev
-        if np.nanmax(np.abs(wn - w)) < 1e-6:
-            return wn
-        w = wn
-    return w
+        mid = 0.5 * (lo + hi)
+        over = ke_rev * mid + vb_fn(mid) * 1e-3 > u
+        hi = np.where(over, mid, hi)
+        lo = np.where(over, lo, mid)
+    return np.where(u <= 0, u / ke_rev, 0.5 * (lo + hi))
 
 
 def estimate(T, mech, fit, r=R_LOCKED, ke=KE, form="power"):
-    """w_hat per spin for the four variants: none, Delta only, V_b only, both; T from signals()"""
+    """w_hat per spin for the four variants: none, Delta only, V_b only, both; T from signals(). The dropout term of
+    V_b does not depend on w, so it comes off u before the solve"""
     out = {}
+    k_d = fit.get("k_d", 0.0)
     for var in VARIANTS:
         k = "d" if var in ("delta", "both") else "0"
         u = T[f"v_mean_{k}"].to_numpy() - np.asarray(r, float) * T[f"i_hat_{k}"].to_numpy() * 1e-3
         if var in ("vb", "both"):
+            u = u - k_d * T["dropouts"].to_numpy(float) * 1e-3
             out[var] = solve_w(u, lambda w: vb_eval(fit, mech, w, form), ke)
         else:
             out[var] = u / (2 * np.pi * ke)
@@ -278,15 +311,16 @@ def score_windows(W, fit, form, r=R_LOCKED, ke=KE, l_h=None):
     l_h = windows()["L_H"] if l_h is None else l_h
     W = W.copy()
     mech = W["dir"].to_numpy() * MECH["speed-torque"]
+    dropouts = W["dropouts_per_s"].to_numpy(float)
     u = (W["u_rest"] - l_h * W["didt"] - np.asarray(r, float) * W["i"]).to_numpy()
     W["w_none"] = u / (2 * np.pi * ke)
     W["w_delta"] = W["w_none"]
-    W["w_vb"] = solve_w(u, lambda w: vb_eval(fit, mech, w, form), ke)
+    W["w_vb"] = solve_w(u - fit.get("k_d", 0.0) * dropouts * 1e-3, lambda w: vb_eval(fit, mech, w, form), ke)
     W["w_both"] = W["w_vb"]
     W["truth"] = W["rev_s"]
     W["band"] = [band_of(w) for w in W["truth"]]
     W["vb_meas_mv"] = (W["y"] - np.asarray(r, float) * W["i"]) * 1e3
-    W["vb_pred_mv"] = vb_eval(fit, mech, W["rev_s"].to_numpy(), form)
+    W["vb_pred_mv"] = vb_total(fit, mech, W["rev_s"].to_numpy(), dropouts, form)
     return W
 
 
