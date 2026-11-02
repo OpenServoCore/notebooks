@@ -247,8 +247,8 @@
       "hi": null,
       "unit": "rev/s"
     },
-    "the constants, J 5.5": {
-      "value": 609.3916471444311,
+    "the constants, J 5.4": {
+      "value": 609.3916560965098,
       "lo": null,
       "hi": null,
       "unit": "rev/s"
@@ -273,8 +273,8 @@
       "hi": null,
       "unit": "ms"
     },
-    "the constants, J 5.5": {
-      "value": 19.099999999999998,
+    "the constants, J 5.4": {
+      "value": 19.0,
       "lo": null,
       "hi": null,
       "unit": "ms"
