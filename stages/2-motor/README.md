@@ -50,8 +50,8 @@ the lead zero and then the motor's leads at their free ends at each of the
 twelve holes, 40 s a hole. The meter's milliamp leaves the copper at room, so the can's
 temperature is the copper's.
 
-Run: `uv run python stages/2-motor/rest-resistance/capture.py`, and
-`capture.py ohms` before the teardown, then the notebook.
+Run: the `capture` plan of `uv run python -m oscnb.sitting locked`, and
+`stages/2-motor/rest-resistance/capture.py ohms` before the teardown, then the notebook.
 
 ## [inductance](inductance/inductance.ipynb)
 
@@ -77,9 +77,9 @@ after a reversal from 10, 25 or 40 %, rising then falling, and a fourth,
 `fast`, runs the four main groups in fast decay and then two slow groups at
 the same seat.
 
-Run: `uv run python stages/2-motor/inductance/capture.py`, then
-`capture.py reversal`, `capture.py steps` and `capture.py fast` after it
-with the bar left at hole 11, then the notebook.
+Run: the `capture` plan of `uv run python -m oscnb.sitting locked`, with
+`--include fast` for the fast-decay groups at the last hole, then the
+notebook. The reversal and step-size runs were the first motor's alone.
 
 ## [bemf-coast](bemf-coast/bemf-coast.ipynb)
 
@@ -109,9 +109,9 @@ the current inside the PWM period. Under fast decay the rotor stays still
 at 5.0 V 30 % and 7.4 V 20 %, below fast decay's onset, and turns only at
 7.4 V 40 %.
 
-Run: `uv run python stages/2-motor/bemf-coast/capture.py`, then
-`capture.py meter`, `capture.py high`, `capture.py swapped` and `capture.py spinning`, then the
-notebook.
+Run: `uv run python -m oscnb.sitting free` for the reference, the ladder
+and the slow rungs, `python -m oscnb.sitting meter` for the meter runs,
+`--include swapped` or `spinning` for those, then the notebook.
 
 ## [no-load-current](no-load-current/no-load-current.ipynb)
 
@@ -153,7 +153,7 @@ The bemf-coast spins at partial duty are left out, since there the current
 switches and the curve is another one. The spin is short because a free
 motor at 100 % runs at its top speed, which wears the brushes.
 
-Run: `uv run python stages/2-motor/speed-torque/capture.py`; the notebook
+Run: the `capture` plan of `uv run python -m oscnb.sitting free`; the notebook
 comes after rest-resistance and inductance, its last inputs.
 
 ## [teardown](teardown/teardown.ipynb)
