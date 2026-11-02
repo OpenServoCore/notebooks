@@ -96,7 +96,7 @@ MODES = {
 
 mode = next((a for a in sys.argv[1:] if a in MODES), None)
 n = [a for a in sys.argv[1:] if a.isdigit()]
-motor = motors.MOTORS[motors.DEFAULT]
+motor = motors.selected()
 board = boards.BOARDS[boards.DEFAULT]
 name, holes, groups = MODES[mode]
 out = capture.dataset(f"{motor.key}__{board.key}", "inductance", ["", *n], name=name)

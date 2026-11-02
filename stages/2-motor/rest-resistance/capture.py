@@ -57,7 +57,7 @@ def window(meter, marks, out, name, expect, seconds):
 
 
 n = [a for a in sys.argv[1:] if a.isdigit()]
-motor = motors.MOTORS[motors.DEFAULT]
+motor = motors.selected()
 board = boards.BOARDS[boards.DEFAULT]
 
 if "shake" in sys.argv[1:]:

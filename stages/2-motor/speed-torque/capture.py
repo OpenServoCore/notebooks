@@ -27,7 +27,7 @@ COAST_MS = 600
 REST_S = 20
 
 n = [a for a in sys.argv[1:] if a.isdigit()]
-motor = motors.MOTORS[motors.DEFAULT]
+motor = motors.selected()
 board = boards.BOARDS[boards.DEFAULT]
 out = capture.dataset(f"{motor.key}__{board.key}", "speed-torque", ["", *n])
 print("motor", motor.key, "board", board.key)
