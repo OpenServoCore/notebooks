@@ -39,7 +39,7 @@ MOTORS = {
     "mg90-b": Motor(
         key="mg90-b",
         label="the motor of MG90 clone b",
-        family="mg90-clone",
+        family="mg90-vorpal",
         source="a new Vorpal-brand MG90 clone opened for stage 2, the servo never run",
         slots=3,
         brushes=2,
@@ -50,7 +50,7 @@ MOTORS = {
     "mg90-c": Motor(
         key="mg90-c",
         label="the motor of MG90 clone c",
-        family="mg90-clone",
+        family="mg90-vorpal",
         source="a second MG90 clone opened after mg90-b's teardown",
         slots=3,
         brushes=2,
