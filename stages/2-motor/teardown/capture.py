@@ -126,7 +126,7 @@ COIL_GROUPS = [              # inductance fast-1's groups: (folder, duty %, dire
 
 args = sys.argv[1:]
 n = [a for a in args if a.isdigit()]
-motor = motors.MOTORS[motors.DEFAULT]
+motor = motors.selected()
 OHMS = "DMM on ohms, manual 220 ohm range."
 TEMP = "DMM on temperature (C)."
 
