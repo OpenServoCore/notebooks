@@ -272,17 +272,25 @@ makes it slide with the fit's length. The window offset at the ON edge is
 mostly a loss at the edge, about 12 mA at 4.95 V, and the rest is the
 ramp's shape. On the free motor the crest sample reads a loss in the window
 that a meter averages away, falling with one less the duty to zero at
-100 %, about 19 mA over the mean at 5.0 V and 29 mA at 7.4 V up to 30 %,
-high confidence. Whether that loss sits across the inductance or in the
-rung is moderate at most, and the spinning motor needs a third or more loss
-than the locked one, for a reason these data leave open. The 20 mA
-speed-torque found at 100 % is drag, high confidence. On the turning motor
-the terminal volts carry a brush drop beyond R i and the EMF, a voltage set
-by the speed and the direction and not by the current, within a few
-millivolts below 160 rev/s, about 45 mV at 300 rev/s and 0.37 V at 550
-rev/s, high confidence that it is in the motor and does not scale with the
-current. Below 160 rev/s the running resistance is the resistance at rest
-within 3 to 4 %.
+100 %, high confidence, about 19 mA over the mean at 5.0 V and 29 mA at
+7.4 V up to 30 % by the board's current zero, and about 25 to 26 mA at
+7.4 V by the open bridge's zero, which these data do not tell apart.
+Whether that loss sits across the inductance or in the rung is moderate at
+most. By the board's zero the spinning motor needs about a third more loss
+than the locked one, about 2.4 sigma once the coast scale and the locked
+fit's range are carried, and by the open bridge's zero its meter points
+need none, so the gap rests on the zero, low to moderate confidence, and a
+DMM in series at 7.4 V decides it. The 20 mA speed-torque found at 100 %
+is not a window current, high confidence, and a drag of the run-up's first
+few hundred milliseconds rather than of the settled drive, moderate
+confidence. On the turning motor the terminal volts carry a
+brush drop beyond R i and the EMF, a voltage set by the speed and the
+direction, within about 10 mV of zero below 160 rev/s at 5 V beside a 10
+to 25 mV rail term of the construction at 7.4 V, about 45 mV at 300 rev/s
+and 0.37 V at 550 rev/s. High confidence that it is in the motor, moderate
+that it does not scale with the current, since a part of up to about 0.3
+ohm that does is not excluded. Below 160 rev/s the running resistance is
+the resistance at rest within 3 to 4 %.
 
 Needs: no bench. The teardown's levels and coil runs and hand readings,
 inductance's fast-1, capture-1 and reversal-1 at hole 11, bridge-states'
