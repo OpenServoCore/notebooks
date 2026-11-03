@@ -1,0 +1,13 @@
+t_host,event,detail
+1793658400.809,start,"motor mg90-c, board dev-v006-2A-D, state meter"
+1793658612.939,prompt,"Bar OFF, rotor free. DMM on DC mA held on the 220.00 mA range with RANGE, red probe in the mA jack, in series on the MOT_A side with its red lead toward MOT_A: MOT_A -> meter -> motor lead -> motor -> other lead -> MOT_B. Bluetooth on."
+1793658815.289,dps,on at 5.25 V
+1793658819.200,rail,"5.0 V: reads 4.989 V, DPS 5.250 V"
+1793658821.952,check,meter polarity: the forward spin reads +56.2 mA
+1793658841.957,plan,low-meter
+1793658841.958,dataset,low-meter: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/low-meter-3
+1793658846.266,rail,"7.4 V: reads 7.391 V, DPS 7.650 V"
+1793659804.940,rail,"5.0 V: reads 4.990 V, DPS 5.250 V"
+1793660747.046,rail,"3.7 V: reads 3.687 V, DPS 3.950 V"
+1793661480.350,dps,off
+1793661480.351,end,

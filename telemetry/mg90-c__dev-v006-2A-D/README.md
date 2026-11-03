@@ -65,8 +65,17 @@ partial folder was removed and it is not part of the record.
 | bemf-coast/threshold-70-1 | 7.4 V 70 %, 1 s spins, 3 cycles | C -> D | the first deliberate run over the rated voltage since high7-nometer-1, 5.18 V effective, 3 s in all | 585 to 732 / 321 to 434 dropouts per s during the spins, climbing cycle by cycle in the heavy direction |
 | speed-torque/capture-7 | 5 V 100 % run-ups | D | two minutes after the 70 % spins | 970 / 560 dropouts per s, crest 107 / 111 mA: the heavy direction's rate up half over capture-6 and its current down 5 mA, so 70 % already changed the brushes |
 | bemf-coast/threshold-75-1 | 7.4 V 75 %, 1 s spins, 3 cycles | D | two minutes after capture-7, 5.55 V effective | 721 to 916 / 521 to 573 dropouts per s, climbing again |
-| speed-torque/capture-8 | 5 V 100 % run-ups | D | two minutes after the 75 % spins; the last drive of the motor's record | 1080 / 637 dropouts per s, crest 105 / 109 mA |
+| speed-torque/capture-8 | 5 V 100 % run-ups | D | two minutes after the 75 % spins; the last drive of sitting 2 | 1080 / 637 dropouts per s, crest 105 / 109 mA |
 
 The stall pass and the two inductance runs share one bar seat: the clamp went on at hole 0 before the stall pass and the pins alone moved between holes, so a hole number is the same rotor angle in all three datasets, which the two 12-hole runs of mg90-b, a day apart on a new seat, could not claim.
 
 Lead orientation at the board's connector, as wired for every dataset but the swapped block of `swapped-1`: the black lead on MOT_A, the white lead on MOT_B. The swapped block has them reversed.
+
+## Sitting 3, the same day, by the sitting runner
+
+The first sitting run by `python -m oscnb.sitting`, whose manifest is `sittings/meter-3.csv` and whose entry check, one forward spin with the meter logging, is `sittings/meter-3-polarity`: it read +56 mA, so the meter's sign is the convention's without any fix.
+
+| Dataset | Run | State | Conditions | What it represents |
+|---|---|---|---|---|
+| bemf-coast/low-meter-3 | kick 300 ms then hold 2.5 s, 7.4 V 15 / 12 / 10 / 8 %, 5 V 20 / 15 / 12 / 10 %, 3.7 V 30 / 20 / 16 %, coast 300 ms, 3 cycles each, DMM in series on the 220 mA range | D | bar off, kick 20 % at 7.4 V, 30 % at 5 V, 40 % at 3.7 V; the meter's burden in the loop holds the rotor well under low-1's speeds; board at room | the true mean current under 20 % duty and the first meter points at 3.7 V: the holds read 32 to 41 mA on the meter at 7.4 V, 31 to 39 at 5 V, 32 to 42 at 3.7 V; the rotor turned at 5 to 61 rev/s on every rung but 5 V 10 % and 7.4 V 8 %, where it stood; the reading term per volt falls about a fifth from 15 to 8 % duty and the 3.7 V holds read an open-bridge zero of 1 to 3 mA against the board's constant |
+

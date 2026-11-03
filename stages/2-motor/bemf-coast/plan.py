@@ -55,6 +55,13 @@ zero of a driven bridge.
 rate and the dropout rows' zero at the rail where the two zeros part,
 every rung under the rated voltage.
 
+`low-meter` is the slow rungs again, kicked and held as in the
+free state, at 8 to 30 % on the three rails, the duties the meter runs
+never reached and the rail they never saw. The meter's burden, near ten
+ohms in a loop of four, holds the rotor well under the free rungs' speeds
+and stops it at the lowest, which the ripple tach tells; the term is the
+crest against the meter's mean either way.
+
 `spinning`, optional, records `osc-lab burst` captures of the free rotor
 already turning at the meter run's three points, the shunt and both taps
 through whole PWM periods, in slow and in fast decay, so the board's own
@@ -76,9 +83,12 @@ HIGH = [(5.0, 60), (5.0, 80), (5.0, 100)]
 HIGH7 = [(7.4, 50), (7.4, 60), (7.4, 67)]
 HIGH7_SPIN_MS = 1000
 LOW = [(5.0, 12), (5.0, 10), (5.0, 8), (5.0, 6), (7.4, 8), (7.4, 6), (7.4, 4)]
-KICK = {5.0: 30, 7.4: 20}    # the kick's duty by rail, near 150 rev/s on each
+KICK = {3.7: 40, 5.0: 30, 7.4: 20}    # the kick's duty by rail, near 150 rev/s on each
 LOW_HOLD_MS = 2000
 LOW_COAST_MS = 600
+# the lowest rungs the meter's burden still lets the rotor hold, down to 0.6 V effective
+LOW_METER = [(7.4, 15), (7.4, 12), (7.4, 10), (7.4, 8), (5.0, 20), (5.0, 15), (5.0, 12), (5.0, 10), (3.7, 30), (3.7, 20), (3.7, 16)]
+LOW_METER_HOLD_MS = 2500
 SWAPPED = [(7.4, 40), (7.4, 60)]
 THRESHOLD = [70, 75]
 RUNUP = [(5.0, 100)]
@@ -117,10 +127,10 @@ def threshold(pct):
     return run
 
 
-def metered(rungs, spin_ms):
+def metered(rungs, spin_ms, kick=None):
     def run(s, out):
         with s.meter_log(out):
-            s.cycles(out, rungs, spin_ms, METER_COAST_MS)
+            s.cycles(out, rungs, spin_ms, METER_COAST_MS, kick=kick)
     return run
 
 
@@ -148,5 +158,6 @@ PLANS = [
     Plan("meter", "bemf-coast", "meter", "5 V 30 %, 7.4 V 20 and 40 %, 3 s spins", run=metered(METER, METER_SPIN_MS), order=10),
     Plan("high", "bemf-coast", "meter", "5 V 60, 80 and 100 %", run=metered(HIGH, METER_SPIN_MS), order=20),
     Plan("high7", "bemf-coast", "meter", "7.4 V 50, 60 and 67 %, 1 s spins", run=metered(HIGH7, HIGH7_SPIN_MS), order=30),
+    Plan("low-meter", "bemf-coast", "meter", "kick then hold at 8 to 30 % on the three rails, metered", run=metered(LOW_METER, LOW_METER_HOLD_MS, kick=KICK), order=35),
     Plan("spinning", "bemf-coast", "meter", "bursts of the turning rotor at the meter points", run=spinning, order=40, optional=True),
 ]
