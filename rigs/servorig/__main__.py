@@ -132,15 +132,15 @@ def summary(s):
     lock_max = s.lock_clamp + s.insert_l + s.insert_relief
     lock = min(M3_LENGTHS, key=lambda n: abs(n - (lock_min + lock_max) / 2))
     arms = " / ".join(f"{a.reach:.2f}" for a in s.horn_arms)
-    roots = " / ".join(f"{s.root_w(a):.2f}" for a in s.horn_arms)
+    tips = " / ".join(f"{2 * a.tip_r:.2f}" for a in s.horn_arms)
     retain = " and ".join(f"r {r:.1f} at {a:.0f} deg"
                           for a, r in s.retain_holes)
     return [
-        f"horn arms at 0 / 90 / 180 / 270 deg reach {arms}, {roots} wide "
-        f"at the hub, {s.horn_arm_tip:.2f} at the tips; hub "
-        f"{s.horn_hub_d:.2f} standing {s.hub_top - s.horn_top:.2f} over a "
-        f"{s.horn_plate_t:.2f} plate, head top {s.head_top - s.horn_top:.2f}"
-        f" over the plate",
+        f"horn arms at 0 / 90 / 180 / 270 deg reach {arms}, {tips} wide at "
+        f"the tips; hub {s.horn_hub_d:.2f} standing "
+        f"{s.hub_top - s.horn_top:.2f} over a {s.horn_plate_t:.2f} plate, "
+        f"head top {s.head_top - s.horn_top:.2f} over the plate; collar "
+        f"{s.collar_bottom - s.case_top - s.case_boss_h:.2f} over the boss",
         f"key {s.key_depth:.2f} into the plate; retaining screws "
         + (f"at {retain}" if s.retain_screws else "left out"),
         f"base top {s.base_top:.2f}, horn top {s.horn_top:.2f}, tag plane "

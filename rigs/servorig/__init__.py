@@ -24,9 +24,10 @@ the three leads gets a pair of zip tie slots at the back. An L-shaped clamp
 wing at each end holds the base to the desk, lying flat or standing on its
 front face.
 
-The horn is the SG90's horn #3, four unequal arms on one 2 mm plate: two
-long arms of 16 and 18 mm and two short ones of 8.25 mm at right angles to
-them, with a hub that stands 3.3 mm above the plate. The tag mount is keyed
+The horn is the MG90S four-arm horn, on one 2.05 mm plate: two long arms
+of 16.2 and 18.2 mm (six and seven holes) and two short ones of 8.1 mm at
+right angles to them, with a 6.65 mm hub that stands 0.3 mm above the plate
+and a 2.2 mm collar under it. The tag mount is keyed
 to all four arms, so it goes on one way only, the longer arm under the lock
 ear. The key reaches 1.5 mm into the plate, which keeps the skirt around it
 clear of the boss under the horn; the skirt is a full circle that encloses
@@ -69,17 +70,16 @@ underside and the mount, the arm and the clip print top down, so each tag
 face comes off the bed flat and no part needs support.
 
 A fit test print goes first: a thin plate with the mount's key pocket at
-three fits, 0.05, 0.15 and 0.25 mm per side, each labeled, and a 10 mm
+four fits, 0.05 to 0.35 mm per side, each labeled, and a 10 mm
 section of the servo pocket with its ear ledge and lead slot. The real horn
 and servo pick the fit, which becomes the key and pocket clearance of every
 part after it.
 
-Servo dimensions default to the SG90-class case measured in the firmware
-repo's mechanical/sg90/measurements.py. The horn's arm reaches, plate, hub
-and spline socket are the owner's calipers rounded to nominal, its hole
-radii and edge tapers the SG90 horn #3 drawing, and its arm widths a photo.
-What is still a guess is measured with calipers and goes in as Spec fields
-or command line overrides before the print (README.md lists them).
+Servo and horn dimensions come from a STEP model of the Tower Pro MG90S
+(GrabCAD), the horn's shorter long arm cut back one hole pitch to match the
+horn at hand. The heights that set where the horn lands are worth a caliper
+check on the servo at hand and go in as command line overrides before the
+print (README.md lists them).
 
     uv run --group cad python -m rigs.servorig [--head-h 1.6 ...]
     writes rigs/servorig/build/

@@ -19,12 +19,11 @@ M3_HOLE = 3.4      # vertical M3 clearance, prints about 3.25
 BTN_CBORE = 1.65 + FIT_TIGHT    # ISO 7380 head height: the dome sits flush
 BTN_CBORE_D = 6.5  # drop-in room around the 5.7 head
 
-# Measured on the servo and the horn at hand before printing; the defaults
-# are the SG90-class case, a photo of the horn or a guess.
+# Worth a caliper check on the servo and the horn at hand before the base
+# prints; the defaults come from a STEP model of the Tower Pro MG90S.
 MEASURE = (
     "body_h", "ear_z", "ear_span", "ear_t", "ear_w", "shaft_offset",
-    "horn_above_body", "horn_hub_d", "horn_arm_root", "horn_arm_tip",
-    "head_d", "head_h",
+    "horn_above_body", "horn_hub_above", "head_d", "head_h",
 )
 # The test print's pick, before the base: settable from the command line.
 FITS = ("key_fit", "servo_clear")
@@ -32,63 +31,67 @@ FITS = ("key_fit", "servo_clear")
 
 @dataclass(frozen=True)
 class Arm:
-    """One horn arm, out from the axis along its own direction."""
+    """One horn arm, out from the axis along its own direction: straight
+    edges from the axis to a round tip."""
     angle: float                # degrees from +X at mid travel
     reach: float                # axis to the tip
     holes: tuple                # axis to each hole
-    taper_deg: float | None     # between the two edges; None: the photo's
-    #                             root and tip widths set the edges
+    tip_r: float                # the round tip, half the width there
+    axis_half_w: float          # half width where the edges, carried
+    #                             straight, cross the axis
 
 
 @dataclass(frozen=True)
 class Spec:
-    # servo plan: MG90 nominal housing (Vorpal Robotics wiki), as the
-    # six-station test harness in the firmware repo's mechanical/testharness
-    servo_w: float = 12.2
-    servo_l: float = 22.8
+    # servo: the Tower Pro MG90S STEP model (GrabCAD, "Tower Pro MG90S
+    # micro servo", the case and its four-arm horn); the model's case is
+    # 22.55 x 12.15 below the ears and 22.6 long above them, against the
+    # 22.8 x 12.2 the datasheets quote, so the fit print tries the pocket
+    servo_w: float = 12.15
+    servo_l: float = 22.6
     servo_clear: float = FIT_TIGHT  # per side, held by the body
-    # servo heights: SG90-class, the Miuzei donor measured with calipers in
-    # the firmware repo's mechanical/sg90/measurements.py; MEASURE
-    body_h: float = 22.447          # case bottom to case top, no output boss
-    ear_z: float = 13.407           # case bottom to ear underside: the case
-    #                                 less its 6.57 top section and the ear
-    ear_span: float = 32.12         # across both ears
-    ear_t: float = 2.47
-    ear_w: float = 12.2             # ear plan width, as the case
-    shaft_offset: float = 6.0       # case center to axis: the SG90's
-    #                                 pot-to-arbor spacing as designed
-    case_boss_d: float = 11.5       # output boss, an estimate; envelope only
-    case_boss_h: float = 4.3        # case top to the boss top: SG90 drawing
-    horn_above_body: float = 6.4    # case top to the arm plate's top face:
-    #                                 the 4.3 boss, the drawing's 4.5 spline
-    #                                 in the horn's 4.4 socket, the 2.0 plate
-    # SG90 horn #3, four unequal arms: hole radii and tapers from the SG90
-    # datasheet drawing (Aus Electronics Direct TA0132, page 5), reaches
-    # from the owner's calipers rounded to nominal (34.14 tip to tip, 16.65
-    # across the short arms); the longer arm points +X under the lock ear at
-    # mid travel
+    body_h: float = 22.55           # case bottom to case top, no output boss
+    ear_z: float = 18.4             # case bottom to ear underside
+    ear_span: float = 32.2          # across both ears, 2.5 holes 27.5 apart
+    ear_t: float = 2.5
+    ear_w: float = 12.1             # ear plan width
+    shaft_offset: float = 5.375     # case center to the output axis
+    case_boss_d: float = 11.8       # output boss; envelope only
+    case_boss_h: float = 5.75       # case top to the boss top; the spline
+    #                                 stands 3.95 over it, 4.9 across
+    horn_above_body: float = 10.0   # case top to the arm plate's top face:
+    #                                 the 5.75 boss, the horn's 2.2 collar
+    #                                 resting on it, the 2.05 plate; a horn
+    #                                 that bottoms on the spline instead
+    #                                 sits up to 1.75 higher, so MEASURE
+    # horn: the model draws two 7-hole long arms, 36.35 tip to tip; the
+    # horn at hand has 6 holes on one of them, so that arm is one 2.0 hole
+    # pitch shorter with the same edges. The long arms run straight through
+    # the hub, 6.65 wide at the axis; the short arms are parallel sided.
+    # The owner's calipers on the horn at hand: 34.14 tip to tip (model
+    # 34.35), 16.65 across the short arms (16.25), plate 1.90 (2.05),
+    # collar bottom to plate top 4.40 (4.25), collar bottom to hub top 5.28
+    # (4.55); the fit print settles the key, the recess over the hub covers
+    # both hub readings. The longer arm points +X under the lock ear at mid
+    # travel.
     horn_arms: tuple = (
-        Arm(0, 18.0, (4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 16.5), 9.8),
-        Arm(90, 8.25, (4.3, 6.3), None),
-        Arm(180, 16.0, (4.0, 6.0, 8.0, 10.0, 12.0, 14.0), 6.3),
-        Arm(270, 8.25, (4.3, 6.3), None),
+        Arm(0, 18.175, (4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 16.5), 2.0, 3.325),
+        Arm(90, 8.125, (4.5, 6.5), 1.85, 1.85),
+        Arm(180, 16.175, (4.5, 6.5, 8.5, 10.5, 12.5, 14.5), 2.18, 3.325),
+        Arm(270, 8.125, (4.5, 6.5), 1.85, 1.85),
     )
-    horn_hole_d: float = 1.0        # SG90 horn #3 drawing
-    horn_plate_t: float = 2.0       # the arm plate: owner's calipers (1.90),
-    #                                 rounded to nominal
-    horn_hub_h: float = 5.3         # collar underside to hub top: owner's
-    #                                 calipers (5.28), rounded to nominal; the
-    #                                 collar taken flush with the plate's
-    #                                 underside, so the hub stands 3.3 above
-    #                                 its top face
-    horn_hub_d: float = 6.9         # SG90 horn #3 drawing; spot-check
-    horn_arm_root: float = 5.0      # short arms where they meet the hub:
-    #                                 the owner's photo, MEASURE
-    horn_arm_tip: float = 3.8       # every arm at its round tip: the photo,
-    #                                 MEASURE; the long arms widen from it
-    #                                 toward the hub at their taper
-    head_d: float = 3.8             # the servo's M2 horn screw, its head on
-    head_h: float = 1.4             # the hub's top face: MEASURE
+    horn_hole_d: float = 1.3
+    horn_plate_t: float = 2.05      # the arm plate
+    horn_collar_h: float = 2.2      # the splined collar under the plate
+    horn_hub_above: float = 0.3     # the hub over the plate's top face,
+    #                                 around a 4.55 x 0.9 screw counterbore
+    horn_hub_d: float = 6.65        # hub and collar
+    head_d: float = 3.8             # the servo's horn screw head, in the
+    #                                 hub's counterbore: an M2 pan head;
+    #                                 MEASURE, an M2.5 head is 4.5 across
+    head_h: float = 1.1             # head top over the hub's top face: a
+    #                                 2.0 tall M2.5 pan head in the 0.9
+    #                                 counterbore; an M2 head sits 0.5 over
     # heights
     horn_above_base: float = 1.5    # owner's band: 1 to 2 mm
     shim_room: float = 0.5          # ledge cut this much low; card shims
@@ -108,21 +111,25 @@ class Spec:
     plate_rim: float = 1.2          # wall around the paper pocket
     # tag mount and load arm, the shared horn seat
     key_fit: float = FIT_TIGHT      # per side on the arms, presses over
-    key_depth: float = 1.5          # into the 2.0 plate: the skirt stays
+    key_depth: float = 1.5          # into the 2.05 plate: the skirt stays
     #                                 clear of the boss under the plate
     key_wall: float = 1.6
-    hub_clear: float = 0.4          # around and over the hub, so the arms
-    #                                 carry the seat
-    head_clear: float = 0.4         # around and over the center screw head
+    hub_clear: float = 0.4          # around the hub and the screw head, so
+    #                                 the arms carry the seat
+    head_clear: float = 1.0         # over the hub and the screw head: the
+    #                                 recess ceilings never bear, and 1.0
+    #                                 covers a hub 0.9 over the plate (the
+    #                                 owner's calipers) as well as the
+    #                                 model's 0.3
     plate_t: float = 7.0            # arm plate's top face to the tag plane
-    retain_d: float = 1.4           # optional retaining screw into a short
-    #                                 arm's 1.0 hole: M1.4 or 1.4 self-tapper
+    retain_d: float = 1.4           # optional retaining screw into a long
+    #                                 arm's 1.3 hole: M1.4 or 1.4 self-tapper
     retain_clear: float = 0.3       # per side: retains, never locates
     retain_head_d: float = 3.2      # drop-in room around a 2.6 pan head
     retain_floor: float = 2.0       # under the retaining screw heads
     retain_screws: bool = True
-    retain_holes: tuple = ((0, 8.5), (180, 8.0))   # (angle, radius): the
-    #                                 long arms' holes, opposite each other
+    retain_holes: tuple = ((0, 8.5), (180, 8.5))   # (angle, radius): the
+    #                                 long arms' third holes, opposite
     # lock: one ear, one M3 button head screw into one heat-set insert
     slot_deg: float = 3.0           # angular play of the slot each way
     ear_wall: float = 1.2           # around the head counterbore
@@ -142,7 +149,9 @@ class Spec:
     clip_overlap: float = 1.0       # lip over the paper's quiet border
     notch_clear: float = 0.5        # skirt notch past the ear or the beam
     # fit test print: three key pockets and a short servo pocket
-    fit_trials: tuple = (0.05, 0.15, 0.25)  # key fits to try, per side
+    fit_trials: tuple = (0.05, 0.15, 0.25, 0.35)  # key fits to try, per
+    #                                 side; 0.35 covers short arms 0.2 longer
+    #                                 than the model's, as the calipers read
     fit_floor: float = 1.5          # under the key pockets
     fit_margin: float = 2.5         # plate past the pockets and the labels
     fit_web: float = 3.0            # between neighboring pockets
@@ -273,35 +282,15 @@ class Spec:
 
     @property
     def hub_top(self):
-        return self.horn_top + self.horn_hub_h - self.horn_plate_t
+        return self.horn_top + self.horn_hub_above
 
     @property
     def head_top(self):
         return self.hub_top + self.head_h
 
-    def tip_x(self, arm):
-        """Axis to the center of an arm's round tip."""
-        return arm.reach - self.horn_arm_tip / 2
-
-    def slope(self, arm):
-        """Half width an arm gains per mm in from its tip."""
-        if arm.taper_deg is not None:
-            return math.tan(math.radians(arm.taper_deg / 2))
-        hub_r = self.horn_hub_d / 2
-        root_x = math.sqrt(hub_r ** 2 - (self.horn_arm_root / 2) ** 2)
-        return ((self.horn_arm_root - self.horn_arm_tip) / 2
-                / (self.tip_x(arm) - root_x))
-
-    def axis_half_w(self, arm):
-        """An arm's edges carried in to the axis, inside the hub."""
-        return self.horn_arm_tip / 2 + self.slope(arm) * self.tip_x(arm)
-
-    def root_w(self, arm):
-        """An arm's width where its edges meet the hub."""
-        k, h = self.slope(arm), self.axis_half_w(arm)
-        hub_r = self.horn_hub_d / 2
-        x = (h * k + math.sqrt(hub_r ** 2 * (1 + k * k) - h * h)) / (1 + k * k)
-        return 2 * (h - k * x)
+    @property
+    def collar_bottom(self):
+        return self.horn_top - self.horn_plate_t - self.horn_collar_h
 
     @property
     def horn_reach(self):
@@ -445,19 +434,20 @@ class Spec:
                              "the horn's top face")
         if self.horn_top - self.horn_plate_t - self.well_floor <= 0:
             raise ValueError("The horn well must clear the mount's skirt")
-        if self.horn_hub_h <= self.horn_plate_t:
-            raise ValueError("The hub must stand above the arm plate")
+        if self.horn_hub_above < 0 or self.horn_collar_h < 0:
+            raise ValueError("The hub and the collar stand off the plate")
+        if self.collar_bottom < self.case_top + self.case_boss_h:
+            raise ValueError("The horn's collar must clear the output boss")
         if not 0 < self.key_depth <= self.horn_plate_t:
             raise ValueError("The key must stay inside the arm plate")
-        if not self.horn_hole_d < self.horn_arm_tip <= self.horn_arm_root:
-            raise ValueError("The arms narrow toward the tips, past a hole")
-        if self.horn_arm_root >= self.horn_hub_d:
-            raise ValueError("The short arms must meet the hub")
         for arm in self.horn_arms:
             if max(arm.holes) + self.horn_hole_d / 2 >= arm.reach:
                 raise ValueError("Each arm's holes must sit on the arm")
-            if self.slope(arm) < 0:
-                raise ValueError("The arms narrow toward the tips")
+            if not self.horn_hole_d / 2 < arm.tip_r <= arm.axis_half_w:
+                raise ValueError("The arms narrow toward the tips, past a "
+                                 "hole")
+            if arm.axis_half_w > self.horn_hub_d / 2:
+                raise ValueError("Each arm must meet the hub")
         holes = {(arm.angle, r) for arm in self.horn_arms for r in arm.holes}
         if not set(self.retain_holes) <= holes:
             raise ValueError("Each retaining screw must go into a horn hole")
@@ -547,11 +537,10 @@ def cyl(x, y, z, d, h):
 
 
 def horn(s: Spec, grow=0.0):
-    """The horn's plan: the hub and four tapered arms with round tips."""
-    tip = s.horn_arm_tip / 2
+    """The horn's plan: the hub and four arms with round tips."""
     plan = Circle(s.horn_hub_d / 2)
     for arm in s.horn_arms:
-        x, root = s.tip_x(arm), s.axis_half_w(arm)
+        x, tip, root = arm.reach - arm.tip_r, arm.tip_r, arm.axis_half_w
         plan += Rot(0, 0, arm.angle) * (
             Polygon((0, -root), (x, -tip), (x, tip), (0, root), align=None)
             + Pos(x, 0) * Circle(tip))
@@ -571,8 +560,8 @@ def horn_seat(p: Part, s: Spec, top: float) -> Part:
     p -= Pos(0, 0, z - s.key_depth - EPS) * extrude(
         horn(s, s.key_fit), s.key_depth + EPS)
     p -= cyl(0, 0, z - EPS, s.horn_hub_d + 2 * s.hub_clear,
-             s.hub_top - z + s.hub_clear + EPS)
-    p -= cyl(0, 0, z - EPS, s.head_d + 2 * s.head_clear,
+             s.hub_top - z + s.head_clear + EPS)
+    p -= cyl(0, 0, z - EPS, s.head_d + 2 * s.hub_clear,
              s.head_top - z + s.head_clear + EPS)
     if s.retain_screws:
         for angle, r in s.retain_holes:
@@ -762,8 +751,8 @@ def build_servo(s: Spec = Spec()) -> Part:
     p += box(0, s.body_y, s.ledge_z + s.shim_room, s.ear_w, s.ear_span,
              s.ear_t)
     p += cyl(0, 0, s.case_top, s.case_boss_d, s.case_boss_h)
-    hub_z = s.case_top + s.case_boss_h
-    p += cyl(0, 0, hub_z, s.horn_hub_d, s.hub_top - hub_z)
+    p += cyl(0, 0, s.collar_bottom, s.horn_hub_d,
+             s.hub_top - s.collar_bottom)
     p += horn_plate(s)
     p += cyl(0, 0, s.hub_top, s.head_d, s.head_h)
     p.label = "servorig_servo"
