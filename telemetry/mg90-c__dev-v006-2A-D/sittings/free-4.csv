@@ -1,0 +1,24 @@
+t_host,event,detail
+1793667534.850,start,"motor mg90-c, board dev-v006-2A-D, state free"
+1793667545.247,prompt,"Motor leads on the board's motor connector, the bar OFF the pinion, the rotor free, no meter."
+1793667545.247,plan,ref (open)
+1793667547.269,dataset,ref-open: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/ref-open-4
+1793667556.651,dps,on at 5.25 V
+1793667560.592,rail,"5.0 V: reads 5.002 V, DPS 5.250 V"
+1793667783.568,plan,trough
+1793667783.569,dataset,trough: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/trough-4
+1793667787.512,rail,"7.4 V: reads 7.380 V, DPS 7.650 V"
+1793668718.740,rail,"5.0 V: reads 5.005 V, DPS 5.250 V"
+1793669632.887,rail,"3.7 V: reads 3.695 V, DPS 3.950 V"
+1793670594.388,plan,pulse-300
+1793670594.391,dataset,pulse-300: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/pulse-300-4
+1793670599.900,prompt,"This plan pulses 7.4 V at 100 % into the motor from rest, over its rated 5.0 V, and may change its brushes for good."
+1793670603.905,rail,"5.0 V: reads 4.979 V, DPS 5.250 V"
+1793670837.166,rail,"7.4 V: reads 7.389 V, DPS 7.650 V"
+1793670844.035,probe,20 ms pulse: coast EMF at the cut 4.01 V
+1793670844.035,pulse,"the shortest probe already passed the target, no block run"
+1793670844.035,plan,ref (close)
+1793670844.036,dataset,ref-close: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/ref-close-4
+1793670848.050,rail,"5.0 V: reads 5.003 V, DPS 5.250 V"
+1793671086.005,dps,off
+1793671086.005,end,

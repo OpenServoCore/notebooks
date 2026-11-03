@@ -81,11 +81,16 @@ sagging supply.
 
 ## How an experiment is laid out
 
-One folder with three files. A `capture.py` that drives the bench and
-writes a dataset under `telemetry/`, one notebook that reads the dataset and
-writes its result, and the `results.json` it wrote. A notebook with no
-capture of its own may keep a module beside it that only it imports. Each stage folder has a
-README listing its experiments and how they chain.
+One folder with three files. A capture that drives the bench and writes a
+dataset under `telemetry/`, one notebook that reads the dataset and writes
+its result, and the `results.json` it wrote. In stages 0 and 1 the capture
+is a `capture.py` run on its own. In stage 2 the bench holds one state for
+several experiments at once, so each declares its capture as plans in a
+`plan.py` and `python -m oscnb.sitting <state>` runs every plan of a state
+in one sitting, with a manifest of what ran under `telemetry/.../sittings/`;
+the teardown's hand routes keep a `capture.py`. A notebook with no capture
+of its own may keep a module beside it that only it imports. Each stage
+folder has a README listing its experiments and how they chain.
 
 Every notebook has the same sections, in the order a reader asks the
 questions. Purpose, why the number is needed and who uses it. Procedure, what

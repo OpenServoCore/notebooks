@@ -267,15 +267,22 @@ def signals(T, ftab, pre=200, rail_col="rail_v"):
     T["i_hat_0"] = T["i_crest"]
     for k in ("d", "0"):
         T[f"v_mean_{k}"] = T["share"] * T["v_on"] - (1 - T["share"]) * R_BRK * T[f"i_hat_{k}"] * 1e-3
+    T["dropouts"] = T[f"dropouts_{pre}"]
     return T
 
 
 # ---------------------------------------------------------------- V_b, the speed table by mechanical direction
 
-def vb_measured(T, ftab, r=R_LOCKED, pre=200):
-    """V_b per spin in mV, X = V_mean - E0 - R i_hat, i_hat the crest less Delta, V_mean by the share construction"""
+LOW_SPEED = 160.0       # rev/s; the rungs under it set the table's floor
+
+
+def vb_measured(T, ftab, r=R_LOCKED, pre=200, ke=KE, emf="tach"):
+    """X per spin in mV, X = V_mean - Ke w - R i_hat, i_hat the crest less Delta, V_mean by the share construction and
+    w the ripple tach. The EMF is the estimator's own Ke at the tach's speed, so whatever Ke does with speed lands in
+    X and the estimator inherits none of it; emf="e0" reads the coast's EMF at the cut instead"""
     T = signals(T, ftab, pre)
-    return (T["v_mean_d"] - T["e_cut"] - r * T["i_hat_d"] * 1e-3) * 1e3
+    e = T["e_cut"] if emf == "e0" else 2 * np.pi * ke * T["spin_rev_s"]
+    return (T["v_mean_d"] - e - np.asarray(r, float) * T["i_hat_d"] * 1e-3) * 1e3
 
 
 def rung_means(T, x, by=("level", "duty", "mech")):
@@ -283,10 +290,53 @@ def rung_means(T, x, by=("level", "duty", "mech")):
     return g.agg(rev_s=("rev_s", "mean"), x=("x", "mean"), sd=("x", "std"), n=("x", "size")).reset_index()
 
 
+def dropout_term(S, x):
+    """k_d, the part of X that follows the dropout rate, in mV per dropout/s, with its se and the fit's dof: least
+    squares over the spins of X = S(rung) + k_d x dropouts, one level per (level, duty) shared by both directions, so
+    k_d is read from the direction split at one speed and from the spin-to-spin spread inside a rung, never below 0"""
+    keys = pd.factorize(S[["level", "duty"]].apply(tuple, axis=1))[0]
+    d = S["dropouts"].to_numpy(float)
+    if not np.any(d > 0):
+        return 0.0, np.nan, 0
+    n, nk = len(S), int(keys.max()) + 1
+    A = np.zeros((n, nk + 1))
+    A[np.arange(n), keys] = 1.0
+    A[:, -1] = d
+    y = np.asarray(x, float)
+    beta, *_ = np.linalg.lstsq(A, y, rcond=None)
+    res = y - A @ beta
+    dof = n - (nk + 1)
+    cov = np.linalg.pinv(A.T @ A) * (res @ res / max(dof, 1))
+    return max(float(beta[-1]), 0.0), float(np.sqrt(cov[-1, -1])), int(dof)
+
+
+def vb_floor(rm, low=LOW_SPEED):
+    """the table's value at and below 150 rev/s from the rung means under `low`: their mean when the rails agree within
+    2 se, a term of speed the table carries; 0 when they split by rail, since a term that follows the rail is the
+    construction's and not the motor's. Returns (floor, the by-rail means, the split in se)"""
+    h = rm[rm["rev_s"] < low].copy()
+    if len(h) == 0:
+        return 0.0, {}, np.nan
+    if "n" not in h:
+        h["n"], h["sd"] = 1, 0.0                                         # bare rung means, one rail
+    if "level" not in h:
+        h["level"] = 0.0
+    by = {lv: (float(np.average(g["x"], weights=g["n"])), float(np.sqrt(np.nansum(g["sd"].to_numpy() ** 2 / g["n"].to_numpy())) / len(g)))
+          for lv, g in h.groupby("level")}
+    if len(by) < 2:
+        return next(iter(by.values()))[0], by, np.nan
+    (x1, s1), (x2, s2) = list(by.values())[:2]
+    se = np.hypot(s1, s2)
+    # one spin per rung has no se; then the rails split when they differ by more than half the larger of them
+    split = (abs(x1 - x2) / se > 2) if se > 0 else (abs(x1 - x2) > 0.5 * max(abs(x1), abs(x2)))
+    return (0.0 if split else float(np.average(h["x"], weights=h["n"]))), by, (float(abs(x1 - x2) / se) if se > 0 else np.nan)
+
+
 def fit_vb(rm, lo=200.0):
-    """per mechanical direction: the power law A (w/300)^n over rung means above lo, and the speed table (zero at and
-    below 150 rev/s, the rung means interpolated, extrapolated past the last rung by its last segment, never below 0)"""
-    out = {}
+    """per mechanical direction: the power law A (w/300)^n over rung means above lo, and the speed table (the floor at
+    and below 150 rev/s, the rung means interpolated, extrapolated past the last rung by its last segment, never below 0)"""
+    floor, by_rail, split = vb_floor(rm)
+    out = {"floor": floor, "floor_by_rail": by_rail, "floor_split_se": split}
     for m, h in rm.groupby("mech"):
         hh = h[(h["rev_s"] > lo) & (h["x"] > 0)].sort_values("rev_s")
         pl = bd.power_law(hh.rename(columns={"x": "x_b"})) if len(hh) >= 2 else dict(mv_300=np.nan, exponent=np.nan, exponent_se=np.nan)
@@ -297,16 +347,38 @@ def fit_vb(rm, lo=200.0):
             sl = (ys[-1] - ys[-2]) / (xs[-1] - xs[-2])
             beyond = VB_KNOTS > xs[-1]
             tab[beyond] = ys[-1] + sl * (VB_KNOTS[beyond] - xs[-1])
-        tab[VB_KNOTS <= 150] = 0.0
+        tab[VB_KNOTS <= 150] = floor
         tab = np.maximum(tab, 0.0)
         out[int(m)] = dict(power=(pl["mv_300"], pl["exponent"], pl.get("exponent_se", np.nan)), table=tab, n_rungs=len(hh),
                            top=float(xs[-1]) if len(xs) else np.nan)
     return out
 
 
-def vb_fit(T, ftab, r=R_LOCKED, pre=200):
-    """the V_b fit from spins T (mechanical direction tagged) with a given R and Delta table"""
-    return fit_vb(rung_means(T, vb_measured(T, ftab, r=r, pre=pre)))
+def vb_fit(T, ftab, r=R_LOCKED, pre=200, ke=KE, emf="tach", dropouts=True):
+    """the V_b fit from spins T (mechanical direction tagged) with a given R, Ke and Delta table: k_d from the spins,
+    then the speed tables and power laws from the rung means of what k_d leaves; dropouts=False holds k_d at 0, the
+    speed-only form"""
+    S = signals(T, ftab, pre)
+    x = vb_measured(T, ftab, r=r, pre=pre, ke=ke, emf=emf)
+    k_d, k_se, dof = dropout_term(S, x) if dropouts else (0.0, np.nan, 0)
+    fit = fit_vb(rung_means(T, x - k_d * S["dropouts"]))
+    fit.update(k_d=k_d, k_d_se=k_se, k_d_dof=dof)
+    return fit
+
+
+def vb_total(fit, mech, rev_s, dropouts, form="table"):
+    """V_b in mV: the speed part by mechanical direction plus k_d times the dropout rate"""
+    return vb_eval(fit, mech, rev_s, form) + fit.get("k_d", 0.0) * np.asarray(dropouts, float)
+
+
+def dropout_separation(T):
+    """whether the dropout threshold sits in a gap on this motor: the rows of every spin's 200 ms window by their crest
+    over the window mean, in the bands bd.ROW_BANDS names. Clear dropouts sit under 0.10, ordinary troughs over 0.40,
+    and the two bands around the threshold are the ambiguous rows; their share of the rows under 0.40 is the figure"""
+    s = {name: int(T[name].sum()) for name, _, _ in bd.ROW_BANDS}
+    near = s["rows_0p10_to_thr"] + s["rows_thr_to_0p40"]
+    low = s["rows_under_0p10"] + near
+    return dict(s, threshold=tel.DROPOUT_FRAC, ambiguous_share=(near / low if low else np.nan))
 
 
 def vb_eval(fit, mech, rev_s, form="table"):

@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-b__dev-v006-2A-D",
-  "notes": "identification reads stage 2's mg90-b captures as a servo's board alone could and grades each route against stage 2's bench references; it scores no speed. Each route key is a quantity, value and bounds, with reference, error_pct (or error_ma), spread and cost beside it. r_one_seat_ohm, r_two_seats_ohm, r_three_seats_ohm: rest-resistance's stall pass, a seat's R the mean of its two graded 100 % laps (3.7 and 4.2 V, direction +1, the line through V/I back to the lap's start), every combination of k of the 12 holes; value the median, bounds the lowest and highest; reference the 12-hole mean; error_pct sd over the combinations with the extremes as bounds; error_angle_part_pct the same with rest-resistance's one-body heat taken out; spread_pct the laps' own scatter about a hole's mean. r_board_ntc_move_pct: copper's 0.39 %/C times the board NTC (nominal beta, at each folder's rest baseline) less T_ref, the board at the stall pass's graded laps, over capture-1, speed-torque and swapped-1's folders; self_heat_bound_pct the winding's rise bounded by rest-resistance's warming_pct_per_j for a spin's own joules and its one-body map (0.716 %/J held, tau 90 s) for heat carried. r_reference_rung: capture-1's 5 V 15 % running R at the cut, (V_mean - E0)/i_hat, the per-spin sd with direction means out, the spins per check for 0.5 % on a change, and the trend over the sitting. ke_v_s_per_rad: one repeat's 20 coasts (e_win over the ripple count), the three repeats as the value and bounds; error_pct held out on the other two repeats. l_mh, l_ripple_mh: inductance's capture-1 bursts at one seat, 4 bursts at 25 % forward with the group's first thrown out, the 12 holes as value and bounds; error_pct against the 12-hole median of the same design. c_a_s_per_v: c = i100 / (Ke (alpha_drive + alpha_coast)) from one speed-torque run-up per direction, the three passes, by the coast's 5 ms windows and its pinned read. delta_f_ma_per_v: the reading term per volt by the 100 % anchor, crest less anchor over 50 ms windows of one capture-1 repeat with that pass's c, the three passes; error_ma the mean over capture-1's rungs at their own v_on against the published no-meter grid. v_b_mv: the speed table by mechanical direction from one repeat of 7.4 V 30/40/60 % both ways, 50 ms windows, reference R, Ke and Delta; value the median over the three passes, bounds the range; reference the full-data table (all repeats, 200 ms). Costs by the board's rough speed, (D v_on - R i)/Ke, a short spin the spin-up to 95 % of speed, the window and 15 ms of coast; the anchor run-up's revs by speed-torque's turn-window tach.",
+  "notes": "identification reads stage 2's mg90-b captures as a servo's board alone could and grades each route against stage 2's bench references; it scores no speed. Each route key is a quantity, value and bounds, with reference, error_pct (or error_ma), spread and cost beside it. r_one_seat_ohm, r_two_seats_ohm, r_three_seats_ohm: rest-resistance's stall pass, a seat's R the mean of its two graded 100 % laps (3.7 and 4.2 V, direction +1, the line through V/I back to the lap's start), every combination of k of the 12 holes; value the median, bounds the lowest and highest; reference the 12-hole mean; error_pct sd over the combinations with the extremes as bounds; error_angle_part_pct the same with rest-resistance's one-body heat taken out; spread_pct the laps' own scatter about a hole's mean. r_board_ntc_move_pct: copper's 0.39 %/C times the board NTC (nominal beta, at each folder's rest baseline) less T_ref, the board at the stall pass's graded laps, over capture-1, speed-torque and swapped-1's folders; self_heat_bound_pct the winding's rise bounded by rest-resistance's warming_pct_per_j for a spin's own joules and its one-body map (0.716 %/J held, tau 90 s) for heat carried. r_reference_rung: capture-1's 5 V 15 % running R at the cut, (V_mean - E0)/i_hat, the per-spin sd with direction means out, the spins per check for 0.5 % on a change, and the trend over the sitting. ke_v_s_per_rad: one repeat's 20 coasts (e_win over the ripple count), the three repeats as the value and bounds; error_pct held out on the other two repeats. l_mh, l_ripple_mh: inductance's capture-1 bursts at one seat, 4 bursts at 25 % forward with the group's first thrown out, the 12 holes as value and bounds; error_pct against the 12-hole median of the same design. c_a_s_per_v: c = i100 / (Ke (alpha_drive + alpha_coast)) from one speed-torque run-up per direction, the three passes, by the coast's 5 ms windows and its pinned read. delta_f_ma_per_v: the reading term per volt by the 100 % anchor, crest less anchor over 50 ms windows of one capture-1 repeat with that pass's c, the three passes; error_ma the mean over capture-1's rungs at their own v_on against the published no-meter grid. v_b_mv: the speed table by mechanical direction from one repeat of 7.4 V 30/40/60 % both ways, 50 ms windows, reference R, Ke and Delta; value the median over the three passes, bounds the range; reference the full-data table (all repeats, 200 ms). X = V_mean - Ke w_tach - R i_hat is split as a speed table plus k_d_mv_per_dropout_s times the dropout rate (rows of the window under dropout_threshold of its mean, per second); the table is the speed part; floor_mv is the table at and below 150 rev/s, the low rungs' mean unless the rails split (floor_by_rail_mv), then 0; dropout_ambiguous_share is the share of the rows under 0.40 of the mean that sit within 0.10 to 0.40, the threshold's gap. Costs by the board's rough speed, (D v_on - R i)/Ke, a short spin the spin-up to 95 % of speed, the window and 15 ms of coast; the anchor run-up's revs by speed-torque's turn-window tach.",
   "servo_travel_motor_revs": {
     "value": 157.44948148148148,
     "lo": null,
@@ -328,8 +328,8 @@
     },
     "trend_pct_per_min": {
       "value": -0.9640292663853788,
-      "lo": -1.3882332486425002,
-      "hi": -0.5398252841282574,
+      "lo": -1.4538578330802994,
+      "hi": -0.47420069969045825,
       "unit": "%/min"
     },
     "ntc_predicts_pct": {
@@ -662,63 +662,63 @@
           "unit": "mV"
         },
         "200 rev/s": {
-          "value": 18.970906301555956,
-          "lo": 18.202174452693065,
-          "hi": 19.862642870357938,
+          "value": 12.486555916280617,
+          "lo": 12.211069438909538,
+          "hi": 16.87444061054766,
           "unit": "mV"
         },
         "250 rev/s": {
-          "value": 30.234311605265233,
-          "lo": 30.142225029188477,
-          "hi": 31.43596906778739,
+          "value": 13.520688122829176,
+          "lo": 13.054860374620537,
+          "hi": 22.400614917096206,
           "unit": "mV"
         },
         "300 rev/s": {
-          "value": 84.46342860532377,
-          "lo": 77.38436002984066,
-          "hi": 87.85103498477147,
+          "value": 19.474270515671734,
+          "lo": 0.0,
+          "hi": 67.50457941028438,
           "unit": "mV"
         },
         "350 rev/s": {
-          "value": 149.12015855072366,
-          "lo": 140.86953726141323,
-          "hi": 162.30279472896868,
+          "value": 25.76321925787843,
+          "lo": 0.0,
+          "hi": 81.76620000821593,
           "unit": "mV"
         },
         "400 rev/s": {
-          "value": 219.87234173649614,
-          "lo": 217.09494587933554,
-          "hi": 250.3267300812313,
+          "value": 32.31372975087245,
+          "lo": 16.57172451485811,
+          "hi": 77.8383198182544,
           "unit": "mV"
         },
         "450 rev/s": {
-          "value": 293.3203544972578,
-          "lo": 290.6245249222686,
-          "hi": 338.3506654334939,
+          "value": 38.86424024386646,
+          "lo": 34.543174853178165,
+          "hi": 73.91043962829289,
           "unit": "mV"
         },
         "500 rev/s": {
-          "value": 369.54576311518014,
-          "lo": 361.3767081080411,
-          "hi": 426.37460078575646,
+          "value": 52.51462519149821,
+          "lo": 45.414750736860476,
+          "hi": 69.98255943833136,
           "unit": "mV"
         },
         "550 rev/s": {
-          "value": 445.77117173310245,
-          "lo": 432.1288912938136,
-          "hi": 514.3985361380192,
+          "value": 66.05467924836985,
+          "lo": 51.96526122985449,
+          "hi": 70.48607552981827,
           "unit": "mV"
         },
         "600 rev/s": {
-          "value": 521.9965803510247,
-          "lo": 502.881074479586,
-          "hi": 602.4224714902816,
+          "value": 62.12679905840833,
+          "lo": 58.515771722848505,
+          "hi": 88.45752586813832,
           "unit": "mV"
         },
         "650 rev/s": {
-          "value": 598.221988968947,
-          "lo": 573.6332576653585,
-          "hi": 690.4464068425443,
+          "value": 65.06628221584252,
+          "lo": 58.19891886844681,
+          "hi": 106.42897620645837,
           "unit": "mV"
         }
       },
@@ -730,63 +730,63 @@
           "unit": "mV"
         },
         "200 rev/s": {
-          "value": 8.074008635138297,
+          "value": 4.40832055405016,
           "lo": 0.0,
-          "hi": 12.406110701728146,
+          "hi": 15.129822187573527,
           "unit": "mV"
         },
         "250 rev/s": {
-          "value": 11.046847059374974,
-          "lo": 2.4871755608431747,
-          "hi": 15.27495061248318,
+          "value": 5.805493658517487,
+          "lo": 0.0,
+          "hi": 16.41693712415323,
           "unit": "mV"
         },
         "300 rev/s": {
-          "value": 25.068919439877213,
-          "lo": 24.81468914161645,
-          "hi": 27.898832686402642,
+          "value": 12.395580169513197,
+          "lo": 10.952644067641224,
+          "hi": 22.080685426750623,
           "unit": "mV"
         },
         "350 rev/s": {
-          "value": 53.1491371851874,
-          "lo": 48.079767790683064,
-          "hi": 57.29133171707382,
+          "value": 20.922128663846134,
+          "lo": 16.70587263984267,
+          "hi": 32.045102381650366,
           "unit": "mV"
         },
         "400 rev/s": {
-          "value": 90.11069510712323,
-          "lo": 79.26667716107346,
-          "hi": 116.63310203464145,
+          "value": 28.34412467808255,
+          "lo": 17.61916531796711,
+          "hi": 48.27294614117116,
           "unit": "mV"
         },
         "450 rev/s": {
-          "value": 127.07225302905908,
-          "lo": 110.45358653146386,
-          "hi": 175.97487235220908,
+          "value": 35.76612069231897,
+          "lo": 18.532457996091548,
+          "hi": 64.50078990069196,
           "unit": "mV"
         },
         "500 rev/s": {
-          "value": 164.0338109509949,
-          "lo": 141.64049590185425,
-          "hi": 235.3166426697767,
+          "value": 43.188116706555384,
+          "lo": 19.445750674215986,
+          "hi": 80.72863366021275,
           "unit": "mV"
         },
         "550 rev/s": {
-          "value": 200.99536887293073,
-          "lo": 172.82740527224465,
-          "hi": 294.6584129873444,
+          "value": 50.6101127207918,
+          "lo": 20.359043352340425,
+          "hi": 96.95647741973355,
           "unit": "mV"
         },
         "600 rev/s": {
-          "value": 237.95692679486658,
-          "lo": 204.01431464263504,
-          "hi": 354.00018330491196,
+          "value": 58.03210873502822,
+          "lo": 21.272336030464864,
+          "hi": 113.18432117925434,
           "unit": "mV"
         },
         "650 rev/s": {
-          "value": 274.9184847168024,
-          "lo": 235.20122401302544,
-          "hi": 413.34195362247965,
+          "value": 65.45410474926463,
+          "lo": 22.185628708589302,
+          "hi": 129.41216493877513,
           "unit": "mV"
         }
       }
@@ -800,61 +800,61 @@
           "unit": "mV"
         },
         "200 rev/s": {
-          "value": 13.256741122184122,
+          "value": 18.4965702702871,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "250 rev/s": {
-          "value": 31.299840863930008,
+          "value": 17.02221977788418,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "300 rev/s": {
-          "value": 82.37049518123449,
+          "value": 26.670125983186125,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "350 rev/s": {
-          "value": 156.70751103828806,
+          "value": 52.78493445704146,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "400 rev/s": {
-          "value": 233.08078818648372,
+          "value": 57.53624600946169,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "450 rev/s": {
-          "value": 309.45406533467934,
+          "value": 62.287557561881925,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "500 rev/s": {
-          "value": 385.827342482875,
+          "value": 67.03886911430216,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "550 rev/s": {
-          "value": 462.20061963107065,
+          "value": 71.79018066672239,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "600 rev/s": {
-          "value": 538.5738967792663,
+          "value": 76.54149221914263,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "650 rev/s": {
-          "value": 614.947173927462,
+          "value": 81.29280377156286,
           "lo": null,
           "hi": null,
           "unit": "mV"
@@ -868,76 +868,120 @@
           "unit": "mV"
         },
         "200 rev/s": {
-          "value": 9.88755458749974,
+          "value": 10.712111869408263,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "250 rev/s": {
-          "value": 8.615021490412259,
+          "value": 6.124719181266899,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "300 rev/s": {
-          "value": 26.6667155342692,
+          "value": 15.873188171368888,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "350 rev/s": {
-          "value": 62.832922335654196,
+          "value": 47.69189453956364,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "400 rev/s": {
-          "value": 101.62276444726541,
+          "value": 50.83218202855056,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "450 rev/s": {
-          "value": 140.4126065588766,
+          "value": 53.97246951753748,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "500 rev/s": {
-          "value": 179.20244867048783,
+          "value": 57.112757006524404,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "550 rev/s": {
-          "value": 217.99229078209902,
+          "value": 60.253044495511325,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "600 rev/s": {
-          "value": 256.78213289371024,
+          "value": 63.393331984498246,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "650 rev/s": {
-          "value": 295.5719750053214,
+          "value": 66.53361947348517,
           "lo": null,
           "hi": null,
           "unit": "mV"
         }
       }
     },
+    "k_d_mv_per_dropout_s": {
+      "value": 0.5050839300794792,
+      "lo": 0.4158822628645993,
+      "hi": 0.8043298137402424,
+      "unit": "mV s",
+      "reference": {
+        "value": 0.5242052981467467,
+        "lo": 0.49806684340791635,
+        "hi": 0.5503437528855769,
+        "unit": "mV s"
+      }
+    },
+    "floor_mv": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "floor_by_rail_mv": {
+      "5 V": {
+        "value": -4.216525919904135,
+        "lo": -4.843981187003595,
+        "hi": -3.589070652804675,
+        "unit": "mV"
+      },
+      "7.4 V": {
+        "value": -22.231380848214112,
+        "lo": -22.853954089743734,
+        "hi": -21.60880760668449,
+        "unit": "mV"
+      }
+    },
+    "dropout_threshold": {
+      "value": 0.25,
+      "lo": null,
+      "hi": null,
+      "unit": ""
+    },
+    "dropout_ambiguous_share": {
+      "value": 0.3522727272727273,
+      "lo": null,
+      "hi": null,
+      "unit": ""
+    },
     "error_rms_200_500_mv": {
       "+1": {
-        "value": 13.17244876047936,
+        "value": 21.140160317129506,
         "lo": null,
         "hi": null,
         "unit": "mV"
       },
       "-1": {
-        "value": 20.96973764417844,
+        "value": 16.579561916909928,
         "lo": null,
         "hi": null,
         "unit": "mV"
@@ -952,61 +996,61 @@
           "unit": "mV"
         },
         "200 rev/s": {
-          "value": 3.255153812175014,
+          "value": 1.6727617373723025,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "250 rev/s": {
-          "value": 1.466418353350529,
+          "value": 3.9605019541616495,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "300 rev/s": {
-          "value": 5.672939164601455,
+          "value": 18.290534012010994,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "350 rev/s": {
-          "value": 19.99759196447883,
+          "value": 8.186751428006458,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "400 rev/s": {
-          "value": 22.369397789741328,
+          "value": 4.550354454671783,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "450 rev/s": {
-          "value": 28.877777253931562,
+          "value": 14.01508140668364,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "500 rev/s": {
-          "value": 37.423413384321265,
+          "value": 24.375669066969635,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "550 rev/s": {
-          "value": 46.90573001344305,
+          "value": 34.84189909494751,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "600 rev/s": {
-          "value": 56.85800678363894,
+          "value": 45.34067243740679,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "650 rev/s": {
-          "value": 67.07136610563978,
+          "value": 55.85364066973225,
           "lo": null,
           "hi": null,
           "unit": "mV"
@@ -1020,61 +1064,61 @@
           "unit": "mV"
         },
         "200 rev/s": {
-          "value": 3.6289697521415336,
+          "value": 4.016148440161742,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "250 rev/s": {
-          "value": 6.101202756887049,
+          "value": 6.64386831628308,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "300 rev/s": {
-          "value": 0.8696474790859019,
+          "value": 4.899228279436844,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "350 rev/s": {
-          "value": 6.22147814948613,
+          "value": 4.876314464629901,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "400 rev/s": {
-          "value": 19.768237957835247,
+          "value": 5.288564684287524,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "450 rev/s": {
-          "value": 33.39390301202175,
+          "value": 6.6895296398205675,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "500 rev/s": {
-          "value": 47.0299412036703,
+          "value": 8.609361991715353,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "550 rev/s": {
-          "value": 60.66935854029371,
+          "value": 10.774174572882986,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "600 rev/s": {
-          "value": 74.31029435136416,
+          "value": 13.062732419740284,
           "lo": null,
           "hi": null,
           "unit": "mV"
         },
         "650 rev/s": {
-          "value": 87.95204211561955,
+          "value": 15.420036820083144,
           "lo": null,
           "hi": null,
           "unit": "mV"

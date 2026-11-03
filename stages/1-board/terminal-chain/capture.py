@@ -40,7 +40,7 @@ if node == "vdd":
     capture.prompt("Bare load on the motor terminals, no meter.")
     bench.power_up(LEVELS[0] + bench.DIODE_V)
     with open(out / "levels.csv", "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["k", "load", "volts_set", "dps_read", "vsys_read", "t_start", "t_end", "folder"])
         for k, v in enumerate(LEVELS):
             dps_read, vsys = bench.set_vsys(v)
@@ -56,7 +56,7 @@ elif node == "rail-fine":
     points = [round(lo + k * FINE_STEP_V, 3) for k in range(int(round((hi - lo) / FINE_STEP_V)) + 1)]
     bench.power_up(points[0] + bench.DIODE_V)
     with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect="DC V"), open(out / "levels.csv", "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["k", "load", "volts_set", "dps_read", "t_set", "t_start", "t_end", "folder"])
         for k, v in enumerate(points):
             t_set = time.time()

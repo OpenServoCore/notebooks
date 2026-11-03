@@ -917,16 +917,17 @@ def share(duty):
     return (2 * duty / 100 * ARR - SLOW_ON + SLOW_OFF) / P
 
 
-def steady(p, duty, v_on, target_ma, r_on=0.5, r_brk=None, sign=1, per=50, last=16):
-    """slow decay to steady state at `duty` %, an EMF solved by a secant so the period mean of the series current
-    equals target_ma; returns the crest sample (the shunt through the amplifier at the board's crest instant)
-    less that mean, the mean, the EMF, and the window line's ON and OFF values as bemf-coast reads them"""
+def steady(p, duty, v_on, target_ma, r_on=0.5, r_brk=None, sign=1, per=50, last=16, on_lag=SLOW_ON, off_lag=SLOW_OFF):
+    """slow decay to steady state at `duty` %, an EMF solved by a secant so the mean of the series current over the
+    last `last` periods and a half equals target_ma; returns the crest sample (the shunt through the amplifier at the
+    board's crest instant) less that mean, the mean, its mean over the whole periods inside it, the EMF, and the
+    window line's ON and OFF values as bemf-coast reads them"""
     r_brk = BSR["low_side_loop_ohm"]["value"] if r_brk is None else r_brk
     q15 = int(round(duty / 100 * 32768))
     half = int(BOARD.drive_ticks(q15))
-    fold = dict(decay="slow", half=half, on_lag=SLOW_ON, off_lag=SLOW_OFF, v_on=v_on + r_on * target_ma * 1e-3,
+    fold = dict(decay="slow", half=half, on_lag=on_lag, off_lag=off_lag, v_on=v_on + r_on * target_ma * 1e-3,
                 r_on=r_on, v_brk=0.0, r_brk=r_brk, sign=sign)
-    modes, t0 = schedule("slow", half, SLOW_ON, SLOW_OFF, per)
+    modes, t0 = schedule("slow", half, on_lag, off_lag, per)
     tt = np.arange(len(modes)) + t0
     lastm = tt >= (per - last) * P - P // 2
 
@@ -950,17 +951,18 @@ def steady(p, duty, v_on, target_ma, r_on=0.5, r_brk=None, sign=1, per=50, last=
     ks = np.arange(per - last, per)
     crest = np.array([sh[np.searchsorted(tt, k * P + CREST_AT)] for k in ks])
     ph = ((tt + P // 2) % P) - P // 2
-    on, off = -half + SLOW_ON, half + SLOW_OFF
+    tr = np.flatnonzero(ph[lastm] == -P // 2)                          # the troughs inside the mask, trough to trough
+    on, off = -half + on_lag, half + off_lag
     w = lastm & (ph > on + 75) & (ph < off - 20)
     c = np.polyfit(ph[w], sh[w], 1)
-    return dict(crest_less_mean=float(crest.mean() - mean), mean=float(mean), emf=float(e1),
-                on_edge=float(np.polyval(c, on)), off_edge=float(np.polyval(c, off)), slope_ma_us=float(c[0] * TPU),
+    return dict(crest_less_mean=float(crest.mean() - mean), mean=float(mean), mean_whole=float(ser[lastm][tr[0]:tr[-1]].mean()),
+                emf=float(e1), on_edge=float(np.polyval(c, on)), off_edge=float(np.polyval(c, off)), slope_ma_us=float(c[0] * TPU),
                 ripple_pp=float(ser[lastm].max() - ser[lastm].min()), sh=sh[lastm], ser=ser[lastm], ph=ph[lastm])
 
 
-def steady_both(p, duty, v_on, target_ma):
+def steady_both(p, duty, v_on, target_ma, **kw):
     """steady() for both drive signs, the mean of their scalar outputs"""
-    res = [steady(p, duty, v_on, target_ma, sign=s) for s in (1, -1)]
+    res = [steady(p, duty, v_on, target_ma, sign=s, **kw) for s in (1, -1)]
     return {k: float(np.mean([r[k] for r in res])) for k in res[0] if not hasattr(res[0][k], "shape")}
 
 

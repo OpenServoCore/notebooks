@@ -26,7 +26,7 @@ PLATEAUS = ["room", "warm", "hot", "room again"]
 
 def poll(path, stop):
     with open(path, "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["t_host", "ntc_raw"])
         while not stop.is_set():
             w.writerow([f"{time.time():.3f}", osc.get("ntc_raw")])

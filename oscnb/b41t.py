@@ -277,7 +277,7 @@ class Logger:
     def __enter__(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._f = open(self.path, "w", newline="")
-        self._w = csv.writer(self._f)
+        self._w = csv.writer(self._f, lineterminator="\n")
         self._w.writerow(["t_host", "function", "value", "raw"])
         self._f.flush()
         if self._own:

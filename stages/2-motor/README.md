@@ -50,8 +50,8 @@ the lead zero and then the motor's leads at their free ends at each of the
 twelve holes, 40 s a hole. The meter's milliamp leaves the copper at room, so the can's
 temperature is the copper's.
 
-Run: `uv run python stages/2-motor/rest-resistance/capture.py`, and
-`capture.py ohms` before the teardown, then the notebook.
+Run: the `capture` plan of `uv run python -m oscnb.sitting locked`, and
+`stages/2-motor/rest-resistance/capture.py ohms` before the teardown, then the notebook.
 
 ## [inductance](inductance/inductance.ipynb)
 
@@ -77,9 +77,9 @@ after a reversal from 10, 25 or 40 %, rising then falling, and a fourth,
 `fast`, runs the four main groups in fast decay and then two slow groups at
 the same seat.
 
-Run: `uv run python stages/2-motor/inductance/capture.py`, then
-`capture.py reversal`, `capture.py steps` and `capture.py fast` after it
-with the bar left at hole 11, then the notebook.
+Run: the `capture` plan of `uv run python -m oscnb.sitting locked`, with
+`--include fast` for the fast-decay groups at the last hole, then the
+notebook. The reversal and step-size runs were the first motor's alone.
 
 ## [bemf-coast](bemf-coast/bemf-coast.ipynb)
 
@@ -109,9 +109,9 @@ the current inside the PWM period. Under fast decay the rotor stays still
 at 5.0 V 30 % and 7.4 V 20 %, below fast decay's onset, and turns only at
 7.4 V 40 %.
 
-Run: `uv run python stages/2-motor/bemf-coast/capture.py`, then
-`capture.py meter`, `capture.py high`, `capture.py swapped` and `capture.py spinning`, then the
-notebook.
+Run: `uv run python -m oscnb.sitting free` for the reference, the ladder
+and the slow rungs, `python -m oscnb.sitting meter` for the meter runs,
+`--include swapped` or `spinning` for those, then the notebook.
 
 ## [no-load-current](no-load-current/no-load-current.ipynb)
 
@@ -153,7 +153,7 @@ The bemf-coast spins at partial duty are left out, since there the current
 switches and the curve is another one. The spin is short because a free
 motor at 100 % runs at its top speed, which wears the brushes.
 
-Run: `uv run python stages/2-motor/speed-torque/capture.py`; the notebook
+Run: the `capture` plan of `uv run python -m oscnb.sitting free`; the notebook
 comes after rest-resistance and inductance, its last inputs.
 
 ## [teardown](teardown/teardown.ipynb)
@@ -272,17 +272,25 @@ makes it slide with the fit's length. The window offset at the ON edge is
 mostly a loss at the edge, about 12 mA at 4.95 V, and the rest is the
 ramp's shape. On the free motor the crest sample reads a loss in the window
 that a meter averages away, falling with one less the duty to zero at
-100 %, about 19 mA over the mean at 5.0 V and 29 mA at 7.4 V up to 30 %,
-high confidence. Whether that loss sits across the inductance or in the
-rung is moderate at most, and the spinning motor needs a third or more loss
-than the locked one, for a reason these data leave open. The 20 mA
-speed-torque found at 100 % is drag, high confidence. On the turning motor
-the terminal volts carry a brush drop beyond R i and the EMF, a voltage set
-by the speed and the direction and not by the current, within a few
-millivolts below 160 rev/s, about 45 mV at 300 rev/s and 0.37 V at 550
-rev/s, high confidence that it is in the motor and does not scale with the
-current. Below 160 rev/s the running resistance is the resistance at rest
-within 3 to 4 %.
+100 %, high confidence, about 19 mA over the mean at 5.0 V and 29 mA at
+7.4 V up to 30 % by the board's current zero, and about 25 to 26.5 mA at
+7.4 V by the zero a driven bridge sits on, which the current dropouts read
+as the open bridge's. Whether that loss sits across the inductance or in
+the rung is moderate at most. By the board's zero the spinning motor needs
+about a third more loss than the locked one, and by the driven zero its
+meter points need none and all its points 12 % more, so the gap is mostly
+the zero, high confidence at 7.4 V and moderate at 5 V, and a DMM in series
+at 7.4 V confirms it. The 20 mA speed-torque found at 100 %
+is not a window current, high confidence, and a drag of the run-up's first
+few hundred milliseconds rather than of the settled drive, moderate
+confidence. On the turning motor the terminal volts carry a
+brush drop beyond R i and the EMF, a voltage set by the speed and the
+direction, within about 10 mV of zero below 160 rev/s at 5 V beside a 10
+to 25 mV rail term of the construction at 7.4 V, about 45 mV at 300 rev/s
+and 0.37 V at 550 rev/s. High confidence that it is in the motor, moderate
+that it does not scale with the current, since a part of up to about 0.3
+ohm that does is not excluded. Below 160 rev/s the running resistance is
+the resistance at rest within 3 to 4 %.
 
 Needs: no bench. The teardown's levels and coil runs and hand readings,
 inductance's fast-1, capture-1 and reversal-1 at hole 11, bridge-states'
@@ -318,9 +326,10 @@ routes are $R$ from one, two and three locked seats, $R$ against the board
 NTC with the winding's self-heat bounded and a low-speed reference rung as
 a relative thermometer, $K_e$ from the coasts of one repeat, $L$ from a few
 bursts at one seat, the reading term $\Delta$ and $c = J/(K_t K_e)$ from the
-100 % anchor, and the brush drop's two speed tables by mechanical direction
-from three rungs. It scores no speed. The compensation notebook takes these
-constants into the estimator.
+100 % anchor, and $V_b$ from three rungs, read as a coefficient on the rate at
+which the motor's current drops out, the board's own count, and a speed table
+by mechanical direction beside it. It scores no speed. The compensation
+notebook takes these constants into the estimator.
 
 Needs: no bench. rest-resistance's stall pass and inductance's capture-1
 through their own cells, bemf-coast's capture-1, meter-1, high-1 and
@@ -344,16 +353,17 @@ reductions run on every core.
 ## [compensation](compensation/compensation.ipynb)
 
 Targets: how accurate a back-EMF speed estimate from the board's own signals
-is against the ripple tach, with the reading term $\Delta$ and the brush drop
-$V_b$ compensated. The signals are the duty, the terminal volts over the
-window, the crest current sample and the rail. It is asked twice, with this stage's
-reference constants and with the constants identification recovered
-board-only, and the gap between the two is the price of identifying without a
-meter. Beside it, the reading term's table per volt and whether it holds
-across rails, the brush drop as a speed table against a power law, whether it
-follows the motor's rotation or the board's drive sign, how it moved between
-two sittings, the estimate's error budget by speed band, and how few rungs an
-ident needs for $V_b$.
+is against the ripple tach, with the reading term $\Delta$ and $V_b$
+compensated. The signals are the duty, the terminal volts over the window, the
+crest current sample, the rail and the dropout rate. It is asked twice, with
+this stage's reference constants and with the constants identification
+recovered board-only, and the gap between the two is the price of identifying
+without a meter. Beside it, the reading term's table per volt and whether it
+holds across rails, $V_b$ in three forms, a power law, a speed table, and the
+speed table with a coefficient on the dropout rate, whether its direction
+split is the rotation or the dropouts, how it moved between two sittings, the
+rail term the construction leaves under 160 rev/s, the estimate's error budget
+by speed band, and how few rungs an ident needs for $V_b$.
 
 Needs: no bench. bemf-coast's capture-1, swapped-1, meter-1 and high-1,
 speed-torque's run-ups through its own cells, and for the identified constants
@@ -362,13 +372,15 @@ cells. The stage 1 current-scale, terminal-chain, sample-timing, bridge-states
 and ntc-curve results, and the rest-resistance, inductance, bemf-coast,
 speed-torque, motor-model and identification results.
 
-How: the estimate is solved by fixed point per spin over the last 200 ms
-before the cut, four ways, with neither term, either one alone and both.
-capture-1 is scored by the fold that left its repeat out of $V_b$, with
-$\Delta$ at a $G$ fitted on the meter runs alone, and swapped-1 and
-speed-torque's one-turn windows were never in a fit. The same estimate then
-runs on identification's 36 board-only passes, and on each identified
-constant alone in the reference set, to split the price by constant.
+How: the estimate is the root of the motor's equation per spin over the last
+200 ms before the cut, by bisection, four ways, with neither term, either one
+alone and both, and $V_b$ fitted against the ripple tach so the estimator
+inherits nothing of $K_e$'s speed trend. capture-1 is scored by the fold that
+left its repeat out of $V_b$, with $\Delta$ at a $G$ fitted on the meter runs
+alone, and swapped-1 and speed-torque's one-turn windows were never in a fit.
+The same estimate then runs on identification's 36 board-only passes, and on
+each identified constant alone in the reference set, to split the price by
+constant.
 
 Run: no capture of its own. `compensation.py` beside the notebook holds the
 estimator and its scoring on top of identification's module, and the grid's

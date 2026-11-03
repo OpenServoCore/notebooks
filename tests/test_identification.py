@@ -88,10 +88,39 @@ def test_vb_eval_power_law():
 
 
 def test_signals_at_full_duty_drive_the_whole_period_and_read_no_delta():
-    T = pd.DataFrame(dict(v_on_200=[4.8], i_crest_200=[120.0], rail_v=[5.0], duty_applied_pct=[100.0], half_ticks=[idn.mm.ARR]))
+    T = pd.DataFrame(dict(v_on_200=[4.8], i_crest_200=[120.0], dropouts_200=[0.0], rail_v=[5.0], duty_applied_pct=[100.0], half_ticks=[idn.mm.ARR]))
     S = idn.signals(T, idn.f_table_published())
     assert S["share"].iloc[0] == 1.0 and S["delta_ma"].iloc[0] == 0.0
     assert S["v_mean_d"].iloc[0] == pytest.approx(4.8) and S["i_hat_d"].iloc[0] == pytest.approx(120.0)
+    assert S["dropouts"].iloc[0] == 0.0
+
+
+def test_dropout_term_reads_k_d_from_the_direction_split_and_leaves_the_speed_part():
+    # two rungs, both directions, one direction dropping out: X = S(rung) + k_d x dropouts exactly
+    k_d, S1, S2 = 0.6, 40.0, 75.0
+    S = pd.DataFrame(dict(level=[7.4] * 6 + [5.0] * 6, duty=[40] * 6 + [60] * 6, mech=[1, 1, 1, -1, -1, -1] * 2,
+                          dropouts=[100.0, 140.0, 120.0, 0.0, 0.0, 0.0, 400.0, 500.0, 450.0, 180.0, 200.0, 190.0]))
+    x = np.where(S["level"] == 7.4, S1, S2) + k_d * S["dropouts"]
+    kd, se, dof = idn.dropout_term(S, x)
+    assert kd == pytest.approx(k_d) and se == pytest.approx(0.0, abs=1e-9) and dof == 12 - 3
+    rm = idn.rung_means(S.assign(spin_rev_s=np.where(S["level"] == 7.4, 330.0, 335.0)), x - kd * S["dropouts"])
+    assert rm["x"].to_numpy() == pytest.approx([S2] * 2 + [S1] * 2)   # grouped by level, duty, mech: 5 V first
+    # no dropouts anywhere reads k_d 0, and a negative fit is held at 0
+    assert idn.dropout_term(S.assign(dropouts=0.0), x)[0] == 0.0
+    assert idn.dropout_term(S, -x)[0] == 0.0
+    assert idn.vb_total({1: dict(power=(0, 0, 0), table=np.zeros(len(idn.VB_KNOTS))), -1: dict(power=(0, 0, 0), table=np.zeros(len(idn.VB_KNOTS))),
+                         "k_d": 0.5}, 1, np.array([300.0]), np.array([200.0])) == pytest.approx([100.0])
+
+
+def test_vb_floor_is_the_low_rungs_mean_unless_the_rails_split():
+    low = dict(mech=[1, 1, 1, 1], rev_s=[65.0, 94.0, 106.0, 149.0], sd=[3.0, 3.0, 3.0, 3.0], n=[3, 3, 3, 3])
+    agree = pd.DataFrame(dict(low, level=[5.0, 5.0, 7.4, 7.4], x=[20.0, 22.0, 21.0, 19.0]))
+    floor, by, z = idn.vb_floor(agree)
+    assert floor == pytest.approx(20.5) and z < 2
+    split = pd.DataFrame(dict(low, level=[5.0, 5.0, 7.4, 7.4], x=[-6.0, -6.0, -25.0, -14.0]))
+    floor, by, z = idn.vb_floor(split)
+    assert floor == 0.0 and z > 2 and set(by) == {5.0, 7.4}
+    assert idn.fit_vb(agree.assign(mech=1))[1]["table"][idn.VB_KNOTS <= 150] == pytest.approx(20.5)
 
 
 def test_spins_for_a_change_between_two_checks():

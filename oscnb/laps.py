@@ -44,7 +44,7 @@ def run(out, levels, load, lap_ms=LAP_MS, log=print):
     out = Path(out)
     (out / "laps").mkdir(parents=True, exist_ok=True)
     with open(out / "levels.csv", "a", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         if f.tell() == 0:
             w.writerow(["k", "load", "volts_set", "dps_read", "vsys_read", "t_start", "t_end", "folder"])
         k0 = len(list((out / "laps").glob("*")))
