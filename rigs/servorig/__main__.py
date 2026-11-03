@@ -1,20 +1,24 @@
-"""Build: uv run --group cad python -m rigs.servorig [--horn-reach R ...]"""
+"""Build: uv run --group cad python -m rigs.servorig [--head-h H ...]"""
 import argparse
 from dataclasses import fields, replace
 from pathlib import Path
 
 from build123d import Compound, Pos, Rot, export_step, export_stl
 
-from .rig import (BED_X, BED_Y, BED_Z, MEASURE, Spec, box, build_arm,
-                  build_base, build_clip, build_mount, build_servo, cyl)
+from .rig import (BED_X, BED_Y, BED_Z, FITS, MEASURE, Spec, box, build_arm,
+                  build_base, build_clip, build_fit, build_mount, build_servo,
+                  cyl, horn_plate)
 
 TOUCH = 1e-3                # mm^3: faces that only meet
+DROP = 0.01                 # mm: a seat lowered this far meets its datum
+CONTACT = 1.0               # mm^2: the least seat an arm must carry
 MOUNT_STEP = 15             # degrees between mount poses over a full turn
 ARM_STEP = 10               # degrees between load arm poses over its travel
 M3_LENGTHS = (6, 8, 10, 12, 16)     # button heads as sold
 TOP_DOWN = Rot(180, 0, 0)
-PRINT = {"servorig_base": None, "servorig_mount": TOP_DOWN,
-         "servorig_arm": TOP_DOWN, "servorig_clip": TOP_DOWN}
+PRINT = {"servorig_fit": None, "servorig_base": None,
+         "servorig_mount": TOP_DOWN, "servorig_arm": TOP_DOWN,
+         "servorig_clip": TOP_DOWN}
 
 
 def print_pose(part):
@@ -62,7 +66,20 @@ def overlap(a, b):
     return (a & b).volume
 
 
-def verify(s, base, mount, arm, clip):
+def seat_areas(s, part, plate):
+    """The part's contact on each arm's top face, out past the hub."""
+    low = Pos(0, 0, -DROP) * part
+    hub_r = s.horn_hub_d / 2
+    areas = []
+    for a in s.horn_arms:
+        zone = Rot(0, 0, a.angle) * box(
+            (hub_r + a.reach) / 2, 0, s.horn_top - s.horn_plate_t,
+            a.reach - hub_r, s.horn_hub_d, s.horn_plate_t)
+        areas.append(overlap(low, plate & zone) / DROP)
+    return areas, overlap(low, build_servo(s)) - overlap(low, plate)
+
+
+def verify(s, fit, base, mount, arm, clip):
     """Every geometric check; returns report lines, raises on a failure."""
     servo = build_servo(s)
     tall = s.arm_top + 50.0
@@ -93,9 +110,15 @@ def verify(s, base, mount, arm, clip):
                         f"+/-{half:.0f} deg")
     need(overlap(servo, base) < TOUCH, "servo seats in its pocket")
     need(overlap(servo, mount) < TOUCH and overlap(servo, arm) < TOUCH,
-         "mount and arm seat on the cross without touching the rest")
+         "mount and arm sit on the horn without touching the rest")
+    plate = horn_plate(s)
+    for part in (mount, arm):
+        areas, rest = seat_areas(s, part, plate)
+        need(min(areas) > CONTACT and rest < TOUCH,
+             f"{part.label} seats on the plate's top face alone, on all "
+             f"four arms: {' / '.join(f'{a:.0f}' for a in areas)} mm^2")
     need(overlap(clip, mount) < TOUCH, "clip goes over the mount's plate")
-    for part in (base, mount, arm, clip):
+    for part in (fit, base, mount, arm, clip):
         bb = print_pose(part).bounding_box()
         plan = sorted((bb.size.X, bb.size.Y), reverse=True)
         need(plan[0] <= BED_X and plan[1] <= BED_Y and bb.size.Z <= BED_Z,
@@ -108,7 +131,18 @@ def summary(s):
     lock_min = s.lock_clamp + s.insert_l / 2
     lock_max = s.lock_clamp + s.insert_l + s.insert_relief
     lock = min(M3_LENGTHS, key=lambda n: abs(n - (lock_min + lock_max) / 2))
+    arms = " / ".join(f"{a.reach:.2f}" for a in s.horn_arms)
+    roots = " / ".join(f"{s.root_w(a):.2f}" for a in s.horn_arms)
+    retain = " and ".join(f"r {r:.1f} at {a:.0f} deg"
+                          for a, r in s.retain_holes)
     return [
+        f"horn arms at 0 / 90 / 180 / 270 deg reach {arms}, {roots} wide "
+        f"at the hub, {s.horn_arm_tip:.2f} at the tips; hub "
+        f"{s.horn_hub_d:.2f} standing {s.hub_top - s.horn_top:.2f} over a "
+        f"{s.horn_plate_t:.2f} plate, head top {s.head_top - s.horn_top:.2f}"
+        f" over the plate",
+        f"key {s.key_depth:.2f} into the plate; retaining screws "
+        + (f"at {retain}" if s.retain_screws else "left out"),
         f"base top {s.base_top:.2f}, horn top {s.horn_top:.2f}, tag plane "
         f"{s.tag_plane:.2f} (clip top {s.tag_plane + s.clip_lip_t:.2f})",
         f"ledge {s.ledge_z:.2f} with {s.shim_room:.1f} of shim under the "
@@ -136,22 +170,24 @@ def summary(s):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for f in fields(Spec):
-        if f.name in MEASURE or f.name == "horn_above_base":
+        if f.name in MEASURE or f.name in FITS or f.name == "horn_above_base":
             parser.add_argument("--" + f.name.replace("_", "-"), type=float,
                                 default=getattr(Spec, f.name))
     parser.add_argument("--no-retain-screws", action="store_true",
                         help="leave out the two retaining screw holes")
     parser.add_argument("--preview", action="store_true",
                         help="also write a PNG of each part")
+    parser.add_argument("--assembly", action="store_true",
+                        help="also write the assembly STEP")
     args = parser.parse_args()
     measured = {k: v for k, v in vars(args).items()
-                if k not in ("no_retain_screws", "preview")}
+                if k not in ("no_retain_screws", "preview", "assembly")}
     spec = replace(Spec(), retain_screws=not args.no_retain_screws,
                    **measured)
     out = Path(__file__).parent / "build"
     out.mkdir(exist_ok=True)
-    parts = [build_base(spec), build_mount(spec), build_arm(spec),
-             build_clip(spec)]
+    parts = [build_fit(spec), build_base(spec), build_mount(spec),
+             build_arm(spec), build_clip(spec)]
     for part in parts:
         if not part.is_valid or len(part.solids()) != 1:
             raise RuntimeError(f"{part.label} must be one valid solid")
@@ -164,12 +200,13 @@ def main():
         if args.preview:
             preview(str(out / f"{part.label}.stl"),
                     str(out / f"{part.label}.png"))
-    base, mount, arm, clip = parts
-    scene = Compound([base, build_servo(spec), mount, clip])
-    export_step(scene, str(out / "servorig_assembly.step"))
+    fit, base, mount, arm, clip = parts
+    if args.assembly:
+        export_step(Compound([base, build_servo(spec), mount, clip]),
+                    str(out / "servorig_assembly.step"))
     print("\n".join(summary(spec)))
     print("checks:")
-    print("\n".join(verify(spec, base, mount, arm, clip)))
+    print("\n".join(verify(spec, fit, base, mount, arm, clip)))
     print(f"-> {out}")
 
 
