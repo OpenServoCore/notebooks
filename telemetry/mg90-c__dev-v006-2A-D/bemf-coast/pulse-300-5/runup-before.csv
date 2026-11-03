@@ -1,0 +1,4 @@
+k,volts_set,dps_read,vsys_read,duty_pct,repeat,t_start,t_end,folder,kick_pct
+0,5.0,5.250,4.995,100,0,1793671488.247,1793671544.182,runup-before/0,0
+1,5.0,5.250,4.995,100,1,1793671564.193,1793671620.081,runup-before/1,0
+2,5.0,5.250,4.995,100,2,1793671640.092,1793671696.498,runup-before/2,0

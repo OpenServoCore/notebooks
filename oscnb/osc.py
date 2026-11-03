@@ -71,6 +71,8 @@ def status():
 # the 12-byte row, so the position, which a resistor has no use for, stays out
 # and every stream carries the rail and the board temperature.
 CHUNKS_RAW = "0x23c+12"
+# the rail, then current_raw to current_trough: the crest and the trough of the shunt with the taps and the duty, no NTC
+CHUNKS_TROUGH = "0x23c+2,0x240+10"
 
 # The TEL row a rest stream wants: vref_raw, then the same six less the duty,
 # which a rest has no use for. vref_raw is the ADC's own 1.2 V reference, so

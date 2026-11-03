@@ -159,12 +159,13 @@ class Sitting:
         the state has no meter."""
         return self.meter.log(out / "dmm.csv", expect="DC A") if self.meter else nullcontext()
 
-    def cycles(self, out, rungs, spin_ms, coast_ms, repeats=3, folder="cycles", kick=None, over_rating=False):
+    def cycles(self, out, rungs, spin_ms, coast_ms, repeats=3, folder="cycles", kick=None, over_rating=False, tel_chunks=None):
         """Run `rungs`, (rail volts, duty %) pairs, `repeats` cycles each, into
         `out/<folder>/K` with one row per cycle in `out/<folder>.csv`. A cycle is
         a spin and a coast in both directions as one sweep. With `kick`, duty by
         rail, each spin opens with KICK_MS at that duty and drops to the rung's
-        duty chained, no torque-off between."""
+        duty chained, no torque-off between. `tel_chunks` picks the TEL row,
+        the R/L set unless given."""
         with open(out / f"{folder}.csv", "w", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
             w.writerow(["k", "volts_set", "dps_read", "vsys_read", "duty_pct", "repeat", "t_start", "t_end", "folder", "kick_pct"])
@@ -176,7 +177,8 @@ class Sitting:
                     sub = f"{folder}/{k}"
                     t0 = time.time()
                     drive = [f"{kick[v]}@{KICK_MS}", f"then:{d}@{spin_ms}"] if kick else [f"{d}@{spin_ms}"]
-                    osc.sweep(out / sub, drive + [f"coast:{coast_ms}"], baseline_ms=500, rest_ms=REST_S * 1000, dirs="both")
+                    osc.sweep(out / sub, drive + [f"coast:{coast_ms}"], baseline_ms=500, rest_ms=REST_S * 1000, dirs="both",
+                              **({"tel_chunks": tel_chunks} if tel_chunks else {}))
                     w.writerow([k, v, f"{dps_read:.3f}", f"{vsys:.3f}", d, r, f"{t0:.3f}", f"{time.time():.3f}", sub, kick[v] if kick else 0])
                     f.flush()
                     k += 1
@@ -246,13 +248,13 @@ def named(p, tokens):
 
 def select(plans, state, only=(), skip=(), include=()):
     """The plans of `state` in running order: by `order`, the optional ones
-    only when named by `include`, `only` and `skip` by name."""
+    only when named by `include` or `only`, `skip` by name."""
     in_state = [p for p in plans if p.state == state]
     for t in (*only, *skip, *include):
         if not any(named(p, (t,)) for p in in_state):
             raise SystemExit(f"no plan {t!r} in state {state}; the plans are "
                              f"{', '.join(sorted(f'{p.experiment}/{p.name}' for p in in_state))}")
-    chosen = [p for p in in_state if not named(p, skip) and (not p.optional or named(p, include))
+    chosen = [p for p in in_state if not named(p, skip) and (not p.optional or named(p, include) or named(p, only))
               and (not only or named(p, only) or p.bracket)]
     return sorted(chosen, key=lambda p: p.order)
 
