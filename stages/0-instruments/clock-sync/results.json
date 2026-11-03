@@ -2,7 +2,7 @@
   "capture": "telemetry/instruments/clock-sync/capture-1",
   "notes": "clip time = offset + rate x (host time - host_t0), from the STAT lamp flashes of osc clapper",
   "offset_s": {
-    "value": 1.1242053234630336,
+    "value": 1.1242053234630367,
     "lo": null,
     "hi": null,
     "unit": "s"
@@ -14,13 +14,13 @@
     "unit": "s"
   },
   "rate": {
-    "value": 1.0000089261045297,
-    "lo": 0.9999162385828997,
-    "hi": 1.0001016136261598,
+    "value": 1.0000089261045302,
+    "lo": 0.9999162385829,
+    "hi": 1.0001016136261602,
     "unit": ""
   },
   "residual_rms_s": {
-    "value": 0.0015939858320385336,
+    "value": 0.001593985832038888,
     "lo": null,
     "hi": null,
     "unit": "s"
