@@ -232,7 +232,10 @@ the same).
 
 Printed fixtures under [rigs/](rigs/README.md), parametric CAD in
 build123d with the measured parts as their inputs. The motor rig of stage 2
-seats the bare motor and holds its rotor at indexed angles.
+seats the bare motor and holds its rotor at indexed angles. The servo rig of
+stage 3 holds the assembled servo and the board under the camera, with a
+tag mount on the stock horn, a bolted horn lock at mid travel, and a load
+arm, on one base that lies flat or stands on edge.
 
 ### clapper
 
