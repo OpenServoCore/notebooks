@@ -11,9 +11,16 @@ HEADER = "seg,cmd_duty_q15,dir,tick,window_valid,pos,current,current_trough,duty
 
 
 def write(folder, board=None, rungs=((32767, 1), (32767, -1)), rail_v=7.4, r_load=5.09, zero=1205,
-          baseline_rows=2000, rung_rows=3000, climb_rows=0, noise=1.3, ntc=1942, seed=0, drop_at=None):
+          baseline_rows=2000, rung_rows=3000, climb_rows=0, noise=1.3, ntc=1942, seed=0, drop_at=None,
+          lead_rows=0, coast_rows=0, tail_rows=0):
     """Baseline then rungs at 100 % (or any Q15) on a resistor: the current
-    is V/R, the taps split the rail, the rail sags 0.1 V under the lap."""
+    is V/R, the taps split the rail, the rail sags 0.1 V under the lap.
+
+    `lead_rows` opens each rung's stream undriven, as a sweep's segments
+    open. With `coast_rows`, each rung is followed by a zero-command coast
+    segment in the same direction: `tail_rows` of the drive's tail, then no
+    drive and a terminal difference falling linearly to zero, an EMF
+    running down."""
     board = board or boards.BOARDS[boards.DEFAULT]
     rng = np.random.default_rng(seed)
     folder = Path(folder)
@@ -33,7 +40,9 @@ def write(folder, board=None, rungs=((32767, 1), (32767, -1)), rail_v=7.4, r_loa
     for n in range(baseline_rows):
         rows.append(row(0, 0, 0, 0, 0.0, vb, vb, rail_v, n))
     tick += baseline_rows
-    for seg, (q15, d) in enumerate(rungs, 1):
+    seg = 0
+    for q15, d in rungs:
+        seg += 1
         duty = abs(q15) / 32767
         ticks = int(board.drive_ticks(q15))
         amps = rail_v * duty / r_load
@@ -43,9 +52,24 @@ def write(folder, board=None, rungs=((32767, 1), (32767, -1)), rail_v=7.4, r_loa
         for n in range(rung_rows):
             if drop_at is not None and seg == drop_at[0] and n == drop_at[1]:
                 tick += 16
+            if n < lead_rows:
+                rows.append(row(seg, q15, d, 0, 0.0, vb, vb, rail_v, n))
+                continue
             k = min(n, climb_rows) / climb_rows if climb_rows else 1.0
             rows.append(row(seg, q15, d, d * int(ticks * k) if climb_rows else d * ticks, amps, va, vbn, rail, n))
         tick += rung_rows
+        if not coast_rows:
+            continue
+        seg += 1
+        for n in range(coast_rows):
+            if n < tail_rows:
+                rows.append(row(seg, 0, d, d * ticks, amps, va, vbn, rail, n))
+                continue
+            left = 1 - (n - tail_rows) / (coast_rows - tail_rows)
+            emf = (hi - vb) * left
+            ca, cb = (vb + emf, vb) if d > 0 else (vb, vb + emf)
+            rows.append(row(seg, 0, d, 0, 0.0, ca, cb, rail_v, n))
+        tick += coast_rows
     pd.DataFrame(rows, columns=HEADER.split(",")).to_csv(folder / "sweep.csv", index=False)
     meta = {"model": 257, "fw": 65, "tick_hz": 20000, "pwm_period_ticks": board.pwm_arr, "vbus_counts": 1800,
             "sense": board.sense, "window_ms": 150, "baseline_ms": int(baseline_rows / 20), "static_load": True,
