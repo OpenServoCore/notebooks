@@ -82,3 +82,115 @@ def zero(df, arr):
     k = np.arange(len(df))
     pre = k < m["step_index"] - 8
     return float(np.median(df["code"].to_numpy(float)[sh & pre]))
+
+
+Q15_FULL = 32768          # a Q15 duty of 1.0
+# the median's standard error over the mean's on normal data, sqrt(pi / 2)
+MEDIAN_SE = 1.2533
+MIN_SE_SAMPLES = 3        # a bin's standard error needs this many samples
+BRAKE_GUARD_TICKS = 10    # the brake read stops this far before the window
+
+
+def duty_pct(m):
+    """A burst's commanded duty in whole percent, from its Q15 step."""
+    return int(round(abs(m["step_q15"]) * 100 / Q15_FULL))
+
+
+def samples(df, board, center):
+    """(frame, meta, half): every sample on the grid of full windows."""
+    if center not in ("crest", "trough"):
+        raise ValueError(f"center is 'crest' or 'trough', not {center!r}")
+    arr = board.pwm_arr
+    period = 2 * arr
+    m, ph, sh, ta, tb = phase(df, arr)
+    half = int(board.drive_ticks(m["step_q15"]))
+    k = np.arange(len(df))
+    if m["start_dir"] == 0:
+        phi0 = m["start_cnt"]
+    else:
+        phi0 = period - m["start_cnt"]
+    tick = phi0 + STEP_TICKS * k + APERTURE_CLK * TICKS_PER_ADC_CLK
+    # the duty written at the step takes effect at the next trough: the grid
+    # starts at the crest window after it, or at the trough window a period
+    # later, the first trough's window holding only its second half
+    trough = period * np.ceil(tick[m["step_index"]] / period)
+    c = arr if center == "crest" else period
+    origin = trough + c - half
+    n = np.floor((tick - origin) / period).astype(int)
+    last = int(np.floor((tick[-1] - origin) / period))
+    # ticks from the nearest window center: the crest in slow decay, the
+    # trough in fast
+    tc = ((tick - c) % period + period // 2) % period - period // 2
+    stream = np.where(sh, "sh", np.where(ta, "ta", "tb"))
+    s = pd.DataFrame({"k": k, "stream": stream,
+                      "code": df["code"].to_numpy(float), "tick": tick,
+                      "tc": tc, "n": n,
+                      "t_us": (tick - origin) / TICKS_PER_US,
+                      "full": n < last})
+    return s, m, half
+
+
+def term_diff(s, sign, scales):
+    """(tc, n, volts): tap A less tap B at each tap A sample, B interpolated."""
+    a = s[s["stream"] == "ta"]
+    b = s[s["stream"] == "tb"]
+    vb = np.interp(a["tick"], b["tick"], b["code"])
+    diff = sign * (a["code"].to_numpy() - vb)
+    volts = scales.volts(diff, scales.terminal_offset_counts)
+    return a["tc"].to_numpy(), a["n"].to_numpy(), volts
+
+
+def binned(x, y, lo, hi, w):
+    """(centers, median, median's standard error, count) of y in w-wide bins."""
+    edges = np.arange(lo, hi + w, w)
+    idx = np.floor((x - lo) / w).astype(int)
+    ok = (idx >= 0) & (idx < len(edges) - 1)
+    centers = edges[:-1] + w / 2
+    med = np.full(len(centers), np.nan)
+    se = np.full(len(centers), np.nan)
+    count = np.zeros(len(centers), int)
+    for i, g in pd.DataFrame({"i": idx[ok], "y": y[ok]}).groupby("i"):
+        med[i] = g["y"].median()
+        count[i] = len(g)
+        if len(g) >= MIN_SE_SAMPLES:
+            se[i] = MEDIAN_SE * g["y"].std(ddof=1) / np.sqrt(len(g))
+    return centers, med, se, count
+
+
+def period_table(df, sign, board, scales, lags=None, edge=0.0, drive_off=0.0):
+    """One row per full period of a slow-decay burst, inductance's read."""
+    lags = scales.edge_lags() if lags is None else lags
+    period = 2 * board.pwm_arr
+    counts_per_a = scales.counts_per_a
+    s, m, half = samples(df, board, "crest")
+    zero_counts = zero(df, board.pwm_arr)
+    a, b = -half + lags["tap_on"], half + lags["off"]
+    on_span = b - a
+    s = s[(s["n"] >= 0) & s["full"]].assign(y=lambda d: d["code"] - zero_counts)
+    settled = (s["tc"] >= -half + lags["settle"]) & (s["tc"] <= half)
+    clear = ((s["tc"] >= b + lags["settle"] - lags["on"])
+             | (s["tc"] <= -half - BRAKE_GUARD_TICKS))
+    rows = []
+    for n, g in s.groupby("n"):
+        sh = g[(g["stream"] == "sh") & settled[g.index]]
+        line = np.polyfit(sh["tc"], sh["y"], 1)
+        i_on = (np.polyval(line, (a + b) / 2) - drive_off) / counts_per_a
+        off = g[(g["stream"] == "sh") & clear[g.index]]
+        i_off = off["y"].mean() / counts_per_a
+        volts = []
+        for w in (settled, clear):
+            tap_a = g[(g["stream"] == "ta") & w[g.index]]["code"].mean()
+            tap_b = g[(g["stream"] == "tb") & w[g.index]]["code"].mean()
+            d = sign * (tap_a - tap_b) - scales.terminal_offset_counts
+            volts.append(d / scales.terminal_counts_per_v)
+        v_on, v_off = volts
+        # `edge`: the volt-ticks the two edges hold beyond the two-part mean
+        v_mean = (v_on * on_span + v_off * (period - on_span) + edge) / period
+        slope = line[0] * TICKS_PER_US * 1e6 / counts_per_a
+        rows.append({"n": n,
+                     "t_us": (n * period + half + (a + b) / 2) / TICKS_PER_US,
+                     "i_a": i_on, "v_v": v_mean, "v_on_v": v_on,
+                     "v_off_v": v_off, "i_off_a": i_off,
+                     "slope_a_per_s": slope, "on_n": len(sh),
+                     "code_lo": sh["code"].min(), "code_hi": sh["code"].max()})
+    return pd.DataFrame(rows)
