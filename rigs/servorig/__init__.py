@@ -1,7 +1,8 @@
 """The servo rig for the stage 3 camera experiments: a base that holds one
 MG90, one osc-dev-v006 board and a reference tag in one rigid piece, a tag
 mount that presses over the servo's four-arm horn, a load arm that takes the
-mount's place, and a clip that holds a tag paper flat.
+mount's place with a lid over its coins, and a clip that holds a tag paper
+flat.
 
 A phone films the rig from straight above, and the camera reads the horn's
 angle from the tag on the mount against the tag on the base. That reading is
@@ -24,9 +25,10 @@ the three leads gets a pair of zip tie slots at the back. An L-shaped clamp
 wing at each end holds the base to the desk, lying flat or standing on its
 front face.
 
-The horn is the SG90's horn #3, four unequal arms on one 2 mm plate: two
-long arms of 16 and 18 mm and two short ones of 8.25 mm at right angles to
-them, with a hub that stands 3.3 mm above the plate. The tag mount is keyed
+The horn is the MG90S four-arm horn, on one 2.05 mm plate: two long arms
+of 16.2 and 18.2 mm (six and seven holes) and two short ones of 8.1 mm at
+right angles to them, with a 6.65 mm hub that stands 0.3 mm above the plate
+and a 2.2 mm collar under it. The tag mount is keyed
 to all four arms, so it goes on one way only, the longer arm under the lock
 ear. The key reaches 1.5 mm into the plate, which keeps the skirt around it
 clear of the boss under the horn; the skirt is a full circle that encloses
@@ -34,33 +36,40 @@ the long arms and stays inside the tag plate's square. The mount's underside
 sits on the plate's top face across all four arms, which makes that face the
 flatness reference. The hub rises into a clearance recess and the M2 center
 screw's head into a counterbore above it, neither touched. The mount's top
-is the tag plane, 7 mm over the plate, with a one-layer pocket for the paper
-at the height of the reference pad's own. One ear reaches out over the
+is the tag plane, 7 mm over the plate, a flat face printed on the bed that
+the paper is glued to, at the height of the reference pad's own. One ear
+reaches out over the
 insert with a slot for the lock screw, 3 degrees of play each way. The ear
 lands wherever the spline left the horn, within one tooth of mid travel, and
 that angle is the lock position. Two optional M1.4 screws through the long
-arms' holes at 8.5 and 8.0 mm, opposite each other so the clamp balances,
+arms' third holes at 8.5 mm, opposite each other so the clamp balances,
 retain the mount on the horn; they never locate it, and they stay because
 the hanging load arm pries at a press fit 1.5 mm deep. Out there their
 counterbores leave a full wall to the hub's recess.
 
-The load arm has the same keyed seat on the horn and a beam to two coin cups at
-55 mm from the axis, about 120 g of US quarters. The base stands on its front
-face at the desk edge and the arm hangs down at mid travel. A tag pocket on
-the arm's hub keeps the camera reading the horn under load. That hub tag
-sits at the cup rims, about 13 mm above the tag plane and closer to the lens
-than the reference tag, which lets the arm print top down. The clip is a
-square frame that pushes onto the mount's plate or the arm's hub and holds
-the paper flat by its quiet border. Its lip stands 0.6 mm above the tag
-plane; both papers sit in the same 0.2 mm pocket depth, so the papers are
-level with each other and the clip top is not.
+The load arm has the same keyed seat on the horn and a beam to a 2 x 2 block
+of coin cups centered 55 mm from the axis: four stacks of 12 US quarters,
+272 g, dropped in by pairs so the load balances across the arm. The inner
+pair, the outer pair and all four make a load ladder of 55, 92 and 147 mN m
+with the arm level, 28 or 46 mN m for one stack. A lid drops into the block's
+open face, plugs in the bores, one M2 screw into the web where the four cup
+walls meet, and the coins sit loose under it. The base stands on its front
+face at the desk edge and the arm hangs down at mid travel. A tag on the
+arm's hub keeps the camera reading the horn under load. That hub tag sits
+at the cup floors, about 13 mm above the tag plane and closer to the lens
+than the reference tag; the cups open the other way, toward the base, so
+the arm prints top down with its tag face and the cup floors on the bed and
+nothing bridging. The coins go in and get taped over before the arm goes on
+the horn, and they lie on the cup walls once the base stands on its front
+face. The clip is a square frame that pushes onto the mount's plate or the
+arm's hub and holds the paper flat by its quiet border. Its lip stands
+0.6 mm above the tag plane.
 
 Nothing of the base rises inside the keep-out circle, which is the circle
 the mount and its clip sweep, ear corners included, plus the tag's quiet
-border. In plan, the cups pass 10 mm from the board pocket at the end of a
-180 degree travel, and 1 mm with the 10 degrees past each end that the
-checks allow. The arm rides above the board, but a servo with more travel
-needs a look.
+border. The board pocket sits back where the loaded arm clears it by 2 mm
+at 10 degrees past each end of a 180 degree travel, which also sets the
+reference pad's place; a servo with more travel needs a look.
 
 Frame: X east, Y north (the back), Z up, the horn axis on Z and Z = 0 the
 base's underside. At mid travel the mount's ear points +X over the insert
@@ -69,17 +78,16 @@ underside and the mount, the arm and the clip print top down, so each tag
 face comes off the bed flat and no part needs support.
 
 A fit test print goes first: a thin plate with the mount's key pocket at
-three fits, 0.05, 0.15 and 0.25 mm per side, each labeled, and a 10 mm
+four fits, 0.05 to 0.35 mm per side, each labeled, and a 10 mm
 section of the servo pocket with its ear ledge and lead slot. The real horn
 and servo pick the fit, which becomes the key and pocket clearance of every
 part after it.
 
-Servo dimensions default to the SG90-class case measured in the firmware
-repo's mechanical/sg90/measurements.py. The horn's arm reaches, plate, hub
-and spline socket are the owner's calipers rounded to nominal, its hole
-radii and edge tapers the SG90 horn #3 drawing, and its arm widths a photo.
-What is still a guess is measured with calipers and goes in as Spec fields
-or command line overrides before the print (README.md lists them).
+Servo and horn dimensions come from a STEP model of the Tower Pro MG90S
+(GrabCAD), the horn's shorter long arm cut back one hole pitch to match the
+horn at hand. The heights that set where the horn lands are worth a caliper
+check on the servo at hand and go in as command line overrides before the
+print (README.md lists them).
 
     uv run --group cad python -m rigs.servorig [--head-h 1.6 ...]
     writes rigs/servorig/build/
