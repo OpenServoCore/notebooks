@@ -13,18 +13,19 @@ import functools
 import itertools
 import json
 import math
-import os
 import time
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.optimize import least_squares
-from scipy.signal import butter, sosfiltfilt
 
 from oscnb import boards, bursts as bu, motors, results, tel
+from oscnb.coast import (COAST_FROM_ROWS as COAST_FROM, TURN_V, bridge as bridge_rows, cut_row, open_rows,
+                         pairs as spin_coast_pairs)
+from oscnb.parallel import call as _call, run_parallel
+from oscnb.ripple import WINDOW_MS as TARGET_MS, count_cycles, line_freq, read_window
 
 BOARD = boards.BOARDS[boards.DEFAULT]
 MOTOR = motors.MOTORS[motors.DEFAULT]
@@ -892,24 +893,6 @@ def job_ind(s, models, part, nparts):
     return rows
 
 
-def _call(job):
-    fn, args, kwargs = job
-    return fn(*args, **kwargs)
-
-
-def run_parallel(jobs, workers=None, chunksize=1, cost=None):
-    """jobs: (function, args, kwargs) triples of this module's functions, run on separate processes, the costliest
-    first when a cost per job is given; results in the order given"""
-    workers = workers or os.cpu_count()
-    order = list(range(len(jobs))) if cost is None else sorted(range(len(jobs)), key=lambda i: -cost[i])
-    with ProcessPoolExecutor(max_workers=workers) as ex:
-        res = list(ex.map(_call, [jobs[i] for i in order], chunksize=chunksize))
-    out = [None] * len(jobs)
-    for i, r in zip(order, res):
-        out[i] = r
-    return out
-
-
 # ---------------------------------------------------------------- the spinning steady state
 
 def share(duty):
@@ -978,87 +961,9 @@ def spin_jobs(p, pts):
 
 FS = BOARD.tick_hz
 N_R = MOTOR.ripple_per_rev   # ripple events per revolution, slots x brushes, as bemf-coast counts them
-SPIN_MS, COAST_FROM, TARGET_MS, MIN_CYCLES, TURN_V = 200, 20, 10, 3, 0.05
-RIPPLE_BAND, NBH, OPEN_FRAC = (150.0, 6000.0), 41, 0.3
+SPIN_MS = 200
 BC = PAIR / "bemf-coast"
 STQ = PAIR / "speed-torque" / "capture-1"
-
-
-def spectrum(x):
-    x = np.asarray(x, float) - np.mean(x)
-    n = len(x)
-    return np.fft.rfftfreq(8 * n, 1 / FS), np.abs(np.fft.rfft(x * np.hanning(n), 8 * n))
-
-
-def line_freq(x, lo=RIPPLE_BAND[0], hi=RIPPLE_BAND[1]):
-    f, X = spectrum(x)
-    m = (f >= lo) & (f <= hi)
-    return float(f[m][int(np.argmax(X[m]))])
-
-
-def crossings(x, f0, frac=0.35):
-    hi = min(f0 * (1 + frac), 0.95 * FS / 2)
-    sos = butter(2, [f0 * (1 - frac), hi], btype="band", fs=FS, output="sos")
-    y = sosfiltfilt(sos, np.asarray(x, float) - np.mean(x))
-    s = np.flatnonzero((y[:-1] < 0) & (y[1:] >= 0))
-    return (s + (-y[s]) / (y[s + 1] - y[s]))[1:-1]
-
-
-def count_cycles(x, f0, frac=0.35):
-    tc = crossings(x, f0, frac)
-    if len(tc) < 3:
-        return np.nan, 0
-    return (len(tc) - 1) / ((tc[-1] - tc[0]) / FS), len(tc) - 1
-
-
-def read_window(e, start, f_seed, target_ms=TARGET_MS, frac=0.35):
-    """the window of whole ripple cycles closest to target_ms from `start`: its frequency, its ends, its cycles"""
-    f = f_seed
-    for _ in range(6):
-        n = max(MIN_CYCLES, int(round(target_ms / 1e3 * f)))
-        stop = start + int((n + 3) * FS / f * 1.3)
-        if stop > len(e):
-            return np.nan, 0, 0, 0
-        tc = crossings(e[start:stop], f, frac)
-        if len(tc) < n + 1:
-            return np.nan, 0, 0, 0
-        tc = tc[:n + 1]
-        f_new = n / ((tc[-1] - tc[0]) / FS)
-        done = abs(f_new / f - 1) < 1e-4
-        f = f_new
-        if done:
-            break
-    return f, start + int(np.ceil(tc[0])), start + int(np.floor(tc[-1])), n
-
-
-def open_rows(e):
-    ref = np.convolve(e, np.ones(NBH) / NBH, mode="same")
-    bad = (e < OPEN_FRAC * ref) & (ref > TURN_V)
-    bad[:COAST_FROM] = False
-    return bad
-
-
-def bridge_rows(e, bad):
-    if not bad.any():
-        return e.copy()
-    x = np.arange(len(e))
-    out = e.copy()
-    out[bad] = np.interp(x[bad], x[~bad], e[~bad])
-    return out
-
-
-def spin_coast_pairs(df):
-    out = []
-    for seg, co in df[df["seg"] > 0].groupby("seg"):
-        if int(co["cmd_duty_q15"].iloc[0]) != 0:
-            continue
-        out.append((int(co["dir"].iloc[0]), df[df["seg"] == seg - 1], co))
-    return out
-
-
-def cut_row(co):
-    z = np.flatnonzero(co["duty_counts"].to_numpy() == 0)
-    return int(z[0]) if len(z) else None
 
 
 def reduce_spins(folder, last_s=SPIN_MS / 1000):
