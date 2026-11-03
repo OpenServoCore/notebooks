@@ -47,12 +47,15 @@ numbers. Same sitting as stage 1.
 Folder `stages/3-servo/`. Targets the assembled servo, meaning the motor plus a gear train, a pot and
 a case.
 
-Open loop throughout, with the camera tag on the horn and the thermocouple inside
-the case. Three groups of experiments live here. Electrical repeats the
-stage 2 measurements in situ, the way `osc-cal` has to do them. Mechanical
-covers friction, inertia, the gear train and the pot. Thermal
-covers the heating holds and the winding temperature constants. This is the
-long sitting.
+Open loop throughout, with the camera tag on the horn and the horn lock for
+the held-rotor routes. Two groups of experiments live here. Electrical
+repeats the stage 2 measurements in situ, the way `osc-cal` has to do them,
+in one pass with one supply and no meter. Mechanical covers friction,
+inertia, the gear train, the pot and the servo under a known load, down to
+a crawl against the camera tag. The winding temperature constants are
+earlier work and are not re-measured; the winding's own resistance against
+its rest value is the thermometer. This is the long sitting, and the last
+one that captures open loop.
 
 ### 4. Estimators
 

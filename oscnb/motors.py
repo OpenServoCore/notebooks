@@ -58,6 +58,19 @@ MOTORS = {
         rated_v=5.0,
         notes="runs bare on the stage 2 rig as the second motor the identification and compensation methods are graded on",
     ),
+    "mg90-d": Motor(
+        key="mg90-d",
+        label="the motor of MG90 clone d",
+        family="mg90-vorpal",
+        source="in situ in the sealed MG90 clone d of stage 3, never opened",
+        slots=3,
+        brushes=2,
+        pinion_teeth=9,
+        rated_v=5.0,
+        notes="the slot, brush and pinion counts are the family's, counted on "
+              "mg90-b and mg90-c; this motor stays in its servo, which shares "
+              "its key",
+    ),
 }
 DEFAULT = "mg90-b"
 

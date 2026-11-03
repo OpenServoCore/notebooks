@@ -27,6 +27,12 @@ def run(*args, capture=False, check=True, tool=TOOL):
     return r.stdout if capture else None
 
 
+def start(*args, tool=TOOL):
+    """`<tool> -i <id> <args>` started and left running: the Popen, for a
+    caller that acts on the bench while the tool drives."""
+    return subprocess.Popen([tool, "-i", ID, *map(str, args)], text=True)
+
+
 def bus_baud():
     """The bus rate the tool finds, from its connection line on stderr."""
     r = subprocess.run([TOOL, "-i", ID, "ping"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
@@ -79,21 +85,53 @@ CHUNKS_TROUGH = "0x23c+2,0x240+10"
 # a rest stream carries VDD, which every other count is a share of.
 CHUNKS_REST = "0x23a+12"
 
+# The TEL row a servo capture wants: pos, then current_raw to current_trough,
+# the crest and the trough of the shunt with the taps and the duty. The rail
+# and the NTC stay out of the row; the runner polls them before each segment.
+CHUNKS_SERVO = "0x238+2,0x240+10"
 
-def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500, dirs="both", decay="slow",
-          tel_chunks=CHUNKS_RAW, static_load=True):
-    """`osc-lab sweep` into `out` (sweep.csv + meta.json). `duty` is the step list
-    as the tool takes it, percent, with `then:` and `@MS` forms allowed."""
+
+def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
+          dirs="both", decay="slow", tel_chunks=CHUNKS_RAW, static_load=True,
+          stall=False, guard_lo=None, guard_hi=None, settle_ms=None,
+          background=False):
+    """`osc-lab sweep` into `out` (sweep.csv + meta.json). `duty` is the step
+    list as the tool takes it, percent, with `then:`, `hold:`, `coast:` and
+    `@MS` forms allowed. `stall` seeks the end stop in each direction and
+    presses the rungs into it, `guard_lo` and `guard_hi` set the seek
+    envelope in counts, `settle_ms` the still time before a rung, all as the
+    tool takes them. `background` returns the running Popen instead of
+    waiting."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    args = ["sweep", "--out", out, "--duty-pct", ",".join(map(str, duty)), "--window-ms", window_ms,
-            "--baseline-ms", baseline_ms, "--rest-ms", rest_ms, "--dirs", dirs, "--decay", decay]
+    args = ["sweep", "--out", out, "--duty-pct", ",".join(map(str, duty)),
+            "--window-ms", window_ms, "--baseline-ms", baseline_ms,
+            "--rest-ms", rest_ms, "--dirs", dirs, "--decay", decay]
     if tel_chunks:
         args += ["--tel-chunks", tel_chunks]
     if static_load:
         args.append("--static-load")
+    if stall:
+        args.append("--stall")
+    for flag, value in (("--guard-lo", guard_lo), ("--guard-hi", guard_hi),
+                        ("--settle-ms", settle_ms)):
+        if value is not None:
+            args += [flag, value]
+    if background:
+        return start(*args, tool=LAB)
     run(*args, tool=LAB)
     return out
+
+
+def clapper(path, flashes):
+    """`osc clapper`: `flashes` flashes of the STAT lamp, one CSV line per
+    flash with the host time either side, into `path`."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        subprocess.run([TOOL, "-i", ID, "clapper", "--flashes", str(flashes)],
+                       stdout=f, text=True, check=True)
+    return path
 
 
 def bursts(out, pct, repeats=3, chans="diff", dirs="both", rest_ms=150, decay="slow", spin_ms=0):
