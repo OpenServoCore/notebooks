@@ -26,7 +26,13 @@ and lifted off by its screw, since a shaft pressed past its end play rides
 the brushes wrong and the motor is not the same motor after.
 
 One motor goes through every experiment in the order below and is torn
-down last.
+down last. A second motor of the same clone, `mg90-c`, went through the
+free-rotor and locked-rotor captures afterward and was not opened; each
+notebook closes with a second-motor section that runs its method on
+mg90-c's own captures and result files, with mg90-b's numbers beside them as
+the comparison only, and writes `results/mg90-c.json`. That section is the
+check that the constants and the methods carry to a motor they were not
+built on.
 
 ## [rest-resistance](rest-resistance/rest-resistance.ipynb)
 
@@ -52,6 +58,17 @@ temperature is the copper's.
 
 Run: the `capture` plan of `uv run python -m oscnb.sitting locked`, and
 `stages/2-motor/rest-resistance/capture.py ohms` before the teardown, then the notebook.
+
+Second motor: mg90-c's stall pass through the same cells reads 4.40 ohm in the
+median over its twelve holes in direction +1 at 0.79 A, 4.28 to 4.44, against
+mg90-b's 4.46 at a board 3 C warmer, a gap the size of 3 C of copper with the
+copper's temperature measured on neither pass. Direction -1 reads 1.3 % over
+it, the laps of a hole repeat to 0.24 % as on mg90-b, and the direction gap
+keeps half the first lap's rise with an offset mg90-b's did not have. Hole 1
+sets the low end: its 3.7 V lap is not on a line and warms twice as fast as
+the rest. The early fall is near zero on this motor. The meter's route and the
+run-up read were not run on mg90-c, so its result file carries the stall
+pass's keys alone.
 
 ## [inductance](inductance/inductance.ipynb)
 
@@ -80,6 +97,18 @@ the same seat.
 Run: the `capture` plan of `uv run python -m oscnb.sitting locked`, with
 `--include fast` for the fast-decay groups at the last hole, then the
 notebook. The reversal and step-size runs were the first motor's alone.
+
+Second motor: mg90-c's `capture-1` and `fast-1`, the main run at twelve holes
+and the fast-decay run at hole 11, on the same bar seat as its stall pass,
+read by the same cells with the motor's own edge pools and its own rest-
+resistance result at each hole, into `results/mg90-c.json` with mg90-b's keys
+where the runs allow (the reversal, step-size and travel-bound keys are left
+out). L agrees with mg90-b within 2 % on every model and duty, 0.84 against
+0.83 mH over both duties, tau 199 against 194 us, the window's L and the fast
+ramp within 1 to 5 %, the ripple-to-fit ratio within 0.003, and the first
+burst's jump after a reversal within a point, 10.3 against 11.1 %. The burst R
+spreads 2.6 % over the holes against mg90-b's 13 %, and the low triple of L
+sits at holes 1, 5 and 9 on this seat against 3, 7 and 11 on mg90-b's.
 
 ## [bemf-coast](bemf-coast/bemf-coast.ipynb)
 
@@ -113,6 +142,19 @@ Run: `uv run python -m oscnb.sitting free` for the reference, the ladder
 and the slow rungs, `python -m oscnb.sitting meter` for the meter runs,
 `--include swapped` or `spinning` for those, then the notebook.
 
+Second motor: mg90-c's ladder, meter and swapped runs through the same cells,
+every number re-derived from its own captures. The back-EMF constant reads
+7.316 mV per rev/s against mg90-b's 7.341, 0.34 % apart with bounds about 1 %
+wide on each, the two directions equal to 0.02 %, the spin route -0.19 % as
+before, and the trend down the coast again the zero's, flat under no zero. The
+reading term reads 4.12 to 4.25 mA/V at 20 to 40 % and falls to nothing at 100
+% as on mg90-b, within its systematics, while the metered rungs, run after the
+brush change, draw 5 to 15 % more current than mg90-b's. Its 7.4 V block does
+not read under its 5.0 V block at matched speed, its direction split under
+drive is there at most rungs, and the 3.7 V 15 % rung sits under the window's
+floor and is left out. `results/mg90-c.json` carries every key but the
+spinning run's.
+
 ## [no-load-current](no-load-current/no-load-current.ipynb)
 
 Targets: the current the free motor draws against its speed, the drag it
@@ -128,6 +170,18 @@ against the coast that follows it, then again with bemf-coast's reading
 term taken out of the spin's current.
 
 Run: no capture of its own; the notebook reads bemf-coast's dataset.
+
+Second motor: mg90-c's ladder, meter-1 and high-1 through the same cells,
+every input re-derived from its own captures, since no mg90-c bemf-coast
+result existed. $K_e$ 1.1652 mV s/rad against 1.1684, the reading term 4.18
+mA/V against 4.29 with the same fall by duty, and the 7.4 V rungs on the 5.0 V
+curve with the term out within -3 to +2 mA. The routes to $J$ through the
+coast land within 1 to 3 % of mg90-b's, the spin-up's ratio at 5.93 against
+6.30, and only the spin-up's line does not transfer, 3.88 against 5.44, which
+sets the bracket's low end. As delivered the motor drew 3 to 9 % less than
+mg90-b at the same rungs and ran faster; its meter runs after the brush change
+read 3 to 8 mA more. Its 3.7 V level, which ran first, sits 3 to 8 mA under
+the 5.0 V curve, and its free-rotor drag is about 5 % lower at 100 rev/s.
 
 ## [speed-torque](speed-torque/speed-torque.ipynb)
 
@@ -155,6 +209,24 @@ motor at 100 % runs at its top speed, which wears the brushes.
 
 Run: the `capture` plan of `uv run python -m oscnb.sitting free`; the notebook
 comes after rest-resistance and inductance, its last inputs.
+
+Second motor: mg90-c's `speed-torque/capture-1`, state A as delivered, goes
+through the same cells with every constant from mg90-c's own result files of
+bemf-coast, no-load-current, rest-resistance and inductance, and writes
+`results/mg90-c.json` with the same keys. The curve comes out the same within
+the method's spread: $K_e$ within 0.3 %, the stall current within 1.5 %, the
+stall torque within 1.5 % by the first millisecond, the peak power within 0.5
+% at the same torque, and $J$ 6.14 against 6.26 x $10^{-9}$ kg m$^2$ with
+overlapping brackets. The 20 mA the 100 % drive draws over the term-out drag
+curve shows on both motors. What differs is the settled end, where mg90-c runs
+3 to 4 % faster at no load, drops 0.13 V less besides its EMF and drops out
+half as often, a state the record shows lasting only until its first spins
+over the rated voltage. The section also reads all eleven mg90-c run-up sets
+and the eight slow references as the brush-state record: the fast run-up's
+dropout rate steps up after each exposure over the rated voltage as rail times
+duty, including 0.7 s of 7.4 V pulses that never passed 300 rev/s, does not
+rise after 7.4 V held under it, and the slow reference sees none of it;
+whether the run-ups themselves add to it was not separated.
 
 ## [teardown](teardown/teardown.ipynb)
 
@@ -258,6 +330,17 @@ once the disc's pads are read, `capture.py disc iv` once the disc is off the
 rotor, then `capture.py coil levels ra`, `capture.py coil levels bare` and
 `capture.py coil levels can` with the disc off, then the notebook.
 
+Second motor: mg90-c is not torn down. The question the teardown answers was
+settled on mg90-b, and mg90-c stays whole as the motor the other notebooks
+grade their methods on a second time and as the motor whose brushes were
+changed on purpose, so a later teardown against mg90-b's photographs is the
+way to see what changed. The notebook quotes the terminals' record from the
+dataset's README, the run-up's dropout rate stepping after every exposure to
+7.4 V, with or without speed, and the crest falling a few milliamps each time
+while the slow reference held, and lists three candidates, eroded finger tips,
+deposits at the segment edges and a lubricant film, each with the observation
+on an opened mg90-c that separates it. It writes no `results/mg90-c.json`.
+
 ## [motor-model](motor-model/motor-model.ipynb)
 
 Targets: one model of the current inside the PWM window that draws every
@@ -316,6 +399,21 @@ the same speeds at up to eleven times the current.
 Run: no capture of its own, the notebook reads the datasets above. Its fits
 run on every core, and the simulator needs numba, which `uv sync` installs.
 
+Second motor: the same code, run through `second_motor.py` on mg90-c's own
+result files and captures. The locked model holds: the Rayleigh, G and rung
+form fits hole 11 at 1.94 per point as on mg90-b, with L0 0.516 mH, G 2.49 mS
+in fast decay and the rung at 0.264 mH and 38 us beside mg90-b's 0.505, 2.49
+and 0.240 and 39, and only the sign term of L(i) changes sign. The spinning
+loss equals the locked loss once the current is read on the zero a driven
+bridge sits on, 2.43 to 2.54 mS against 2.49; by the board's constant zero it
+reads 3.03 mS at 3.5 per point, because the new 3.7 V rail's zero sits under
+that constant, and the dropout rows read 2.5, 6.0 and 10.2 counts at 3.7, 5
+and 7.4 V. The coast still reads as a meter at 0.990, the 100 % run-ups sit 20
+mA over the term-out curve on both motors, and $V_b$ has the same shape and
+direction split, 52 mV at 300 rev/s with exponent 2.88 against 45 mV and 3.55,
+smaller at full speed with half the dropouts. The 3.7 V 15 % cycles are left
+out as bemf-coast left them, and the teardown-side keys are not written.
+
 ## [identification](identification/identification.ipynb)
 
 Targets: whether the board alone recovers each motor constant a back-EMF
@@ -349,6 +447,19 @@ capture must record so every route runs on it.
 Run: no capture of its own. `identification.py` beside the notebook holds
 the routes and the pieces the compensation notebook also reads, and its
 reductions run on every core.
+
+Second motor: the same passes run on mg90-c's own datasets through
+`second_motor_ident.py`, each graded against mg90-c's own result files, with
+mg90-b as the comparison only. The locked routes and the coasts carry. R from
+one seat lands within 0.92 % sd against 0.91 %, L from one seat within 2.7 %
+against 2.8 %, and Ke from one repeat within 0.13 % held out against 0.05 %.
+k_d reads 0.44 against 0.52. Two rules fail on this motor and are reported,
+not worked around. The pinned coast read gives a negative c on one cut in six,
+which takes pass 1's c and $\Delta$ down (+68.5 mA on the grid, -0.31 of the
+DMM), while the window read of the same cuts sits at 0.92 to 1.01. The ripple
+tach's gate drops two 7.4 V 60 % spins, which leaves the minimal V_b table in
+direction +1 64 mV rms from the full-data one. `results/mg90-c.json` carries
+mg90-b's keys plus `pinned_c_negative_cuts` and `tach_gate_dropped_spins`.
 
 ## [compensation](compensation/compensation.ipynb)
 
@@ -385,3 +496,71 @@ constant.
 Run: no capture of its own. `compensation.py` beside the notebook holds the
 estimator and its scoring on top of identification's module, and the grid's
 steady states run on every core.
+
+Second motor: the same scoring runs on mg90-c through `second_motor_comp.py`,
+with mg90-c's own reference constants and identification's three mg90-c
+passes, and mg90-b as the comparison only. Under 350 rev/s the free shaft
+reads 0.41 to 2.64 % rms by band against 0.45 to 2.44 %, the run-ups 2.35
+against 2.54 %, and the 3.7 V rungs, which no fit saw, 1.50 %. swapped-1, run
+after the brushes changed, reads +4.1 % at 469 rev/s with the speed table and
++1.3 to +1.7 % with k_d. R, Ke and L from the board cost nothing visible.
+$\Delta$ by the anchor costs 3.6 points on capture-1 against 0.6 on mg90-b,
+and the pass with the negative pinned c reads 28.7 %. No V_b subset holds the
+0.2 point rule once the gate takes a repeat's top rung, and the one complete
+repeat of 7.4 V 30, 40 and 60 % does. `results/mg90-c.json` carries mg90-b's
+keys plus the 3.7 V set.
+
+## What the stage concludes: four terms, one pass
+Four terms stand between the terminal volts and the motor's speed. The stage
+measured each on mg90-b, checked each on mg90-c, and ends with how a user's
+bench identifies it with one supply and no meter, and how the firmware
+compensates it. The identification is one pass on the servo, inside the rated
+voltage as rail times duty: a rest, locked bursts, then coast rungs.
+The current zero. The shunt amplifier reads one zero with the bridge asleep
+and a higher one awake, the step growing with the rail, 2 to 8 mA from 3.7 to
+7.4 V on this board, and it wanders a count or two over a sitting. It is the
+board's, not the motor's. Nothing is identified: the install's rest seeds it
+and a live two-zero tracker learns the rest, fed by coasts, brakes and the
+slow-decay trough under low duties, which stage 1's compensation notebook
+grades at 0.3 to 0.4 rev/s steady and up to 2 rev/s for the first second after
+a rail change.
+The reading term. The board samples the shunt once per period near the crest,
+and the period mean sits under it at partial duty by 3.4 to 3.9 mA per volt of
+the window at 10 to 40 %, tens of milliamps on the free shaft at 7.4 V,
+nothing at 100 %, set by the winding's L and a loss conductance of about 2.5
+mS that came out the same on both motors in the locked fit. The locked bursts
+already run for R and L give both constants. The firmware turns each crest
+reading into a mean through that model at the live duty and rail before it
+enters the estimate; what the model leaves at speed lands in the brush table,
+fitted on the same construction. About a milliamp is left, held out, on either
+motor.
+The brush drop. 100 to 300 mV across the brushes at speed, different by
+direction, plus a share that follows the dropout rate at about half a
+millivolt per dropout per second, and it moves with the state of the brushes.
+Rungs over the speed range in both directions, each ending in a natural coast,
+give Ke and the true speed at the cut from the coast and the leftover voltage
+from the drive, so one pass yields Ke, the speed table per direction and the
+per-dropout coefficient. The estimate is the root of the motor's equation with
+the table inside it. The dropout rate over a window is also the flag: when it
+sits well above the identified rate, the tables are stale and the estimate is
+marked, never trimmed live; re-identification is the user's act. One to two
+percent is left above 300 rev/s, a fixed voltage of a few rev/s at a crawl.
+R and Ke with temperature. Copper rises 0.39 % per degree. The identified R is
+tagged with its temperature, the copper coefficient is physics, and the
+magnets' coefficient on Ke, a fraction of a percent per degree and one
+constant per motor family, is not measured in this stage; the bare motors ran
+within a few degrees of room. Both scale from the identified values by the
+winding temperature the thermal model carries. No coast is injected at runtime
+to read them.
+Two rules frame the chain. Nothing puts more than the rated voltage across the
+motor as rail times duty: 7.4 V at 70 % changed mg90-c's brushes within
+seconds, 67 % did not, and so did 0.7 s of 7.4 V pulses from rest that never
+passed 300 rev/s, so the line is electrical and the firmware's duty cap tracks
+the rail. And the dropout rate is the flag that the brushes have moved anyway.
+What the second motor added: the constants carry, Ke within 0.3 %, R within
+1.2 % at a board 3 C cooler, L within 1 %, the loss conductance the same; the
+identification carries with two fragilities for the next stage's requirements,
+a pinned read of the drag coefficient that one cut in six inverted, and a
+speed gate that excluded real spins; and the mechanism behind the brush
+change, eroded tips, edge deposits or a film, stays open, with mg90-c kept
+whole for the teardown that would tell.

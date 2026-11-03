@@ -1,0 +1,824 @@
+{
+  "capture": "telemetry/mg90-c__dev-v006-2A-D/inductance/capture-1",
+  "notes": "mg90-c, the second motor: capture-1 (twelve holes, the five groups in the first motor's order on a 5 V rail) and fast-1 (hole 11, f1 to f4 in fast decay, f5 and f6 slow at the same seat) read by this notebook's cells exactly as mg90-b's are, every key defined as in results/mg90-b.json's notes; the edge pools are this run's own per duty and sign; no group is excluded; the bar seat is the one rest-resistance/capture-1's stall pass used, so hole k is the same rotor angle in both; R at the holes for l_ripple_mh, l_mh_r_pinned_by_duty and fast_l_ramp_mh from rest-resistance's result for mg90-c; keys of mg90-b's file left out: reversal_l_first_jump_pct, reversal_tau_first_jump_pct, reversal_r_first_jump_pct, reversal_l_group_mh, steps_old_step_current_ma, steps_l_first_jump_pct_by_old_step, steps_tau_first_jump_pct_by_old_step, steps_r_first_jump_pct_by_old_step, steps_l_ripple_first_jump_pct_by_old_step, steps_leftover_uvs_by_old_step, steps_late_current_pct_by_old_step, steps_reverse_25_after_25, leftover_per_amp_uvs_per_a, travel_bound_uvs, travel_bound_preloaded_uvs_by_old_step and steps_excess_share_pairs_1_4_pct, since reversal-1 and steps-1 were the first motor's alone; leftover_rotor_angle_mrad_by_change, since no bemf-coast result for this motor is read here",
+  "l_mh": {
+    "value": 0.8410170559483771,
+    "lo": 0.7728993222645129,
+    "hi": 0.9477710576350411,
+    "unit": "mH"
+  },
+  "l_ripple_mh": {
+    "value": 0.6283080486227619,
+    "lo": 0.590742353370503,
+    "hi": 0.6727751877315571,
+    "unit": "mH"
+  },
+  "l_ripple_first_mh": {
+    "value": 0.6997152484490294,
+    "lo": 0.6417979498712556,
+    "hi": 0.7878978586523245,
+    "unit": "mH"
+  },
+  "tau_us": {
+    "value": 199.36842884917502,
+    "lo": 184.59782370691957,
+    "hi": 220.34928480652593,
+    "unit": "us"
+  },
+  "r_burst_ohm": {
+    "value": 4.218400370480964,
+    "lo": 4.136668881063505,
+    "hi": 4.382434595255024,
+    "unit": "ohm"
+  },
+  "early_l_mh": {
+    "value": 0.7853812814292802,
+    "lo": 0.7080657800487041,
+    "hi": 0.8890668349814035,
+    "unit": "mH"
+  },
+  "early_r_ohm": {
+    "value": 4.652139574320634,
+    "lo": 4.519865938567092,
+    "hi": 4.832414596367878,
+    "unit": "ohm"
+  },
+  "l_mh_by_duty": {
+    "25": {
+      "value": 0.8149502595540967,
+      "lo": 0.7728993222645129,
+      "hi": 0.8619338850619616,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8837384383769809,
+      "lo": 0.838523524552208,
+      "hi": 0.9477710576350411,
+      "unit": "mH"
+    }
+  },
+  "tau_us_by_duty": {
+    "25": {
+      "value": 194.34525859990296,
+      "lo": 184.59782370691957,
+      "hi": 203.7359277022867,
+      "unit": "us"
+    },
+    "40": {
+      "value": 206.35996634509505,
+      "lo": 195.94480646519165,
+      "hi": 220.34928480652593,
+      "unit": "us"
+    }
+  },
+  "r_burst_ohm_by_duty": {
+    "25": {
+      "value": 4.183857720706782,
+      "lo": 4.136668881063505,
+      "hi": 4.277551556492247,
+      "unit": "ohm"
+    },
+    "40": {
+      "value": 4.277465581205586,
+      "lo": 4.189460028268026,
+      "hi": 4.382434595255024,
+      "unit": "ohm"
+    }
+  },
+  "l_mh_r_pinned_by_duty": {
+    "25": {
+      "value": 0.7656676121550011,
+      "lo": 0.7312092091115951,
+      "hi": 0.8147145064455752,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8558226965887948,
+      "lo": 0.8223004082174425,
+      "hi": 0.9044243920175072,
+      "unit": "mH"
+    }
+  },
+  "window_scale": {
+    "value": 1.006331915441961,
+    "lo": 1.0045500774479592,
+    "hi": 1.0081137534359628,
+    "unit": "ratio"
+  },
+  "applied_volts_drop_pct": {
+    "value": -5.439188183475291,
+    "lo": -6.470452308403341,
+    "hi": -4.99656541789919,
+    "unit": "%"
+  },
+  "captures": {
+    "value": 216.0,
+    "lo": null,
+    "hi": null,
+    "unit": "captures"
+  },
+  "l_first_capture_mh": {
+    "value": 0.8500500353337586,
+    "lo": 0.783757448855847,
+    "hi": 1.055805057645995,
+    "unit": "mH"
+  },
+  "l_other_captures_mh": {
+    "value": 0.8410170559483771,
+    "lo": 0.7633920539710602,
+    "hi": 0.9504022488247148,
+    "unit": "mH"
+  },
+  "tau_first_capture_us": {
+    "value": 199.6268144819647,
+    "lo": 187.40295622581314,
+    "hi": 246.72915041775238,
+    "unit": "us"
+  },
+  "tau_other_captures_us": {
+    "value": 199.36842884917502,
+    "lo": 181.05274952617737,
+    "hi": 220.83971200663504,
+    "unit": "us"
+  },
+  "l_mh_by_hole": [
+    0.8512,
+    0.7859,
+    0.8386,
+    0.8336,
+    0.8706,
+    0.7931,
+    0.8265,
+    0.8145,
+    0.8581,
+    0.8019,
+    0.8389,
+    0.8157
+  ],
+  "l_ripple_mh_by_hole": [
+    0.6442,
+    0.6289,
+    0.626,
+    0.6351,
+    0.6419,
+    0.6271,
+    0.6008,
+    0.6225,
+    0.644,
+    0.6267,
+    0.6317,
+    0.6337
+  ],
+  "tau_us_by_hole": [
+    200.9958,
+    188.6946,
+    200.971,
+    199.7942,
+    206.3805,
+    190.067,
+    198.981,
+    196.9401,
+    206.1266,
+    194.4236,
+    201.0748,
+    192.0528
+  ],
+  "r_burst_ohm_by_hole": [
+    4.2352,
+    4.2012,
+    4.1945,
+    4.2195,
+    4.2213,
+    4.233,
+    4.214,
+    4.1835,
+    4.2024,
+    4.1697,
+    4.1938,
+    4.279
+  ],
+  "l_mh_25_by_hole": [
+    0.8326,
+    0.7742,
+    0.8188,
+    0.8243,
+    0.8524,
+    0.7876,
+    0.8065,
+    0.8055,
+    0.8451,
+    0.7908,
+    0.8319,
+    0.8102
+  ],
+  "l_mh_40_by_hole": [
+    0.9071,
+    0.8398,
+    0.8994,
+    0.8855,
+    0.9362,
+    0.8521,
+    0.8777,
+    0.8705,
+    0.9208,
+    0.8557,
+    0.8982,
+    0.877
+  ],
+  "l_mh_by_duty_sign": {
+    "25_rev": 0.817,
+    "25_fwd": 0.808,
+    "40_rev": 0.892,
+    "40_fwd": 0.8746
+  },
+  "l_ripple_mh_by_duty_sign": {
+    "25_rev": 0.6321,
+    "25_fwd": 0.6158,
+    "40_rev": 0.6412,
+    "40_fwd": 0.6217
+  },
+  "tau_us_by_duty_sign": {
+    "25_rev": 194.4771,
+    "25_fwd": 194.1775,
+    "40_rev": 207.2027,
+    "40_fwd": 204.9912
+  },
+  "r_burst_ohm_by_duty_sign": {
+    "25_rev": 4.2065,
+    "25_fwd": 4.1625,
+    "40_rev": 4.2923,
+    "40_fwd": 4.2379
+  },
+  "l_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 7.119909722203587,
+      "lo": 4.646548069519918,
+      "hi": 11.178027998741413,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": -2.1410673673516456,
+      "lo": -2.915542117103298,
+      "hi": -1.1629953384314384,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 10.26783808519972,
+      "lo": 8.83818971710959,
+      "hi": 11.72832510132733,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 1.6958183191485898,
+      "lo": -0.013388010998394151,
+      "hi": 2.8330478742317755,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": 0.5724472704411898,
+      "lo": -1.8189163880462544,
+      "hi": 2.0829757501496626,
+      "unit": "%"
+    }
+  },
+  "tau_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 5.220780836868721,
+      "lo": 1.686882475617968,
+      "hi": 9.814520008580562,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": -3.3195483350993094,
+      "lo": -4.809373277616691,
+      "hi": -2.10240285262846,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 10.554663240689187,
+      "lo": 8.656261314248393,
+      "hi": 12.863340672819268,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 1.496472002209448,
+      "lo": -0.7145279779813163,
+      "hi": 3.1647327559500393,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": 0.7513763192547929,
+      "lo": -2.757668759172194,
+      "hi": 2.9048239780076646,
+      "unit": "%"
+    }
+  },
+  "r_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 1.80451399129955,
+      "lo": 1.2964849806772705,
+      "hi": 3.051090727478334,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": 1.402581695236349,
+      "lo": 1.0054023430313919,
+      "hi": 2.022437678775546,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": -0.45713859418594627,
+      "lo": -1.0081617806042775,
+      "hi": 0.4800810391996535,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": -0.04322418786615323,
+      "lo": -0.6519420363096939,
+      "hi": 0.7058919825120302,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": -0.28008698067838456,
+      "lo": -1.1369732986473036,
+      "hi": 1.1007749847490533,
+      "unit": "%"
+    }
+  },
+  "l_ripple_first_jump_pct_by_change": {
+    "g1_bar_move_and_reversal": {
+      "value": 1.0467883425601787,
+      "lo": -2.7152135217132,
+      "hi": 5.58825835295369,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": 0.11981266987116101,
+      "lo": -1.2745462430727605,
+      "hi": 1.7273937504258985,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 1.2934732784901648,
+      "lo": -0.6103718394783963,
+      "hi": 4.006617295188986,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": -0.704180579351249,
+      "lo": -4.664709279877699,
+      "hi": 5.941350231088993,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": 0.22609179462921292,
+      "lo": -3.8111338250217175,
+      "hi": 2.6297222510419216,
+      "unit": "%"
+    }
+  },
+  "leftover_flux_uvs_by_change": {
+    "g1": {
+      "value": 15.672428102552423,
+      "lo": 14.241086338257197,
+      "hi": 20.07503977921199,
+      "unit": "uV s"
+    },
+    "g2": {
+      "value": 1.6939466556757063,
+      "lo": -0.38825130349644793,
+      "hi": 2.9624156104734425,
+      "unit": "uV s"
+    },
+    "g3": {
+      "value": 26.27172388253299,
+      "lo": 22.545137231225283,
+      "hi": 28.098569013916727,
+      "unit": "uV s"
+    },
+    "g4": {
+      "value": 2.133499261003884,
+      "lo": 0.35086745825657,
+      "hi": 4.046998488422981,
+      "unit": "uV s"
+    },
+    "g5": {
+      "value": 0.7320604153388084,
+      "lo": -1.9428455038710792,
+      "hi": 1.1415626297873738,
+      "unit": "uV s"
+    }
+  },
+  "even_over_odd_holes_pct": {
+    "L at 25 %": {
+      "value": 3.9793543704719894,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "L at 40 %": {
+      "value": 4.875906217421623,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "tau at 25 %": {
+      "value": 3.7005073137055144,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "R": {
+      "value": -0.09823557103255831,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "ripple L": {
+      "value": 0.38411000737665213,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "even_over_odd_holes_p": {
+    "L at 25 %": {
+      "value": 0.012987012987012988,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "L at 40 %": {
+      "value": 0.004329004329004329,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "tau at 25 %": {
+      "value": 0.010822510822510822,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "R": {
+      "value": 0.8333333333333334,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    },
+    "ripple L": {
+      "value": 0.7770562770562771,
+      "lo": null,
+      "hi": null,
+      "unit": "permutation p"
+    }
+  },
+  "fast_l_ramp_mh": {
+    "25_rev": {
+      "value": 0.6655789419685716,
+      "lo": 0.6645416632735557,
+      "hi": 0.669874703074223,
+      "unit": "mH"
+    },
+    "25_fwd": {
+      "value": 0.6634076236158639,
+      "lo": 0.6560638289091371,
+      "hi": 0.6653716489280326,
+      "unit": "mH"
+    },
+    "40_rev": {
+      "value": 0.710269848210187,
+      "lo": 0.7052534035575369,
+      "hi": 0.7128474747254979,
+      "unit": "mH"
+    },
+    "40_fwd": {
+      "value": 0.7030480953608103,
+      "lo": 0.6915168962874089,
+      "hi": 0.7074085604678513,
+      "unit": "mH"
+    }
+  },
+  "fast_l_ramp_over_fit": {
+    "25": {
+      "value": 0.820612993900204,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.8054403980650535,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_l_ramp_over_ripple": {
+    "25": {
+      "value": 1.055192284527753,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 1.1059190256932303,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_l_ramp_late_start_pct": {
+    "25": {
+      "value": 2.0330689425057225,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "40": {
+      "value": 1.4573370527899643,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "fast_on_edge_step_ma": {
+    "25": {
+      "value": 17.47611491185331,
+      "lo": 16.597185968900547,
+      "hi": 18.781165549558157,
+      "unit": "mA"
+    },
+    "40": {
+      "value": 21.851908626243947,
+      "lo": 20.867980535692364,
+      "hi": 22.473302480280108,
+      "unit": "mA"
+    }
+  },
+  "fast_on_edge_step_corrected_ma": {
+    "25": {
+      "value": 18.356508050419908,
+      "lo": 17.751252185832232,
+      "hi": 20.129157167924973,
+      "unit": "mA, a line read, bounds the band's start"
+    },
+    "40": {
+      "value": 23.75664131738427,
+      "lo": 22.546542256652295,
+      "hi": 26.678096420737862,
+      "unit": "mA, a line read, bounds the band's start"
+    }
+  },
+  "fast_on_edge_step_quad_ma": {
+    "25": {
+      "value": 12.0170433107916,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, a quadratic through the band"
+    },
+    "40": {
+      "value": 15.155747312611709,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, a quadratic through the band"
+    }
+  },
+  "fast_on_edge_spike_ma": {
+    "25": {
+      "value": 141.8485418872449,
+      "lo": null,
+      "hi": null,
+      "unit": "mA"
+    },
+    "40": {
+      "value": 152.42110401548672,
+      "lo": null,
+      "hi": null,
+      "unit": "mA"
+    }
+  },
+  "fast_on_edge_spike_nc": {
+    "25": {
+      "value": 44.320404125151015,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
+    },
+    "40": {
+      "value": 42.002205887347486,
+      "lo": null,
+      "hi": null,
+      "unit": "nC"
+    }
+  },
+  "fast_return_over_top": {
+    "25": {
+      "value": 0.44537815126050423,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.6047904191616768,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_return_over_top_ra": {
+    "25": {
+      "value": 0.8148148148148149,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.8476190476190476,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "fast_zero_before_window_us": {
+    "25": {
+      "value": 30.625,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    },
+    "40": {
+      "value": 19.208333333333332,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    }
+  },
+  "fast_slow_l_mh": {
+    "25": {
+      "value": 0.8098578888712161,
+      "lo": 0.8076066555229394,
+      "hi": 0.8223769781697616,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8746642103447304,
+      "lo": 0.8661400872061881,
+      "hi": 0.8748179319854401,
+      "unit": "mH"
+    }
+  },
+  "fast_slow_l_ripple_mh": {
+    "25": {
+      "value": 0.6149714846654595,
+      "lo": 0.6052520055299064,
+      "hi": 0.6314331996519693,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.6292945039093256,
+      "lo": 0.6252113315771223,
+      "hi": 0.6308713418853946,
+      "unit": "mH"
+    }
+  },
+  "fast_l_ramp_first_jump_pct": {
+    "f1-fwd-25": {
+      "value": 0.47337637231148477,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "f2-fwd-40": {
+      "value": -1.0681978525719726,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "f3-rev-40": {
+      "value": -0.10339089773609977,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "f4-rev-25": {
+      "value": 0.03264260132311847,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "fast_slow_first_burst": {
+    "f5-fwd-25": {
+      "l_first_jump_pct": {
+        "value": 7.669611940246246,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "leftover_uvs": {
+        "value": 14.907958541818646,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      }
+    },
+    "f6-fwd-40": {
+      "l_first_jump_pct": {
+        "value": -1.8817751515255998,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "leftover_uvs": {
+        "value": 1.9878540821399808,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      }
+    }
+  },
+  "ripple_over_fit": {
+    "25": {
+      "value": 0.7678606527970704,
+      "lo": 0.7321774417587207,
+      "hi": 0.8084373415271738,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.7148529562332347,
+      "lo": 0.6557920502521066,
+      "hi": 0.7623363860854087,
+      "unit": "ratio"
+    }
+  },
+  "ripple_over_fit_inductors": {
+    "25": {
+      "value": 0.9817553109449711,
+      "lo": 0.9701855238874252,
+      "hi": 0.9956539164799828,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.9115575179059159,
+      "lo": 0.9111624559269715,
+      "hi": 0.9594763551607993,
+      "unit": "ratio"
+    }
+  },
+  "window_scale_bridge_states": {
+    "value": 1.0052500035278729,
+    "lo": 1.0036944884427073,
+    "hi": 1.0082051890964487,
+    "unit": "ratio"
+  },
+  "k_bound_pct": {
+    "value": 0.10762615372208462,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "l_mh_bridge_states_k": {
+    "value": 0.841922210257841,
+    "lo": 0.7737311640772102,
+    "hi": 0.9487911071704648,
+    "unit": "mH"
+  },
+  "l_ripple_mh_bridge_states_k": {
+    "value": 0.6289842724090209,
+    "lo": 0.5913781466438429,
+    "hi": 0.6734992697893091,
+    "unit": "mH"
+  },
+  "r_burst_ohm_bridge_states_k": {
+    "value": 4.222940472548311,
+    "lo": 4.141121018672412,
+    "hi": 4.387151241049283,
+    "unit": "ohm"
+  },
+  "drive_offset_twice_pct": {
+    "R": {
+      "value": 1.6535125441776266,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "L": {
+      "value": 1.4525151141406623,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "tau": {
+      "value": -0.15434694978968544,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "ripple L": {
+      "value": 0.5940558940491281,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  }
+}

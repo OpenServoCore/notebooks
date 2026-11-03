@@ -68,16 +68,33 @@ Folder `stages/5-control/`. Targets the control loops. Current, velocity, positi
 including how a hold behaves.
 
 The loops are designed from the measured plant and the estimators' noise
-and delay, then validated closed loop on the bench. Each notebook ends with
-the loop the data supports, which is what the firmware carries.
+and delay, over the stage 3 data. Each notebook ends with the loop the data
+supports, which is what the firmware carries, and the acceptance it has to
+meet in stage 7.
 
 ### 6. Safety design
 
 Folder `stages/6-safety/`. Targets the limits and the faults. The current ceiling, the stall and
 position-error faults, the thermal derate and cutoff, the stop-hold limits.
 
-Derived from stages 3 to 5 and validated on the bench, including on a
-sagging supply.
+Derived from stages 3 to 5, with the acceptance each limit and fault has
+to meet in stage 7, including on a sagging supply.
+
+### 7. Validation
+
+Folder `stages/7-validation/`. Targets the firmware as built from stages 4
+to 6, mode by mode, on the servo of stage 3 and then on servos it was not
+designed on.
+
+The closed-loop image runs each mode against the stage 0 instruments and
+the acceptance the design stages pre-registered: position, with its step,
+hold and tracking error against the tag; velocity, from a crawl to full
+speed against the tag, smooth at the crawl; torque and the current ceiling
+against the DMM; the thermal estimate and derate against the winding's own
+resistance read at rest; the faults and the stop-hold limits, and all of it on a sagging supply.
+A mode passes or fails against its number, and a failure goes back to the
+stage that designed it. This is the bench gate for a release, and it is
+re-run on each new servo type.
 
 ## How an experiment is laid out
 

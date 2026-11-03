@@ -1,0 +1,2371 @@
+{
+  "capture": "telemetry/mg90-c__dev-v006-2A-D/bemf-coast/capture-1",
+  "notes": "the second motor through the same estimators as mg90-b's file, every input re-derived from mg90-c's own captures in this notebook, since no mg90-c bemf-coast result existed when it ran: the per-spin list (spin speed in the current's ripple over the spin's last 200 ms, i_spin_a through current-scale's in-drive offset, i_spin_open_zero_a through the coast's tail, v_on_v, the dropouts) as bemf-coast reads it; ke_v_s_per_rad is bemf-coast's coast route, the EMF over the whole ripple cycles closest to 10 ms from 1 ms past the cut over the speed counted in the same rows, open rows bridged, the mean over the spins with a counted window under the rest zero, its bounds the same mean under no zero and under the coast's tail only (bemf-coast's rail split and estimator share are not read here); reading_term_a_per_v is this motor's meter-1, the crest sample over the DMM in series per volt of the terminal difference, the mean at 20 to 40 % with the three points as the bounds, and the _meter keys take the term by duty through meter-1's 20, 30 and 40 % points and high-1's 60, 80 and 100 % points on 5.0 V, held below 20 %, the same per volt on every rail; the meter runs were captured after the motor's brushes changed at 7.4 V and capture-1 before, and the term is carried across that on the assumption that it is a property of the drive and the leads. The ladder has three rails, 3.7, 5.0 and 7.4 V, so the per-level keys carry three levels; level_gap keys stay 7.4 V over the 5.0 V curve as in mg90-b's file; the one-J lines and the bracket take the 3.7 V rungs in. j_kg_m2's bounds run from the lowest to the highest of the term-out routes through the coast, the spin-up's line with the term out and the spin-up's ratio both ways, without the meter loop's R-L bias, which needs this motor's rest-resistance and inductance results. Everything else as in mg90-b's notes",
+  "ke_v_s_per_rad": {
+    "value": 0.00116521908691755,
+    "lo": 0.001157226491309586,
+    "hi": 0.0011652662847268203,
+    "unit": "V s/rad"
+  },
+  "kt_n_m_per_a": {
+    "value": 0.00116521908691755,
+    "lo": 0.001157226491309586,
+    "hi": 0.0011652662847268203,
+    "unit": "N m/A"
+  },
+  "i0_by_speed": [
+    {
+      "level_v": 3.7,
+      "duty_pct": 15,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 47.8559170917907,
+        "lo": 47.72465409561848,
+        "hi": 47.98718008796292,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.04734809287439936,
+        "lo": 0.04696358807177471,
+        "hi": 0.04773259767702401,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.05019250541664735,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 15,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 47.849318207116085,
+        "lo": 47.761049809814935,
+        "hi": 47.937586604417234,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.047928262221186624,
+        "lo": 0.0474292260288362,
+        "hi": 0.048427298413537045,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.0504587495862584,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 20,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 70.02579629433137,
+        "lo": 69.9613405127691,
+        "hi": 70.09025207589364,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.05174693950488098,
+        "lo": 0.051270140085957594,
+        "hi": 0.05222373892380437,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.05415567773660599,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 20,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 70.12672210509095,
+        "lo": 69.99644622445523,
+        "hi": 70.25699798572667,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.051924837546802716,
+        "lo": 0.05169573761276876,
+        "hi": 0.05215393748083667,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.054391358407671765,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 30,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 114.00717788214172,
+        "lo": 113.80135545264967,
+        "hi": 114.21300031163376,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.059761602383221334,
+        "lo": 0.05912697887954896,
+        "hi": 0.06039622588689371,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.062104963228252326,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 30,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 111.65266009217817,
+        "lo": 110.34341925398732,
+        "hi": 112.96190093036901,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06297845125187958,
+        "lo": 0.061125270172244346,
+        "hi": 0.06483163233151482,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.06561674676462931,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 40,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 159.07693053792437,
+        "lo": 158.60053810618422,
+        "hi": 159.55332296966452,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06460912211902022,
+        "lo": 0.06419731468772552,
+        "hi": 0.06502092955031491,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.06717461280818367,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 40,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 157.80505021263573,
+        "lo": 156.80329247772733,
+        "hi": 158.80680794754414,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06495302407046942,
+        "lo": 0.06325530652477689,
+        "hi": 0.06665074161616195,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.0674118291881247,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 60,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 249.82824434109523,
+        "lo": 248.88299923710179,
+        "hi": 250.77348944508867,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06990795810066842,
+        "lo": 0.0687063733740727,
+        "hi": 0.07110954282726414,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.07265925129117067,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 60,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 245.0671969333497,
+        "lo": 244.40023343619092,
+        "hi": 245.73416043050847,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07046220998612744,
+        "lo": 0.07015646194135408,
+        "hi": 0.0707679580309008,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.07321181962693508,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 70.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 15,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 69.07509333521762,
+        "lo": 69.05350965414836,
+        "hi": 69.09667701628688,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.05896675128877447,
+        "lo": 0.058671976229686784,
+        "hi": 0.05926152634786215,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.05863915471797534,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 15,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 67.92853429566715,
+        "lo": 67.67619649945192,
+        "hi": 68.18087209188238,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06128067398345274,
+        "lo": 0.060554614355127,
+        "hi": 0.062006733611778476,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.06061869373862525,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 20,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 97.65689269162176,
+        "lo": 97.45423097024864,
+        "hi": 97.85955441299488,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06639867510036583,
+        "lo": 0.06623078103757322,
+        "hi": 0.06656656916315844,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.06587063180754356,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 20,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 95.46519035113828,
+        "lo": 95.43265319718878,
+        "hi": 95.49772750508777,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06983299569835638,
+        "lo": 0.06956746778225285,
+        "hi": 0.07009852361445991,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.06963047651274883,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 30,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 156.786407030703,
+        "lo": 156.6677361364574,
+        "hi": 156.9050779249486,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07693768402796458,
+        "lo": 0.07685799855507693,
+        "hi": 0.07701736950085224,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.07671479976140229,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 30,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 154.98410153137783,
+        "lo": 154.9281948119982,
+        "hi": 155.04000825075747,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07905660168783303,
+        "lo": 0.07878520894777172,
+        "hi": 0.07932799442789434,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.07874773351547727,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 40,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 218.51592444643356,
+        "lo": 218.26754889134662,
+        "hi": 218.7643000015205,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.08300618784843472,
+        "lo": 0.08265283665653989,
+        "hi": 0.08335953904032956,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.08215997084914332,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 40,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 217.38485324577172,
+        "lo": 215.54920092870515,
+        "hi": 219.2205055628383,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.08215061794232081,
+        "lo": 0.07950732469580687,
+        "hi": 0.08479391118883475,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.0816570946196627,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 60,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 341.0344076447568,
+        "lo": 340.4460433317632,
+        "hi": 341.62277195775044,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.09033759889923743,
+        "lo": 0.08941455090751138,
+        "hi": 0.09126064689096347,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.09019109077667893,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 60,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 333.54759668511525,
+        "lo": 333.34438398585894,
+        "hi": 333.75080938437156,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.08871573850053699,
+        "lo": 0.08858914974759499,
+        "hi": 0.08884232725347899,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.08850035147885306,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 35.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 15,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 110.51477173469378,
+        "lo": 110.50284199050586,
+        "hi": 110.5267014788817,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07752512201121502,
+        "lo": 0.07718946353477622,
+        "hi": 0.07786078048765381,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.07376824299582463,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 15,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 110.87650766788313,
+        "lo": 110.68855989313052,
+        "hi": 111.06445544263575,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07758855738398446,
+        "lo": 0.07734693847473781,
+        "hi": 0.07783017629323111,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.07388802237666035,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 20,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 154.60291505254284,
+        "lo": 154.4181531076953,
+        "hi": 154.78767699739038,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.08573809385003021,
+        "lo": 0.08552143556894526,
+        "hi": 0.08595475213111517,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.08205652725857439,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 20,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 154.76704521674725,
+        "lo": 154.54162017861734,
+        "hi": 154.99247025487716,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.08586019225849734,
+        "lo": 0.08531421006646181,
+        "hi": 0.08640617445053286,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.0817235624611471,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 30,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 244.69951604821745,
+        "lo": 244.47936751586286,
+        "hi": 244.91966458057203,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.09743854277975854,
+        "lo": 0.09717857671355053,
+        "hi": 0.09769850884596655,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.09372903764944492,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 30,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 240.5274604057522,
+        "lo": 240.3663607131651,
+        "hi": 240.6885600983393,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.09801004849924627,
+        "lo": 0.09783970671581511,
+        "hi": 0.09818039028267743,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.09443768639025714,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 45.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 40,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 333.85630146315134,
+        "lo": 333.5315304164559,
+        "hi": 334.1810725098468,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.1069349796086001,
+        "lo": 0.10666671500063223,
+        "hi": 0.10720324421656797,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.10266040937339298,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 40,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 327.5046982555813,
+        "lo": 327.1254684767434,
+        "hi": 327.88392803441917,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.10414433715073661,
+        "lo": 0.1037520090380712,
+        "hi": 0.10453666526340201,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.10044438272673727,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 103.33333333333333,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 60,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 509.56338325192036,
+        "lo": 508.99603893456964,
+        "hi": 510.1307275692711,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.1141919422010831,
+        "lo": 0.11333438891180851,
+        "hi": 0.11504949549035769,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.11002742216488604,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 133.33333333333334,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 60,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 487.0263973055177,
+        "lo": 486.24897848676125,
+        "hi": 487.8038161242742,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.11306875431609809,
+        "lo": 0.11240853713540813,
+        "hi": 0.11372897149678804,
+        "unit": "A"
+      },
+      "current_open_zero_a": {
+        "value": 0.10904401179171375,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "drops_out_per_s": {
+        "value": 446.6666666666667,
+        "lo": null,
+        "hi": null,
+        "unit": "1/s"
+      }
+    }
+  ],
+  "drive_drag_by_level": {
+    "3.7 V": {
+      "form": "I0 = a + b ln(w / w_ref), w in rad/s, w_ref = 2 pi x 100 rad/s, the board's crest reading with the reading term in, not the drag; the drag is drive_drag_by_level_meter",
+      "a_a": {
+        "value": 0.05804598579436054,
+        "lo": 0.05759716168259015,
+        "hi": 0.05849480990613092,
+        "unit": "A"
+      },
+      "b_a": {
+        "value": 0.014159663849633148,
+        "lo": 0.013393766854448442,
+        "hi": 0.014925560844817854,
+        "unit": "A per unit of ln(w)"
+      },
+      "rms_a": {
+        "value": 0.0019103936850847544,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "a_open_zero_a": {
+        "value": 0.06061785332719156,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "b_open_zero_a": {
+        "value": 0.014208304626628657,
+        "lo": null,
+        "hi": null,
+        "unit": "A per unit of ln(w)"
+      },
+      "speed_range_rev_s": {
+        "value": 251.48489453519994,
+        "lo": 47.61586926741783,
+        "hi": 251.48489453519994,
+        "unit": "rev/s"
+      }
+    },
+    "5 V": {
+      "form": "I0 = a + b ln(w / w_ref), w in rad/s, w_ref = 2 pi x 100 rad/s, the board's crest reading with the reading term in, not the drag; the drag is drive_drag_by_level_meter",
+      "a_a": {
+        "value": 0.0682656243791783,
+        "lo": 0.06757635845400824,
+        "hi": 0.06895489030434836,
+        "unit": "A"
+      },
+      "b_a": {
+        "value": 0.0182757274520701,
+        "lo": 0.01728635856011893,
+        "hi": 0.01926509634402127,
+        "unit": "A per unit of ln(w)"
+      },
+      "rms_a": {
+        "value": 0.002115139519709974,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "a_open_zero_a": {
+        "value": 0.06783464713216794,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "b_open_zero_a": {
+        "value": 0.018363676671510287,
+        "lo": null,
+        "hi": null,
+        "unit": "A per unit of ln(w)"
+      },
+      "speed_range_rev_s": {
+        "value": 341.7976749407464,
+        "lo": 67.49766728453078,
+        "hi": 341.7976749407464,
+        "unit": "rev/s"
+      }
+    },
+    "7.4 V": {
+      "form": "I0 = a + b ln(w / w_ref), w in rad/s, w_ref = 2 pi x 100 rad/s, the board's crest reading with the reading term in, not the drag; the drag is drive_drag_by_level_meter",
+      "a_a": {
+        "value": 0.07543435861538887,
+        "lo": 0.07483709786913662,
+        "hi": 0.07603161936164113,
+        "unit": "A"
+      },
+      "b_a": {
+        "value": 0.024392707842882073,
+        "lo": 0.023795178365822203,
+        "hi": 0.024990237319941943,
+        "unit": "A per unit of ln(w)"
+      },
+      "rms_a": {
+        "value": 0.0010999414549190338,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "a_open_zero_a": {
+        "value": 0.07173896763735066,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "b_open_zero_a": {
+        "value": 0.024183592563596742,
+        "lo": null,
+        "hi": null,
+        "unit": "A per unit of ln(w)"
+      },
+      "speed_range_rev_s": {
+        "value": 510.20152780892886,
+        "lo": 110.49300042009605,
+        "hi": 510.20152780892886,
+        "unit": "rev/s"
+      }
+    }
+  },
+  "level_gap_a": {
+    "value": 0.011418225527681607,
+    "lo": 0.00743414071471675,
+    "hi": 0.01541658441431408,
+    "unit": "A, 7.4 V over the 5.0 V curve at the same speed"
+  },
+  "level_gap_open_zero_a": {
+    "value": 0.00797509318316112,
+    "lo": 0.004127474055120873,
+    "hi": 0.011755113607371873,
+    "unit": "A"
+  },
+  "coast_decel_late_rad_s2": {
+    "form": "alpha = a + b sqrt(w), w in rad/s",
+    "a": {
+      "value": 2188.213240407604,
+      "lo": 2064.1475423616225,
+      "hi": 2312.278938453586,
+      "unit": "rad/s^2"
+    },
+    "b": {
+      "value": 276.9513076658529,
+      "lo": 272.14549150013596,
+      "hi": 281.7571238315698,
+      "unit": "rad/s^2 per sqrt(rad/s)"
+    },
+    "speed_range_rev_s": {
+      "value": 343.9111596067351,
+      "lo": 42.4588044543991,
+      "hi": 343.9111596067351,
+      "unit": "rev/s"
+    }
+  },
+  "coast_relax_early_pct": {
+    "value": 4.350313151925156,
+    "lo": 3.596655353593403,
+    "hi": 4.350313151925156,
+    "unit": "% over the late curve in the first 8 ms, 5 ms windows; the bounds span the 5 and 10 ms windows"
+  },
+  "j_kg_m2": {
+    "value": 5.932131900205254e-09,
+    "lo": 3.88284164688595e-09,
+    "hi": 6.038205471514753e-09,
+    "unit": "kg m^2"
+  },
+  "j_by_route": {
+    "ratio at the cut, 5.0 V rungs": {
+      "value": 7.741836113712163e-09,
+      "lo": 6.718472360263428e-09,
+      "hi": 8.619132789184826e-09,
+      "unit": "kg m^2"
+    },
+    "ratio at the cut, 7.4 V rungs": {
+      "value": 8.410131816574234e-09,
+      "lo": 7.384914348563998e-09,
+      "hi": 9.366629558189039e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, 5.0 V": {
+      "value": 4.622971735033925e-09,
+      "lo": 4.467874583076977e-09,
+      "hi": 4.778068886990873e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, 7.4 V": {
+      "value": 4.804375890831849e-09,
+      "lo": 4.611585807642003e-09,
+      "hi": 4.997165974021695e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, one J": {
+      "value": 4.740572976436618e-09,
+      "lo": 4.607619968640949e-09,
+      "hi": 4.873525984232288e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, one J, no open rungs": {
+      "value": 4.862693415634801e-09,
+      "lo": 4.6992495870701154e-09,
+      "hi": 5.026137244199486e-09,
+      "unit": "kg m^2"
+    },
+    "spin-up, line": {
+      "value": 3.8070532788160445e-09,
+      "lo": 3.607401645840496e-09,
+      "hi": 4.006704911791593e-09,
+      "unit": "kg m^2"
+    },
+    "spin-up, ratio at the start": {
+      "value": 5.932131900205254e-09,
+      "lo": 5.649094624695971e-09,
+      "hi": 6.354933973847109e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_ratio_by_level": {
+    "3.7 V": {
+      "value": 5.744513570592122e-09,
+      "lo": 5.552246719941799e-09,
+      "hi": 8.389272590889354e-09,
+      "unit": "kg m^2"
+    },
+    "5 V": {
+      "value": 5.725801238514617e-09,
+      "lo": 5.576065578182905e-09,
+      "hi": 5.8549166701608855e-09,
+      "unit": "kg m^2"
+    },
+    "7.4 V": {
+      "value": 6.095444630573807e-09,
+      "lo": 5.80850469182534e-09,
+      "hi": 6.617546378183174e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_ratio_by_direction": {
+    "-1": {
+      "value": 5.933874205433008e-09,
+      "lo": 5.657015487679449e-09,
+      "hi": 6.2350531025713336e-09,
+      "unit": "kg m^2"
+    },
+    "+1": {
+      "value": 5.887705243814453e-09,
+      "lo": 5.646280728771979e-09,
+      "hi": 6.630366181531836e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_ratio_without_open_rungs_kg_m2": {
+    "value": 5.852359893802317e-09,
+    "lo": 5.658253270249809e-09,
+    "hi": 6.201094579698548e-09,
+    "unit": "kg m^2"
+  },
+  "j_spinup_line_by_level": {
+    "3.7 V": {
+      "value": 5.060505353785667e-09,
+      "lo": 4.548705421303686e-09,
+      "hi": 5.572305286267647e-09,
+      "unit": "kg m^2"
+    },
+    "5 V": {
+      "value": 4.502007414045629e-09,
+      "lo": 4.113757025275358e-09,
+      "hi": 4.8902578028158996e-09,
+      "unit": "kg m^2"
+    },
+    "7.4 V": {
+      "value": 3.5531183474878013e-09,
+      "lo": 3.2744140905801596e-09,
+      "hi": 3.831822604395443e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_line_by_direction": {
+    "+1": {
+      "value": 3.6460283760803797e-09,
+      "lo": 3.353251254710569e-09,
+      "hi": 3.93880549745019e-09,
+      "unit": "kg m^2"
+    },
+    "-1": {
+      "value": 3.950878996079468e-09,
+      "lo": 3.6790686523322185e-09,
+      "hi": 4.222689339826718e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_line_without_open_rungs_kg_m2": {
+    "value": 4.893517137283679e-09,
+    "lo": 4.56668239018757e-09,
+    "hi": 5.220351884379787e-09,
+    "unit": "kg m^2"
+  },
+  "spinup_line_excess_a": {
+    "value": 0.0448769819052033,
+    "lo": 0.03957455043696708,
+    "hi": 0.050179413373439515,
+    "unit": "A"
+  },
+  "early_run_excess_a_by_level": {
+    "3.7 V": {
+      "40 to 75 ms": {
+        "value": 0.013400644749562603,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "75 to 100 ms": {
+        "value": 0.00832288866001557,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "100 to 150 ms": {
+        "value": 0.004921465112192096,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "150 to 200 ms": {
+        "value": 0.0037978591233646386,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "200 to 300 ms": {
+        "value": 0.0025099939783836678,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "300 to 450 ms": {
+        "value": 0.0016773793918203606,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "450 to 700 ms": {
+        "value": 0.0007872512751806379,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "700 to 1000 ms": {
+        "value": -0.00017329489789302127,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "1000 to 1500 ms": {
+        "value": -0.000499050212341437,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    },
+    "5 V": {
+      "40 to 75 ms": {
+        "value": 0.01906185417694642,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "75 to 100 ms": {
+        "value": 0.009123099463842724,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "100 to 150 ms": {
+        "value": 0.004559710016090984,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "150 to 200 ms": {
+        "value": 0.0031655842997902334,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "200 to 300 ms": {
+        "value": 0.0027288149769249676,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "300 to 450 ms": {
+        "value": 0.0021923010882687194,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "450 to 700 ms": {
+        "value": 0.0009651816420969128,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "700 to 1000 ms": {
+        "value": 4.440109488981769e-06,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "1000 to 1500 ms": {
+        "value": -0.00034997694471648744,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    },
+    "7.4 V": {
+      "40 to 75 ms": {
+        "value": 0.0414991516379577,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "75 to 100 ms": {
+        "value": 0.018070058874862238,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "100 to 150 ms": {
+        "value": 0.011905493225683808,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "150 to 200 ms": {
+        "value": 0.009978920234427688,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "200 to 300 ms": {
+        "value": 0.007486072722855383,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "300 to 450 ms": {
+        "value": 0.005012546542078944,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "450 to 700 ms": {
+        "value": 0.003000924919248346,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "700 to 1000 ms": {
+        "value": 0.002428337315646359,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "1000 to 1500 ms": {
+        "value": 0.0013383332152152663,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    }
+  },
+  "j_line_open_zero_kg_m2": {
+    "value": 4.730981899287284e-09,
+    "lo": 4.597822783283446e-09,
+    "hi": 4.864141015291123e-09,
+    "unit": "kg m^2"
+  },
+  "j_line_without_open_rungs_kg_m2": {
+    "value": 4.862693415634801e-09,
+    "lo": 4.6992495870701154e-09,
+    "hi": 5.026137244199486e-09,
+    "unit": "kg m^2"
+  },
+  "drive_excess_a_by_level": {
+    "3.7 V": {
+      "value": 0.018567504985950396,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "5 V": {
+      "value": 0.02837690265004076,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "7.4 V": {
+      "value": 0.040741684564769,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    }
+  },
+  "drive_excess_open_zero_a_by_level": {
+    "3.7 V": {
+      "value": 0.02122533684002913,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "5 V": {
+      "value": 0.028077229491697706,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "7.4 V": {
+      "value": 0.03698145739235276,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    }
+  },
+  "j_ratio_trend_pct_per_100_rev_s": {
+    "value": -2.494173146938033,
+    "lo": null,
+    "hi": null,
+    "unit": "% of the mean per 100 rev/s"
+  },
+  "spin_window_current_drift_ma": {
+    "value": -0.09332733430517821,
+    "lo": -1.5294973212189793,
+    "hi": 0.9493279744317294,
+    "unit": "mA"
+  },
+  "reading_term_a_per_v": {
+    "value": 0.0041815270097594354,
+    "lo": 0.0041230980968263884,
+    "hi": 0.004251845705615165,
+    "unit": "A per V of the terminal difference at the crest sample"
+  },
+  "i0_meter_by_speed": [
+    {
+      "level_v": 3.7,
+      "duty_pct": 15,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 47.8559170917907,
+        "lo": 47.72465409561848,
+        "hi": 47.98718008796292,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.031800622223702425,
+        "lo": 0.03141550873828662,
+        "hi": 0.03218573570911823,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.6566403691846787,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 15,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 47.849318207116085,
+        "lo": 47.761049809814935,
+        "hi": 47.937586604417234,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.03237539043312084,
+        "lo": 0.03187563047592628,
+        "hi": 0.032875150390315404,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.657910673363809,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 20,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 70.02579629433137,
+        "lo": 69.9613405127691,
+        "hi": 70.09025207589364,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.03623579314358868,
+        "lo": 0.03575950760669506,
+        "hi": 0.0367120786804823,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.648097187724295,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 20,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 70.12672210509095,
+        "lo": 69.99644622445523,
+        "hi": 70.25699798572667,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.03640859391561634,
+        "lo": 0.036178436671646726,
+        "hi": 0.03663875115958596,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.6492960247110973,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 30,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 114.00717788214172,
+        "lo": 113.80135545264967,
+        "hi": 114.21300031163376,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.04458293263572812,
+        "lo": 0.04394576153270325,
+        "hi": 0.045220103738752994,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.640285454523422,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 30,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 111.65266009217817,
+        "lo": 110.34341925398732,
+        "hi": 112.96190093036901,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.04780238788744209,
+        "lo": 0.04593887085971228,
+        "hi": 0.04966590491517189,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.6396603682355937,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 40,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 159.07693053792437,
+        "lo": 158.60053810618422,
+        "hi": 159.55332296966452,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.04963178888266667,
+        "lo": 0.04921882785773756,
+        "hi": 0.05004474990759578,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.6325435108812543,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 40,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 157.80505021263573,
+        "lo": 156.80329247772735,
+        "hi": 158.80680794754412,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.049973997540766195,
+        "lo": 0.04826859619816077,
+        "hi": 0.05167939888337162,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.6329541955920983,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 60,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 249.82824434109523,
+        "lo": 248.88299923710176,
+        "hi": 250.7734894450887,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.05960939844465593,
+        "lo": 0.058406032238704185,
+        "hi": 0.06081276465060768,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.6202823577861802,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 3.7,
+      "duty_pct": 60,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 245.0671969333497,
+        "lo": 244.40023343619092,
+        "hi": 245.73416043050847,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.060163277133307574,
+        "lo": 0.05985707187326571,
+        "hi": 0.06046948239334944,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 3.620413548735477,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 15,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 69.07509333521762,
+        "lo": 69.05350965414836,
+        "hi": 69.09667701628688,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.037966271807323974,
+        "lo": 0.037669308945274656,
+        "hi": 0.03826323466937329,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.9391443000192545,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 15,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 67.92853429566716,
+        "lo": 67.67619649945193,
+        "hi": 68.18087209188239,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.040277675112516405,
+        "lo": 0.03954969146744799,
+        "hi": 0.04100565875758482,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.9397368402148025,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 20,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 97.65689269162176,
+        "lo": 97.45423097024866,
+        "hi": 97.85955441299487,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.045428192902448095,
+        "lo": 0.04525890546391162,
+        "hi": 0.04559748034098457,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.93208917958223,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 20,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 95.46519035113828,
+        "lo": 95.43265319718878,
+        "hi": 95.49772750508777,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.048866888906754107,
+        "lo": 0.04860079985380715,
+        "hi": 0.04913297795970106,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.93106011911805,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 30,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 156.786407030703,
+        "lo": 156.6677361364574,
+        "hi": 156.9050779249486,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.05642726111649656,
+        "lo": 0.05634651589496019,
+        "hi": 0.056508006338032934,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.918994578103386,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 30,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 154.98410153137783,
+        "lo": 154.9281948119982,
+        "hi": 155.04000825075747,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.058545961927533224,
+        "lo": 0.05827369632747825,
+        "hi": 0.058818227527588196,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.91904658474569,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 40,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 218.51592444643356,
+        "lo": 218.26754889134662,
+        "hi": 218.7643000015205,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06275717865618985,
+        "lo": 0.06240163307321729,
+        "hi": 0.06311272423916241,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.911115068504153,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 40,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 217.38485324577172,
+        "lo": 215.54920092870515,
+        "hi": 219.2205055628383,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06189559921877611,
+        "lo": 0.05924360030317784,
+        "hi": 0.06454759813437438,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.912572596595581,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 60,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 341.0344076447568,
+        "lo": 340.4460433317632,
+        "hi": 341.62277195775044,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07638933386332188,
+        "lo": 0.07546479486675149,
+        "hi": 0.07731387285989226,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.90327380895152,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 5.0,
+      "duty_pct": 60,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 333.54759668511525,
+        "lo": 333.34438398585894,
+        "hi": 333.75080938437156,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07475801564578734,
+        "lo": 0.07463051515925014,
+        "hi": 0.07488551613232454,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.906598543265044,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 15,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 110.51477173469378,
+        "lo": 110.50284199050586,
+        "hi": 110.5267014788817,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.046412037111021064,
+        "lo": 0.04607644473646863,
+        "hi": 0.0467476294855735,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.317547967252129,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 15,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 110.87650766788313,
+        "lo": 110.68855989313052,
+        "hi": 111.06445544263575,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.046465340714748345,
+        "lo": 0.04622294691007637,
+        "hi": 0.04670773451942032,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.319930878049853,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 20,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 154.60291505254284,
+        "lo": 154.4181531076953,
+        "hi": 154.78767699739038,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.05466252873662999,
+        "lo": 0.054446432309108006,
+        "hi": 0.05487862516415197,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.308723614396577,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 20,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 154.76704521674728,
+        "lo": 154.54162017861736,
+        "hi": 154.9924702548772,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.054774041714754536,
+        "lo": 0.054227120213160326,
+        "hi": 0.055320963216348745,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.3112132226927065,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 30,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 244.69951604821745,
+        "lo": 244.47936751586286,
+        "hi": 244.91966458057203,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06702134881012227,
+        "lo": 0.0667668158229022,
+        "hi": 0.06727588179734234,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.294925748903084,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 30,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 240.5274604057522,
+        "lo": 240.3663607131651,
+        "hi": 240.6885600983393,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.06758423513830229,
+        "lo": 0.06741901325122253,
+        "hi": 0.06774945702538206,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.296992929053009,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 40,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 333.85630146315134,
+        "lo": 333.5315304164559,
+        "hi": 334.1810725098468,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07688234975193006,
+        "lo": 0.07661514753077579,
+        "hi": 0.07714955197308433,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.288846675707764,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 40,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 327.5046982555813,
+        "lo": 327.1254684767434,
+        "hi": 327.88392803441917,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.07408043527265058,
+        "lo": 0.07368346778820552,
+        "hi": 0.07447740275709565,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.291580547459364,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 60,
+      "direction": -1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 509.56338325192036,
+        "lo": 508.99603893456964,
+        "hi": 510.1307275692711,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.09348270349630368,
+        "lo": 0.09261915475612649,
+        "hi": 0.09434625223648087,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.279978368851296,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    },
+    {
+      "level_v": 7.4,
+      "duty_pct": 60,
+      "direction": 1,
+      "n": 3,
+      "speed_rev_s": {
+        "value": 487.0263973055178,
+        "lo": 486.2489784867613,
+        "hi": 487.80381612427425,
+        "unit": "rev/s"
+      },
+      "current_a": {
+        "value": 0.09235002629505583,
+        "lo": 0.09168687167572999,
+        "hi": 0.09301318091438167,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 7.283314175546731,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      }
+    }
+  ],
+  "drive_drag_by_level_meter": {
+    "3.7 V": {
+      "form": "I0 = a + b ln(w / w_ref), w in rad/s, w_ref = 2 pi x 100 rad/s; drag torque = Kt x I0; the reading term taken out, the drag under drive",
+      "a_a": {
+        "value": 0.04352913099022038,
+        "lo": 0.043031187965535754,
+        "hi": 0.044027074014905,
+        "unit": "A"
+      },
+      "b_a": {
+        "value": 0.01686485412008417,
+        "lo": 0.016015138045943494,
+        "hi": 0.017714570194224847,
+        "unit": "A per unit of ln(w)"
+      },
+      "rms_a": {
+        "value": 0.0020198230620588832,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "speed_range_rev_s": {
+        "value": 251.48489453519994,
+        "lo": 47.61586926741783,
+        "hi": 251.48489453519994,
+        "unit": "rev/s"
+      }
+    },
+    "5 V": {
+      "form": "I0 = a + b ln(w / w_ref), w in rad/s, w_ref = 2 pi x 100 rad/s; drag torque = Kt x I0; the reading term taken out, the drag under drive",
+      "a_a": {
+        "value": 0.04741592936693953,
+        "lo": 0.04666686953069233,
+        "hi": 0.04816498920318673,
+        "unit": "A"
+      },
+      "b_a": {
+        "value": 0.022009959994661713,
+        "lo": 0.02093476321962722,
+        "hi": 0.023085156769696205,
+        "unit": "A per unit of ln(w)"
+      },
+      "rms_a": {
+        "value": 0.002232433918898943,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "speed_range_rev_s": {
+        "value": 341.7976749407464,
+        "lo": 67.49766728453078,
+        "hi": 341.7976749407464,
+        "unit": "rev/s"
+      }
+    },
+    "7.4 V": {
+      "form": "I0 = a + b ln(w / w_ref), w in rad/s, w_ref = 2 pi x 100 rad/s; drag torque = Kt x I0; the reading term taken out, the drag under drive",
+      "a_a": {
+        "value": 0.04183051248974292,
+        "lo": 0.04055799865907258,
+        "hi": 0.04310302632041326,
+        "unit": "A"
+      },
+      "b_a": {
+        "value": 0.030220366505460228,
+        "lo": 0.028947280121977344,
+        "hi": 0.03149345288894311,
+        "unit": "A per unit of ln(w)"
+      },
+      "rms_a": {
+        "value": 0.002022620515608842,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "speed_range_rev_s": {
+        "value": 510.20152780892886,
+        "lo": 110.49300042009605,
+        "hi": 510.20152780892886,
+        "unit": "rev/s"
+      }
+    }
+  },
+  "level_gap_meter_a": {
+    "value": -0.0008478051786033266,
+    "lo": -0.0032137663511409356,
+    "hi": 0.0017419369142471638,
+    "unit": "A, 7.4 V over the 5.0 V curve at the same speed, the reading term taken out"
+  },
+  "drive_excess_meter_a_by_level": {
+    "3.7 V": {
+      "value": -0.004933585078218498,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "5 V": {
+      "value": -0.0016749800584080006,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "7.4 V": {
+      "value": -0.00046802057892791183,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    }
+  },
+  "drive_excess_meter_without_open_rungs_a_by_level": {
+    "3.7 V": {
+      "value": -0.003016582604787599,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "5 V": {
+      "value": 0.0006408493512732017,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "7.4 V": {
+      "value": 0.001069657544052735,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    }
+  },
+  "j_by_route_meter": {
+    "ratio at the cut, 5.0 V rungs": {
+      "value": 5.651084351931418e-09,
+      "lo": 5.577102670842361e-09,
+      "hi": 5.7536419664323165e-09,
+      "unit": "kg m^2"
+    },
+    "ratio at the cut, 7.4 V rungs": {
+      "value": 5.76300432457704e-09,
+      "lo": 5.586068540406404e-09,
+      "hi": 6.038205471514753e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, 5.0 V": {
+      "value": 5.5931622562933725e-09,
+      "lo": 5.474466963807766e-09,
+      "hi": 5.711857548778979e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, 7.4 V": {
+      "value": 5.971794478056422e-09,
+      "lo": 5.726893352608154e-09,
+      "hi": 6.216695603504691e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, one J": {
+      "value": 5.814639015700804e-09,
+      "lo": 5.670399223643216e-09,
+      "hi": 5.958878807758392e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, one J, no open rungs": {
+      "value": 5.573372631139013e-09,
+      "lo": 5.419140166626937e-09,
+      "hi": 5.7276050956510896e-09,
+      "unit": "kg m^2"
+    },
+    "spin-up, line": {
+      "value": 3.88284164688595e-09,
+      "lo": 3.680490321315842e-09,
+      "hi": 4.085192972456059e-09,
+      "unit": "kg m^2"
+    },
+    "spin-up, ratio at the start": {
+      "value": 5.932131900205254e-09,
+      "lo": 5.649094624695971e-09,
+      "hi": 6.354933973847109e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_ratio_meter_trend_pct_per_100_rev_s": {
+    "value": 2.655875957480391,
+    "lo": null,
+    "hi": null,
+    "unit": "% of the mean per 100 rev/s"
+  },
+  "cut_speed_free_over_spin_pct": {
+    "value": 0.03515294333944485,
+    "lo": -0.10660761990059164,
+    "hi": 0.20561017906530754,
+    "unit": "%"
+  }
+}
