@@ -25,6 +25,24 @@ then drops to the rung's duty, chained with no torque-off between, holds
 it for two seconds and coasts. The last 200 ms of the hold are the rung,
 whether the rotor kept turning or stopped, which the ripple tach tells.
 
+`trough` is the slow rungs with the TEL row swapped for the one that
+carries the shunt's trough sample beside its crest, the between-window
+level of a slow-decay period, at 10 to 20 % on the three rails and one
+rung above, where the brake part of the period is short. The level a
+turning motor's trough reads at each rail is what a zero that feeds on it
+would learn; the R/L row the other plans stream does not carry it. The
+row has no NTC, so the board temperature comes from the brackets.
+
+`pulse-300` and `pulse-400`, the sacrificial exception for a motor whose
+captures are done: short 7.4 V 100 % pulses from rest, the rail over the
+rating but the speed under it, so the brushes commutate the full rail at
+the high current of a start without the sprint that changed them. The
+pulse is sized on the motor by a probe, lengthened a few ms at a time until
+the coast EMF at the cut reaches the plan's target, 2.2 V or 2.9 V, near
+300 or 400 rev/s on an MG90 motor; then a block of pulses in both
+directions, between two sets of 5 V 100 % run-ups in `runup-before/` and
+`runup-after/`, whose dropout rates say whether the block changed anything.
+
 `swapped`, optional, runs the 40 and 60 % cycles on 7.4 V with the leads
 as wired, then again with the motor's two leads swapped at the board's
 connector. A split between the directions that follows the rotor is the
@@ -67,7 +85,12 @@ already turning at the meter run's three points, the shunt and both taps
 through whole PWM periods, in slow and in fast decay, so the board's own
 period mean sits beside the meter's.
 """
-from oscnb import capture, osc
+import csv
+import time
+
+import numpy as np
+
+from oscnb import capture, osc, tel
 from oscnb.sitting import Plan
 
 LEVELS = [3.7, 5.0, 7.4]
@@ -96,6 +119,13 @@ RUNUP_SPIN_MS = 300
 RUNUP_COAST_MS = 600
 BURST_SPIN_MS = 1500
 BURST_REST_MS = 1500         # the rotor coasts to a stop between captures
+TROUGH = [(7.4, 20), (7.4, 15), (7.4, 10), (7.4, 40), (5.0, 20), (5.0, 15), (5.0, 12), (5.0, 40), (3.7, 30), (3.7, 20), (3.7, 16), (3.7, 60)]
+PULSE_RAIL = 7.4
+PULSE_PROBE_MS = (4, 6, 8, 10, 12, 15)   # a free MG90 rotor passes 500 rev/s within 20 ms of a 7.4 V start
+PULSE_COAST_MS = 800
+PULSE_REST_MS = 1500
+PULSE_COUNT = 60             # sweeps, each a pulse in both directions
+PULSE_EMF_V = {300: 2.2, 400: 2.9}    # the coast EMF at the cut the probe stops at, near 300 or 400 rev/s on an MG90 motor
 
 
 def ref(s, out):
@@ -108,6 +138,63 @@ def ladder(s, out):
 
 def low(s, out):
     s.cycles(out, LOW, LOW_HOLD_MS, LOW_COAST_MS, kick=KICK)
+
+
+def trough(s, out):
+    s.cycles(out, TROUGH, LOW_HOLD_MS, LOW_COAST_MS, kick=KICK, tel_chunks=osc.CHUNKS_TROUGH)
+
+
+def cut_emf(folder):
+    """The coast EMF at the cut, volts, the larger of the two directions: the
+    terminal difference 2 to 10 ms into each coast segment."""
+    df, meta = tel.load(folder)
+    b = tel.board_of(meta)
+    out = 0.0
+    for seg, g in df.groupby("seg"):
+        if seg == 0 or g["duty_counts"].abs().median() > 0 or len(g) < 200:
+            continue
+        v = b.diff_v(g["vmotor_a"].iloc[40:200], g["vmotor_b"].iloc[40:200])
+        out = max(out, float(abs(np.median(v))))
+    return out
+
+
+def pulse(target):
+    def run(s, out):
+        s.prompt(f"This plan pulses 7.4 V at 100 % into the motor from rest, over its rated {s.motor.rated_v} V, and may change its brushes for good.")
+        s.cycles(out, RUNUP, RUNUP_SPIN_MS, RUNUP_COAST_MS, folder="runup-before")
+        s.cap(PULSE_RAIL, 100, over_rating=True)
+        s.rail(PULSE_RAIL)
+        chosen = None
+        with open(out / "probe.csv", "w", newline="") as f:
+            w = csv.writer(f, lineterminator="\n")
+            w.writerow(["pulse_ms", "cut_emf_v", "folder"])
+            for ms in PULSE_PROBE_MS:
+                sub = f"probe/{ms}"
+                osc.sweep(out / sub, [f"100@{ms}", f"coast:{PULSE_COAST_MS}"], baseline_ms=500, rest_ms=PULSE_REST_MS, dirs="both")
+                emf = cut_emf(out / sub)
+                w.writerow([ms, f"{emf:.3f}", sub])
+                f.flush()
+                s.note("probe", f"{ms} ms pulse: coast EMF at the cut {emf:.2f} V")
+                if emf > PULSE_EMF_V[target]:
+                    break
+                chosen = ms
+                s.rest(f"probe {ms} ms done, the motor resting")
+        if chosen is None:
+            s.note("pulse", "the shortest probe already passed the target, no block run")
+            return
+        s.note("pulse", f"block of {PULSE_COUNT} sweeps at {chosen} ms")
+        with open(out / "pulses.csv", "w", newline="") as f:
+            w = csv.writer(f, lineterminator="\n")
+            w.writerow(["k", "pulse_ms", "t_start", "t_end", "folder"])
+            for k in range(PULSE_COUNT):
+                sub = f"pulses/{k}"
+                t0 = time.time()
+                osc.sweep(out / sub, [f"100@{chosen}", f"coast:{PULSE_COAST_MS}"], baseline_ms=500, rest_ms=PULSE_REST_MS, dirs="both")
+                w.writerow([k, chosen, f"{t0:.3f}", f"{time.time():.3f}", sub])
+                f.flush()
+        s.rest("the block done, the motor resting")
+        s.cycles(out, RUNUP, RUNUP_SPIN_MS, RUNUP_COAST_MS, folder="runup-after")
+    return run
 
 
 def swapped(s, out):
@@ -152,6 +239,9 @@ PLANS = [
     Plan("ref", "bemf-coast", "free", "three cycles of 30 % on 5 V at the open and the close", run=ref, order=0, bracket=True),
     Plan("capture", "bemf-coast", "free", "the ladder: 3.7, 5 and 7.4 V at 15 to 60 %, three cycles each", run=ladder, order=10),
     Plan("low", "bemf-coast", "free", "kick then hold at 4 to 12 %, the slow rungs", run=low, order=30),
+    Plan("trough", "bemf-coast", "free", "the slow rungs with the shunt's trough in the TEL row", run=trough, order=50, optional=True),
+    *[Plan(f"pulse-{t}", "bemf-coast", "free", f"7.4 V 100 % pulses sized to {t} rev/s at the cut, between 5 V run-ups", run=pulse(t), order=t, over_rating=True)
+      for t in PULSE_EMF_V],
     Plan("swapped", "bemf-coast", "free", "7.4 V 40 and 60 % as wired, then with the leads swapped", run=swapped, order=40, optional=True),
     *[Plan(f"threshold-{p}", "bemf-coast", "free", f"7.4 V at {p} %, over the rating, then 5 V run-ups", run=threshold(p), order=p, over_rating=True)
       for p in THRESHOLD],

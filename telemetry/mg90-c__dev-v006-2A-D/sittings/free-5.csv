@@ -1,0 +1,20 @@
+t_host,event,detail
+1793671217.662,start,"motor mg90-c, board dev-v006-2A-D, state free"
+1793671226.818,prompt,"Motor leads on the board's motor connector, the bar OFF the pinion, the rotor free, no meter."
+1793671226.818,plan,ref (open)
+1793671226.819,dataset,ref-open: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/ref-open-5
+1793671241.339,dps,on at 5.25 V
+1793671245.360,rail,"5.0 V: reads 4.995 V, DPS 5.250 V"
+1793671484.005,plan,pulse-300
+1793671484.008,dataset,pulse-300: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/pulse-300-5
+1793671488.245,prompt,"This plan pulses 7.4 V at 100 % into the motor from rest, over its rated 5.0 V, and may change its brushes for good."
+1793671720.587,rail,"7.4 V: reads 7.381 V, DPS 7.650 V"
+1793671727.203,probe,4 ms pulse: coast EMF at the cut 1.64 V
+1793671753.901,probe,6 ms pulse: coast EMF at the cut 2.02 V
+1793671780.837,probe,8 ms pulse: coast EMF at the cut 2.32 V
+1793671780.837,pulse,block of 60 sweeps at 6 ms
+1793672213.899,rail,"5.0 V: reads 4.995 V, DPS 5.250 V"
+1793672442.516,plan,ref (close)
+1793672442.518,dataset,ref-close: telemetry/mg90-c__dev-v006-2A-D/bemf-coast/ref-close-5
+1793672682.388,dps,off
+1793672682.389,end,

@@ -79,3 +79,24 @@ The first sitting run by `python -m oscnb.sitting`, whose manifest is `sittings/
 |---|---|---|---|---|
 | bemf-coast/low-meter-3 | kick 300 ms then hold 2.5 s, 7.4 V 15 / 12 / 10 / 8 %, 5 V 20 / 15 / 12 / 10 %, 3.7 V 30 / 20 / 16 %, coast 300 ms, 3 cycles each, DMM in series on the 220 mA range | D | bar off, kick 20 % at 7.4 V, 30 % at 5 V, 40 % at 3.7 V; the meter's burden in the loop holds the rotor well under low-1's speeds; board at room | the true mean current under 20 % duty and the first meter points at 3.7 V: the holds read 32 to 41 mA on the meter at 7.4 V, 31 to 39 at 5 V, 32 to 42 at 3.7 V; the rotor turned at 5 to 61 rev/s on every rung but 5 V 10 % and 7.4 V 8 %, where it stood; the reading term per volt falls about a fifth from 15 to 8 % duty and the 3.7 V holds read an open-bridge zero of 1 to 3 mA against the board's constant |
 
+
+## Sitting 4, the same evening, free rotor
+
+Manifest `sittings/free-4.csv`. The run selected the `trough` and `pulse-300` plans with the reference brackets; the pulse plan's probe grid began at 20 ms, which already passed its target, so no block ran and the plan closed after one probe pair.
+
+| Dataset | Run | State | Conditions | What it represents |
+|---|---|---|---|---|
+| bemf-coast/ref-open-4 | 5 V 30 %, 3 cycles | D | bar off, no meter, board at room | the opening reference: 80 mA crest, 145 rev/s, no dropouts |
+| bemf-coast/trough-4 | kick 300 ms then hold 2 s, 7.4 V 20 / 15 / 10 / 40 %, 5 V 20 / 15 / 12 / 40 %, 3.7 V 30 / 20 / 16 / 60 %, coast 600 ms, 3 cycles each | D | the TEL row swapped for the one with the shunt's trough sample beside its crest, no NTC; kick 20 % at 7.4 V, 30 % at 5 V, 40 % at 3.7 V | the first motor recording of the slow-decay trough, the sample a zero fed under a low-duty drive learns from: it sits 0.1 to 0.35 counts over the same spin's open bridge at 20 % and under on the three rails, steps up 0.3 to 0.5 counts above 20 %, and moves with neither speed nor time in the hold |
+| bemf-coast/pulse-300-4 | 5 V 100 % run-ups, 3 cycles, then one probe pair of 7.4 V 100 % for 20 ms from rest, coast 800 ms | D | the probe's first length | the run-ups: 857 / 433 dropouts per s by direction over the last 100 ms, 106 / 109 mA crest, 512 / 530 rev/s at the cut; the 20 ms probe peaked at 1.58 A and left the rotor at about 540 rev/s, 3.8 to 4.1 V of EMF at the cut, so the free rotor's rise is faster than the grid assumed |
+| bemf-coast/ref-close-4 | 5 V 30 %, 3 cycles | D | the close of the sitting | 80 mA, 145 rev/s, the same as the open |
+
+## Sitting 5, right after, the pulse block
+
+Manifest `sittings/free-5.csv`. The `pulse-300` plan again with its probe grid at 4 to 15 ms, and the reference brackets. The pulses are the sacrificial exception to the rated-voltage rule on a motor whose captures are done.
+
+| Dataset | Run | State | Conditions | What it represents |
+|---|---|---|---|---|
+| bemf-coast/ref-open-5 | 5 V 30 %, 3 cycles | D | bar off, no meter | 80 mA, 145 rev/s |
+| bemf-coast/pulse-300-5 | 5 V 100 % run-ups, 3 cycles; probes of 7.4 V 100 % for 4, 6 and 8 ms from rest; 60 sweeps of a 6 ms pulse in each direction, coast 800 ms, 1.5 s rest; 5 V 100 % run-ups, 3 cycles | D -> E | the probe stopped at 8 ms (2.32 V at the cut, over the 2.2 V target) and the block ran at 6 ms, 2.02 V; 7 minutes of block, 0.72 s of 7.4 V in all | whether the full rail across the commutator changes the brushes without the speed: the pulses peaked at 1.5 A and left the rotor at 270 to 300 rev/s; the run-ups read 850 / 597 dropouts per s before and 1187 / 777 after, crest 107 / 110 mA before and 104 / 103 after, speed at the cut unchanged at 512 to 530 rev/s |
+| bemf-coast/ref-close-5 | 5 V 30 %, 3 cycles | E | the close of the sitting | 80 mA, 146 rev/s, unchanged: the change again lives above the reference's speed |
