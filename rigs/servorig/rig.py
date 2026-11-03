@@ -120,8 +120,10 @@ class Spec:
     well_clear: float = 0.75        # horn well around the mount's skirt
     well_floor_clear: float = 1.0   # under the skirt
     ear_fit: float = FIT_LOOSE      # ear well, per side
-    wire_w: float = 7.0             # every lead slot and groove, the
-    #                                 test harness's servo lead slot
+    wire_w: float = 7.0             # bus and power lead grooves, the test
+    #                                 harness's lead slot
+    servo_lead_w: float = 4.5       # the servo's three-wire ribbon, 3 x
+    #                                 1.3 mm, so the wall above bridges less
     lead_slot_depth: float = 2.5    # into the pocket's end wall
     channel_depth: float = 3.0      # servo lead under the base
     groove_depth: float = 3.0       # bus and power leads in the base top
@@ -309,10 +311,9 @@ class Spec:
     def tie_y(self):
         return self.y_max - self.back_rim / 2
 
-    @property
-    def tie_dx(self):
-        """A tie slot's center from its lead's centerline."""
-        return self.wire_w / 2 + self.tie_web + self.tie_slot_w / 2
+    def tie_dx(self, lead_w):
+        """A tie slot's center from a lead's centerline."""
+        return lead_w / 2 + self.tie_web + self.tie_slot_w / 2
 
     @property
     def stack_n(self):
@@ -398,11 +399,12 @@ class Spec:
         if self.groove_depth >= self.board_recess + self.underside_clear:
             raise ValueError("The lead grooves must open into the board "
                              "pocket's wall")
-        if abs(self.bus_dx - self.power_dx) < 2 * self.tie_dx + self.tie_slot_w:
+        if (abs(self.bus_dx - self.power_dx)
+                < 2 * self.tie_dx(self.wire_w) + self.tie_slot_w):
             raise ValueError("The bus and power ties must not overlap")
         bx, by = self.board_pocket
         for dx in (self.bus_dx, self.power_dx):
-            out = abs(dx) + self.tie_dx + self.tie_slot_w / 2
+            out = abs(dx) + self.tie_dx(self.wire_w) + self.tie_slot_w / 2
             if out > bx / 2 + self.rim - self.min_wall:
                 raise ValueError("Each lead tie must stay inside the base")
         back = self.ref_y + max(self.plate_side, by) / 2
@@ -540,13 +542,14 @@ def build_clip(s: Spec = Spec()) -> Part:
     return p
 
 
-def tie(p: Part, s: Spec, x, band_z) -> Part:
+def tie(p: Part, s: Spec, x, band_z, lead_w) -> Part:
     """Two zip tie slots through the base either side of a lead at x, and
     the band's groove across the face opposite the lead."""
+    dx = s.tie_dx(lead_w)
     for sx in (-1, 1):
-        p -= box(x + sx * s.tie_dx, s.tie_y, -EPS, s.tie_slot_w,
+        p -= box(x + sx * dx, s.tie_y, -EPS, s.tie_slot_w,
                  s.tie_slot_l, s.base_top + 2 * EPS)
-    span = 2 * s.tie_dx + s.tie_slot_w
+    span = 2 * dx + s.tie_slot_w
     z = -EPS if band_z == 0 else band_z - s.tie_band_depth
     return p - box(x, s.tie_y, z, span, s.tie_slot_l,
                    s.tie_band_depth + EPS)
@@ -572,11 +575,11 @@ def build_base(s: Spec = Spec()) -> Part:
     p -= box(0, s.body_y, s.ledge_z, s.ear_w + 2 * s.ear_fit,
              s.ear_span + 2 * s.ear_fit, top - s.ledge_z + EPS)
     p -= cyl(0, 0, s.well_floor, 2 * s.well_r, top - s.well_floor + EPS)
-    p -= box(0, s.body_end + (s.lead_slot_depth - EPS) / 2, -EPS, s.wire_w,
-             s.lead_slot_depth + EPS, s.ledge_z + EPS)
-    p -= box(0, (s.body_end + s.y_max) / 2, -EPS, s.wire_w,
+    p -= box(0, s.body_end + (s.lead_slot_depth - EPS) / 2, -EPS,
+             s.servo_lead_w, s.lead_slot_depth + EPS, s.ledge_z + EPS)
+    p -= box(0, (s.body_end + s.y_max) / 2, -EPS, s.servo_lead_w,
              s.y_max - s.body_end + EPS, s.channel_depth + EPS)
-    p = tie(p, s, 0, top)
+    p = tie(p, s, 0, top, s.servo_lead_w)
     insert_depth = s.insert_l + s.insert_relief
     p -= cyl(s.insert_r, 0, top - insert_depth, s.insert_hole_d,
              insert_depth + EPS)
@@ -597,7 +600,7 @@ def build_base(s: Spec = Spec()) -> Part:
         x = s.board_x + dx
         p -= box(x, (back + s.y_max) / 2, top - s.groove_depth,
                  s.wire_w, s.y_max - back + 2 * EPS, s.groove_depth + EPS)
-        p = tie(p, s, x, 0)
+        p = tie(p, s, x, 0, s.wire_w)
     p.label = "servorig_base"
     return p
 
