@@ -375,18 +375,34 @@ bounds = "statistical, one standard error of the line"
 confidence = "the step is concave, the line leaves +/- 0.5 counts per rail, three points carry it"
 
 [[constant]]
-label = "Zero by the three-rail table, rms over the last 200 ms"
+label = "Trough-fed zero over the crest's open bridge, feeding rungs, 7.4 V"
 experiment = "compensation"
-key = "methods_pooled.C.rms_200_counts"
+key = "motor_trough.over_coast_crest_column_counts.7v4"
 decimals = 2
-confidence = "the asleep zero + the table by the live rail, held out on four datasets and a second motor, no spin past 0.5 rev/s, no bounds in the file"
+bounds = "statistical, one standard error over the 18 holds"
+confidence = "measured on trough-4 at 10 to 20 % duty: 0.35 over the open bridge in its own column plus the frame offset, half the dummy's reading"
 
 [[constant]]
-label = "Zero by the tracker alone, rms over the last 200 ms, warm"
+label = "Trough sample over the crest sample, bridge open awake"
 experiment = "compensation"
-key = "methods_pooled.A.rms_200_counts"
+key = "frame_offset_counts.awake_open_bridge_counts"
 decimals = 2
-confidence = "inside the budget once warm, 3.9 counts on a first spin above 20 % after a rail step, no bounds in the file"
+bounds = "range, the three rails"
+confidence = "a systematic of a trough-fed zero under a crest reading, 0.17 rev/s; 0.175 +/- 0.008 at rest over 36 baselines"
+
+[[constant]]
+label = "Zero by the tracker on its real feed, gate 30 %, rms over the last 200 ms, warm"
+experiment = "compensation"
+key = "real_feed_replay.gates.30pct.warm.rms_200_counts"
+decimals = 2
+confidence = "the method specified; 0.62 on the steady spins, 3.9 counts worst on a first spin above the gate after a rail step, no bounds in the file"
+
+[[constant]]
+label = "Zero by a three-rail table, the static bound, rms over the last 200 ms"
+experiment = "compensation"
+key = "comparison.table_three_rail.rms_200_counts"
+decimals = 2
+confidence = "the comparison, not a method a user can run: the asleep zero + the table by the live rail, held out on four datasets and a second motor, 0.56 on the real feed, no bounds in the file"
 
 [[constant]]
 label = "Rail step 5 to 7.4 V, feed to settle within 0.5 counts"
