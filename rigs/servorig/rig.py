@@ -162,19 +162,33 @@ class Spec:
     fit_wall: float = 2.0           # around the servo pocket
     label_h: float = 3.5            # font size of the fit labels
     label_depth: float = 0.4        # two layers into the plate
-    # load arm: two stacks of US quarters (5.670 g, 24.26 x 1.75 mm)
-    arm_r: float = 55.0             # axis to the mass center
-    mass_g: float = 120.0
-    mass_stacks: int = 2            # side by side across the arm
+    # load arm: four stacks of US quarters (5.670 g, 24.26 x 1.75 mm) in
+    # a 2 x 2 block of cups centered on arm_r, two along the arm and two
+    # across it; stacks go in by pairs, so each pair balances across the
+    # arm, and the inner pair, the outer pair and both make the load ladder
+    arm_r: float = 55.0             # axis to the block's center
+    stack_n: int = 12               # coins a cup holds
     unit_g: float = 5.670
     unit_d: float = 24.26
     unit_t: float = 1.75
-    cup_clear: float = 0.5          # on the diameter and over the stack
+    cup_clear: float = 1.0          # on the diameter: the coins drop in
+    cup_room: float = 0.5           # over the stack, under the lid's plug
     cup_wall: float = 1.6
     cup_floor: float = 1.6
+    # lid: a plate dropped into a pocket in the block's open face, four
+    # plugs into the bores, one M2 self-tapping screw into the block's
+    # center, where the four walls meet
+    lid_t: float = 2.0
+    lid_fit: float = FIT_LOOSE      # per side in its pocket
+    lid_margin: float = 0.3         # pocket past the bores
+    plug_h: float = 1.5
+    plug_clear: float = 0.3         # per side in the bore
+    lid_hole_d: float = 2.2         # M2 clearance
     beam_w: float = 10.0
     travel_deg: float = 180.0       # servo travel, mid travel centered
     travel_margin: float = 10.0     # past each end, for the sweep check
+    arm_board_clear: float = 2.0    # loaded arm to the board pocket at the
+    #                                 ends of travel
     # base
     well_clear: float = 0.75        # horn well around the mount's skirt
     well_floor_clear: float = 1.0   # under the skirt
@@ -352,8 +366,27 @@ class Spec:
         return self.sweep_r + self.quiet
 
     @property
+    def arm_sweep_y(self):
+        """How far toward the back the load arm reaches over its travel
+        plus the margin, in plan."""
+        half = self.block_side / 2
+        pts = [(sx * half, -(self.arm_r + sy * half))
+               for sx in (-1, 1) for sy in (-1, 1)]
+        pts += [(sx * self.plate_side / 2, sy * self.plate_side / 2)
+                for sx in (-1, 1) for sy in (-1, 1)]
+        end = self.travel_deg / 2 + self.travel_margin
+        angles = [math.radians(a / 10) for a in range(-round(10 * end),
+                                                       round(10 * end) + 1)]
+        return max(x * math.sin(a) + y * math.cos(a)
+                   for x, y in pts for a in angles)
+
+    @property
     def ref_y(self):
-        return self.keep_out_r + self.pad_margin + self.plate_side / 2
+        """The reference pad and the board share this Y: past the keep-out
+        circle, and the board pocket past the loaded arm's sweep."""
+        return max(self.keep_out_r + self.pad_margin + self.plate_side / 2,
+                   self.arm_sweep_y + self.arm_board_clear
+                   + self.board_pocket[1] / 2)
 
     @property
     def board_x(self):
@@ -391,8 +424,8 @@ class Spec:
         return lead_w / 2 + self.tie_web + self.tie_slot_w / 2
 
     @property
-    def stack_n(self):
-        return math.ceil(self.mass_g / self.unit_g / self.mass_stacks)
+    def stack_g(self):
+        return self.stack_n * self.unit_g
 
     @property
     def cup_bore(self):
@@ -400,21 +433,38 @@ class Spec:
 
     @property
     def cup_pitch(self):
-        """Neighboring stacks share one wall."""
+        """Neighboring cups share one wall."""
         return self.cup_bore + self.cup_wall
 
     @property
+    def block_side(self):
+        """The 2 x 2 cup block, square in plan."""
+        return self.cup_pitch + self.cup_bore + 2 * self.cup_wall
+
+    @property
+    def lid_pocket(self):
+        return self.cup_pitch + self.cup_bore + 2 * self.lid_margin
+
+    @property
+    def lid_side(self):
+        return self.lid_pocket - 2 * self.lid_fit
+
+    @property
     def arm_top(self):
-        """The cup rims and the hub tag: one plane, the arm's print face."""
-        return (self.ear_bottom + self.cup_floor
-                + self.stack_n * self.unit_t + self.cup_clear)
+        """The cup floors and the hub tag: one plane, the arm's print
+        face; the coins stack from the lid's plugs up to the floors."""
+        return (self.ear_bottom + self.lid_t + self.plug_h
+                + self.stack_n * self.unit_t + self.cup_room + self.cup_floor)
 
     @property
     def arm_reach(self):
         """Farthest point of the load arm from the axis."""
-        far = (self.mass_stacks - 1) / 2 * self.cup_pitch
-        return math.hypot(self.arm_r + self.cup_bore / 2 + self.cup_wall,
-                          far + self.cup_bore / 2 + self.cup_wall)
+        return math.hypot(self.arm_r + self.block_side / 2,
+                          self.block_side / 2)
+
+    def stack_radii(self):
+        """Axis to the inner and the outer pair of cups."""
+        return (self.arm_r - self.cup_pitch / 2, self.arm_r + self.cup_pitch / 2)
 
     @property
     def notch_w(self):
@@ -509,10 +559,19 @@ class Spec:
         near = math.hypot(self.board_x - bx / 2, self.ref_y - by / 2)
         if near <= self.keep_out_r:
             raise ValueError("The board must sit outside the keep-out circle")
-        if self.mass_stacks < 1 or self.beam_w >= self.cup_bore:
-            raise ValueError("The beam must run into the cups")
-        if self.arm_r - self.cup_bore / 2 - self.cup_wall <= self.skirt_r:
-            raise ValueError("The cups must sit clear of the hub")
+        if self.beam_w >= self.block_side:
+            raise ValueError("The beam must run into the cup block")
+        if self.arm_r - self.block_side / 2 <= self.skirt_r:
+            raise ValueError("The cup block must sit clear of the hub")
+        if self.lid_margin >= self.cup_wall:
+            raise ValueError("The lid pocket must leave the block's outer "
+                             "wall")
+        web = self.cup_pitch / math.sqrt(2) - self.cup_bore / 2
+        if web - self.pilot_d / 2 < self.min_wall:
+            raise ValueError("The lid screw's pilot must sit in the web "
+                             "between the four cups")
+        if self.plug_clear <= 0 or self.plug_h >= self.lid_t + self.plug_h:
+            raise ValueError("The plugs must enter the bores freely")
         if self.arm_top - self.plate_t <= self.head_top + self.head_clear:
             raise ValueError("The arm's hub plate must sit above the horn")
         if self.wing_h > self.base_top or self.wing_t >= self.wing_depth:
@@ -601,8 +660,12 @@ def build_mount(s: Spec = Spec()) -> Part:
 
 
 def cup_centers(s: Spec):
-    first = -(s.mass_stacks - 1) / 2 * s.cup_pitch
-    return [(first + i * s.cup_pitch, -s.arm_r) for i in range(s.mass_stacks)]
+    h = s.cup_pitch / 2
+    return [(x, -s.arm_r + y) for x in (-h, h) for y in (-h, h)]
+
+
+def block(s: Spec, side, r, z, h):
+    return Pos(0, -s.arm_r, z) * extrude(RectangleRounded(side, side, r), h)
 
 
 def build_arm(s: Spec = Spec()) -> Part:
@@ -613,16 +676,33 @@ def build_arm(s: Spec = Spec()) -> Part:
     p += cyl(0, 0, z - s.key_depth, 2 * s.skirt_r,
              plate_z - z + s.key_depth + EPS)
     p += box(0, -s.arm_r / 2, bottom, s.beam_w, s.arm_r, top - bottom)
-    od = s.cup_bore + 2 * s.cup_wall
-    for x, y in cup_centers(s):
-        p += cyl(x, y, bottom, od, top - bottom)
+    p += block(s, s.block_side, s.cup_bore / 2 + s.cup_wall, bottom,
+               top - bottom)
     p = horn_seat(p, s, top)
     # the cups open toward the base: their floors print on the bed, top
     # down, instead of bridging the bore
     for x, y in cup_centers(s):
         p -= cyl(x, y, bottom - EPS, s.cup_bore,
                  top - bottom - s.cup_floor + EPS)
+    p -= block(s, s.lid_pocket, s.cup_bore / 2 + s.lid_margin, bottom - EPS,
+               s.lid_t + EPS)
+    p -= cyl(0, -s.arm_r, bottom - EPS, s.pilot_d,
+             s.lid_t + s.pilot_depth + EPS)
     p.label = "servorig_arm"
+    return p
+
+
+def build_lid(s: Spec = Spec()) -> Part:
+    """The coin lid, in place on the arm."""
+    s.check()
+    z = s.ear_bottom
+    p = block(s, s.lid_side, s.cup_bore / 2 + s.lid_margin - s.lid_fit, z,
+              s.lid_t)
+    for x, y in cup_centers(s):
+        p += cyl(x, y, z + s.lid_t - EPS, s.cup_bore - 2 * s.plug_clear,
+                 s.plug_h + EPS)
+    p -= cyl(0, -s.arm_r, z - EPS, s.lid_hole_d, s.lid_t + 2 * EPS)
+    p.label = "servorig_lid"
     return p
 
 

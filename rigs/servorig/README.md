@@ -6,8 +6,8 @@ the frame and the reasons behind each part live in the package docstring,
 [`__init__.py`](__init__.py). This page covers what to measure, the build,
 the print, the hardware, the assembly and the acceptance.
 
-There are four printed parts, the base, the tag mount, the load arm and the
-tag clip, and a fit test print that goes first. The rest is the MG90S
+There are five printed parts, the base, the tag mount, the load arm, its
+coin lid and the tag clip, and a fit test print that goes first. The rest is the MG90S
 four-arm horn and a few screws.
 
 ## Measure before printing
@@ -97,6 +97,7 @@ runs the checks and stops with an error if one fails:
   open at the bed and step down to their holes over short bridges.
 - **Load arm** top down, the hub tag face and the cup floors on the bed.
   The cups open the other way, toward the base, so nothing bridges.
+- **Coin lid** flat, plugs up.
 - **Tag clip** lip down, its top on the bed.
 
 ## Hardware
@@ -104,12 +105,13 @@ runs the checks and stops with an error if one fails:
 - the MG90S four-arm horn and the servo's center screw
 - one M3 heat-set insert, 5.7 mm long for a 4.0 mm hole
 - one M3 x 12 button head screw and one M3 washer (0.5 mm), the lock
-- four M2 x 6 screws for the board, into the 1.8 mm pilots
+- five M2 x 6 screws, four for the board and one for the coin lid, into
+  1.8 mm pilots
 - two M1.4 x 4 screws or 1.4 x 4 mm self-tapping screws, into the long
   arms' 1.3 mm third holes, 8.5 mm from the axis, to retain the mount on
   the horn (optional)
 - three 2.5 mm zip ties
-- 22 US quarters and some tape, for the load arm
+- 48 US quarters, four stacks of 12, for the load arm
 - a few strips of 0.5 mm card, for shims under the servo's ears
 
 ## Assembly
@@ -138,12 +140,14 @@ The ear lands over the insert at whatever angle the spline left the horn
 at, within one tooth of mid travel. That angle is the lock position. Command
 the servo there before putting the lock screw in (washer under the ear).
 
-For the load arm, fill the two cups with 11 quarters each and tape over
-them first; they open toward the base. Then swap the mount for the arm,
-pointing at the front face at mid travel, stand the base on its front face
-at the desk edge, horn face out past the edge, and clamp it by the wings.
-The arm hangs down at mid travel and swings out past the edge, the coins
-lying on the cup walls, never on the tape.
+For the load arm, drop stacks of 12 quarters into the cups first; they
+open toward the base. Load by pairs so the arm stays balanced: the inner
+pair, the outer pair or all four, and a diagonal pair for the middle step.
+Fit the lid, plugs into the bores, and screw it down at the center. Then
+swap the mount for the arm, pointing at the front face at mid travel, stand
+the base on its front face at the desk edge, horn face out past the edge,
+and clamp it by the wings. The arm hangs down at mid travel and swings out
+past the edge, the coins lying on the cup walls.
 
 If the horn sits outside the 1 to 2 mm band, change the shims under the
 ears. Without shims the horn drops 0.5 mm.

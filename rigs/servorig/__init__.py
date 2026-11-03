@@ -1,7 +1,8 @@
 """The servo rig for the stage 3 camera experiments: a base that holds one
 MG90, one osc-dev-v006 board and a reference tag in one rigid piece, a tag
 mount that presses over the servo's four-arm horn, a load arm that takes the
-mount's place, and a clip that holds a tag paper flat.
+mount's place with a lid over its coins, and a clip that holds a tag paper
+flat.
 
 A phone films the rig from straight above, and the camera reads the horn's
 angle from the tag on the mount against the tag on the base. That reading is
@@ -46,8 +47,13 @@ retain the mount on the horn; they never locate it, and they stay because
 the hanging load arm pries at a press fit 1.5 mm deep. Out there their
 counterbores leave a full wall to the hub's recess.
 
-The load arm has the same keyed seat on the horn and a beam to two coin cups at
-55 mm from the axis, about 120 g of US quarters. The base stands on its front
+The load arm has the same keyed seat on the horn and a beam to a 2 x 2 block
+of coin cups centered 55 mm from the axis: four stacks of 12 US quarters,
+272 g, dropped in by pairs so the load balances across the arm. The inner
+pair, the outer pair and all four make a load ladder of 55, 92 and 147 mN m
+with the arm level, 28 or 46 mN m for one stack. A lid drops into the block's
+open face, plugs in the bores, one M2 screw into the web where the four cup
+walls meet, and the coins sit loose under it. The base stands on its front
 face at the desk edge and the arm hangs down at mid travel. A tag on the
 arm's hub keeps the camera reading the horn under load. That hub tag sits
 at the cup floors, about 13 mm above the tag plane and closer to the lens
@@ -61,10 +67,9 @@ arm's hub and holds the paper flat by its quiet border. Its lip stands
 
 Nothing of the base rises inside the keep-out circle, which is the circle
 the mount and its clip sweep, ear corners included, plus the tag's quiet
-border. In plan, the cups pass 10 mm from the board pocket at the end of a
-180 degree travel, and 1 mm with the 10 degrees past each end that the
-checks allow. The arm rides above the board, but a servo with more travel
-needs a look.
+border. The board pocket sits back where the loaded arm clears it by 2 mm
+at 10 degrees past each end of a 180 degree travel, which also sets the
+reference pad's place; a servo with more travel needs a look.
 
 Frame: X east, Y north (the back), Z up, the horn axis on Z and Z = 0 the
 base's underside. At mid travel the mount's ear points +X over the insert

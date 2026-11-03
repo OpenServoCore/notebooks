@@ -7,8 +7,8 @@ from build123d import (CenterOf, Compound, Pos, Rot, export_step,
                        export_stl)
 
 from .rig import (BED_X, BED_Y, BED_Z, FITS, MEASURE, Spec, box, build_arm,
-                  build_base, build_clip, build_fit, build_mount, build_servo,
-                  cyl, horn_plate)
+                  build_base, build_clip, build_fit, build_lid, build_mount,
+                  build_servo, cyl, horn_plate)
 
 TOUCH = 1e-3                # mm^3: faces that only meet
 DROP = 0.01                 # mm: a seat lowered this far meets its datum
@@ -20,7 +20,7 @@ PLA_G_PER_CM3 = 1.24                # solid; infill prints lighter
 TOP_DOWN = Rot(180, 0, 0)
 PRINT = {"servorig_fit": None, "servorig_base": None,
          "servorig_mount": TOP_DOWN, "servorig_arm": TOP_DOWN,
-         "servorig_clip": TOP_DOWN}
+         "servorig_lid": None, "servorig_clip": TOP_DOWN}
 
 
 def print_pose(part):
@@ -81,9 +81,10 @@ def seat_areas(s, part, plate):
     return areas, overlap(low, build_servo(s)) - overlap(low, plate)
 
 
-def verify(s, fit, base, mount, arm, clip):
+def verify(s, fit, base, mount, arm, lid, clip):
     """Every geometric check; returns report lines, raises on a failure."""
     servo = build_servo(s)
+    loaded = arm + lid
     tall = s.arm_top + 50.0
     lines = []
 
@@ -106,10 +107,12 @@ def verify(s, fit, base, mount, arm, clip):
     board = box(s.board_x, s.ref_y, s.base_top, bx, by, tall)
     half = s.travel_deg / 2 + s.travel_margin
     angles = range(-round(half), round(half) + 1, ARM_STEP)
-    worst = max(max(overlap(Rot(0, 0, a) * arm, base),
-                    overlap(Rot(0, 0, a) * arm, board)) for a in angles)
-    need(worst < TOUCH, f"load arm clears the base and the board over "
-                        f"+/-{half:.0f} deg")
+    worst = max(max(overlap(Rot(0, 0, a) * loaded, base),
+                    overlap(Rot(0, 0, a) * loaded, board)) for a in angles)
+    need(worst < TOUCH, f"load arm and lid clear the base and the board "
+                        f"over +/-{half:.0f} deg")
+    need(overlap(lid, arm) < TOUCH and len((lid + arm).solids()) == 1,
+         "lid sits in the arm's pocket, plugs in the bores")
     need(overlap(servo, base) < TOUCH, "servo seats in its pocket")
     need(overlap(servo, mount) < TOUCH and overlap(servo, arm) < TOUCH,
          "mount and arm sit on the horn without touching the rest")
@@ -120,7 +123,7 @@ def verify(s, fit, base, mount, arm, clip):
              f"{part.label} seats on the plate's top face alone, on all "
              f"four arms: {' / '.join(f'{a:.0f}' for a in areas)} mm^2")
     need(overlap(clip, mount) < TOUCH, "clip goes over the mount's plate")
-    for part in (fit, base, mount, arm, clip):
+    for part in (fit, base, mount, arm, lid, clip):
         bb = print_pose(part).bounding_box()
         plan = sorted((bb.size.X, bb.size.Y), reverse=True)
         need(plan[0] <= BED_X and plan[1] <= BED_Y and bb.size.Z <= BED_Z,
@@ -161,11 +164,13 @@ def summary(s):
         f"reference pad at y {s.ref_y:.2f}, tags {s.ref_y:.1f} apart; board "
         f"at ({s.board_x:.2f}, {s.ref_y:.2f}), four M2 into "
         f"{s.pilot_depth:.1f} pilots under a {s.board_t:.1f} board",
-        f"load arm: {s.mass_stacks} x {s.stack_n} coins = "
-        f"{s.mass_stacks * s.stack_n * s.unit_g:.0f} g at {s.arm_r:.0f} mm, "
-        f"{s.mass_stacks * s.stack_n * s.unit_g * 9.81 * s.arm_r / 1e3:.0f}"
-        f" mN m level; reach {s.arm_reach:.1f}, hub tag at "
-        f"{s.arm_top:.2f}",
+        f"load arm: 4 x {s.stack_n} coins = {4 * s.stack_g:.0f} g at "
+        f"{s.arm_r:.0f} mm, {4 * s.stack_g * 9.81 * s.arm_r / 1e3:.0f} mN m "
+        f"level; one stack {s.stack_g:.1f} g gives "
+        + " / ".join(f"{s.stack_g * 9.81 * r / 1e3:.0f}"
+                     for r in s.stack_radii())
+        + f" mN m at r {' / '.join(f'{r:.1f}' for r in s.stack_radii())}; "
+        f"reach {s.arm_reach:.1f}, hub tag at {s.arm_top:.2f}",
     ]
 
 
@@ -189,7 +194,7 @@ def main():
     out = Path(__file__).parent / "build"
     out.mkdir(exist_ok=True)
     parts = [build_fit(spec), build_base(spec), build_mount(spec),
-             build_arm(spec), build_clip(spec)]
+             build_arm(spec), build_lid(spec), build_clip(spec)]
     for part in parts:
         if not part.is_valid or len(part.solids()) != 1:
             raise RuntimeError(f"{part.label} must be one valid solid")
@@ -202,10 +207,11 @@ def main():
         if args.preview:
             preview(str(out / f"{part.label}.stl"),
                     str(out / f"{part.label}.png"))
-    fit, base, mount, arm, clip = parts
-    arm_g = arm.volume / 1000 * PLA_G_PER_CM3
-    arm_y = arm.center(CenterOf.MASS).Y
-    print(f"load arm itself, printed solid: {arm_g:.0f} g with its mass "
+    fit, base, mount, arm, lid, clip = parts
+    loaded = arm + lid
+    arm_g = loaded.volume / 1000 * PLA_G_PER_CM3
+    arm_y = loaded.center(CenterOf.MASS).Y
+    print(f"load arm and lid, printed solid: {arm_g:.0f} g with the mass "
           f"center {-arm_y:.1f} mm out, {arm_g * 9.81 * -arm_y / 1e3:.0f} "
           f"mN m level on top of the coins; weigh the print")
     if args.assembly:
@@ -213,7 +219,7 @@ def main():
                     str(out / "servorig_assembly.step"))
     print("\n".join(summary(spec)))
     print("checks:")
-    print("\n".join(verify(spec, fit, base, mount, arm, clip)))
+    print("\n".join(verify(spec, fit, base, mount, arm, lid, clip)))
     print(f"-> {out}")
 
 
