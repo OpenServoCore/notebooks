@@ -7,6 +7,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "stages" / "2-motor" / "motor-model"))
 import motor_model as mm  # noqa: E402
 
+from oscnb import coast, parallel, ripple  # noqa: E402
+
 TICK_S = 1 / 48e6
 
 
@@ -63,3 +65,19 @@ def test_steady_state_meets_the_target_mean():
     s = mm.steady(p, 30, 4.9, 60.0)
     assert s["mean"] == pytest.approx(60.0, abs=0.01)
     assert s["emf"] > 0
+
+
+def test_run_parallel_comes_from_the_library():
+    # the second-motor modules call mm._call and set mm.run_parallel
+    assert mm.run_parallel is parallel.run_parallel
+    assert mm._call is parallel.call
+
+
+def test_the_coast_reads_come_from_the_library():
+    assert mm.spin_coast_pairs is coast.pairs
+    assert mm.bridge_rows is coast.bridge
+    assert mm.cut_row is coast.cut_row and mm.open_rows is coast.open_rows
+    assert mm.read_window is ripple.read_window
+    assert mm.line_freq is ripple.line_freq
+    assert mm.count_cycles is ripple.count_cycles
+    assert (mm.COAST_FROM, mm.TARGET_MS, mm.TURN_V) == (20, 10, 0.05)

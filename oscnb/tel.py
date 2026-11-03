@@ -66,6 +66,32 @@ def baseline(df):
     return b.iloc[len(b) // 2:]
 
 
+def rest_zeros(df):
+    """(current zero, tap difference zero): the baseline's medians."""
+    rest = baseline(df)
+    zero_i = rest["current_raw"].median()
+    zero_e = (rest["vmotor_a"] - rest["vmotor_b"]).median()
+    return zero_i, zero_e
+
+
+def drive_start(seg):
+    """The row of a segment where its drive starts, the first nonzero duty."""
+    driven = np.flatnonzero(seg["duty_counts"].to_numpy() != 0)
+    if len(driven) == 0:
+        raise ValueError("the segment has no driven row")
+    return int(driven[0])
+
+
+def drive_rows(seg):
+    """A segment's rows from its first driven one; the stream opens early."""
+    return seg.iloc[drive_start(seg):]
+
+
+def segment_edges(df):
+    """The row positions where a new segment starts, for a sweep figure."""
+    return np.flatnonzero(np.diff(df["seg"].to_numpy()) != 0) + 1
+
+
 def settled(g, skip=SETTLE_ROWS):
     """The rows of one rung after its duty reached the held value and at
     least `skip` rows in. Under the current limit the duty climbs from the

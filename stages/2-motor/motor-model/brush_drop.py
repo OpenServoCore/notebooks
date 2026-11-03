@@ -673,8 +673,10 @@ def gap_hz(rev_s, segments=MOTOR.slots):
 # ---------------------------------------------------------------- speed against current: the run-ups
 
 ST_NB = results.ROOT / "stages" / "2-motor" / "speed-torque"
-# imports and constants, cycles, results carried in, the run-ups, the dropout rows, the estimators, the count, by cell id
-ST_CELLS = ("fc44883f", "98a52b0f", "61357cd8", "4c4b548a", "64a4b80c", "71c11876", "1331f6dd")
+# imports, constants, cycles, results carried in, the run-ups, the dropout rows, the estimators, the count, by cell id
+ST_CELLS = ("fc44883f", "39aed35f", "98a52b0f", "61357cd8", "4c4b548a", "8c90b37a", "64a4b80c", "71c11876",
+            "8b919995", "e9f96306", "8a5b0c97", "b05789b4", "ad5ddf1c", "427500a9", "1331f6dd", "6acd1bb0",
+            "41d0c1af", "6d42c823")
 
 
 def runup_windows():
@@ -701,7 +703,8 @@ def runup_windows():
         plt.show = show0
         for n in set(plt.get_fignums()) - figs:
             plt.close(n)
-    return g["REV"].copy(), g["RUNS"], g["L_H"], g["T_OFFSET"], g["V_PER_COUNT"], g["SETTLED"]
+    scales = g["SCALES"]
+    return g["REV"].copy(), g["RUNS"], g["L_H"], scales.terminal_offset_counts, scales.v_per_count, g["SETTLED"]
 
 
 def x_free(C1, ST_):

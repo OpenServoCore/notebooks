@@ -13,6 +13,12 @@
     "hi": 0.0011725120516164766,
     "unit": "N m/A"
   },
+  "reading_term_a_per_v": {
+    "value": 0.004287794200351041,
+    "lo": 0.004076481633760655,
+    "hi": 0.004514032228630319,
+    "unit": "A per V of the terminal difference at the crest sample, the meter in the loop"
+  },
   "i0_by_speed": [
     {
       "level_v": 5.0,
@@ -707,334 +713,11 @@
     "hi": 0.012335653701993715,
     "unit": "A"
   },
-  "coast_decel_late_rad_s2": {
-    "form": "alpha = a + b sqrt(w), w in rad/s",
-    "a": {
-      "value": 3242.24276207743,
-      "lo": 2956.380561825857,
-      "hi": 3528.1049623290032,
-      "unit": "rad/s^2"
-    },
-    "b": {
-      "value": 256.07494568553136,
-      "lo": 243.76598991050608,
-      "hi": 268.3839014605567,
-      "unit": "rad/s^2 per sqrt(rad/s)"
-    },
-    "speed_range_rev_s": {
-      "value": 353.9454398162563,
-      "lo": 44.18643185795504,
-      "hi": 353.9454398162563,
-      "unit": "rev/s"
-    }
-  },
-  "coast_relax_early_pct": {
-    "value": 9.212139413575882,
-    "lo": 7.324120174928539,
-    "hi": 9.212139413575882,
-    "unit": "% over the late curve in the first 8 ms, 5 ms windows; the bounds span the 5 and 10 ms windows"
-  },
-  "j_kg_m2": {
-    "value": 6.2962577455468e-09,
-    "lo": 5.441158203119697e-09,
-    "hi": 6.426070268907689e-09,
-    "unit": "kg m^2"
-  },
-  "j_by_route": {
-    "ratio at the cut, 5.0 V rungs": {
-      "value": 7.700262269620644e-09,
-      "lo": 6.8829135792972625e-09,
-      "hi": 8.247147048291274e-09,
-      "unit": "kg m^2"
-    },
-    "ratio at the cut, 7.4 V rungs": {
-      "value": 8.395667525721101e-09,
-      "lo": 7.208426332248626e-09,
-      "hi": 9.354645132034683e-09,
-      "unit": "kg m^2"
-    },
-    "line at the cut, 5.0 V": {
-      "value": 4.9992752067467265e-09,
-      "lo": 4.807226081030309e-09,
-      "hi": 5.191324332463144e-09,
-      "unit": "kg m^2"
-    },
-    "line at the cut, 7.4 V": {
-      "value": 4.39482551828809e-09,
-      "lo": 4.181236195564537e-09,
-      "hi": 4.608414841011643e-09,
-      "unit": "kg m^2"
-    },
-    "line at the cut, one J": {
-      "value": 4.639048758676496e-09,
-      "lo": 4.489987513443622e-09,
-      "hi": 4.78811000390937e-09,
-      "unit": "kg m^2"
-    },
-    "line at the cut, one J, no open rungs": {
-      "value": 5.121297203634869e-09,
-      "lo": 4.976123843437271e-09,
-      "hi": 5.266470563832466e-09,
-      "unit": "kg m^2"
-    },
-    "spin-up, line": {
-      "value": 5.33216728142935e-09,
-      "lo": 5.077533674609683e-09,
-      "hi": 5.586800888249017e-09,
-      "unit": "kg m^2"
-    },
-    "spin-up, ratio at the start": {
-      "value": 6.2962577455468e-09,
-      "lo": 5.960663499317799e-09,
-      "hi": 7.039683002608355e-09,
-      "unit": "kg m^2"
-    }
-  },
-  "j_spinup_ratio_by_level": {
-    "5 V": {
-      "value": 6.213004314920137e-09,
-      "lo": 5.949069344459874e-09,
-      "hi": 6.422838720062159e-09,
-      "unit": "kg m^2"
-    },
-    "7.4 V": {
-      "value": 6.298055375717612e-09,
-      "lo": 6.025699000931044e-09,
-      "hi": 7.310241582389459e-09,
-      "unit": "kg m^2"
-    }
-  },
-  "j_spinup_ratio_by_direction": {
-    "-1": {
-      "value": 6.28587614407439e-09,
-      "lo": 5.9706129198520005e-09,
-      "hi": 6.977751198592034e-09,
-      "unit": "kg m^2"
-    },
-    "+1": {
-      "value": 6.296520320988563e-09,
-      "lo": 5.842576236814108e-09,
-      "hi": 9.23470146485344e-09,
-      "unit": "kg m^2"
-    }
-  },
-  "j_spinup_ratio_without_open_rungs_kg_m2": {
-    "value": 6.201554393031146e-09,
-    "lo": 5.9642814704211455e-09,
-    "hi": 6.4202412064698284e-09,
-    "unit": "kg m^2"
-  },
-  "j_spinup_line_by_level": {
-    "5 V": {
-      "value": 5.637950117323845e-09,
-      "lo": 5.334236283867412e-09,
-      "hi": 5.941663950780278e-09,
-      "unit": "kg m^2"
-    },
-    "7.4 V": {
-      "value": 5.216838225674077e-09,
-      "lo": 4.880820512804032e-09,
-      "hi": 5.5528559385441215e-09,
-      "unit": "kg m^2"
-    }
-  },
-  "j_spinup_line_by_direction": {
-    "+1": {
-      "value": 4.573632003009699e-09,
-      "lo": 4.213864762042329e-09,
-      "hi": 4.933399243977068e-09,
-      "unit": "kg m^2"
-    },
-    "-1": {
-      "value": 6.4640412797871626e-09,
-      "lo": 6.124188296944932e-09,
-      "hi": 6.803894262629393e-09,
-      "unit": "kg m^2"
-    }
-  },
-  "j_spinup_line_without_open_rungs_kg_m2": {
-    "value": 5.8508039161154074e-09,
-    "lo": 5.659169656522837e-09,
-    "hi": 6.042438175707978e-09,
-    "unit": "kg m^2"
-  },
-  "spinup_line_excess_a": {
-    "value": 0.026960106479030455,
-    "lo": 0.02063386821153814,
-    "hi": 0.03328634474652277,
-    "unit": "A"
-  },
-  "early_run_excess_a_by_level": {
-    "5 V": {
-      "40 to 75 ms": {
-        "value": 0.01745433625621072,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "75 to 100 ms": {
-        "value": 0.013734911946164462,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "100 to 150 ms": {
-        "value": 0.008007983545419275,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "150 to 200 ms": {
-        "value": 0.0058268970969459905,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "200 to 300 ms": {
-        "value": 0.004024234515549244,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "300 to 450 ms": {
-        "value": 0.002188988629884557,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "450 to 700 ms": {
-        "value": 0.0002877358732646662,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "700 to 1000 ms": {
-        "value": -5.338649943321949e-05,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "1000 to 1500 ms": {
-        "value": -0.00017704397821093065,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      }
-    },
-    "7.4 V": {
-      "40 to 75 ms": {
-        "value": 0.03571981362652281,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "75 to 100 ms": {
-        "value": 0.02019336926394842,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "100 to 150 ms": {
-        "value": 0.012102320557063048,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "150 to 200 ms": {
-        "value": 0.00866858903561707,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "200 to 300 ms": {
-        "value": 0.0065703423298763,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "300 to 450 ms": {
-        "value": 0.004527738713501345,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "450 to 700 ms": {
-        "value": 0.003916685258605959,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "700 to 1000 ms": {
-        "value": 0.0036070996884379133,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      },
-      "1000 to 1500 ms": {
-        "value": 0.003310902980443328,
-        "lo": null,
-        "hi": null,
-        "unit": "A"
-      }
-    }
-  },
-  "j_line_open_zero_kg_m2": {
-    "value": 4.624223283867391e-09,
-    "lo": 4.474210070012063e-09,
-    "hi": 4.774236497722719e-09,
-    "unit": "kg m^2"
-  },
-  "j_line_without_open_rungs_kg_m2": {
-    "value": 5.121297203634869e-09,
-    "lo": 4.976123843437271e-09,
-    "hi": 5.266470563832466e-09,
-    "unit": "kg m^2"
-  },
-  "drive_excess_a_by_level": {
-    "5 V": {
-      "value": 0.031581969963792415,
-      "lo": null,
-      "hi": null,
-      "unit": "A"
-    },
-    "7.4 V": {
-      "value": 0.043858514582295054,
-      "lo": null,
-      "hi": null,
-      "unit": "A"
-    }
-  },
-  "drive_excess_open_zero_a_by_level": {
-    "5 V": {
-      "value": 0.031049558049748953,
-      "lo": null,
-      "hi": null,
-      "unit": "A"
-    },
-    "7.4 V": {
-      "value": 0.040666730712166824,
-      "lo": null,
-      "hi": null,
-      "unit": "A"
-    }
-  },
-  "j_ratio_trend_pct_per_100_rev_s": {
-    "value": -4.4822602556316085,
-    "lo": null,
-    "hi": null,
-    "unit": "% of the mean per 100 rev/s"
-  },
   "spin_window_current_drift_ma": {
     "value": -0.12655503708646756,
     "lo": -3.656344402683615,
     "hi": 0.6563798987950236,
     "unit": "mA"
-  },
-  "reading_term_a_per_v": {
-    "value": 0.004287794200351041,
-    "lo": 0.004076481633760655,
-    "hi": 0.004514032228630319,
-    "unit": "A per V of the terminal difference at the crest sample, the meter in the loop"
   },
   "i0_meter_by_speed": [
     {
@@ -1580,6 +1263,329 @@
     "hi": 0.0005776260289072632,
     "unit": "A, 7.4 V over the 5.0 V curve at the same speed, the reading term taken out"
   },
+  "coast_decel_late_rad_s2": {
+    "form": "alpha = a + b sqrt(w), w in rad/s",
+    "a": {
+      "value": 3242.24276207743,
+      "lo": 2956.380561825857,
+      "hi": 3528.1049623290032,
+      "unit": "rad/s^2"
+    },
+    "b": {
+      "value": 256.07494568553136,
+      "lo": 243.76598991050608,
+      "hi": 268.3839014605567,
+      "unit": "rad/s^2 per sqrt(rad/s)"
+    },
+    "speed_range_rev_s": {
+      "value": 353.9454398162563,
+      "lo": 44.18643185795504,
+      "hi": 353.9454398162563,
+      "unit": "rev/s"
+    }
+  },
+  "coast_relax_early_pct": {
+    "value": 9.212139413575882,
+    "lo": 7.324120174928539,
+    "hi": 9.212139413575882,
+    "unit": "% over the late curve in the first 8 ms, 5 ms windows; the bounds span the 5 and 10 ms windows"
+  },
+  "cut_speed_free_over_spin_pct": {
+    "value": -0.013146671596858672,
+    "lo": -0.10989956497401643,
+    "hi": 0.15073320729339024,
+    "unit": "%"
+  },
+  "j_kg_m2": {
+    "value": 6.2962577455468e-09,
+    "lo": 5.441158203119697e-09,
+    "hi": 6.426070268907689e-09,
+    "unit": "kg m^2"
+  },
+  "j_by_route": {
+    "ratio at the cut, 5.0 V rungs": {
+      "value": 7.700262269620644e-09,
+      "lo": 6.8829135792972625e-09,
+      "hi": 8.247147048291274e-09,
+      "unit": "kg m^2"
+    },
+    "ratio at the cut, 7.4 V rungs": {
+      "value": 8.395667525721101e-09,
+      "lo": 7.208426332248626e-09,
+      "hi": 9.354645132034683e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, 5.0 V": {
+      "value": 4.9992752067467265e-09,
+      "lo": 4.807226081030309e-09,
+      "hi": 5.191324332463144e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, 7.4 V": {
+      "value": 4.39482551828809e-09,
+      "lo": 4.181236195564537e-09,
+      "hi": 4.608414841011643e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, one J": {
+      "value": 4.639048758676496e-09,
+      "lo": 4.489987513443622e-09,
+      "hi": 4.78811000390937e-09,
+      "unit": "kg m^2"
+    },
+    "line at the cut, one J, no open rungs": {
+      "value": 5.121297203634869e-09,
+      "lo": 4.976123843437271e-09,
+      "hi": 5.266470563832466e-09,
+      "unit": "kg m^2"
+    },
+    "spin-up, line": {
+      "value": 5.33216728142935e-09,
+      "lo": 5.077533674609683e-09,
+      "hi": 5.586800888249017e-09,
+      "unit": "kg m^2"
+    },
+    "spin-up, ratio at the start": {
+      "value": 6.2962577455468e-09,
+      "lo": 5.960663499317799e-09,
+      "hi": 7.039683002608355e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_ratio_by_level": {
+    "5 V": {
+      "value": 6.213004314920137e-09,
+      "lo": 5.949069344459874e-09,
+      "hi": 6.422838720062159e-09,
+      "unit": "kg m^2"
+    },
+    "7.4 V": {
+      "value": 6.298055375717612e-09,
+      "lo": 6.025699000931044e-09,
+      "hi": 7.310241582389459e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_ratio_by_direction": {
+    "-1": {
+      "value": 6.28587614407439e-09,
+      "lo": 5.9706129198520005e-09,
+      "hi": 6.977751198592034e-09,
+      "unit": "kg m^2"
+    },
+    "+1": {
+      "value": 6.296520320988563e-09,
+      "lo": 5.842576236814108e-09,
+      "hi": 9.23470146485344e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_ratio_without_open_rungs_kg_m2": {
+    "value": 6.201554393031146e-09,
+    "lo": 5.9642814704211455e-09,
+    "hi": 6.4202412064698284e-09,
+    "unit": "kg m^2"
+  },
+  "j_spinup_line_by_level": {
+    "5 V": {
+      "value": 5.637950117323845e-09,
+      "lo": 5.334236283867412e-09,
+      "hi": 5.941663950780278e-09,
+      "unit": "kg m^2"
+    },
+    "7.4 V": {
+      "value": 5.216838225674077e-09,
+      "lo": 4.880820512804032e-09,
+      "hi": 5.5528559385441215e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_line_by_direction": {
+    "+1": {
+      "value": 4.573632003009699e-09,
+      "lo": 4.213864762042329e-09,
+      "hi": 4.933399243977068e-09,
+      "unit": "kg m^2"
+    },
+    "-1": {
+      "value": 6.4640412797871626e-09,
+      "lo": 6.124188296944932e-09,
+      "hi": 6.803894262629393e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_spinup_line_without_open_rungs_kg_m2": {
+    "value": 5.8508039161154074e-09,
+    "lo": 5.659169656522837e-09,
+    "hi": 6.042438175707978e-09,
+    "unit": "kg m^2"
+  },
+  "spinup_line_excess_a": {
+    "value": 0.026960106479030455,
+    "lo": 0.02063386821153814,
+    "hi": 0.03328634474652277,
+    "unit": "A"
+  },
+  "early_run_excess_a_by_level": {
+    "5 V": {
+      "40 to 75 ms": {
+        "value": 0.01745433625621072,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "75 to 100 ms": {
+        "value": 0.013734911946164462,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "100 to 150 ms": {
+        "value": 0.008007983545419275,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "150 to 200 ms": {
+        "value": 0.0058268970969459905,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "200 to 300 ms": {
+        "value": 0.004024234515549244,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "300 to 450 ms": {
+        "value": 0.002188988629884557,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "450 to 700 ms": {
+        "value": 0.0002877358732646662,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "700 to 1000 ms": {
+        "value": -5.338649943321949e-05,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "1000 to 1500 ms": {
+        "value": -0.00017704397821093065,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    },
+    "7.4 V": {
+      "40 to 75 ms": {
+        "value": 0.03571981362652281,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "75 to 100 ms": {
+        "value": 0.02019336926394842,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "100 to 150 ms": {
+        "value": 0.012102320557063048,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "150 to 200 ms": {
+        "value": 0.00866858903561707,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "200 to 300 ms": {
+        "value": 0.0065703423298763,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "300 to 450 ms": {
+        "value": 0.004527738713501345,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "450 to 700 ms": {
+        "value": 0.003916685258605959,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "700 to 1000 ms": {
+        "value": 0.0036070996884379133,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "1000 to 1500 ms": {
+        "value": 0.003310902980443328,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      }
+    }
+  },
+  "j_line_open_zero_kg_m2": {
+    "value": 4.624223283867391e-09,
+    "lo": 4.474210070012063e-09,
+    "hi": 4.774236497722719e-09,
+    "unit": "kg m^2"
+  },
+  "j_line_without_open_rungs_kg_m2": {
+    "value": 5.121297203634869e-09,
+    "lo": 4.976123843437271e-09,
+    "hi": 5.266470563832466e-09,
+    "unit": "kg m^2"
+  },
+  "drive_excess_a_by_level": {
+    "5 V": {
+      "value": 0.031581969963792415,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "7.4 V": {
+      "value": 0.043858514582295054,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    }
+  },
+  "drive_excess_open_zero_a_by_level": {
+    "5 V": {
+      "value": 0.031049558049748953,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    },
+    "7.4 V": {
+      "value": 0.040666730712166824,
+      "lo": null,
+      "hi": null,
+      "unit": "A"
+    }
+  },
+  "j_ratio_trend_pct_per_100_rev_s": {
+    "value": -4.4822602556316085,
+    "lo": null,
+    "hi": null,
+    "unit": "% of the mean per 100 rev/s"
+  },
   "drive_excess_meter_a_by_level": {
     "5 V": {
       "value": -0.002254626629286084,
@@ -1663,11 +1669,5 @@
     "lo": null,
     "hi": null,
     "unit": "% of the mean per 100 rev/s"
-  },
-  "cut_speed_free_over_spin_pct": {
-    "value": -0.013146671596858672,
-    "lo": -0.10989956497401643,
-    "hi": 0.15073320729339024,
-    "unit": "%"
   }
 }
