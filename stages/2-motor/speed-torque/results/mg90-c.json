@@ -1,0 +1,1340 @@
+{
+  "capture": "telemetry/mg90-c__dev-v006-2A-D/speed-torque/capture-1",
+  "notes": "mg90-c, state A as delivered, the same capture form, the same estimators and the same key definitions as mg90-b's file in this folder, whose notes define every key; every constant from mg90-c's own result files of bemf-coast, no-load-current, rest-resistance and inductance, each re-derived from mg90-c's captures. brush_state_record is every mg90-c run-up set in time order with its brush state, the dropout rate over the spin's last 100 ms less its last ms against the 2 ms running mean (DROPOUT_FRAC), the crest with the dropout rows out, the speed at the cut from the coast's line, the three cycles' lowest and highest as bounds, and 'after' what ran between it and the next set; reference_record the same for the 5 V 30 % references",
+  "j_kg_m2": {
+    "value": 6.140452517045869e-09,
+    "lo": 5.517851136992322e-09,
+    "hi": 6.560699651179684e-09,
+    "unit": "kg m^2"
+  },
+  "j_line_kg_m2": {
+    "value": 6.140452517045869e-09,
+    "lo": 6.090457867317763e-09,
+    "hi": 6.190447166773975e-09,
+    "unit": "kg m^2"
+  },
+  "j_line_by_direction": {
+    "+1": {
+      "value": 6.140086846908538e-09,
+      "lo": 5.947543471044811e-09,
+      "hi": 6.332630222772264e-09,
+      "unit": "kg m^2"
+    },
+    "-1": {
+      "value": 6.129902433311252e-09,
+      "lo": 6.1114299748311255e-09,
+      "hi": 6.148374891791378e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_line_drag_7v4_kg_m2": {
+    "value": 6.2230077962279056e-09,
+    "lo": null,
+    "hi": null,
+    "unit": "kg m^2"
+  },
+  "j_ratio_by_drag": {
+    "drag curve at 5.0 V": {
+      "value": 6.455305289555115e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    },
+    "drag curve at 7.4 V": {
+      "value": 6.347582081383752e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    },
+    "plus 19 mA of early-run drag": {
+      "value": 6.0620715474945274e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    },
+    "plus 41 mA of early-run drag": {
+      "value": 5.605955830946097e-09,
+      "lo": null,
+      "hi": null,
+      "unit": "kg m^2"
+    }
+  },
+  "j_line_extra_drag_a": {
+    "value": 0.016603842647090115,
+    "lo": null,
+    "hi": null,
+    "unit": "A"
+  },
+  "j_dips_first_turn_kg_m2": {
+    "value": 6.510439267640453e-09,
+    "lo": 6.095422103151822e-09,
+    "hi": 7.0849741772354886e-09,
+    "unit": "kg m^2"
+  },
+  "j_windows": {
+    "value": 329.0,
+    "lo": 0.010130994456575646,
+    "hi": 0.03884366765058338,
+    "unit": "windows, from lo to hi s into the run-up"
+  },
+  "r_rotating_ohm": {
+    "value": 4.126801968829589,
+    "lo": 3.988378758792887,
+    "hi": 4.25258478093939,
+    "unit": "ohm"
+  },
+  "v0_rotating_v": {
+    "value": 0.3030851342873066,
+    "lo": 0.21350712884977952,
+    "hi": 0.39659747324722594,
+    "unit": "V"
+  },
+  "no_load_speed_rev_s": {
+    "value": 566.71875,
+    "lo": 560.7986111111112,
+    "hi": 572.6388888888888,
+    "unit": "rev/s"
+  },
+  "no_load_speed_by_direction": {
+    "+1": {
+      "value": 560.7986111111112,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-1": {
+      "value": 572.6388888888888,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "no_load_current_a": {
+    "value": 0.10564769674891632,
+    "lo": 0.104173773514998,
+    "hi": 0.10712161998283463,
+    "unit": "A"
+  },
+  "stall_torque_n_m": {
+    "value": 0.0010936229334816854,
+    "lo": 0.001086195602436224,
+    "hi": 0.0011010502645271466,
+    "unit": "N m"
+  },
+  "stall_torque_first_ms_n_m": {
+    "value": 0.0011731618430284288,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "stall_current_a": {
+    "value": 0.992427061571035,
+    "lo": 0.9798829922626496,
+    "hi": 1.0049711308794202,
+    "unit": "A"
+  },
+  "stall_terminal_v": {
+    "value": 4.426553190941086,
+    "lo": 4.419882490084317,
+    "hi": 4.433223891797855,
+    "unit": "V"
+  },
+  "peak_power_w": {
+    "value": 0.9796449421378488,
+    "lo": 0.9470002591295527,
+    "hi": 1.0155611515517893,
+    "unit": "W"
+  },
+  "peak_power_torque_n_m": {
+    "value": 0.0005750000000000001,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "peak_efficiency": {
+    "value": 0.47739721295271026,
+    "lo": 0.48017796507246685,
+    "hi": 0.4812816889391678,
+    "unit": ""
+  },
+  "peak_efficiency_torque_n_m": {
+    "value": 0.00037500000000000006,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "key_numbers_by_direction": {
+    "+1": {
+      "no_load_rev_s": 560.7986111111112,
+      "stall_line_mnm": 1.1010502645271467,
+      "p_max_w": 0.9470002591295527,
+      "p_max_torque_mnm": 0.47500000000000003,
+      "p_max_rev_s": 320.658258289183,
+      "p_line_w": 0.9553559870983263,
+      "eff_max": 0.4812816889391678,
+      "eff_max_torque_mnm": 0.37500000000000006,
+      "eff_max_rev_s": 379.444625874008
+    },
+    "-1": {
+      "no_load_rev_s": 572.6388888888888,
+      "stall_line_mnm": 1.086195602436224,
+      "p_max_w": 1.0155611515517893,
+      "p_max_torque_mnm": 0.5750000000000001,
+      "p_max_rev_s": 276.1893552642488,
+      "p_line_w": 0.985627400702122,
+      "eff_max": 0.48017796507246685,
+      "eff_max_torque_mnm": 0.225,
+      "eff_max_rev_s": 454.09105517769416
+    }
+  },
+  "terminal_source": {
+    "form": "u = v_s - r_s i at the motor's terminals, the rail, the diode, the bridge and the leads as one source",
+    "v_s": {
+      "value": 4.929575709959941,
+      "lo": null,
+      "hi": null,
+      "unit": "V"
+    },
+    "r_s": {
+      "value": 0.5192626157970445,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    }
+  },
+  "speed_count_start_ms": {
+    "value": 8.440792853149917,
+    "lo": 7.885213502673384,
+    "hi": 9.762154918570465,
+    "unit": "ms"
+  },
+  "speed_count_start_rev_s": {
+    "value": 203.8647913983914,
+    "lo": 181.5396639233961,
+    "hi": 231.12242964871956,
+    "unit": "rev/s"
+  },
+  "crossings_repaired": {
+    "value": 3.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  },
+  "crossings_total": {
+    "value": 5686.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  },
+  "dropouts_settled_per_s_by_direction": {
+    "+1": {
+      "value": 558.3333333333334,
+      "lo": 529.4658198738521,
+      "hi": 587.2008467928147,
+      "unit": "1/s"
+    },
+    "-1": {
+      "value": 251.66666666666666,
+      "lo": 236.3914143501472,
+      "hi": 266.9419189831861,
+      "unit": "1/s"
+    }
+  },
+  "model_settled_rev_s": {
+    "the constants as handed": {
+      "value": 615.0017351140951,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "the constants, J 3.9": {
+      "value": 615.0020811096825,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "the constants, J 6.0": {
+      "value": 615.0016348006455,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "the run-up's own R, V0 and J": {
+      "value": 577.7368188107778,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "model_rise_63_ms": {
+    "the constants as handed": {
+      "value": 20.650000000000002,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "the constants, J 3.9": {
+      "value": 13.5,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "the constants, J 6.0": {
+      "value": 21.05,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "the run-up's own R, V0 and J": {
+      "value": 20.2,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    }
+  },
+  "measured_rise_63_ms": {
+    "+1": {
+      "value": 20.5,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "-1": {
+      "value": 20.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    }
+  },
+  "ke_coast_top_v_s_per_rad": {
+    "value": 0.0011576808929597323,
+    "lo": 0.001154835279318925,
+    "hi": 0.0011605265066005396,
+    "unit": "V s/rad"
+  },
+  "ke_coast_top_rev_s": {
+    "value": 545.2461110425637,
+    "lo": 541.0161321103385,
+    "hi": 549.4760899747889,
+    "unit": "rev/s"
+  },
+  "curve": [
+    {
+      "torque_mnm": 0.025,
+      "n": 334,
+      "speed_rev_s": 548.64,
+      "current_a": 0.12778,
+      "terminal_v": 4.8623,
+      "power_w": 0.08655,
+      "efficiency": 0.1381
+    },
+    {
+      "torque_mnm": 0.075,
+      "n": 199,
+      "speed_rev_s": 532.81,
+      "current_a": 0.15813,
+      "terminal_v": 4.8446,
+      "power_w": 0.23016,
+      "efficiency": 0.3044
+    },
+    {
+      "torque_mnm": 0.125,
+      "n": 102,
+      "speed_rev_s": 504.93,
+      "current_a": 0.20106,
+      "terminal_v": 4.8194,
+      "power_w": 0.37128,
+      "efficiency": 0.3956
+    },
+    {
+      "torque_mnm": 0.175,
+      "n": 75,
+      "speed_rev_s": 476.18,
+      "current_a": 0.24653,
+      "terminal_v": 4.7942,
+      "power_w": 0.52498,
+      "efficiency": 0.4395
+    },
+    {
+      "torque_mnm": 0.225,
+      "n": 50,
+      "speed_rev_s": 447.98,
+      "current_a": 0.29346,
+      "terminal_v": 4.7688,
+      "power_w": 0.64167,
+      "efficiency": 0.4648
+    },
+    {
+      "torque_mnm": 0.275,
+      "n": 36,
+      "speed_rev_s": 427.91,
+      "current_a": 0.33197,
+      "terminal_v": 4.7479,
+      "power_w": 0.74215,
+      "efficiency": 0.4752
+    },
+    {
+      "torque_mnm": 0.325,
+      "n": 22,
+      "speed_rev_s": 404.79,
+      "current_a": 0.36457,
+      "terminal_v": 4.7307,
+      "power_w": 0.81649,
+      "efficiency": 0.4691
+    },
+    {
+      "torque_mnm": 0.375,
+      "n": 31,
+      "speed_rev_s": 383.11,
+      "current_a": 0.39925,
+      "terminal_v": 4.7136,
+      "power_w": 0.89993,
+      "efficiency": 0.4774
+    },
+    {
+      "torque_mnm": 0.425,
+      "n": 39,
+      "speed_rev_s": 352.43,
+      "current_a": 0.44736,
+      "terminal_v": 4.69,
+      "power_w": 0.93102,
+      "efficiency": 0.4418
+    },
+    {
+      "torque_mnm": 0.475,
+      "n": 27,
+      "speed_rev_s": 323.2,
+      "current_a": 0.49525,
+      "terminal_v": 4.6648,
+      "power_w": 0.94996,
+      "efficiency": 0.4045
+    },
+    {
+      "torque_mnm": 0.525,
+      "n": 25,
+      "speed_rev_s": 292.25,
+      "current_a": 0.54028,
+      "terminal_v": 4.6448,
+      "power_w": 0.97359,
+      "efficiency": 0.3861
+    },
+    {
+      "torque_mnm": 0.575,
+      "n": 20,
+      "speed_rev_s": 268.8,
+      "current_a": 0.58557,
+      "terminal_v": 4.6241,
+      "power_w": 0.97964,
+      "efficiency": 0.3626
+    },
+    {
+      "torque_mnm": 0.625,
+      "n": 11,
+      "speed_rev_s": 247.98,
+      "current_a": 0.61307,
+      "terminal_v": 4.6098,
+      "power_w": 0.95508,
+      "efficiency": 0.3344
+    }
+  ],
+  "brush_state_record": [
+    {
+      "set": "capture-1",
+      "state": "A",
+      "hours_from_ref_1": 1.08,
+      "after": "7.4 V 80 and 100 %",
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 582.4915824915824,
+            "lo": 535.3535353535353,
+            "hi": 626.2626262626262,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.1077107465285444,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 543.0555555555555,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 259.25925925925924,
+            "lo": 232.3232323232323,
+            "hi": 282.8282828282828,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10787060744178029,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 550.0,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "capture-2",
+      "state": "B",
+      "hours_from_ref_1": 1.35,
+      "after": null,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 1030.3030303030303,
+            "lo": 1010.10101010101,
+            "hi": 1060.6060606060605,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10690598270882692,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 531.25,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 784.5117845117844,
+            "lo": 737.3737373737373,
+            "hi": 868.6868686868686,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10096158641097153,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 532.6388888888889,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "capture-3",
+      "state": "B",
+      "hours_from_ref_1": 1.92,
+      "after": null,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 1033.6700336700337,
+            "lo": 1000.0,
+            "hi": 1080.8080808080808,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.11274820222460495,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 513.1944444444445,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 582.4915824915824,
+            "lo": 515.1515151515151,
+            "hi": 616.1616161616162,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10692769013156964,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 529.1666666666666,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "capture-4",
+      "state": "C cold",
+      "hours_from_ref_1": 12.72,
+      "after": null,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 457.9124579124579,
+            "lo": 383.83838383838383,
+            "hi": 515.1515151515151,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.11336145719803195,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 520.8333333333334,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 501.6835016835016,
+            "lo": 424.24242424242425,
+            "hi": 545.4545454545454,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10955247287878159,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 520.8333333333334,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "capture-5",
+      "state": "C",
+      "hours_from_ref_1": 12.88,
+      "after": "7.4 V 40 to 67 %",
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 740.7407407407408,
+            "lo": 717.1717171717171,
+            "hi": 767.6767676767677,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.11580979412708389,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 511.8055555555556,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 595.959595959596,
+            "lo": 555.5555555555555,
+            "hi": 636.3636363636364,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10932545528854179,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 520.8333333333334,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "capture-6",
+      "state": "C",
+      "hours_from_ref_1": 15.09,
+      "after": "7.4 V 70 %",
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 710.4377104377104,
+            "lo": 646.4646464646464,
+            "hi": 787.8787878787879,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.11145054637208801,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 528.4722222222223,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 383.83838383838383,
+            "lo": 353.5353535353535,
+            "hi": 434.3434343434343,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10985096520482858,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 533.3333333333334,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "capture-7",
+      "state": "D",
+      "hours_from_ref_1": 15.22,
+      "after": "7.4 V 75 %",
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 1070.7070707070707,
+            "lo": 1000.0,
+            "hi": 1121.2121212121212,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10773534966539763,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 514.5833333333334,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 602.6936026936027,
+            "lo": 505.050505050505,
+            "hi": 696.9696969696969,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10987689118906388,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 530.5555555555555,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "capture-8",
+      "state": "D",
+      "hours_from_ref_1": 15.37,
+      "after": null,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 1151.5151515151515,
+            "lo": 1111.111111111111,
+            "hi": 1181.8181818181818,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10618455057812963,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 520.1388888888889,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 686.8686868686868,
+            "lo": 656.5656565656566,
+            "hi": 707.070707070707,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10824176638835123,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 531.9444444444445,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "pulse-300-4 before",
+      "state": "D",
+      "hours_from_ref_1": 21.01,
+      "after": "20 ms probe at 7.4 V",
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 925.9259259259258,
+            "lo": 888.8888888888888,
+            "hi": 979.7979797979798,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10589533542327063,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 504.8611111111111,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 491.5824915824916,
+            "lo": 424.24242424242425,
+            "hi": 575.7575757575758,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10710615889686455,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 521.5277777777778,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "pulse-300-5 before",
+      "state": "D",
+      "hours_from_ref_1": 21.26,
+      "after": "6 ms pulses at 7.4 V",
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 919.1919191919192,
+            "lo": 858.5858585858585,
+            "hi": 959.5959595959596,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10677767274047743,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 505.5555555555556,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 649.8316498316498,
+            "lo": 535.3535353535353,
+            "hi": 797.9797979797979,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10806624601063147,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 522.2222222222222,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "pulse-300-5 after",
+      "state": "E",
+      "hours_from_ref_1": 21.46,
+      "after": null,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 1245.791245791246,
+            "lo": 1121.2121212121212,
+            "hi": 1343.4343434343434,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10563925599424336,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 510.4166666666667,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 841.7508417508417,
+            "lo": 808.0808080808081,
+            "hi": 898.989898989899,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.10268641327988963,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 522.9166666666666,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    }
+  ],
+  "reference_record": [
+    {
+      "set": "ref-1",
+      "hours_from_ref_1": 0.0,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.08180037289856783,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 138.19444444444443,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.0765667469909498,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 145.83333333333334,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "ref-2",
+      "hours_from_ref_1": 3.17,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.0735068149384017,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 147.91666666666666,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07575748914903498,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 146.5277777777778,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "ref-3",
+      "hours_from_ref_1": 12.81,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07800104378921155,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.05555555555554,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07800074714044253,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.75,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "ref-4",
+      "hours_from_ref_1": 15.02,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07596855474820008,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 145.13888888888889,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07633536095110612,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 145.83333333333334,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "ref-open-4",
+      "hours_from_ref_1": 20.16,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07579842667916119,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.05555555555554,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07545490740462403,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.75,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "ref-close-4",
+      "hours_from_ref_1": 21.08,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07543384534202285,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.05555555555554,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07495164276796402,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.75,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "ref-open-5",
+      "hours_from_ref_1": 21.19,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07572678600144035,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 141.66666666666666,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07514372284591117,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.75,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    },
+    {
+      "set": "ref-close-5",
+      "hours_from_ref_1": 21.52,
+      "by_direction": {
+        "+1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.0757849291601703,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 143.75,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        },
+        "-1": {
+          "dropouts_per_s": {
+            "value": 0.0,
+            "lo": null,
+            "hi": null,
+            "unit": "1/s"
+          },
+          "crest_a": {
+            "value": 0.07621670144349399,
+            "lo": null,
+            "hi": null,
+            "unit": "A"
+          },
+          "cut_rev_s": {
+            "value": 144.44444444444446,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          }
+        }
+      }
+    }
+  ]
+}

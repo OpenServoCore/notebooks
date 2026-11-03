@@ -1,0 +1,164 @@
+{
+  "capture": "telemetry/mg90-c__dev-v006-2A-D/rest-resistance/capture-1",
+  "notes": "the second motor through the same cells: the stall pass alone, 100 % laps of 300 ms into the rotor locked at twelve holes 30 degrees apart, rails [3.3, 3.7, 4.2] V, direction +1 then -1 a second later, one bar seat shared with inductance/capture-1 so hole k is the same rotor angle there; current and terminal volts through the stage 1 current-scale and terminal-chain results; each lap read as V/I at the drive's first row by a line through V/I over 60 ms to the end extrapolated back; r_term_* is that V/I on the direction +1 laps at the graded levels (3.7 and 4.2 V), per hole the mean of the two, the brush drop included, median over the holes with the range over the holes as the bounds; direction -1 starts warm from the +1 lap and is reported apart; the 3.3 V level enters no number; r_stall_graded_lines_ohm and v0_graded_lines_v are the slope and intercept of the line V = V0 + R I through each hole's two graded +1 laps at the start, median with the range over the holes; v0_mean_v is their mean and standard error widened either way by the most the stage 1 resistor laps' V/I step between 3.7 and 4.2 V moves it; the all-rails lines carry the 3.3 V point as read and over the stage 1 factor; direction_gap_offset_ohm's bounds are two standard errors; copper_tau_s's low bound holds a fifth of the rise in the iron through the rest, its high bound is the no-floor read a standard error up; the copper's temperature is not measured, board_ntc_c is the board's; left out against mg90-b's file: r_stall_ohm and v0_brush_v, whose bounds are the bracket the speed-torque run-ups and the meter's route set and neither was read on mg90-c; the run-up keys r_runup_ohm, r_runup_amps, v0_runup_lever_v, j_runup_kg_m2 and runup_rise_tau_us, which take the inertia through a back-EMF constant from a mg90-c bemf-coast result that does not exist yet; the ohms keys r_ohms_median_ohm, r_ohms_by_hole, ohms_lead_zero_ohm, ohms_room_c1_c, ohms_room_c2_c and room_c, since the meter's route was not run on mg90-c; and hole_map_body_* and hole_map_angle_*, the one-body split, not run in this section",
+  "r_term_median_ohm": {
+    "value": 4.402044352465747,
+    "lo": 4.283051314067713,
+    "hi": 4.43908076650985,
+    "unit": "ohm"
+  },
+  "r_term_by_hole": [
+    4.3557,
+    4.2831,
+    4.3679,
+    4.3852,
+    4.3946,
+    4.4036,
+    4.4233,
+    4.4035,
+    4.4051,
+    4.4006,
+    4.4391,
+    4.4379
+  ],
+  "r_term_minus_by_hole": [
+    4.4078,
+    4.3955,
+    4.4023,
+    4.4238,
+    4.4385,
+    4.4688,
+    4.4893,
+    4.4629,
+    4.4611,
+    4.4599,
+    4.4867,
+    4.5029
+  ],
+  "r_term_angle_pct": {
+    "value": 3.5444770644970647,
+    "lo": -2.7031312924273965,
+    "hi": 0.8413457720696682,
+    "unit": "%"
+  },
+  "r_term_lap_scatter_pct": {
+    "value": 0.2372921791925957,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_term_amps": {
+    "value": 0.7920944676586785,
+    "lo": 0.784772534808177,
+    "hi": 0.809481636960812,
+    "unit": "A"
+  },
+  "r_stall_graded_lines_ohm": {
+    "value": 4.5019031970841565,
+    "lo": 4.278886476929529,
+    "hi": 5.077292407218243,
+    "unit": "ohm"
+  },
+  "v0_graded_lines_v": {
+    "value": -0.07616370616372103,
+    "lo": -0.639365493672734,
+    "hi": 0.07093986316741122,
+    "unit": "V"
+  },
+  "v0_mean_v": {
+    "value": -0.11150033252574465,
+    "lo": -0.31690819449047036,
+    "hi": 0.09390752943898109,
+    "unit": "V"
+  },
+  "v0_all_rails_v": {
+    "value": 0.17407253975799708,
+    "lo": -0.0090666337519763,
+    "hi": 0.21505041323393612,
+    "unit": "V"
+  },
+  "v0_all_rails_scaled_v": {
+    "value": -0.3986685810887781,
+    "lo": -0.6615190222083023,
+    "hi": -0.3169001203997433,
+    "unit": "V"
+  },
+  "r_stall_all_rails_ohm": {
+    "value": 4.211559061817274,
+    "lo": 4.106264206364662,
+    "hi": 4.322933909215232,
+    "unit": "ohm"
+  },
+  "direction_gap_pct": {
+    "value": 1.2306672344526952,
+    "lo": 0.17871665511327772,
+    "hi": 3.63984860407246,
+    "unit": "%"
+  },
+  "direction_gap_kept": {
+    "value": 0.49069641117003426,
+    "lo": 0.46607007710102705,
+    "hi": 0.5153227452390415,
+    "unit": ""
+  },
+  "direction_gap_offset_ohm": {
+    "value": -0.04517653740989937,
+    "lo": -0.06292166060289234,
+    "hi": -0.0274314142169064,
+    "unit": "ohm"
+  },
+  "copper_tau_s": {
+    "value": 1.404633169233885,
+    "lo": 0.9878179664187284,
+    "hi": 1.5083823412693662,
+    "unit": "s"
+  },
+  "warming_pct_per_j": {
+    "value": 3.4391362003192363,
+    "lo": 2.2227403440618296,
+    "hi": 6.5942761103531415,
+    "unit": "%/J"
+  },
+  "copper_heat_capacity_max_j_per_c": {
+    "value": 0.1130414349315606,
+    "lo": null,
+    "hi": null,
+    "unit": "J/C"
+  },
+  "copper_mass_max_g": {
+    "value": 0.2936141167053522,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "early_excess_pct": {
+    "value": 0.030080338662305375,
+    "lo": -1.4380846441071515,
+    "hi": 0.8091887507999607,
+    "unit": "%"
+  },
+  "v_over_i_3v3_excess_pct": {
+    "value": 1.2403475267945607,
+    "lo": 0.4649040968475848,
+    "hi": 1.8832134411108647,
+    "unit": "%"
+  },
+  "v_over_i_3v3_stage1_pct": {
+    "value": 3.9412220770681294,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "lap_joules": {
+    "value": 0.9340354402302073,
+    "lo": 0.666027637769219,
+    "hi": 0.9340354402302073,
+    "unit": "J"
+  },
+  "board_ntc_c": {
+    "value": 22.724873728742722,
+    "lo": 21.61588003025139,
+    "hi": 22.89247242346306,
+    "unit": "C"
+  }
+}
