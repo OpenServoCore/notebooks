@@ -1,0 +1,4523 @@
+{
+  "capture": "telemetry/mg90-c__dev-v006-2A-D/bemf-coast/trough-4",
+  "notes": "compensation grades the board's terms for a low-speed current reading and specifies the dynamic two-zero tracker as the current zero's method, graded against the stage 1 captures, the stage 2 bemf-coast datasets of mg90-c (capture-1, capture-2, low-1, low-meter-3) and mg90-b (capture-1), and mg90-c's trough-4, the recording with the trough sample in every row. awake_step_*: the open bridge 1-20 ms after each coast cut over the cycle's torque-off baseline mean, per rail, mg90-c, the bounds one standard error over the coasts; awake_step_mg90b_counts the same on mg90-b. asleep_zero_counts: the baseline mean per rail. step_shape: the fits of the step against the coast's rail per spin. motor_trough: trough-4's trough sample under the holds, settled rows over the trough baseline, against the same chain's late coast (10 ms past the cut to the end) in its own column (same_column) and in the crest column (crest_column), the bounds one standard error; its duty step, slopes, time and speed terms, and the coast levels reproduced. frame_offset: the trough sample over the crest sample at rest and with the bridge open awake. switching_share: the motor's trough, the dropout rows and the dummy's trough over the open bridge. tracker_replay: the tick-exact port through each of the five datasets' timelines with the motor's measured trough level synthesized at feeding widths, the error against the dataset's own per-rail open bridge; warm = the first chain left out; the variants feed the dummy's level (d), the dropout level (e), the open bridge (b) and a 1 s brake. gate_candidates: per feeding gate, the zero error the widest admitted hold feeds and the real-feed replay's scores. real_feed_replay: the port through trough-4 on its own trough samples per gate, the error against the chain's own late coast; steady = the two rail-step chains out as well. convergence: the exact port under continuous dithered feed. methods_pooled: on the modeled replay, A the tracker, B0 the tracker + slope x (rail - rail at the last feed), B with a rail EWMA, C the asleep zero + mg90-c capture-1's three-rail table by the live rail, Cline the same with the line; warm, the last 200 ms. recommended_form: the tracker alone with the 30 % gate and its constants, its residual stated. comparison: the table and the rail term, the bounds they set, not deliverables. board_terms: each term in rev/s at low speed through mg90-c's own R and Ke. motor_constants: mg90-c's from its own stall pass and coasts, mg90-b's from its stage 2 results.",
+  "awake_step_counts": {
+    "3v7": {
+      "value": 2.532816008771915,
+      "lo": 2.4819204064996168,
+      "hi": 2.5837116110442135,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": 5.880585695006767,
+      "lo": 5.840843814116159,
+      "hi": 5.920327575897375,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": 9.42984298245614,
+      "lo": 9.382100301014974,
+      "hi": 9.477585663897306,
+      "unit": "counts"
+    }
+  },
+  "awake_step_ma": {
+    "3v7": {
+      "value": 2.23152955101222,
+      "lo": 2.1866881412557064,
+      "hi": 2.2763709607687335,
+      "unit": "mA"
+    },
+    "5v0": {
+      "value": 5.181071467575779,
+      "lo": 5.146057008841684,
+      "hi": 5.216085926309874,
+      "unit": "mA"
+    },
+    "7v4": {
+      "value": 8.308133399298583,
+      "lo": 8.266069860489784,
+      "hi": 8.350196938107382,
+      "unit": "mA"
+    }
+  },
+  "awake_step_spin_sd_counts": {
+    "3v7": {
+      "value": 0.49867302287506776,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": 0.49637593322887175,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": 0.5729121772939849,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "awake_step_coasts": {
+    "3v7": {
+      "value": 96.0,
+      "lo": null,
+      "hi": null,
+      "unit": "coasts"
+    },
+    "5v0": {
+      "value": 156.0,
+      "lo": null,
+      "hi": null,
+      "unit": "coasts"
+    },
+    "7v4": {
+      "value": 144.0,
+      "lo": null,
+      "hi": null,
+      "unit": "coasts"
+    }
+  },
+  "awake_step_mg90b_counts": {
+    "5v0": {
+      "value": 6.202209824561387,
+      "lo": 6.130221877977356,
+      "hi": 6.274197771145418,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": 9.488611929824568,
+      "lo": 9.404662977797933,
+      "hi": 9.572560881851203,
+      "unit": "counts"
+    }
+  },
+  "asleep_zero_counts": {
+    "3v7": {
+      "value": 1205.8982074074074,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": 1206.2469106666667,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": 1206.4187924444445,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "step_shape": {
+    "line_intercept_counts": {
+      "value": -3.5141159323682993,
+      "lo": -3.6474352976205213,
+      "hi": -3.3807965671160773,
+      "unit": "counts"
+    },
+    "line_slope_counts_per_v": {
+      "value": 1.7811023871882041,
+      "lo": 1.7578595373362234,
+      "hi": 1.804345237040185,
+      "unit": "counts/V"
+    },
+    "line_resid_sd_counts": {
+      "value": 0.6803467672222042,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "line_resid_by_rail_counts": {
+      "3v7": {
+        "value": -0.5393784336173866,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.5111700368683412,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": -0.19418191752912153,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "origin_slope_counts_per_v": {
+      "value": 1.1889928591608754,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/V"
+    },
+    "origin_resid_sd_counts": {
+      "value": 1.1069253880444943,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "quadratic_counts": {
+      "v2": {
+        "value": -0.3016871333752415,
+        "lo": null,
+        "hi": null,
+        "unit": "counts/V^2"
+      },
+      "v1": {
+        "value": 5.215924046170796,
+        "lo": null,
+        "hi": null,
+        "unit": "counts/V"
+      },
+      "v0": {
+        "value": -12.62969528634361,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "quadratic_resid_sd_counts": {
+      "value": 0.5246278982485622,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "quadratic_resid_by_rail_counts": {
+      "3v7": {
+        "value": 3.3124625904064806e-06,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 2.3750371459182947e-05,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": -2.7937877474447524e-05,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "two_point_slopes_counts_per_v": {
+      "3v7_to_5v0": {
+        "value": 2.5752074509498857,
+        "lo": null,
+        "hi": null,
+        "unit": "counts/V"
+      },
+      "5v0_to_7v4": {
+        "value": 1.4788572031039058,
+        "lo": null,
+        "hi": null,
+        "unit": "counts/V"
+      }
+    },
+    "mg90b_slope_5v0_to_7v4_counts_per_v": {
+      "value": 1.3751702328542108,
+      "lo": 1.328895441339039,
+      "hi": 1.4214450243693826,
+      "unit": "counts/V"
+    },
+    "n_spins": {
+      "value": 396.0,
+      "lo": null,
+      "hi": null,
+      "unit": "coasts"
+    }
+  },
+  "motor_trough": {
+    "over_coast_same_column_counts": {
+      "3v7": {
+        "value": 0.11562058127886532,
+        "lo": 0.04300408125658438,
+        "hi": 0.18823708130114625,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.31697196007189465,
+        "lo": 0.23987770502338635,
+        "hi": 0.39406621512040296,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.34533012262484125,
+        "lo": 0.27240238769506736,
+        "hi": 0.41825785755461514,
+        "unit": "counts"
+      }
+    },
+    "over_coast_crest_column_counts": {
+      "3v7": {
+        "value": 0.1972150419718268,
+        "lo": 0.13180925807497162,
+        "hi": 0.26262082586868196,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.4105537533191689,
+        "lo": 0.33617456671490614,
+        "hi": 0.4849329399234316,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.5978718199946891,
+        "lo": 0.524314809827864,
+        "hi": 0.6714288301615141,
+        "unit": "counts"
+      }
+    },
+    "over_coast_crest_column_ma": {
+      "3v7": {
+        "value": 0.17375569032258031,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "5v0": {
+        "value": 0.3617170886624828,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "7v4": {
+        "value": 0.5267530801349067,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "over_coast_crest_column_rev_s": {
+      "3v7": {
+        "value": 0.10447346329122884,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "5v0": {
+        "value": 0.21748834190139388,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "7v4": {
+        "value": 0.31671894301043385,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      }
+    },
+    "feeding_holds": {
+      "3v7": {
+        "value": 12.0,
+        "lo": null,
+        "hi": null,
+        "unit": "holds"
+      },
+      "5v0": {
+        "value": 18.0,
+        "lo": null,
+        "hi": null,
+        "unit": "holds"
+      },
+      "7v4": {
+        "value": 18.0,
+        "lo": null,
+        "hi": null,
+        "unit": "holds"
+      }
+    },
+    "level_over_asleep_zero_counts": {
+      "3v7": {
+        "value": 3.159945745745736,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 6.39002911800687,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 9.79307287287286,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "by_rung_counts": {
+      "3v7_hold_16pct": {
+        "same_column": {
+          "value": 0.05426095446163659,
+          "lo": -0.06676870445086526,
+          "hi": 0.17529061337413843,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.16265341560013233,
+          "lo": 0.06378381230743008,
+          "hi": 0.2615230188928346,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 192.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "3v7_hold_20pct": {
+        "same_column": {
+          "value": 0.17698020809609405,
+          "lo": 0.09302958645216745,
+          "hi": 0.26093082974002063,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.23177666834352126,
+          "lo": 0.13920328105930033,
+          "hi": 0.3243500556277422,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 240.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "3v7_hold_30pct": {
+        "same_column": {
+          "value": 0.6216262377753736,
+          "lo": 0.5250967036405719,
+          "hi": 0.7181557719101753,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.7034708559320814,
+          "lo": 0.6007502324740518,
+          "hi": 0.8061914793901109,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 360.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "3v7_hold_60pct": {
+        "same_column": {
+          "value": 0.6205746202707315,
+          "lo": 0.5290425033888929,
+          "hi": 0.7121067371525701,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.7313357381031147,
+          "lo": 0.6390455106830114,
+          "hi": 0.823625965523218,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 720.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "3v7_kick_40pct": {
+        "same_column": {
+          "value": 0.496718813123361,
+          "lo": 0.4206036432836972,
+          "hi": 0.5728339829630249,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.5856674774671145,
+          "lo": 0.5102518888823228,
+          "hi": 0.6610830660519061,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 480.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 24.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "5v0_hold_12pct": {
+        "same_column": {
+          "value": 0.37877222373087216,
+          "lo": 0.2532736098423654,
+          "hi": 0.504270837619379,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.484998594291617,
+          "lo": 0.3660481360146019,
+          "hi": 0.6039490525686322,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 144.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "5v0_hold_15pct": {
+        "same_column": {
+          "value": 0.45246710509139937,
+          "lo": 0.2922790513662415,
+          "hi": 0.6126551588165572,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.5355165308882258,
+          "lo": 0.38627341419393457,
+          "hi": 0.6847596475825171,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 180.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "5v0_hold_20pct": {
+        "same_column": {
+          "value": 0.11967655139341238,
+          "lo": 0.0360518256037646,
+          "hi": 0.20330127718306015,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.21114613477766384,
+          "lo": 0.12270326291878661,
+          "hi": 0.2995890066365411,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 240.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "5v0_hold_40pct": {
+        "same_column": {
+          "value": 0.5840760372712684,
+          "lo": 0.4820039849558281,
+          "hi": 0.6861480895867088,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.7241220480489982,
+          "lo": 0.6250162995233921,
+          "hi": 0.8232277965746042,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 480.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "5v0_kick_30pct": {
+        "same_column": {
+          "value": 0.5741213155154884,
+          "lo": 0.517210211477154,
+          "hi": 0.6310324195538228,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.6793191631453764,
+          "lo": 0.6192086222372474,
+          "hi": 0.7394297040535055,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 360.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 24.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "7v4_hold_10pct": {
+        "same_column": {
+          "value": 0.2736670775276486,
+          "lo": 0.08299808044908977,
+          "hi": 0.4643360746062074,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.5332872697750698,
+          "lo": 0.3432973146030529,
+          "hi": 0.7232772249470867,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 120.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "7v4_hold_15pct": {
+        "same_column": {
+          "value": 0.3369981282402866,
+          "lo": 0.23800972438955934,
+          "hi": 0.4359865320910138,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.5984071160251231,
+          "lo": 0.5008654796267342,
+          "hi": 0.695948752423512,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 180.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "7v4_hold_20pct": {
+        "same_column": {
+          "value": 0.42532516210658855,
+          "lo": 0.3493381798038915,
+          "hi": 0.5013121444092856,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.6619210741838746,
+          "lo": 0.57290894707751,
+          "hi": 0.7509332012902392,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 240.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "7v4_hold_40pct": {
+        "same_column": {
+          "value": 0.8487077784477464,
+          "lo": 0.7181376383997571,
+          "hi": 0.9792779184957356,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 1.0646738924181542,
+          "lo": 0.9411551691359076,
+          "hi": 1.188192615700401,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 480.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 6.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "7v4_kick_20pct": {
+        "same_column": {
+          "value": 0.35071929386581696,
+          "lo": 0.26066674591554717,
+          "hi": 0.44077184181608675,
+          "unit": "counts"
+        },
+        "crest_column": {
+          "value": 0.5941170953858048,
+          "lo": 0.5020118070775972,
+          "hi": 0.6862223836940124,
+          "unit": "counts"
+        },
+        "ticks": {
+          "value": 240.0,
+          "lo": null,
+          "hi": null,
+          "unit": "ticks"
+        },
+        "spins": {
+          "value": 24.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      }
+    },
+    "step_above_20pct_counts": {
+      "3v7": {
+        "value": 0.5054798477441872,
+        "lo": 0.4090691770041086,
+        "hi": 0.6018905184842658,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.2671040771993738,
+        "lo": 0.13918915224778558,
+        "hi": 0.395019002150962,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.5033776558229051,
+        "lo": 0.353821592775836,
+        "hi": 0.6529337188699741,
+        "unit": "counts"
+      }
+    },
+    "slope_per_count_of_crest_holds": {
+      "value": 0.012524420356328836,
+      "lo": 0.010042690018051524,
+      "hi": 0.015006150694606148,
+      "unit": "counts/count"
+    },
+    "slope_per_pct_duty_holds": {
+      "value": 0.01272715380430045,
+      "lo": 0.010052457207279287,
+      "hi": 0.015401850401321615,
+      "unit": "counts/%"
+    },
+    "slope_per_count_of_crest_holds_kicks": {
+      "value": 0.007152696403713049,
+      "lo": 0.005415359901060799,
+      "hi": 0.0088900329063653,
+      "unit": "counts/count"
+    },
+    "current_leak_bound_pct": {
+      "value": 1.748788103288346,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "quarter_slope_counts": {
+      "3v7": {
+        "value": 0.05072238905572236,
+        "lo": 0.03460729178400433,
+        "hi": 0.06683748632744038,
+        "unit": "counts per 0.5 s"
+      },
+      "5v0": {
+        "value": -0.02005296963630297,
+        "lo": -0.038965902571351865,
+        "hi": -0.0011400367012540762,
+        "unit": "counts per 0.5 s"
+      },
+      "7v4": {
+        "value": 0.05062020353687019,
+        "lo": 0.027029860109951943,
+        "hi": 0.07421054696378844,
+        "unit": "counts per 0.5 s"
+      }
+    },
+    "kick_minus_last_quarter_counts": {
+      "3v7": {
+        "value": 0.04581117750860477,
+        "lo": -0.03874751643385003,
+        "hi": 0.13036987145105958,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.21834401515609572,
+        "lo": 0.15139281118624578,
+        "hi": 0.2852952191259457,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": -0.20179178759296224,
+        "lo": -0.33687128862717686,
+        "hi": -0.06671228655874759,
+        "unit": "counts"
+      }
+    },
+    "early_coast_over_late_counts": {
+      "3v7_trough": {
+        "value": 0.011280069452102276,
+        "lo": -0.05537414884479212,
+        "hi": 0.07793428774899668,
+        "unit": "counts"
+      },
+      "3v7_crest": {
+        "value": 0.033211189936211916,
+        "lo": -0.03898616097608426,
+        "hi": 0.10540854084850809,
+        "unit": "counts"
+      },
+      "5v0_trough": {
+        "value": 0.0936042720679433,
+        "lo": 0.037493435968752764,
+        "hi": 0.14971510816713385,
+        "unit": "counts"
+      },
+      "5v0_crest": {
+        "value": 0.1071784354873105,
+        "lo": 0.04945078474341724,
+        "hi": 0.16490608623120376,
+        "unit": "counts"
+      },
+      "7v4_trough": {
+        "value": 0.18657639677409432,
+        "lo": 0.09545195018208355,
+        "hi": 0.2777008433661051,
+        "unit": "counts"
+      },
+      "7v4_crest": {
+        "value": 0.26898647899582745,
+        "lo": 0.17460604508382277,
+        "hi": 0.36336691290783213,
+        "unit": "counts"
+      }
+    },
+    "early_coast_slope_per_100rev_s": {
+      "3v7_trough": {
+        "value": -0.06914350126814989,
+        "lo": -0.1620812376587905,
+        "hi": 0.02379423512249075,
+        "unit": "counts"
+      },
+      "3v7_crest": {
+        "value": -0.018441046813368805,
+        "lo": -0.12029033913023184,
+        "hi": 0.08340824550349422,
+        "unit": "counts"
+      },
+      "5v0_trough": {
+        "value": 0.036768850880463985,
+        "lo": -0.055419896778196476,
+        "hi": 0.12895759853912445,
+        "unit": "counts"
+      },
+      "5v0_crest": {
+        "value": 0.08348567611403052,
+        "lo": -0.010022786499358935,
+        "hi": 0.17699413872741998,
+        "unit": "counts"
+      },
+      "7v4_trough": {
+        "value": -0.005767400891489487,
+        "lo": -0.10062654988342369,
+        "hi": 0.08909174810044472,
+        "unit": "counts"
+      },
+      "7v4_crest": {
+        "value": 0.03290933464781365,
+        "lo": -0.06509667216365285,
+        "hi": 0.13091534145928013,
+        "unit": "counts"
+      }
+    },
+    "speed_at_cut_range_rev_s": {
+      "value": 43.46739654878405,
+      "lo": 43.46739654878405,
+      "hi": 316.65173055474963,
+      "unit": "rev/s"
+    },
+    "coast_reproduced": {
+      "late_coast_counts": {
+        "3v7": {
+          "value": 2.6043010907655497,
+          "lo": 2.5139410698191957,
+          "hi": 2.6946611117119037,
+          "unit": "counts"
+        },
+        "5v0": {
+          "value": 5.812294371530211,
+          "lo": 5.738996106278315,
+          "hi": 5.885592636782106,
+          "unit": "counts"
+        },
+        "7v4": {
+          "value": 9.145742468372598,
+          "lo": 9.064197495948827,
+          "hi": 9.227287440796369,
+          "unit": "counts"
+        }
+      },
+      "open_1_20ms_counts": {
+        "3v7": {
+          "value": 2.637512280701762,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "5v0": {
+          "value": 5.919472807017521,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "7v4": {
+          "value": 9.414728947368426,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        }
+      },
+      "chains": {
+        "3v7": {
+          "value": 24.0,
+          "lo": null,
+          "hi": null,
+          "unit": "chains"
+        },
+        "5v0": {
+          "value": 24.0,
+          "lo": null,
+          "hi": null,
+          "unit": "chains"
+        },
+        "7v4": {
+          "value": 24.0,
+          "lo": null,
+          "hi": null,
+          "unit": "chains"
+        }
+      }
+    }
+  },
+  "frame_offset_counts": {
+    "rest_counts": {
+      "value": 0.1748166666666672,
+      "lo": 0.16720839057550188,
+      "hi": 0.18242494275783253,
+      "unit": "counts"
+    },
+    "rest_by_rail_counts": {
+      "3v7": {
+        "value": 0.20250000000000531,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.18951666666667202,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.1324333333333243,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "awake_open_bridge_counts": {
+      "value": 0.3206647711645437,
+      "lo": 0.29144866434375877,
+      "hi": 0.37583113485331215,
+      "unit": "counts"
+    },
+    "awake_by_rail_counts": {
+      "3v7": {
+        "value": 0.29144866434375877,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.29471451429656015,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.37583113485331215,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "awake_open_bridge_ma": {
+      "value": 0.2825206846229663,
+      "lo": null,
+      "hi": null,
+      "unit": "mA"
+    },
+    "awake_open_bridge_rev_s": {
+      "value": 0.16987020292212318,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "baselines": {
+      "value": 36.0,
+      "lo": null,
+      "hi": null,
+      "unit": "cycles"
+    }
+  },
+  "switching_share": {
+    "motor_trough_minus_coast_same_column_counts": {
+      "3v7": {
+        "value": 0.11562058127886532,
+        "lo": 0.04300408125658438,
+        "hi": 0.18823708130114625,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.31697196007189465,
+        "lo": 0.23987770502338635,
+        "hi": 0.39406621512040296,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.34533012262484125,
+        "lo": 0.27240238769506736,
+        "hi": 0.41825785755461514,
+        "unit": "counts"
+      }
+    },
+    "motor_trough_minus_coast_crest_column_counts": {
+      "3v7": {
+        "value": 0.1972150419718268,
+        "lo": 0.13180925807497162,
+        "hi": 0.26262082586868196,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.4105537533191689,
+        "lo": 0.33617456671490614,
+        "hi": 0.4849329399234316,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.5978718199946891,
+        "lo": 0.524314809827864,
+        "hi": 0.6714288301615141,
+        "unit": "counts"
+      }
+    },
+    "motor_trough_above_20pct_extra_counts": {
+      "3v7": {
+        "value": 0.5054798477441872,
+        "lo": 0.4090691770041086,
+        "hi": 0.6018905184842658,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.2671040771993738,
+        "lo": 0.13918915224778558,
+        "hi": 0.395019002150962,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.5033776558229051,
+        "lo": 0.353821592775836,
+        "hi": 0.6529337188699741,
+        "unit": "counts"
+      }
+    },
+    "dropout_minus_coast_counts": {
+      "3v7": {
+        "value": 0.6669173245613789,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.5768143049932402,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.6281792397660944,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "dropout_spins": {
+      "3v7": {
+        "value": 3.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "5v0": {
+        "value": 4.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "7v4": {
+        "value": 18.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      }
+    },
+    "dummy_trough_minus_coast_counts": {
+      "3v7": {
+        "value": 0.8396173245613805,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 0.5736236842105651,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "dummy_trough_5v0_above_feed_limit_minus_coast_counts": {
+      "value": 0.9907143049932641,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "tracker_replay": {
+    "synthetic_trough": "the motor's measured trough over the open bridge, same column, per rail",
+    "warm_pooled": {
+      "rms_200_counts": {
+        "value": 0.4062784620698617,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 3.79761669150912,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "rms_200_rev_s": {
+        "value": 0.2153829046088197,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "worst_200_rev_s": {
+        "value": 2.011764234855949,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "rms_start_counts": {
+        "value": 0.6188396871306621,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_start_counts": {
+        "value": 4.104638504688637,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "spins_over_half_rev_s_200": {
+        "value": 4.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "spins_over_half_rev_s_start": {
+        "value": 11.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "spins": {
+        "value": 449.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      }
+    },
+    "all_pooled": {
+      "rms_200_counts": {
+        "value": 0.5493860900034668,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 5.642723576355138,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "rms_200_rev_s": {
+        "value": 0.2911500167900351,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "worst_200_rev_s": {
+        "value": 2.9891983315405795,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "rms_start_counts": {
+        "value": 0.9256508524954631,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_start_counts": {
+        "value": 9.280387646484542,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "spins_over_half_rev_s_200": {
+        "value": 6.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "spins_over_half_rev_s_start": {
+        "value": 18.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "spins": {
+        "value": 456.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      }
+    },
+    "warm_by_dataset": {
+      "mg90-c capture-1": {
+        "rms_200_counts": {
+          "value": 0.3473331874389688,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 0.9389057356770536,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.1839976334711549,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 0.4973795757637678,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "rms_start_counts": {
+          "value": 0.6869879432679598,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 4.099303468424523,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 0.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins_over_half_rev_s_start": {
+          "value": 2.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins": {
+          "value": 89.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "mg90-c capture-2": {
+        "rms_200_counts": {
+          "value": 0.2931464209622745,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 0.79128842884802,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.15529252506881494,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 0.4191802095695997,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "rms_start_counts": {
+          "value": 0.636266863867556,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 3.8380297374417296,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 0.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins_over_half_rev_s_start": {
+          "value": 2.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins": {
+          "value": 89.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "mg90-c low-1": {
+        "rms_200_counts": {
+          "value": 0.35291330627308753,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 2.4398419424937856,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.1869536673230772,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 1.292491359010732,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "rms_start_counts": {
+          "value": 0.5354317714621757,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 4.104638504688637,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 1.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins_over_half_rev_s_start": {
+          "value": 2.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins": {
+          "value": 82.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "mg90-c low-meter-3": {
+        "rms_200_counts": {
+          "value": 0.5524494764264773,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 3.79761669150912,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.2926567340839309,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 2.011764234855949,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "rms_start_counts": {
+          "value": 0.6398667849761541,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 3.8004700850638073,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 3.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins_over_half_rev_s_start": {
+          "value": 4.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins": {
+          "value": 130.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "mg90-b capture-1": {
+        "rms_200_counts": {
+          "value": 0.31458226266419886,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 0.7363831456450498,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.1682076895637165,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 0.39374536413337363,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "rms_start_counts": {
+          "value": 0.5396464058699206,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 3.1031155919340563,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 0.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins_over_half_rev_s_start": {
+          "value": 1.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "spins": {
+          "value": 59.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      }
+    },
+    "variants_warm_pooled_rms_200_counts": {
+      "m brake 0.02 s": {
+        "value": 0.4062784620698617,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "m brake 1 s": {
+        "value": 0.38474182089996645,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "d brake 0.02 s": {
+        "value": 0.559255062982318,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "d brake 1 s": {
+        "value": 0.6721371774355352,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "e brake 0.02 s": {
+        "value": 0.518123877268434,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "e brake 1 s": {
+        "value": 0.5935552593865395,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "b brake 0.02 s": {
+        "value": 0.3781033878568771,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "b brake 1 s": {
+        "value": 0.31110810963101215,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "boot_first_row_counts": {
+      "mg90-c capture-1": {
+        "value": -2.4533236473753277,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "mg90-c capture-2": {
+        "value": -2.518487681178158,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "mg90-c low-1": {
+        "value": -5.624100618489592,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "mg90-c low-meter-3": {
+        "value": -9.280387646484542,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "mg90-b capture-1": {
+        "value": -6.195933896827,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "feeding_rung_end_offset_counts": {
+      "value": 0.21322933322864623,
+      "lo": 0.12597120583849541,
+      "hi": 0.30048746061879705,
+      "unit": "counts"
+    },
+    "non_feeding_rung_sd_counts": {
+      "value": 0.5101092861348664,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "gate_candidates": {
+    "20pct": {
+      "trough_feed_max_ticks": {
+        "value": 240.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "brake_min_ticks": {
+        "value": 960.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "worst_admitted_rung": "7.4 V hold 20 %",
+      "worst_admitted_rung_counts": {
+        "value": 0.6619210741838746,
+        "lo": 0.57290894707751,
+        "hi": 0.7509332012902392,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_upper_2se_counts": {
+        "value": 0.8399453283966037,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_rev_s": {
+        "value": 0.35064864400819223,
+        "lo": 0.35064864400819223,
+        "hi": 0.4449559047601327,
+        "unit": "rev/s"
+      },
+      "by_rail_worst_counts": {
+        "3v7": {
+          "value": 0.23177666834352126,
+          "lo": 0.13920328105930033,
+          "hi": 0.3243500556277422,
+          "unit": "counts"
+        },
+        "5v0": {
+          "value": 0.5355165308882258,
+          "lo": 0.38627341419393457,
+          "hi": 0.6847596475825171,
+          "unit": "counts"
+        },
+        "7v4": {
+          "value": 0.6619210741838746,
+          "lo": 0.57290894707751,
+          "hi": 0.7509332012902392,
+          "unit": "counts"
+        }
+      },
+      "unmeasured": "",
+      "real_feed_warm": {
+        "rms_200_counts": {
+          "value": 0.8198760836258802,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 4.099740071869746,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.4871708612947249,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.4343243449872407,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 2.1718122493072856,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 18.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.8736183572880231,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 4.102074666596309,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 142.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_steady": {
+        "rms_200_counts": {
+          "value": 0.5975242430354514,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 1.4876244467766355,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.4135359502635281,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.316534816240342,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 0.788059959714714,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 15.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.5740923102673826,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 1.4876244467766355,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 138.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_warm_by_rail": {
+        "3v7": {
+          "rms_200_counts": {
+            "value": 0.9388211222219527,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 3.8236975449533475,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.45034985101962377,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.49733475230300617,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 2.0255804075863164,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 3.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.9614140514550543,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 3.825940586945535,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "5v0": {
+          "rms_200_counts": {
+            "value": 0.8355862288246833,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 4.099740071869746,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.4602410098027813,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.44264669840063553,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 2.1718122493072856,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 7.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.9919546166174761,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.102074666596309,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "7v4": {
+          "rms_200_counts": {
+            "value": 0.6532802042024568,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.2501504184072019,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.553693499660337,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.34607119594042823,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.6622595444045143,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 8.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.6039312829179646,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.2251204273966323,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 46.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      },
+      "real_feed_7v4_holds_steady_mean_counts": {
+        "value": 0.6107340457458675,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "30pct": {
+      "trough_feed_max_ticks": {
+        "value": 360.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "brake_min_ticks": {
+        "value": 840.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "worst_admitted_rung": "3.7 V hold 30 %",
+      "worst_admitted_rung_counts": {
+        "value": 0.7034708559320814,
+        "lo": 0.6007502324740518,
+        "hi": 0.8061914793901109,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_upper_2se_counts": {
+        "value": 0.9089121028481405,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_rev_s": {
+        "value": 0.3726593869760129,
+        "lo": 0.3726593869760129,
+        "hi": 0.48149063206560055,
+        "unit": "rev/s"
+      },
+      "by_rail_worst_counts": {
+        "3v7": {
+          "value": 0.7034708559320814,
+          "lo": 0.6007502324740518,
+          "hi": 0.8061914793901109,
+          "unit": "counts"
+        },
+        "5v0": {
+          "value": 0.5355165308882258,
+          "lo": 0.38627341419393457,
+          "hi": 0.6847596475825171,
+          "unit": "counts"
+        },
+        "7v4": {
+          "value": 0.6619210741838746,
+          "lo": 0.57290894707751,
+          "hi": 0.7509332012902392,
+          "unit": "counts"
+        }
+      },
+      "unmeasured": "no 30 % rung at 5 and 7.4 V; nothing between 40 and 60 % but at 3.7 V",
+      "real_feed_warm": {
+        "rms_200_counts": {
+          "value": 0.7390120050909798,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 3.9121985215158475,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.5254733462368798,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.39148709354877376,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 2.072463259085347,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 20.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.8440878192468498,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 4.102074666596309,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 142.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_steady": {
+        "rms_200_counts": {
+          "value": 0.6185496992097553,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 1.4876244467766355,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.481187626800863,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.32767292316081353,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 0.788059959714714,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 17.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.5889255945457476,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 1.4876244467766355,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 138.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_warm_by_rail": {
+        "3v7": {
+          "rms_200_counts": {
+            "value": 0.8074166467106634,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 3.9121985215158475,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.4516677922879069,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.42772403442179596,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 2.072463259085347,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 5.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.9668632765521173,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 3.9145178574533475,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "5v0": {
+          "rms_200_counts": {
+            "value": 0.7448127792593704,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 2.8479714294442147,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.572234586488373,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.39456001821558817,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 1.5086954606181282,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 7.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.9074169462082605,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.102074666596309,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "7v4": {
+          "rms_200_counts": {
+            "value": 0.6532802042024568,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.2501504184072019,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.553693499660337,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.34607119594042823,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.6622595444045143,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 8.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.6039312829179646,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.2251204273966323,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 46.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      },
+      "real_feed_7v4_holds_steady_mean_counts": {
+        "value": 0.6107340457458675,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "40pct": {
+      "trough_feed_max_ticks": {
+        "value": 480.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "brake_min_ticks": {
+        "value": 720.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "worst_admitted_rung": "7.4 V hold 40 %",
+      "worst_admitted_rung_counts": {
+        "value": 1.0646738924181542,
+        "lo": 0.9411551691359076,
+        "hi": 1.188192615700401,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_upper_2se_counts": {
+        "value": 1.3117113389826476,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_rev_s": {
+        "value": 0.564004488220364,
+        "lo": 0.564004488220364,
+        "hi": 0.6948710658767551,
+        "unit": "rev/s"
+      },
+      "by_rail_worst_counts": {
+        "3v7": {
+          "value": 0.7034708559320814,
+          "lo": 0.6007502324740518,
+          "hi": 0.8061914793901109,
+          "unit": "counts"
+        },
+        "5v0": {
+          "value": 0.7241220480489982,
+          "lo": 0.6250162995233921,
+          "hi": 0.8232277965746042,
+          "unit": "counts"
+        },
+        "7v4": {
+          "value": 1.0646738924181542,
+          "lo": 0.9411551691359076,
+          "hi": 1.188192615700401,
+          "unit": "counts"
+        }
+      },
+      "unmeasured": "no 30 % rung at 5 and 7.4 V; nothing between 40 and 60 % but at 3.7 V",
+      "real_feed_warm": {
+        "rms_200_counts": {
+          "value": 0.7698612404457916,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 2.9811438804636055,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.6058361919935232,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.4078292874563958,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 1.5792427527205473,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 26.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.829759656999991,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 4.316124959565059,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 142.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_steady": {
+        "rms_200_counts": {
+          "value": 0.6898500925399614,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 1.7894044190920795,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.5704646386722044,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.3654438708063668,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 0.947926055852703,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 23.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.6116324436703371,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 1.488036434081323,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 138.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_warm_by_rail": {
+        "3v7": {
+          "rms_200_counts": {
+            "value": 0.7404257231744442,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 2.8777365654916593,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.5436432146702685,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.3922360020641702,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 1.5244633595426704,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 6.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.8857851830725073,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 3.93070743264866,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "5v0": {
+          "rms_200_counts": {
+            "value": 0.7679587213679301,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 2.9811438804636055,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.5973387634070377,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.4068214396013107,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 1.5792427527205473,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 7.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.9389718391473255,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.316124959565059,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "7v4": {
+          "rms_200_counts": {
+            "value": 0.8013290323247205,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.7894044190920795,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.6796000938123825,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.4244991579026316,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.947926055852703,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 13.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.6218056857466072,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.2251204273966323,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 46.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      },
+      "real_feed_7v4_holds_steady_mean_counts": {
+        "value": 0.837524777424713,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "60pct": {
+      "trough_feed_max_ticks": {
+        "value": 720.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "brake_min_ticks": {
+        "value": 480.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "worst_admitted_rung": "7.4 V hold 40 %",
+      "worst_admitted_rung_counts": {
+        "value": 1.0646738924181542,
+        "lo": 0.9411551691359076,
+        "hi": 1.188192615700401,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_upper_2se_counts": {
+        "value": 1.3117113389826476,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_rev_s": {
+        "value": 0.564004488220364,
+        "lo": 0.564004488220364,
+        "hi": 0.6948710658767551,
+        "unit": "rev/s"
+      },
+      "by_rail_worst_counts": {
+        "3v7": {
+          "value": 0.7313357381031147,
+          "lo": 0.6390455106830114,
+          "hi": 0.823625965523218,
+          "unit": "counts"
+        },
+        "5v0": {
+          "value": 0.7241220480489982,
+          "lo": 0.6250162995233921,
+          "hi": 0.8232277965746042,
+          "unit": "counts"
+        },
+        "7v4": {
+          "value": 1.0646738924181542,
+          "lo": 0.9411551691359076,
+          "hi": 1.188192615700401,
+          "unit": "counts"
+        }
+      },
+      "unmeasured": "no 30 % rung at 5 and 7.4 V; nothing between 40 and 60 % but at 3.7 V",
+      "real_feed_warm": {
+        "rms_200_counts": {
+          "value": 0.7883003954402779,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 2.9811438804636055,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.62791879273484,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.41759731713190573,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 1.5792427527205473,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 29.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.8353115663227275,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 4.316124959565059,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 142.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_steady": {
+        "rms_200_counts": {
+          "value": 0.7109550773624136,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_200_counts": {
+          "value": 1.7894044190920795,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mean_200_counts": {
+          "value": 0.5931873147973274,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "rms_200_rev_s": {
+          "value": 0.37662410754219033,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "worst_200_rev_s": {
+          "value": 0.947926055852703,
+          "lo": null,
+          "hi": null,
+          "unit": "rev/s"
+        },
+        "spins_over_half_rev_s_200": {
+          "value": 26.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        },
+        "rms_start_counts": {
+          "value": 0.6193597678499975,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "worst_start_counts": {
+          "value": 1.488036434081323,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "spins": {
+          "value": 138.0,
+          "lo": null,
+          "hi": null,
+          "unit": "spins"
+        }
+      },
+      "real_feed_warm_by_rail": {
+        "3v7": {
+          "rms_200_counts": {
+            "value": 0.7957554087828465,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 2.8777365654916593,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.6089709085299972,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.42154656489208275,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 1.5244633595426704,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 9.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.9010899975634108,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 3.93070743264866,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "5v0": {
+          "rms_200_counts": {
+            "value": 0.7679587213679301,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 2.9811438804636055,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.5973387634070377,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.4068214396013107,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 1.5792427527205473,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 7.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.9389718391473255,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.316124959565059,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 48.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "7v4": {
+          "rms_200_counts": {
+            "value": 0.8013290323247205,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.7894044190920795,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.6796000938123825,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.4244991579026316,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.947926055852703,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 13.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.6218056857466072,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.2251204273966323,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 46.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      },
+      "real_feed_7v4_holds_steady_mean_counts": {
+        "value": 0.837524777424713,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    }
+  },
+  "real_feed_replay": {
+    "dataset": "telemetry/mg90-c__dev-v006-2A-D/bemf-coast/trough-4",
+    "truth": "the chain's own late coast, crest column, 10 ms past the cut to the end",
+    "feed": "every streamed row's trough sample; the brake, the rests and the pre-drive coast synthesized as in the modeled replay",
+    "gates": {
+      "20pct": {
+        "warm": {
+          "rms_200_counts": {
+            "value": 0.8198760836258802,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 4.099740071869746,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.4871708612947249,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.4343243449872407,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 2.1718122493072856,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 18.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.8736183572880231,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.102074666596309,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 142.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "steady": {
+          "rms_200_counts": {
+            "value": 0.5975242430354514,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.4876244467766355,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.4135359502635281,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.316534816240342,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.788059959714714,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 15.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.5740923102673826,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.4876244467766355,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 138.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      },
+      "30pct": {
+        "warm": {
+          "rms_200_counts": {
+            "value": 0.7390120050909798,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 3.9121985215158475,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.5254733462368798,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.39148709354877376,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 2.072463259085347,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 20.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.8440878192468498,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.102074666596309,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 142.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "steady": {
+          "rms_200_counts": {
+            "value": 0.6185496992097553,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.4876244467766355,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.481187626800863,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.32767292316081353,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.788059959714714,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 17.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.5889255945457476,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.4876244467766355,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 138.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      },
+      "40pct": {
+        "warm": {
+          "rms_200_counts": {
+            "value": 0.7698612404457916,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 2.9811438804636055,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.6058361919935232,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.4078292874563958,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 1.5792427527205473,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 26.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.829759656999991,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.316124959565059,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 142.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "steady": {
+          "rms_200_counts": {
+            "value": 0.6898500925399614,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.7894044190920795,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.5704646386722044,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.3654438708063668,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.947926055852703,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 23.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.6116324436703371,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.488036434081323,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 138.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      },
+      "60pct": {
+        "warm": {
+          "rms_200_counts": {
+            "value": 0.7883003954402779,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 2.9811438804636055,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.62791879273484,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.41759731713190573,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 1.5792427527205473,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 29.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.8353115663227275,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 4.316124959565059,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 142.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        },
+        "steady": {
+          "rms_200_counts": {
+            "value": 0.7109550773624136,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_200_counts": {
+            "value": 1.7894044190920795,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "mean_200_counts": {
+            "value": 0.5931873147973274,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "rms_200_rev_s": {
+            "value": 0.37662410754219033,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "worst_200_rev_s": {
+            "value": 0.947926055852703,
+            "lo": null,
+            "hi": null,
+            "unit": "rev/s"
+          },
+          "spins_over_half_rev_s_200": {
+            "value": 26.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          },
+          "rms_start_counts": {
+            "value": 0.6193597678499975,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "worst_start_counts": {
+            "value": 1.488036434081323,
+            "lo": null,
+            "hi": null,
+            "unit": "counts"
+          },
+          "spins": {
+            "value": 138.0,
+            "lo": null,
+            "hi": null,
+            "unit": "spins"
+          }
+        }
+      }
+    },
+    "boot_first_row_counts": {
+      "value": -9.590710748755555,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "boot_first_row_rev_s": {
+      "value": -5.0806204097253636,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "boot_kick_end_counts": {
+      "value": -5.918973161780514,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "boot_hold_end_counts": {
+      "value": 0.7441515025261651,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "warm_5v_first_row_counts": {
+      "value": -3.7793856755133675,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "rail_step_first_spin_counts": {
+      "k12_5v0_kick_30pct_gate20": {
+        "value": 4.099740071869746,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k12_5v0_hold_20pct_gate20": {
+        "value": 0.363166005707626,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_kick_40pct_gate20": {
+        "value": 3.8236975449533475,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_hold_30pct_gate20": {
+        "value": 3.8236975449533475,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k12_5v0_kick_30pct_gate30": {
+        "value": 2.8479714294442147,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k12_5v0_hold_20pct_gate30": {
+        "value": 0.3521956268318718,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_kick_40pct_gate30": {
+        "value": 3.9121985215158475,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_hold_30pct_gate30": {
+        "value": 1.1009570893259024,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k12_5v0_kick_30pct_gate40": {
+        "value": 2.9811438804636055,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k12_5v0_hold_20pct_gate40": {
+        "value": 0.3523714805612599,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_kick_40pct_gate40": {
+        "value": 2.8777365654916593,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_hold_30pct_gate40": {
+        "value": 1.0933671997995589,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k12_5v0_kick_30pct_gate60": {
+        "value": 2.9811438804636055,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k12_5v0_hold_20pct_gate60": {
+        "value": 0.3523714805612599,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_kick_40pct_gate60": {
+        "value": 2.8777365654916593,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "k24_3v7_hold_30pct_gate60": {
+        "value": 1.0933671997995589,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "steady_mean_frame_offset_share_counts": {
+      "value": 0.3206647711645437,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "table_comparison": {
+      "rms_200_counts": {
+        "value": 0.564986270613553,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 1.4194384935362905,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    }
+  },
+  "convergence": {
+    "settle_within_half_count_s": {
+      "3v7_to_5_V": {
+        "value": 0.8184,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "5_to_7v4_V": {
+        "value": 0.8483,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "3v7_to_7v4_V": {
+        "value": 1.12565,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "7v4_to_3v7_V": {
+        "value": 1.0331,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "boot_at_3v7_V": {
+        "value": 0.70685,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "boot_at_5_V": {
+        "value": 1.05735,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "boot_at_7v4_V": {
+        "value": 1.2513,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    },
+    "step_counts": {
+      "3v7_to_5_V": {
+        "value": 3.3477696862348516,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5_to_7v4_V": {
+        "value": 3.5492572874493735,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "3v7_to_7v4_V": {
+        "value": 6.897026973684225,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4_to_3v7_V": {
+        "value": -6.897026973684225,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "boot_at_3v7_V": {
+        "value": 2.532816008771915,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "boot_at_5_V": {
+        "value": 5.880585695006767,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "boot_at_7v4_V": {
+        "value": 9.42984298245614,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "fraction_closed": {
+      "coast 0.3 s (low-meter-3)": {
+        "value": 0.519256721072024,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "coast 0.6 s (low-1)": {
+        "value": 0.7688858997655782,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "coast 0.8 s (capture-1/2, mg90-b)": {
+        "value": 0.8581698409126575,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "brake 20 ms": {
+        "value": 0.0476552001048236,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "brake 1 s": {
+        "value": 0.9129616323437765,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "hold 1.5 s at <= 20 %": {
+        "value": 0.9743217095849732,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "hold 2.5 s at <= 20 %": {
+        "value": 0.9977650035180736,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "coast 0.8 s + brake 1 s": {
+        "value": 0.9876553344686152,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      }
+    },
+    "sag_8v4_to_7v0_move_counts": {
+      "line": {
+        "value": -2.493543342063486,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "quadratic": {
+        "value": -0.7979190690689109,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "through_the_origin": {
+        "value": -1.664590002825225,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "tau_s": {
+      "value": 0.4096,
+      "lo": null,
+      "hi": null,
+      "unit": "s"
+    }
+  },
+  "methods_pooled": {
+    "A": {
+      "rms_200_counts": {
+        "value": 0.4062784620698617,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 3.79761669150912,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "rms_200_rev_s": {
+        "value": 0.2153829046088197,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "worst_200_rev_s": {
+        "value": 2.011764234855949,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "spins_over_half_rev_s": {
+        "value": 4.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "rms_by_dataset_counts": {
+        "mg90-c capture-1": {
+          "value": 0.3473331874389688,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c capture-2": {
+          "value": 0.2931464209622745,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-1": {
+          "value": 0.35291330627308753,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-meter-3": {
+          "value": 0.5524494764264773,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-b capture-1": {
+          "value": 0.31458226266419886,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        }
+      }
+    },
+    "B0": {
+      "rms_200_counts": {
+        "value": 0.41856099437305233,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 3.701372527368676,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "rms_200_rev_s": {
+        "value": 0.22193208597875433,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "worst_200_rev_s": {
+        "value": 1.9607794770566016,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "spins_over_half_rev_s": {
+        "value": 5.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "rms_by_dataset_counts": {
+        "mg90-c capture-1": {
+          "value": 0.3773797715312576,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c capture-2": {
+          "value": 0.33009184192519403,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-1": {
+          "value": 0.3655502941130334,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-meter-3": {
+          "value": 0.5385784235904845,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-b capture-1": {
+          "value": 0.35945418239508614,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        }
+      }
+    },
+    "B": {
+      "rms_200_counts": {
+        "value": 0.3058476531349201,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 0.9648946352547227,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "rms_200_rev_s": {
+        "value": 0.16230534418632311,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "worst_200_rev_s": {
+        "value": 0.5111470364952617,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "spins_over_half_rev_s": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "rms_by_dataset_counts": {
+        "mg90-c capture-1": {
+          "value": 0.3822496312739341,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c capture-2": {
+          "value": 0.334511950970076,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-1": {
+          "value": 0.23201165235635224,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-meter-3": {
+          "value": 0.22829420989150737,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-b capture-1": {
+          "value": 0.3647188061502586,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        }
+      }
+    },
+    "C": {
+      "rms_200_counts": {
+        "value": 0.24088458644854877,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 0.7214140162891454,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "rms_200_rev_s": {
+        "value": 0.1279025759319352,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "worst_200_rev_s": {
+        "value": 0.38574134431861107,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "spins_over_half_rev_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "rms_by_dataset_counts": {
+        "mg90-c capture-1": {
+          "value": 0.25042776457392335,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c capture-2": {
+          "value": 0.2069191755099732,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-1": {
+          "value": 0.214461754416105,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-meter-3": {
+          "value": 0.2230436372407354,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-b capture-1": {
+          "value": 0.3299323641023198,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        }
+      }
+    },
+    "Cline": {
+      "rms_200_counts": {
+        "value": 0.521400477032048,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 1.29156178675521,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "rms_200_rev_s": {
+        "value": 0.276816341469979,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "worst_200_rev_s": {
+        "value": 0.6906003607418381,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "spins_over_half_rev_s": {
+        "value": 26.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "rms_by_dataset_counts": {
+        "mg90-c capture-1": {
+          "value": 0.5363034530028843,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c capture-2": {
+          "value": 0.471966285228446,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-1": {
+          "value": 0.4680831206817096,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-c low-meter-3": {
+          "value": 0.4810665234447435,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "mg90-b capture-1": {
+          "value": 0.6961102775464393,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        }
+      }
+    }
+  },
+  "recommended_form": {
+    "form": "the dynamic two-zero tracker alone: an EWMA per zero of the trough shunt sample, the asleep zero fed with the driver disabled, the awake zero fed by coasts and brakes after the settle and by slow-decay drives at 30 % duty and under; a stale zero follows the other; both seeded from the install's rest; the reading is the crest sample less the awake zero",
+    "ewma_alpha_shift": {
+      "value": 13.0,
+      "lo": null,
+      "hi": null,
+      "unit": "bits"
+    },
+    "state_frac_bits": {
+      "value": 16.0,
+      "lo": null,
+      "hi": null,
+      "unit": "bits"
+    },
+    "stale_ticks": {
+      "value": 65535.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks"
+    },
+    "settle_ticks": {
+      "value": 32.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks"
+    },
+    "trough_feed_gate_pct": {
+      "value": 30.0,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "trough_feed_max_ticks": {
+      "value": 360.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks"
+    },
+    "brake_min_ticks": {
+      "value": 840.0,
+      "lo": null,
+      "hi": null,
+      "unit": "ticks"
+    },
+    "residual": {
+      "first_spin_above_gate_after_rail_step_counts": {
+        "value": 3.9121985215158475,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "first_spin_above_gate_after_rail_step_rev_s": {
+        "value": 2.072463259085347,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "boot_first_row_rev_s": {
+        "value": -5.0806204097253636,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "feed_to_close_a_rail_step_s": {
+        "value": 0.8483,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "frame_offset_systematic_counts": {
+        "value": 0.3206647711645437,
+        "lo": 0.29144866434375877,
+        "hi": 0.37583113485331215,
+        "unit": "counts"
+      },
+      "worst_admitted_rung_counts": {
+        "value": 0.7034708559320814,
+        "lo": 0.6007502324740518,
+        "hi": 0.8061914793901109,
+        "unit": "counts"
+      }
+    },
+    "why": "the zero is a property of the board that moves with the rail and the temperature; the tracker reads it on the board in service where the reading it serves is taken, at no cost at identification; a per-rail table would need the zero read at three rails, three supplies on every bench"
+  },
+  "comparison": {
+    "table_three_rail": {
+      "form": "the asleep zero + a per-board table of the awake step at three rails, linear between, by the live rail; no awake tracking",
+      "table_counts": {
+        "3v7": {
+          "value": 2.5944175438596435,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "5v0": {
+          "value": 6.012360701754412,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        },
+        "7v4": {
+          "value": 9.658706666666687,
+          "lo": null,
+          "hi": null,
+          "unit": "counts"
+        }
+      },
+      "table_source": "mg90-c capture-1, the open bridge 1-20 ms after the coast cut, per rail",
+      "rms_200_counts": {
+        "value": 0.24088458644854877,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 0.7214140162891454,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "spins_over_half_rev_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "spins"
+      },
+      "real_feed_rms_200_counts": {
+        "value": 0.564986270613553,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "real_feed_worst_200_counts": {
+        "value": 1.4194384935362905,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "status": "the bound a static method reaches on this board and the grading truth's own reproducibility; not a deliverable, identification cannot ask a user for three supplies"
+    },
+    "rail_ewma_term": {
+      "form": "the tracker + the line's slope x (the live rail - a rail EWMA fed on the awake-fed ticks)",
+      "rms_200_counts": {
+        "value": 0.3058476531349201,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "worst_200_counts": {
+        "value": 0.9648946352547227,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "status": "the one refinement that needs no identification step; it carries the line's wrong shape, +/- 0.5 counts per rail; not recommended"
+    }
+  },
+  "board_terms": {
+    "current_zero_unlearned_rev_s": {
+      "3v7": {
+        "value": 1.3417438024512889,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "5v0": {
+        "value": 3.1152043353061285,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "7v4": {
+        "value": 4.99540169360114,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      }
+    },
+    "rail_step_first_spin_rev_s": {
+      "3v7_to_5v0": {
+        "value": 1.7734605328548394,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "5v0_to_7v4": {
+        "value": 1.8801973582950116,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      }
+    },
+    "drive_offset_constant_error_counts": {
+      "3v7": {
+        "value": -2.727712716575586,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "5v0": {
+        "value": 0.6200569696592657,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "7v4": {
+        "value": 4.169314257108639,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      }
+    },
+    "switching_share_rev_s": {
+      "value": 0.31671894301043385,
+      "lo": 0.10447346329122884,
+      "hi": 0.3726593869760129,
+      "unit": "rev/s"
+    },
+    "frame_offset_rev_s": {
+      "value": 0.16987020292212318,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "tick_of_window_rev_s": {
+      "3v7": {
+        "value": 0.21057316461326303,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "5v0": {
+        "value": 0.2845583305584636,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "7v4": {
+        "value": 0.42114632922652606,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      }
+    },
+    "window_scale_at_50ma_rev_s": {
+      "value": 0.18939892486767324,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "inl_differential_worst_counts": {
+      "value": 1.692540126227591,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "zero_3v3_if_3v7_kept_rev_s": {
+      "value": -8.740774167477202,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "zero_tempco_over_35c_rev_s": {
+      "value": 1.1565031153092955,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "baseline_wander_range_counts": {
+      "value": 2.0829999999999926,
+      "lo": 1.4908000000000357,
+      "hi": 2.991600000000062,
+      "unit": "counts"
+    },
+    "baseline_vs_ntc_counts_per_c": {
+      "mg90-c capture-1": {
+        "value": 1.0008431704365073,
+        "lo": 0.7920994519281246,
+        "hi": 1.20958688894489,
+        "unit": "counts/C"
+      },
+      "mg90-c capture-2": {
+        "value": 0.11668529133729402,
+        "lo": -0.2165800718692941,
+        "hi": 0.44995065454388217,
+        "unit": "counts/C"
+      },
+      "mg90-c low-1": {
+        "value": 1.1009091147699621,
+        "lo": 0.7857855879392774,
+        "hi": 1.4160326416006468,
+        "unit": "counts/C"
+      },
+      "mg90-c low-meter-3": {
+        "value": 0.8085075444147402,
+        "lo": 0.519420735707506,
+        "hi": 1.0975943531219743,
+        "unit": "counts/C"
+      },
+      "mg90-b capture-1": {
+        "value": -0.5206536007680018,
+        "lo": -0.6533786799459442,
+        "hi": -0.38792852159005936,
+        "unit": "counts/C"
+      }
+    },
+    "gain_drift_at_50ma_35c_rev_s": {
+      "value": 0.09431895520538552,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "scale_at_50ma_rev_s": {
+      "value": 0.7203943462771756,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "scale_over_nominal_pct": {
+      "value": 2.3962566760698856,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "motor_constants": {
+    "mg90-c": {
+      "ke_mv_per_rev_s": {
+        "value": 7.321287446565564,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "ke_coasts": {
+        "value": 88.0,
+        "lo": null,
+        "hi": null,
+        "unit": "coasts"
+      },
+      "r_ohm": {
+        "value": 4.402044352465747,
+        "lo": 4.283051314067713,
+        "hi": 4.43908076650985,
+        "unit": "ohm"
+      },
+      "rev_s_per_count": {
+        "value": 0.5297438889380123,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      }
+    },
+    "mg90-b": {
+      "ke_mv_per_rev_s": {
+        "value": 7.3411408896499175,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "r_ohm": {
+        "value": 4.455291999475678,
+        "lo": 4.383552379419842,
+        "hi": 4.53083637687499,
+        "unit": "ohm"
+      },
+      "rev_s_per_count": {
+        "value": 0.534701760166529,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      }
+    }
+  },
+  "rev_s_per_count_mg90c": {
+    "value": 0.5297438889380123,
+    "lo": null,
+    "hi": null,
+    "unit": "rev/s"
+  },
+  "ma_per_count": {
+    "value": 0.8810468440201545,
+    "lo": null,
+    "hi": null,
+    "unit": "mA"
+  }
+}
