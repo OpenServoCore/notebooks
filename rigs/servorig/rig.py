@@ -49,7 +49,12 @@ class Spec:
     # 22.8 x 12.2 the datasheets quote, so the fit print tries the pocket
     servo_w: float = 12.15
     servo_l: float = 22.6
-    servo_clear: float = FIT_TIGHT  # per side, held by the body
+    servo_clear: float = 0.2        # per side: at 0.05 the fit print's
+    #                                 pocket took the body but not pushed
+    #                                 home; two screws through the ears
+    #                                 locate the servo, not the pocket
+    ear_hole_dy: float = 13.75      # body center to each ear's screw hole
+    ear_pilot_wall: float = 1.2     # least wall from a pilot to the pocket
     body_h: float = 22.55           # case bottom to case top, no output boss
     ear_z: float = 18.4             # case bottom to ear underside
     ear_span: float = 32.2          # across both ears, 2.5 holes 27.5 apart
@@ -113,7 +118,9 @@ class Spec:
     paper_pocket: float = 0.2       # one layer in the pad; the paper is 0.1
     plate_rim: float = 1.2          # plate past the paper
     # tag mount and load arm, the shared horn seat
-    key_fit: float = FIT_TIGHT      # per side on the arms, presses over
+    key_fit: float = 0.25           # per side on the arms: the fit print's
+    #                                 0.25 pocket pressed on by hand and
+    #                                 held; 0.05 and 0.15 did not go on
     key_depth: float = 1.5          # into the 2.05 plate: the skirt stays
     #                                 clear of the boss under the plate
     key_wall: float = 1.6
@@ -197,7 +204,11 @@ class Spec:
     #                                 harness's lead slot
     servo_lead_w: float = 4.5       # the servo's three-wire ribbon, 3 x
     #                                 1.3 mm, so the wall above bridges less
-    lead_slot_depth: float = 2.5    # into the pocket's end wall
+    lead_boot_w: float = 6.5        # the lead's strain relief boot where it
+    #                                 leaves the case, 5.9 x 1.7 in the
+    #                                 model, has to pass the end wall's slot
+    lead_slot_depth: float = 4.0    # into the pocket's end wall: the boot
+    #                                 and the ribbon's bend down the slot
     channel_depth: float = 3.0      # servo lead under the base
     groove_depth: float = 3.0       # bus and power leads in the base top
     pad_margin: float = 1.0         # reference pad past the keep-out circle
@@ -540,8 +551,16 @@ class Spec:
             raise ValueError("The insert must sit clear of the ear well")
         if self.insert_l + self.insert_relief >= self.base_top:
             raise ValueError("The insert hole must stay in the base")
-        if self.wire_w >= self.servo_w:
-            raise ValueError("The lead slot must leave the pocket's corners")
+        if self.wire_w >= self.servo_w or self.lead_boot_w >= self.servo_w:
+            raise ValueError("The lead slots must leave the pocket's corners")
+        wall = (self.ear_hole_dy - self.pilot_d / 2 - self.servo_l / 2
+                - self.servo_clear)
+        if wall < self.ear_pilot_wall:
+            raise ValueError("The ear screw pilots must leave a wall to the "
+                             "pocket")
+        if self.ear_hole_dy + self.pilot_d / 2 + self.ear_pilot_wall > (
+                self.ear_span / 2 + self.ear_fit):
+            raise ValueError("The ear screw pilots must sit under the ears")
         if self.groove_depth >= self.board_recess + self.underside_clear:
             raise ValueError("The lead grooves must open into the board "
                              "pocket's wall")
@@ -757,9 +776,19 @@ def build_fit(s: Spec = Spec()) -> Part:
              s.servo_l + 2 * s.servo_clear, h + 2 * EPS)
     p -= box(cx, cy, s.fit_body_h, ear_w, ear_l, ear_depth + EPS)
     end = cy + s.servo_l / 2 + s.servo_clear
-    p -= box(cx, end + (s.lead_slot_depth - EPS) / 2, -EPS, s.servo_lead_w,
+    p -= box(cx, end + (s.lead_slot_depth - EPS) / 2, -EPS, s.lead_boot_w,
              s.lead_slot_depth + EPS, s.fit_body_h + EPS)
+    p = ear_pilots(p, s, cx, cy, s.fit_body_h)
     p.label = "servorig_fit"
+    return p
+
+
+def ear_pilots(p: Part, s: Spec, x, y, ledge) -> Part:
+    """Two pilots down from the ear ledge, under the servo's ear holes,
+    for the M2 screws that hold the servo."""
+    for sy in (-1, 1):
+        p -= cyl(x, y + sy * s.ear_hole_dy, ledge - s.pilot_depth, s.pilot_d,
+                 s.pilot_depth + EPS)
     return p
 
 
@@ -797,7 +826,8 @@ def build_base(s: Spec = Spec()) -> Part:
              s.ear_span + 2 * s.ear_fit, top - s.ledge_z + EPS)
     p -= cyl(0, 0, s.well_floor, 2 * s.well_r, top - s.well_floor + EPS)
     p -= box(0, s.body_end + (s.lead_slot_depth - EPS) / 2, -EPS,
-             s.servo_lead_w, s.lead_slot_depth + EPS, s.ledge_z + EPS)
+             s.lead_boot_w, s.lead_slot_depth + EPS, s.ledge_z + EPS)
+    p = ear_pilots(p, s, 0, s.body_y, s.ledge_z)
     p -= box(0, (s.body_end + s.y_max) / 2, -EPS, s.servo_lead_w,
              s.y_max - s.body_end + EPS, s.channel_depth + EPS)
     p = tie(p, s, 0, top, s.servo_lead_w)

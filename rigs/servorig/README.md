@@ -79,16 +79,19 @@ runs the checks and stops with an error if one fails:
 ## Print
 
 - **Fit test** first, flat, pockets up, about 13 cm^3 (under 17 g even
-  solid). It carries the tag mount's key pocket four times, labeled with
+  solid). Done once on the horn and servo at hand: the 0.25 key pocket
+  pressed on and held, and the 0.05 servo pocket bound, which set the
+  defaults below. It carries the tag mount's key pocket four times, labeled with
   its fit per side, 0.05 to 0.35, and a 10 mm section of the servo
   pocket with the ear ledge and the lead slot, open underneath. Press the
   horn, screw in, into each key pocket, hub down: the hub and the screw head
   pass through the plate, so hold it clear of the desk. Pick the fit that
   presses on by hand and does not rock, and try the servo body and ears in
-  the short pocket. The fit you pick goes in as `--key-fit` and
-  `--servo-clear` (both 0.05 by default) for every part after it. The servo
-  pocket is cut at `--servo-clear`, so print the test again with the new
-  value if the body does not go in.
+  the short pocket. The fit you pick goes in as `--key-fit` (0.25) and
+  `--servo-clear` (0.2) for every part after it. The servo pocket is cut at
+  `--servo-clear`, so print the test again with a new value if the body
+  does not slide home; the two ear screws locate the servo, so the pocket
+  only needs to let it drop in.
 - **Base** flat, underside on the bed. The underside and the front face
   are the two datums.
 - **Tag mount** top down, tag face on the bed. The bed gives the flattest
@@ -105,8 +108,8 @@ runs the checks and stops with an error if one fails:
 - the MG90S four-arm horn and the servo's center screw
 - one M3 heat-set insert, 5.7 mm long for a 4.0 mm hole
 - one M3 x 12 button head screw and one M3 washer (0.5 mm), the lock
-- five M2 x 6 screws, four for the board and one for the coin lid, into
-  1.8 mm pilots
+- five M2 x 6 screws, four for the board and one for the coin lid, and
+  two M2 x 8 through the servo's ears, all into 1.8 mm pilots
 - two M1.4 x 4 screws or 1.4 x 4 mm self-tapping screws, into the long
   arms' 1.3 mm third holes, 8.5 mm from the axis, to retain the mount on
   the horn (optional)
@@ -123,9 +126,11 @@ runs the checks and stops with an error if one fails:
    pointing at the insert, as square to the base as the spline allows, and
    screw it down.
 4. Lay the card shims on the ear ledge, one strip under each ear. Feed the
-   lead down the slot in the pocket's back wall and press the servo in until
-   the ears sit on the shims. The lead goes along the channel under the base
-   and out the back. Zip tie it at the back.
+   lead down the slot in the pocket's back wall first, boot and all, and
+   keep pulling it through under the base as the servo goes down, so it
+   never folds at the case. Lower the servo until the ears sit on the
+   shims and screw the ears down. The lead goes along the channel under
+   the base and out the back. Zip tie it at the back.
 5. Lay the bus and power leads in their grooves and zip tie them.
 6. Glue the reference tag into the pad's pocket, square to the base
    edges, and the horn tag onto the mount's flat face, centered by eye:
