@@ -32,7 +32,9 @@ scripts turn it on with the leads connected.
 Run in this order. The lap experiments share one wiring and the heated
 experiments share another, opamp-temperature reads the ntc-curve result, and
 bridge-states comes last on the RL dummy, the bare load in series with two
-power inductors.
+power inductors. compensation captures nothing of its own and closes the
+stage: it reads this stage's results and datasets and, as earlier-stage data,
+two motors' stage 2 coast datasets taken on the same board.
 
 ## TL;DR
 
@@ -92,6 +94,13 @@ the edges are in timer ticks after the commanded edge, about 0.02 us each.
 | First burst after a sign change, L jump, slow decay | +3.8 | +1.1 to +5.7, range, lowest to highest of the twelve sets | % | moderate confidence, the cores' history or the set boundary is open | [bridge-states](bridge-states/bridge-states.ipynb) |
 | First burst after a sign change, L jump, fast decay | 0.0 | -1.8 to +4.6, range, lowest to highest of the sets | % | measured, within the other bursts' scatter | [bridge-states](bridge-states/bridge-states.ipynb) |
 | First burst after a sign change, leftover volt-seconds | 10 | 4 to 16, range, lowest to highest of the first bursts | uV s | measured | [bridge-states](bridge-states/bridge-states.ipynb) |
+| Awake zero over the asleep zero, 3.7 V | 2.53 | 2.48 to 2.58, statistical, one standard error over the coasts | counts | measured on 96 coasts of mg90-c, per-spin sd 0.5 counts, mg90-b within 0.3 | [compensation](compensation/compensation.ipynb) |
+| Awake zero over the asleep zero, 5 V | 5.88 | 5.84 to 5.92, statistical, one standard error over the coasts | counts | measured on 156 coasts of mg90-c, per-spin sd 0.5 counts, mg90-b 0.3 above | [compensation](compensation/compensation.ipynb) |
+| Awake zero over the asleep zero, 7.4 V | 9.43 | 9.38 to 9.48, statistical, one standard error over the coasts | counts | measured on 144 coasts of mg90-c, per-spin sd 0.6 counts, mg90-b within 0.1 | [compensation](compensation/compensation.ipynb) |
+| Awake step against the rail, the line's slope | 1.781 | 1.758 to 1.804, statistical, one standard error of the line | counts/V | the step is concave, the line leaves +/- 0.5 counts per rail, three points carry it | [compensation](compensation/compensation.ipynb) |
+| Zero by the three-rail table, rms over the last 200 ms | 0.24 | - | counts | the asleep zero + the table by the live rail, held out on four datasets and a second motor, no spin past 0.5 rev/s, no bounds in the file | [compensation](compensation/compensation.ipynb) |
+| Zero by the tracker alone, rms over the last 200 ms, warm | 0.56 | - | counts | inside the budget once warm, 3.9 counts on a first spin above 20 % after a rail step, no bounds in the file | [compensation](compensation/compensation.ipynb) |
+| Rail step 5 to 7.4 V, feed to settle within 0.5 counts | 0.85 | - | s | the exact port under continuous dithered feed, tau 0.41 s, no bounds in the file | [compensation](compensation/compensation.ipynb) |
 <!-- tldr:constants:end -->
 
 ### Key findings
@@ -132,6 +141,17 @@ the edges are in timer ticks after the commanded edge, about 0.02 us each.
   60 C. The current gain falls 0.27 % from 28 to 63 C and comes back, with
   high confidence, and the shunt likely owns about two thirds of it, from
   two sittings a day apart.
+- The current channel's zero is two numbers and a shape. The awake zero,
+  with the driver on and no winding current, sits 2.5, 5.9 and 9.4 counts
+  (2.2, 5.2 and 8.3 mA) over the asleep zero at 3.7, 5 and 7.4 V, concave
+  in the rail, and reproduces to 0.3 counts across days and a second motor.
+  A dynamic two-zero tracker holds it to 0.56 counts rms once warm and loses
+  it for a whole spin above 20 % duty after a rail step or a boot, 1.8 to
+  5 rev/s at low speed. A per-board table of the step at three rails, read
+  by the live rail and added to the asleep zero, holds every spin inside
+  0.5 rev/s at 0.24 counts rms, held out on four datasets and the second
+  motor. The form the data support is the table seeding the awake zero on a
+  rail change and the tracker trimming the rest.
 
 ### Open questions
 
@@ -180,6 +200,15 @@ the edges are in timer ticks after the commanded edge, about 0.02 us each.
   The converter's carries and the amplifier's step at every slow-decay ON
   edge are the two candidates. Bursts that keep the window's codes inside
   one 256-code block, and a slow burst at a lower rail, separate them.
+- The torque-off zero's wander ([compensation](compensation/compensation.ipynb)).
+  The baseline moves 1.5 to 3 counts over a sitting with no consistent law
+  in the board NTC. A torque-off stream with the NTC, `vref_raw` and
+  `vbus_raw` through a heated plateau, and the same at rest with the motor
+  unplugged, separates the amplifier, the rail and the join.
+- The trough on a motor ([compensation](compensation/compensation.ipynb)).
+  The level a low-duty drive feeds the awake zero was read on the dummy
+  only. A sweep at 15 and 20 % on a motor with the trough sample in the row
+  reads it where the replay models it.
 - The first burst after a change of sign ([bridge-states](bridge-states/bridge-states.ipynb)).
   Whether its jump is the cores' history or the set boundary. Sets of the
   same sign back to back keep the boundary and drop the reversal.
@@ -225,6 +254,10 @@ the teardown read `fast_edge_lags_ticks` from its result. Inductance
 reads sample-timing's `window_scale`, and no-load-current, speed-torque
 and the teardown read current-scale's `counts_per_a_class_pct`. No stage 2
 notebook reads ntc-curve or opamp-temperature yet.
+
+compensation closes this stage with the current zero. A later stage that
+reads a current at a rail it did not rest at takes the three-rail step table
+and the tracker's constants from its result.
 
 ## [rest-noise](rest-noise/rest-noise.ipynb)
 
@@ -346,3 +379,24 @@ first full period and show the turn-off, the return on the taps, the amplifier's
 tail and the discontinuous current inside one period.
 
 Run: `uv run python stages/1-board/bridge-states/capture.py`, then the notebook.
+
+## [compensation](compensation/compensation.ipynb)
+
+Targets: what the board adds to a current reading at low current, term by
+term, and how best to take each out. The current zero's step between the
+bridge asleep and awake per rail and its shape, a dynamic two-zero tracker
+replayed tick-exactly over the captures, its convergence and rail steps, and
+three zero methods scored on the same replay.
+
+Needs: no bench. This stage's results and datasets, and the stage 2
+bemf-coast datasets of mg90-c and mg90-b on this board, read as earlier-stage
+data with each motor's own constants.
+
+How: the torque-off baseline and the open bridge after each coast cut give the
+two zeros on every cycle at three rails, the stage 1 bursts give the
+slow-decay trough on the dummy, the tracker is ported and replayed over each
+dataset's real timeline, and the asleep zero plus a per-rail table, the
+tracker, and the tracker with a rail term are scored against each dataset's
+own per-rail zero.
+
+Run: the notebook alone.

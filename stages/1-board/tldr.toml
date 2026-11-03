@@ -341,3 +341,56 @@ key = "first_burst_leftover_uvs"
 decimals = 0
 bounds = "range, lowest to highest of the first bursts"
 confidence = "measured"
+
+[[constant]]
+label = "Awake zero over the asleep zero, 3.7 V"
+experiment = "compensation"
+key = "awake_step_counts.3v7"
+decimals = 2
+bounds = "statistical, one standard error over the coasts"
+confidence = "measured on 96 coasts of mg90-c, per-spin sd 0.5 counts, mg90-b within 0.3"
+
+[[constant]]
+label = "Awake zero over the asleep zero, 5 V"
+experiment = "compensation"
+key = "awake_step_counts.5v0"
+decimals = 2
+bounds = "statistical, one standard error over the coasts"
+confidence = "measured on 156 coasts of mg90-c, per-spin sd 0.5 counts, mg90-b 0.3 above"
+
+[[constant]]
+label = "Awake zero over the asleep zero, 7.4 V"
+experiment = "compensation"
+key = "awake_step_counts.7v4"
+decimals = 2
+bounds = "statistical, one standard error over the coasts"
+confidence = "measured on 144 coasts of mg90-c, per-spin sd 0.6 counts, mg90-b within 0.1"
+
+[[constant]]
+label = "Awake step against the rail, the line's slope"
+experiment = "compensation"
+key = "step_shape.line_slope_counts_per_v"
+decimals = 3
+bounds = "statistical, one standard error of the line"
+confidence = "the step is concave, the line leaves +/- 0.5 counts per rail, three points carry it"
+
+[[constant]]
+label = "Zero by the three-rail table, rms over the last 200 ms"
+experiment = "compensation"
+key = "methods_pooled.C.rms_200_counts"
+decimals = 2
+confidence = "the asleep zero + the table by the live rail, held out on four datasets and a second motor, no spin past 0.5 rev/s, no bounds in the file"
+
+[[constant]]
+label = "Zero by the tracker alone, rms over the last 200 ms, warm"
+experiment = "compensation"
+key = "methods_pooled.A.rms_200_counts"
+decimals = 2
+confidence = "inside the budget once warm, 3.9 counts on a first spin above 20 % after a rail step, no bounds in the file"
+
+[[constant]]
+label = "Rail step 5 to 7.4 V, feed to settle within 0.5 counts"
+experiment = "compensation"
+key = "convergence.settle_within_half_count_s.5_to_7v4_V"
+decimals = 2
+confidence = "the exact port under continuous dithered feed, tau 0.41 s, no bounds in the file"
