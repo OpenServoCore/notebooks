@@ -94,9 +94,9 @@ runs the checks and stops with an error if one fails:
 - **Tag mount** top down, tag face on the bed. The bed gives the flattest
   tag face, and the seat on the horn prints as a top skin, so no support
   anywhere. The lock screw counterbore and the retaining screw counterbores
-  open at the bed and print as short bridges.
-- **Load arm** top down, the hub tag and the cup rims on the bed. The cup
-  floors print as 25 mm bridges.
+  open at the bed and step down to their holes over short bridges.
+- **Load arm** top down, the hub tag face and the cup floors on the bed.
+  The cups open the other way, toward the base, so nothing bridges.
 - **Tag clip** lip down, its top on the bed.
 
 ## Hardware
@@ -125,8 +125,9 @@ runs the checks and stops with an error if one fails:
    the ears sit on the shims. The lead goes along the channel under the base
    and out the back. Zip tie it at the back.
 5. Lay the bus and power leads in their grooves and zip tie them.
-6. Glue the reference tag into the pad's pocket and the horn tag into the
-   mount's pocket, both square to the base edges.
+6. Glue the reference tag into the pad's pocket, square to the base
+   edges, and the horn tag onto the mount's flat face, centered by eye:
+   the clip's lip covers its edges.
 7. Press the tag mount over the horn, ear over the longer arm; it goes on
    one way only. Add the two retaining screws if you use them. Push the
    clip on.
@@ -137,11 +138,12 @@ The ear lands over the insert at whatever angle the spline left the horn
 at, within one tooth of mid travel. That angle is the lock position. Command
 the servo there before putting the lock screw in (washer under the ear).
 
-For the load arm, swap the mount for the arm, pointing at the front face at
-mid travel. Fill the two cups with 11 quarters each and tape over them. Then
-stand the base on its front face at the desk edge, horn face out past the
-edge, and clamp it by the wings. The arm hangs down at mid travel and swings
-out past the edge.
+For the load arm, fill the two cups with 11 quarters each and tape over
+them first; they open toward the base. Then swap the mount for the arm,
+pointing at the front face at mid travel, stand the base on its front face
+at the desk edge, horn face out past the edge, and clamp it by the wings.
+The arm hangs down at mid travel and swings out past the edge, the coins
+lying on the cup walls, never on the tape.
 
 If the horn sits outside the 1 to 2 mm band, change the shims under the
 ears. Without shims the horn drops 0.5 mm.

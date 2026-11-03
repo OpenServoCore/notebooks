@@ -35,26 +35,29 @@ the long arms and stays inside the tag plate's square. The mount's underside
 sits on the plate's top face across all four arms, which makes that face the
 flatness reference. The hub rises into a clearance recess and the M2 center
 screw's head into a counterbore above it, neither touched. The mount's top
-is the tag plane, 7 mm over the plate, with a one-layer pocket for the paper
-at the height of the reference pad's own. One ear reaches out over the
+is the tag plane, 7 mm over the plate, a flat face printed on the bed that
+the paper is glued to, at the height of the reference pad's own. One ear
+reaches out over the
 insert with a slot for the lock screw, 3 degrees of play each way. The ear
 lands wherever the spline left the horn, within one tooth of mid travel, and
 that angle is the lock position. Two optional M1.4 screws through the long
-arms' holes at 8.5 and 8.0 mm, opposite each other so the clamp balances,
+arms' third holes at 8.5 mm, opposite each other so the clamp balances,
 retain the mount on the horn; they never locate it, and they stay because
 the hanging load arm pries at a press fit 1.5 mm deep. Out there their
 counterbores leave a full wall to the hub's recess.
 
 The load arm has the same keyed seat on the horn and a beam to two coin cups at
 55 mm from the axis, about 120 g of US quarters. The base stands on its front
-face at the desk edge and the arm hangs down at mid travel. A tag pocket on
-the arm's hub keeps the camera reading the horn under load. That hub tag
-sits at the cup rims, about 13 mm above the tag plane and closer to the lens
-than the reference tag, which lets the arm print top down. The clip is a
-square frame that pushes onto the mount's plate or the arm's hub and holds
-the paper flat by its quiet border. Its lip stands 0.6 mm above the tag
-plane; both papers sit in the same 0.2 mm pocket depth, so the papers are
-level with each other and the clip top is not.
+face at the desk edge and the arm hangs down at mid travel. A tag on the
+arm's hub keeps the camera reading the horn under load. That hub tag sits
+at the cup floors, about 13 mm above the tag plane and closer to the lens
+than the reference tag; the cups open the other way, toward the base, so
+the arm prints top down with its tag face and the cup floors on the bed and
+nothing bridging. The coins go in and get taped over before the arm goes on
+the horn, and they lie on the cup walls once the base stands on its front
+face. The clip is a square frame that pushes onto the mount's plate or the
+arm's hub and holds the paper flat by its quiet border. Its lip stands
+0.6 mm above the tag plane.
 
 Nothing of the base rises inside the keep-out circle, which is the circle
 the mount and its clip sweep, ear corners included, plus the tag's quiet

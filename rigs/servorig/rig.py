@@ -106,9 +106,12 @@ class Spec:
     working_distance: float = 250.0     # lens to tags
     frame_per_distance: float = 1.4     # 1x lens: 28 cm wide from 20 cm
     frame_aspect: float = 9 / 16        # 1080p
-    paper_clear: float = 0.25       # per side, the cut paper in its pocket
-    paper_pocket: float = 0.2       # one layer; the paper is 0.1
-    plate_rim: float = 1.2          # wall around the paper pocket
+    paper_clear: float = 0.25       # per side: the cut paper in the pad's
+    #                                 pocket, placement slop on the mount
+    #                                 and the arm, whose tag faces print on
+    #                                 the bed and stay flat, no pocket
+    paper_pocket: float = 0.2       # one layer in the pad; the paper is 0.1
+    plate_rim: float = 1.2          # plate past the paper
     # tag mount and load arm, the shared horn seat
     key_fit: float = FIT_TIGHT      # per side on the arms, presses over
     key_depth: float = 1.5          # into the 2.05 plate: the skirt stays
@@ -463,12 +466,11 @@ class Spec:
             raise ValueError("The ear ledge must sit inside the base")
         if self.ledge_z + self.shim_room + self.ear_t >= self.case_top:
             raise ValueError("The ears must sit below the case top")
-        roof = (self.tag_plane - self.paper_pocket - self.head_top
-                - self.head_clear)
+        roof = self.tag_plane - self.head_top - self.head_clear
         if roof < self.min_wall:
             raise ValueError("The plate must leave a roof over the screw head")
-        if self.retain_floor + self.paper_pocket >= self.plate_t:
-            raise ValueError("The retaining heads must sink below the paper")
+        if self.retain_floor >= self.plate_t:
+            raise ValueError("The retaining heads must sink into the plate")
         if self.lock_clamp - self.ear_gap < self.ear_clamp:
             raise ValueError("The ear must leave a clamp under the head")
         if self.clip_skirt >= self.plate_t:
@@ -587,7 +589,6 @@ def build_mount(s: Spec = Spec()) -> Part:
     p += box(s.ear_tip / 2, 0, s.ear_bottom, s.ear_tip, s.lock_w,
              top - s.ear_bottom)
     p = horn_seat(p, s, top)
-    p -= paper_pocket(s, 0, 0, top)
     slot = 2 * s.slot_half
     p -= Pos(s.insert_r, 0, s.ear_bottom - EPS) * extrude(
         SlotCenterToCenter(slot, M3_HOLE, rotation=90),
@@ -616,9 +617,10 @@ def build_arm(s: Spec = Spec()) -> Part:
     for x, y in cup_centers(s):
         p += cyl(x, y, bottom, od, top - bottom)
     p = horn_seat(p, s, top)
-    p -= paper_pocket(s, 0, 0, top)
+    # the cups open toward the base: their floors print on the bed, top
+    # down, instead of bridging the bore
     for x, y in cup_centers(s):
-        p -= cyl(x, y, bottom + s.cup_floor, s.cup_bore,
+        p -= cyl(x, y, bottom - EPS, s.cup_bore,
                  top - bottom - s.cup_floor + EPS)
     p.label = "servorig_arm"
     return p

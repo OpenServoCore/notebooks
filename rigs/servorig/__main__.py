@@ -3,7 +3,8 @@ import argparse
 from dataclasses import fields, replace
 from pathlib import Path
 
-from build123d import Compound, Pos, Rot, export_step, export_stl
+from build123d import (CenterOf, Compound, Pos, Rot, export_step,
+                       export_stl)
 
 from .rig import (BED_X, BED_Y, BED_Z, FITS, MEASURE, Spec, box, build_arm,
                   build_base, build_clip, build_fit, build_mount, build_servo,
@@ -15,6 +16,7 @@ CONTACT = 1.0               # mm^2: the least seat an arm must carry
 MOUNT_STEP = 15             # degrees between mount poses over a full turn
 ARM_STEP = 10               # degrees between load arm poses over its travel
 M3_LENGTHS = (6, 8, 10, 12, 16)     # button heads as sold
+PLA_G_PER_CM3 = 1.24                # solid; infill prints lighter
 TOP_DOWN = Rot(180, 0, 0)
 PRINT = {"servorig_fit": None, "servorig_base": None,
          "servorig_mount": TOP_DOWN, "servorig_arm": TOP_DOWN,
@@ -201,6 +203,11 @@ def main():
             preview(str(out / f"{part.label}.stl"),
                     str(out / f"{part.label}.png"))
     fit, base, mount, arm, clip = parts
+    arm_g = arm.volume / 1000 * PLA_G_PER_CM3
+    arm_y = arm.center(CenterOf.MASS).Y
+    print(f"load arm itself, printed solid: {arm_g:.0f} g with its mass "
+          f"center {-arm_y:.1f} mm out, {arm_g * 9.81 * -arm_y / 1e3:.0f} "
+          f"mN m level on top of the coins; weigh the print")
     if args.assembly:
         export_step(Compound([base, build_servo(spec), mount, clip]),
                     str(out / "servorig_assembly.step"))
