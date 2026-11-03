@@ -69,7 +69,7 @@ def _log(p, out, hold_s, setter, levels, column):
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "events.csv", "w", newline="") as fe, open(out / "dps.csv", "w", newline="") as fd:
-        ev, log = csv.writer(fe), csv.writer(fd)
+        ev, log = csv.writer(fe, lineterminator="\n"), csv.writer(fd, lineterminator="\n")
         ev.writerow(["t_host", column])
         log.writerow(["t_host", "volts", "amps"])
         setter(levels[0])

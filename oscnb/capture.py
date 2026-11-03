@@ -46,7 +46,7 @@ class Marks:
         self.path = Path(out) / "marks.csv"
         append = append and self.path.exists()
         self._f = open(self.path, "a" if append else "w", newline="")
-        self._w = csv.writer(self._f)
+        self._w = csv.writer(self._f, lineterminator="\n")
         if not append:
             self._w.writerow(["t_host", "mark"])
 

@@ -243,7 +243,7 @@ if "disc" in args and "iv" in args:
                 capture.prompt(wiring)
                 with open(out / f"steps-{way}.csv", "w", newline="") as f, \
                         meter.log(out / f"iv-{way}.csv", expect="DC A"):
-                    w = csv.writer(f)
+                    w = csv.writer(f, lineterminator="\n")
                     w.writerow(["t_host", "volts_set", "dps_volts", "dps_amps"])
                     for v in up + up[-2::-1]:
                         p.set_voltage(float(v))

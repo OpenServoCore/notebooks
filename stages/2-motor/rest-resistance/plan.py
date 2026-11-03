@@ -26,7 +26,7 @@ def setup(s, out):
     stall = out / "stall"
     stall.mkdir(exist_ok=True)
     f = open(stall / "laps.csv", "w", newline="")
-    w = csv.writer(f)
+    w = csv.writer(f, lineterminator="\n")
     w.writerow(["hole", "volts_set", "dps_read", "vsys_read", "t_start", "t_end", "folder"])
     _LAPS[out] = (f, w)
 

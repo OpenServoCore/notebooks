@@ -105,7 +105,7 @@ class Sitting:
         folder = self.root / "telemetry" / self.group / "sittings"
         folder.mkdir(parents=True, exist_ok=True)
         self._f = open(folder / f"{self.state}-{self.n}.csv", "w", newline="")
-        self._w = csv.writer(self._f)
+        self._w = csv.writer(self._f, lineterminator="\n")
         self._w.writerow(["t_host", "event", "detail"])
         self.note("start", f"motor {self.motor.key}, board {self.board.key}, state {self.state}")
 
@@ -166,7 +166,7 @@ class Sitting:
         rail, each spin opens with KICK_MS at that duty and drops to the rung's
         duty chained, no torque-off between."""
         with open(out / f"{folder}.csv", "w", newline="") as f:
-            w = csv.writer(f)
+            w = csv.writer(f, lineterminator="\n")
             w.writerow(["k", "volts_set", "dps_read", "vsys_read", "duty_pct", "repeat", "t_start", "t_end", "folder", "kick_pct"])
             k = 0
             for v, d in rungs:
