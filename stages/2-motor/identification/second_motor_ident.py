@@ -70,8 +70,8 @@ RR_CELLS = tuple(c for c in idn.RR_CELLS if c != "19018c53")
 # inductance's mg90-b cells that its mg90-c section reads, then that section's reading of mg90-c's bursts
 IND_CELLS = idn.IND_CELLS + ("b82dfc38", "7529243b", "4f7b00df", "44173f2e", "fb66b760", "d7374be2", "1660e598",
                              "754f6d7f", "ed33bff0")
-# speed-torque's cells that read a capture: its cycles, its run-ups with their dropout rows, and the count
-ST_RECOUNT = ("98a52b0f", "4c4b548a", "64a4b80c", "1331f6dd")
+# speed-torque's cells that read a capture: its cycles, its run-ups, their dropout rows, and the count
+ST_RECOUNT = ("98a52b0f", "8c90b37a", "64a4b80c", "6d42c823")
 
 
 @contextlib.contextmanager
@@ -131,25 +131,23 @@ def runup_cells():
     _cells_into(g, "speed-torque", bd.ST_CELLS[:1])
     g["show"] = lambda *a, **k: None
     _cells_into(g, "speed-torque", bd.ST_CELLS[1:])
-    # rebound as speed-torque's mg90-c section rebinds them: the capture, Ke, Kt, the drag curves, L and R
-    nl = results.read("2-motor", "no-load-current", pair=KEY)
-    nl_b, g["NL"] = g["NL"], nl
-    g["I0"], g["I0_HI"] = g["drag_curve"]("5 V"), g["drag_curve"]("7.4 V")
-    g["NL"] = nl_b
+    # rebound as speed-torque's mg90-c section rebinds them: the capture, and Ke, Kt, the drag curves, L and R
+    # through its motor_constants, under the name the count cell reads
+    files = [results.read("2-motor", nb, pair=KEY)
+             for nb in ("bemf-coast", "no-load-current", "rest-resistance", "inductance")]
+    g["CONST_B"] = g["motor_constants"](*files)
+    g["L_H"] = g["CONST_B"]["l_h"]
     g["CAPTURE"] = sm.PAIR / "speed-torque" / "capture-1"
-    g["KE"] = results.read("2-motor", "bemf-coast", pair=KEY)["ke_v_s_per_rad"]["value"]
-    g["KT"] = nl["kt_n_m_per_a"]["value"]
-    g["L_H"] = results.read("2-motor", "inductance", pair=KEY)["l_mh"]["value"] * 1e-3
-    g["RR"] = results.read("2-motor", "rest-resistance", pair=KEY)
     _cells_into(g, "speed-torque", ST_RECOUNT)
-    assert len(g["RUNS"]) == 2 * len(g["cycles"])                 # both directions of every cycle
+    assert len(g["RUNS"]) == 2 * len(g["CYCLES"])                 # both directions of every cycle
     return g
 
 
 def runup_windows():
     """speed-torque's turn-window table of mg90-c's capture-1, as brush_drop's runup_windows returns it"""
     g = runup_cells()
-    return g["REV"].copy(), g["RUNS"], g["L_H"], g["T_OFFSET"], g["V_PER_COUNT"], g["SETTLED"]
+    scales = g["SCALES"]
+    return g["REV"].copy(), g["RUNS"], g["L_H"], scales.terminal_offset_counts, scales.v_per_count, g["SETTLED"]
 
 
 _cycle_folders = idn.cycle_folders
