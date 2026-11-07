@@ -248,6 +248,11 @@ pub struct Args {
     /// which is exactly what the stall trip exists to catch.
     #[arg(long)]
     static_load: bool,
+    /// Leave the shaft where the last rung left it instead of parking it at
+    /// the soft limits' centre: a press into a stop stays wound for what
+    /// runs next. The caller centres the horn when it is done.
+    #[arg(long)]
+    no_park: bool,
     /// Brake-and-hold after the seek, before the rung arms. Without it the
     /// rung opens on a shaft still coasting from the seek, and since a fwd
     /// rung's start band is at the LOW guard the coast is BACKWARD: measured
@@ -290,6 +295,7 @@ pub(crate) struct Cfg {
     pub(crate) settle_ms: u32,
     pub(crate) stall: bool,
     pub(crate) static_load: bool,
+    pub(crate) park: bool,
     pub(crate) guard: (u16, u16),
     /// The pot stops, where a stop seek must come to rest.
     pub(crate) stops: Option<(u16, u16)>,
@@ -339,6 +345,7 @@ impl Cfg {
             settle_ms: a.settle_ms,
             stall: a.stall,
             static_load: a.static_load,
+            park: !a.no_park,
             guard,
             stops: (!a.static_load).then_some(lim.raw),
             tel_chunks: pump::parse_tel_chunks(&a.tel_chunks).context("--tel-chunks")?,
@@ -1089,13 +1096,7 @@ pub fn run(args: &Args, bus: Bus, id: u8) -> Result<()> {
     );
     writeln!(t, "{SEGMENTS_HEADER}")?;
 
-    // A resistor has no shaft to park.
-    let center = if cfg.static_load {
-        None
-    } else {
-        let (lo, hi) = lim.soft;
-        Some(((lo + hi) / 2).clamp(0, u16::MAX as i32) as u16)
-    };
+    let center = park_at(&cfg, lim.soft);
 
     let mut s = Wire::new(c, id);
     let r = record(&mut s, &cfg, |g| {
@@ -1118,6 +1119,13 @@ pub fn run(args: &Args, bus: Bus, id: u8) -> Result<()> {
     println!("sweep: {}", csv_path.display());
     println!("meta:  {}", meta_path.display());
     Ok(())
+}
+
+/// Where the shaft parks after the rungs: the soft limits' centre, or
+/// nowhere for a resistor, which has no shaft, and under `--no-park`.
+fn park_at(cfg: &Cfg, soft: (i32, i32)) -> Option<u16> {
+    let (lo, hi) = soft;
+    (!cfg.static_load && cfg.park).then(|| ((lo + hi) / 2).clamp(0, u16::MAX as i32) as u16)
 }
 
 #[cfg(test)]
@@ -1402,11 +1410,34 @@ mod tests {
             settle_ms: 300,
             stall: false,
             static_load: true,
+            park: true,
             guard: (0, 4095),
             stops: None,
             tel_chunks: Chunks::one(0x23c, 12),
             rung_tries: 3,
         }
+    }
+
+    /// A shaft parks at the soft limits' centre unless it is a resistor or
+    /// `--no-park` leaves a pressed seat where it is.
+    #[test]
+    fn park_at_skips_a_resistor_and_no_park() {
+        let shaft = Cfg {
+            static_load: false,
+            ..static_cfg(vec![])
+        };
+        assert_eq!(park_at(&shaft, (314, 3560)), Some(1937));
+        assert_eq!(
+            park_at(
+                &Cfg {
+                    park: false,
+                    ..shaft
+                },
+                (314, 3560)
+            ),
+            None
+        );
+        assert_eq!(park_at(&static_cfg(vec![]), (314, 3560)), None);
     }
 
     /// What a test keeps of a committed segment: its number, sign, duty
