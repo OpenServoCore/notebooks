@@ -77,10 +77,15 @@ SERVOS = {
         lap_cap_a=0.45,
         output_stopper="plastic",
         type_motor="mg90-b",
-        notes="a new sealed MG90 clone of the same brand as mg90-b and "
-              "mg90-c, run first in stage 3; its motor is never opened, "
-              "and mg90-b's stage 2 results stand as the type values, "
-              "comparison only. lock_hold_a is the stock MG90's stall "
+        notes="an MG90 clone of the same brand as mg90-b and mg90-c, run "
+              "first in stage 3: a new, unused motor from one new servo in "
+              "the new, unused body (case, train, pot) that came with "
+              "mg90-c's motor, not a factory pair; the train was cleaned of "
+              "its stale factory grease and regreased by hand with Super "
+              "Lube (synthetic PTFE, NLGI 2) before the first sitting, so "
+              "its friction is that of an MG90 in Super Lube. Its motor is "
+              "never opened, and mg90-b's stage 2 results stand as the type "
+              "values, comparison only. lock_hold_a is the stock MG90's stall "
               "rating, 1.8 kg cm at 4.8 V (0.177 N m), through the 308:1 "
               "train at about 0.6 efficiency, 0.96 mN m at the motor, over "
               "the type Kt of 1.16 mN m per A: about 0.75 to 0.85 A at the "

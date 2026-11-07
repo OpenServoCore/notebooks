@@ -6,8 +6,11 @@ loop. Stages 4 to 6 design the estimators, the loops and the limits over its
 data, and stage 7 holds the closed loop to the numbers it sets, so the data
 bank here has to be complete in one pass.
 
-The servo is `mg90-d`, a new sealed MG90 clone of the same brand as the two
-stage 2 motors. Its motor is never opened. One key names the servo and the
+The servo is `mg90-d`, an MG90 clone of the same brand as the two stage 2
+motors: a new, unused motor from one new servo, in the new, unused body
+that came with mg90-c's motor, with the train cleaned of its stale factory
+grease and regreased by hand with Super Lube (synthetic PTFE, NLGI 2)
+before the first sitting. Its motor is never opened. One key names the servo and the
 motor inside it, so its datasets land in
 `telemetry/mg90-d__dev-v006-2A-D/<experiment>/<name>-N/` and each notebook
 writes `results/mg90-d__dev-v006-2A-D.json` in its folder. The registry
