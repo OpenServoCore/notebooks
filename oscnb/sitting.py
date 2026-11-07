@@ -522,16 +522,22 @@ class Sitting:
     def center(self):
         """The horn to mid travel: a sweep of one still segment, which
         osc-lab opens with a seek to the middle band and ends with a park
-        at the soft limits' center. Refuses unless pos reads there."""
-        self._centers += 1
-        out = self.sittings_dir(f"center-{self._centers}")
-        self.drive(out, PILOT[0], [f"coast:{CENTER_MS}"], dirs="fwd",
-                   rest_ms=0, baseline_ms=CENTER_MS)
-        pos = self.probe("centered")["pos"]
+        at the soft limits' center. Refuses unless pos reads there. A horn
+        already there is left alone: a lock put on before the sitting holds
+        it within MID_TOL but not within the park's band, and the park would
+        drive against it."""
         lo, hi = self.guards()
-        if abs(pos - (lo + hi) // 2) > MID_TOL:
+        mid = (lo + hi) // 2
+        pos = self.probe("center")["pos"]
+        if abs(pos - mid) > MID_TOL:
+            self._centers += 1
+            out = self.sittings_dir(f"center-{self._centers}")
+            self.drive(out, PILOT[0], [f"coast:{CENTER_MS}"], dirs="fwd",
+                       rest_ms=0, baseline_ms=CENTER_MS)
+            pos = self.probe("centered")["pos"]
+        if abs(pos - mid) > MID_TOL:
             raise SystemExit(f"the horn reads {pos}, not within {MID_TOL} of "
-                             f"mid travel {(lo + hi) // 2}")
+                             f"mid travel {mid}")
         return pos
 
     def set_lock(self, on):
