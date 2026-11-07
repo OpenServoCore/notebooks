@@ -374,12 +374,15 @@ class Sitting:
             return str(out)
 
     def drive(self, out, volts, steps, dirs="both", seat=None, guards=None,
-              rest_ms=REST_S * 1000, baseline_ms=500, background=False):
+              rest_ms=REST_S * 1000, baseline_ms=500, park=True,
+              background=False):
         """One `osc-lab sweep` on the servo: the schedule checked, the rail
         set, the probes read, the servo's TEL row. `seat` "lock" drives the
         locked horn with no seek, "stop" presses into the end stops, None
-        is a free rotor from the guards. `background` returns the running
-        sweep instead of waiting."""
+        is a free rotor from the guards. `park` False leaves the horn where
+        the last step left it, for a plan that works on at a pressed seat
+        and centers the horn when it is done. `background` returns the
+        running sweep instead of waiting."""
         self.check(volts, steps, seat)
         self.rail(volts)
         self.probe(self.label(out))
@@ -388,7 +391,7 @@ class Sitting:
         else:
             lo, hi = guards or self.guards()
             kw = {"static_load": False, "stall": seat == "stop",
-                  "guard_lo": lo, "guard_hi": hi}
+                  "guard_lo": lo, "guard_hi": hi, "park": park}
         return osc.sweep(out, steps, baseline_ms=baseline_ms, rest_ms=rest_ms,
                          dirs=dirs, tel_chunks=osc.CHUNKS_SERVO,
                          background=background, **kw)

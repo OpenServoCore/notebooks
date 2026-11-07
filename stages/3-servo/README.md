@@ -136,14 +136,16 @@ grade.
 How: stage 2's five groups on 5 V, forward 25 then 40 %, reverse 40 then
 25 %, five captures each, then three more at reverse 25 % after a 20 s rest,
 each change before a group's first capture different. `locked` runs them at
-mid travel with the lock on. `stop`, optional, runs them at the low stop
-with the train wound by a `--stall` press. osc-lab parks the horn after every
-sweep, so for now the plan reads the seat back, finds the horn away from the
-stop and stops there rather than record a free rotor as a held one.
+mid travel with the lock on. `wound`, optional, runs them into the lock
+after a reverse press has wound the train. `stop`, optional, runs them at the low stop
+with the train wound by a `--stall` press that skips osc-lab's park, the
+seat read back before and after the groups and the horn centered at the
+end; a read-back away from the stop ends the plan rather than record a free
+rotor as a held one.
 
 Run: the `locked` plan of `uv run python -m oscnb.sitting servo`, `--include
-inductance/stop` once osc-lab can leave a pressed shaft at the stop, then
-the notebook.
+inductance/wound` with the lock on and `--include inductance/stop` with the
+horn free, then the notebook.
 
 ## ladder
 
@@ -225,7 +227,7 @@ How: `capture` steps the rail down 0.2 V at a time, and at each rail runs a
 held at 0.5 V effective, and one 30 % cycle. The DPS steps only between
 sweeps with torque off, since a DPS step down has reset the servo once.
 `held` runs only when the first pass came through clean. It steps the DPS
-down the same rails while osc-lab holds a low stall at the low stop.
+down the same rails while osc-lab holds a low stall into the horn lock.
 
 Run: `uv run python -m oscnb.sitting servo --include sag/capture`, then
 `--include sag/held`, then the notebook.

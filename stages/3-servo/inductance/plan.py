@@ -8,11 +8,15 @@ time each group and rest began. Run by `python -m oscnb.sitting servo`.
 `locked` runs the groups with the horn lock on at mid travel, the seat
 read before and after, under the servo's hold current.
 
+`wound`, optional, runs them into the lock after a reverse press of the
+seat duty has wound the train, the seat read before and after; against
+`locked` it shows what the pre-wound train adds to the onset.
+
 `stop`, optional, runs them at the low stop with the train wound, the
-seat set by a `--stall` press and read back before the first burst. osc-lab
-parks the horn at mid travel after every sweep, so until it can leave a
-pressed shaft where it is, the read-back finds the horn away from the stop
-and the plan stops there rather than record a free rotor as a held one.
+seat set by a `--stall` press that skips osc-lab's park, so the horn stays
+on the stop, and read back before the first burst and after the last; the
+plan centers the horn at the end. A read-back away from the stop ends the
+plan rather than record a free rotor as a held one.
 """
 from oscnb import capture, osc
 from oscnb.sitting import Plan, Skip
@@ -54,24 +58,40 @@ def locked(s, out):
     s.seat(out, "lock", s.probe("after the bursts")["pos"])
 
 
+def wound(s, out):
+    s.check(LEVEL, [str(SEAT_PCT)] + [str(g[1]) for g in GROUPS], "lock")
+    s.seat(out, "lock", s.probe("before the press")["pos"])
+    s.drive(out / "seat", LEVEL, [f"{SEAT_PCT}@{SEAT_MS}"], dirs="rev",
+            seat="lock")
+    s.seat(out, "lock", s.probe("the seat")["pos"])
+    groups(s, out, "lock")
+    s.seat(out, "lock", s.probe("after the bursts")["pos"])
+
+
 def stop(s, out):
     s.check(LEVEL, [str(SEAT_PCT)] + [str(g[1]) for g in GROUPS], "stop")
     s.drive(out / "seat", LEVEL, [f"{SEAT_PCT}@{SEAT_MS}"], dirs="rev",
-            seat="stop")
-    pos = s.probe("the seat")["pos"]
-    low = osc.get("raw_min")
-    if abs(pos - low) > STOP_TOL:
-        raise Skip(f"the horn reads {pos} after the seat, {pos - low:+} "
-                   "from the low stop: osc-lab parked it")
-    s.seat(out, "low stop", pos)
-    groups(s, out, "stop")
-    s.seat(out, "low stop", s.probe("after the bursts")["pos"])
+            seat="stop", park=False)
+    try:
+        pos = s.probe("the seat")["pos"]
+        low = osc.get("raw_min")
+        if abs(pos - low) > STOP_TOL:
+            raise Skip(f"the horn reads {pos} after the seat, {pos - low:+} "
+                       "from the low stop: the press did not hold it there")
+        s.seat(out, "low stop", pos)
+        groups(s, out, "stop")
+        s.seat(out, "low stop", s.probe("after the bursts")["pos"])
+    finally:
+        s.center()
 
 
 PLANS = [
     Plan("locked", "inductance", "servo",
          "five burst groups at 5 V into the locked horn at mid travel",
          run=locked, order=15, lock=True, minutes=2, mb=1),
+    Plan("wound", "inductance", "servo",
+         "the same groups into the locked horn, the train wound by a press",
+         run=wound, order=16, lock=True, optional=True, minutes=2, mb=2),
     Plan("stop", "inductance", "servo",
          "the same groups at the low stop, the train wound",
          run=stop, order=25, seated=True, optional=True, minutes=2, mb=2),
