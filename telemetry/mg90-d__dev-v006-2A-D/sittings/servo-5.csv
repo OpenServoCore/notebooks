@@ -1,0 +1,44 @@
+t_host,event,detail
+1794089497.359,start,"servo mg90-d, motor mg90-d, board dev-v006-2A-D, state servo"
+1794089497.359,prompt,"The servo's motor and pot leads on the board, the board on the DPS, the adapter on the bus, no instrument. The horn free and the lock off, the lock to hand."
+1794089497.521,guards,414 to 3460 counts
+1794089497.798,probe,"center: pos 2020, ntc_raw 2036, vbus_raw 857"
+1794089497.798,prompt,The horn is at mid travel: put the horn lock on without turning the horn.
+1794089498.094,probe,"lock on: pos 2020, ntc_raw 2038, vbus_raw 859"
+1794089498.094,lock,on
+1794089498.094,plan,wound
+1794089498.095,dataset,wound: telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5
+1794089498.386,probe,"before the press: pos 2017, ntc_raw 2036, vbus_raw 858"
+1794089505.880,dps,on at 5.25 V
+1794089509.881,rail,"5.0 V: reads 5.007 V, DPS 5.250 V"
+1794089510.187,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5/seat: pos 2017, ntc_raw 2034, vbus_raw 1243"
+1794089538.365,probe,"the seat: pos 2022, ntc_raw 2028, vbus_raw 1245"
+1794089538.677,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5/g1-fwd-25: pos 2020, ntc_raw 2024, vbus_raw 1239"
+1794089541.630,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5/g2-fwd-40: pos 2019, ntc_raw 2021, vbus_raw 1241"
+1794089544.616,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5/g3-rev-40: pos 2024, ntc_raw 2027, vbus_raw 1239"
+1794089547.585,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5/g4-rev-25: pos 2022, ntc_raw 2027, vbus_raw 1237"
+1794089570.563,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5/g5-rev-25-rested: pos 2028, ntc_raw 2018, vbus_raw 1242"
+1794089572.524,probe,"after the bursts: pos 2026, ntc_raw 2021, vbus_raw 1236"
+1794089572.526,plan,held
+1794089572.527,dataset,held: telemetry/mg90-d__dev-v006-2A-D/sag/held-5
+1794089572.527,prompt,The DPS now steps down under a stall into the horn lock; a step down has reset the servo once. Hands clear of the horn.
+1794089572.826,probe,"before the hold: pos 2027, ntc_raw 2023, vbus_raw 1243"
+1794089576.770,rail,"8.4 V: reads 8.387 V, DPS 8.650 V"
+1794089577.019,probe,"telemetry/mg90-d__dev-v006-2A-D/sag/held-5/held: pos 2025, ntc_raw 2018, vbus_raw 2083"
+1794089585.889,dps,8.2 V under the hold: DPS reads 8.450 V
+1794089589.689,dps,8.0 V under the hold: DPS reads 8.250 V
+1794089593.491,dps,7.8 V under the hold: DPS reads 8.050 V
+1794089597.293,dps,7.6 V under the hold: DPS reads 7.850 V
+1794089601.146,dps,7.4 V under the hold: DPS reads 7.650 V
+1794089604.943,dps,7.2 V under the hold: DPS reads 7.450 V
+1794089608.749,dps,7.0 V under the hold: DPS reads 7.250 V
+1794089612.569,dps,6.8 V under the hold: DPS reads 7.050 V
+1794089616.429,dps,6.6 V under the hold: DPS reads 6.850 V
+1794089620.237,dps,6.4 V under the hold: DPS reads 6.650 V
+1794089624.054,dps,6.2 V under the hold: DPS reads 6.450 V
+1794089627.860,dps,6.0 V under the hold: DPS reads 6.250 V
+1794089641.519,probe,"after the hold: pos 2022, ntc_raw 1996, vbus_raw 1488"
+1794089641.521,prompt,Take the horn lock off; the horn free.
+1794089641.521,lock,off
+1794089643.853,dps,off
+1794089643.854,end,
