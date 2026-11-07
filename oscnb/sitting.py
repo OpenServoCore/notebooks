@@ -374,12 +374,15 @@ class Sitting:
             return str(out)
 
     def drive(self, out, volts, steps, dirs="both", seat=None, guards=None,
-              rest_ms=REST_S * 1000, baseline_ms=500, background=False):
+              rest_ms=REST_S * 1000, baseline_ms=500, park=True,
+              background=False):
         """One `osc-lab sweep` on the servo: the schedule checked, the rail
         set, the probes read, the servo's TEL row. `seat` "lock" drives the
         locked horn with no seek, "stop" presses into the end stops, None
-        is a free rotor from the guards. `background` returns the running
-        sweep instead of waiting."""
+        is a free rotor from the guards. `park` False leaves the horn where
+        the last step left it, for a plan that works on at a pressed seat
+        and centers the horn when it is done. `background` returns the
+        running sweep instead of waiting."""
         self.check(volts, steps, seat)
         self.rail(volts)
         self.probe(self.label(out))
@@ -388,7 +391,7 @@ class Sitting:
         else:
             lo, hi = guards or self.guards()
             kw = {"static_load": False, "stall": seat == "stop",
-                  "guard_lo": lo, "guard_hi": hi}
+                  "guard_lo": lo, "guard_hi": hi, "park": park}
         return osc.sweep(out, steps, baseline_ms=baseline_ms, rest_ms=rest_ms,
                          dirs=dirs, tel_chunks=osc.CHUNKS_SERVO,
                          background=background, **kw)
@@ -522,16 +525,22 @@ class Sitting:
     def center(self):
         """The horn to mid travel: a sweep of one still segment, which
         osc-lab opens with a seek to the middle band and ends with a park
-        at the soft limits' center. Refuses unless pos reads there."""
-        self._centers += 1
-        out = self.sittings_dir(f"center-{self._centers}")
-        self.drive(out, PILOT[0], [f"coast:{CENTER_MS}"], dirs="fwd",
-                   rest_ms=0, baseline_ms=CENTER_MS)
-        pos = self.probe("centered")["pos"]
+        at the soft limits' center. Refuses unless pos reads there. A horn
+        already there is left alone: a lock put on before the sitting holds
+        it within MID_TOL but not within the park's band, and the park would
+        drive against it."""
         lo, hi = self.guards()
-        if abs(pos - (lo + hi) // 2) > MID_TOL:
+        mid = (lo + hi) // 2
+        pos = self.probe("center")["pos"]
+        if abs(pos - mid) > MID_TOL:
+            self._centers += 1
+            out = self.sittings_dir(f"center-{self._centers}")
+            self.drive(out, PILOT[0], [f"coast:{CENTER_MS}"], dirs="fwd",
+                       rest_ms=0, baseline_ms=CENTER_MS)
+            pos = self.probe("centered")["pos"]
+        if abs(pos - mid) > MID_TOL:
             raise SystemExit(f"the horn reads {pos}, not within {MID_TOL} of "
-                             f"mid travel {(lo + hi) // 2}")
+                             f"mid travel {mid}")
         return pos
 
     def set_lock(self, on):

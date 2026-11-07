@@ -1,0 +1,45 @@
+t_host,event,detail
+1794088426.779,start,"servo mg90-d, motor mg90-d, board dev-v006-2A-D, state servo"
+1794088426.779,prompt,"The servo's motor and pot leads on the board, the board on the DPS, the adapter on the bus, no instrument. The horn free and the lock off, the lock to hand."
+1794088426.925,guards,414 to 3460 counts
+1794088427.151,probe,"center: pos 2014, ntc_raw 2002, vbus_raw 859"
+1794088427.151,prompt,The horn is at mid travel: put the horn lock on without turning the horn.
+1794088427.407,probe,"lock on: pos 2015, ntc_raw 2001, vbus_raw 859"
+1794088427.407,lock,on
+1794088427.407,plan,locked
+1794088427.408,dataset,locked: telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4
+1794088427.663,probe,"before the lap: pos 2015, ntc_raw 2000, vbus_raw 858"
+1794088434.981,dps,on at 3.55 V
+1794088438.880,rail,"3.3 V: reads 3.289 V, DPS 3.550 V"
+1794088439.108,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4/chains/0: pos 2015, ntc_raw 1998, vbus_raw 858"
+1794088487.626,probe,"after the lap: pos 2015, ntc_raw 1997, vbus_raw 859"
+1794088507.930,probe,"before the lap: pos 2015, ntc_raw 1995, vbus_raw 859"
+1794088508.209,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4/chains/1: pos 2019, ntc_raw 1994, vbus_raw 859"
+1794088556.654,probe,"after the lap: pos 2020, ntc_raw 1992, vbus_raw 859"
+1794088576.973,probe,"before the lap: pos 2019, ntc_raw 1992, vbus_raw 860"
+1794088577.220,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4/chains/2: pos 2019, ntc_raw 1993, vbus_raw 859"
+1794088625.464,probe,"after the lap: pos 2019, ntc_raw 1991, vbus_raw 858"
+1794088645.759,probe,"before the lap: pos 2020, ntc_raw 1990, vbus_raw 859"
+1794088649.708,rail,"3.7 V: reads 3.694 V, DPS 3.950 V"
+1794088649.986,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4/chains/3: pos 2016, ntc_raw 1992, vbus_raw 919"
+1794088698.588,probe,"after the lap: pos 2015, ntc_raw 1988, vbus_raw 920"
+1794088718.856,probe,"before the lap: pos 2018, ntc_raw 1989, vbus_raw 918"
+1794088719.137,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4/chains/4: pos 2015, ntc_raw 1988, vbus_raw 917"
+1794088768.135,probe,"after the lap: pos 2018, ntc_raw 1988, vbus_raw 919"
+1794088788.436,probe,"before the lap: pos 2018, ntc_raw 1990, vbus_raw 920"
+1794088788.684,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4/chains/5: pos 2017, ntc_raw 1992, vbus_raw 919"
+1794088837.707,probe,"after the lap: pos 2017, ntc_raw 1986, vbus_raw 920"
+1794088857.714,plan,locked
+1794088857.716,dataset,locked: telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4
+1794088858.029,probe,"before the bursts: pos 2016, ntc_raw 1984, vbus_raw 917"
+1794088861.948,rail,"5.0 V: reads 4.981 V, DPS 5.250 V"
+1794088862.170,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4/g1-fwd-25: pos 2017, ntc_raw 1987, vbus_raw 1237"
+1794088864.719,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4/g2-fwd-40: pos 2021, ntc_raw 1990, vbus_raw 1240"
+1794088867.324,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4/g3-rev-40: pos 2016, ntc_raw 1995, vbus_raw 1245"
+1794088869.908,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4/g4-rev-25: pos 2017, ntc_raw 1986, vbus_raw 1240"
+1794088892.521,probe,"telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4/g5-rev-25-rested: pos 2015, ntc_raw 1983, vbus_raw 1241"
+1794088894.221,probe,"after the bursts: pos 2016, ntc_raw 1987, vbus_raw 1239"
+1794088894.222,prompt,Take the horn lock off; the horn free.
+1794088894.222,lock,off
+1794088896.526,dps,off
+1794088896.526,end,

@@ -3,16 +3,18 @@ to its floor, for the rail-tracking duty cap, the zero tracker's step with
 the rail and the undervolt behavior stage 6 designs. Optional plans of
 `python -m oscnb.sitting servo`, the horn lock off, run on request.
 
-`capture` is the first pass: thirteen rails 0.2 V apart from 8.4 V down to
+`capture` is the first pass, the horn lock off: thirteen rails 0.2 V apart from 8.4 V down to
 6.0 V, and at each a lap chain of 1.5 V effective into the low stop, one
 crawl cycle both ways, a kick then a hold at 0.5 V effective, and one 30 %
 cycle. The DPS steps only between sweeps, with torque off: a DPS step down
 has reset the servo once, so no drive spans one.
 
 `held`, run only when the first pass came through clean, steps the DPS
-down the same rails while osc-lab holds a low stall at the low stop, the
-hold unstreamed between two short windows, so a rail falling under drive
-is recorded where the first pass only ever saw a still bridge.
+down the same rails while osc-lab holds a low stall into the horn lock,
+the hold unstreamed between two short windows, so a rail falling under
+drive is recorded where the first pass only ever saw a still bridge. What
+holds the stall does not matter to it, and the lock is the rigid one: the
+end stop's stopper gives tens of counts under a press.
 
 A dataset is `levels.csv`, one row per sweep, and `levels/<rail>/<what>`
 sweeps; `held` is one sweep with the DPS steps in `steps.csv`.
@@ -87,9 +89,10 @@ def held(s, out):
     hold_ms = int((HELD_LEAD_S + HELD_STEP_S * len(LEVELS)) * 1000)
     steps = [f"{d}@{HELD_WINDOW_MS}", f"hold:{d}@{hold_ms}",
              f"then:{d}@{HELD_WINDOW_MS}"]
-    s.prompt("The DPS now steps down under a stall at the low stop; a step "
-             "down has reset the servo once. Hands clear of the horn.")
-    proc = s.drive(out / "held", LEVELS[0], steps, dirs="rev", seat="stop",
+    s.prompt("The DPS now steps down under a stall into the horn lock; a "
+             "step down has reset the servo once. Hands clear of the horn.")
+    s.seat(out, "lock", s.probe("before the hold")["pos"])
+    proc = s.drive(out / "held", LEVELS[0], steps, dirs="rev", seat="lock",
                    background=True)
     time.sleep(HELD_LEAD_S)
     for v in LEVELS[1:]:
@@ -103,6 +106,7 @@ def held(s, out):
     if proc.wait() != 0:
         raise SystemExit(f"the held sweep ended with {proc.returncode}: "
                          "did the servo reset?")
+    s.seat(out, "lock", s.probe("after the hold")["pos"])
 
 
 PLANS = [
@@ -110,6 +114,6 @@ PLANS = [
          "8.4 down to 6.0 V: a stop chain, a crawl and a 30 % cycle at each",
          run=capture, order=70, optional=True, minutes=24, mb=205),
     Plan("held", "sag", "servo",
-         "the DPS stepped down 8.4 to 6.0 V under a stall at the low stop",
-         run=held, order=75, optional=True, seated=True, minutes=2, mb=1),
+         "the DPS stepped down 8.4 to 6.0 V under a stall into the horn lock",
+         run=held, order=75, optional=True, lock=True, minutes=2, mb=1),
 ]

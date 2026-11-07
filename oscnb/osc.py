@@ -94,14 +94,15 @@ CHUNKS_SERVO = "0x238+2,0x240+10"
 def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
           dirs="both", decay="slow", tel_chunks=CHUNKS_RAW, static_load=True,
           stall=False, guard_lo=None, guard_hi=None, settle_ms=None,
-          background=False):
+          park=True, background=False):
     """`osc-lab sweep` into `out` (sweep.csv + meta.json). `duty` is the step
     list as the tool takes it, percent, with `then:`, `hold:`, `coast:` and
     `@MS` forms allowed. `stall` seeks the end stop in each direction and
     presses the rungs into it, `guard_lo` and `guard_hi` set the seek
     envelope in counts, `settle_ms` the still time before a rung, all as the
-    tool takes them. `background` returns the running Popen instead of
-    waiting."""
+    tool takes them. `park` False leaves the shaft where the last rung left
+    it, a stop press still wound, for the caller to center. `background`
+    returns the running Popen instead of waiting."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     args = ["sweep", "--out", out, "--duty-pct", ",".join(map(str, duty)),
@@ -113,6 +114,8 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
         args.append("--static-load")
     if stall:
         args.append("--stall")
+    if not park:
+        args.append("--no-park")
     for flag, value in (("--guard-lo", guard_lo), ("--guard-hi", guard_hi),
                         ("--settle-ms", settle_ms)):
         if value is not None:
