@@ -23,9 +23,12 @@ uv run --group cad python -m rigs.servorig --horn-arm-root 5.2 --head-h 1.6   # 
   angles.
 - [servorig](servorig/__init__.py): the servo rig for stage 3. A base that
   seats one MG90 on its ears with the horn just above the base top, and
-  carries the reference tag, the board and the lock insert outside the
-  circle the horn sweeps, a tag mount keyed to the four-arm horn with one ear
-  to the lock screw, a load arm with two coin cups that takes the mount's
-  place, a clip that holds a tag paper flat, and a fit test print that tries
+  carries the reference tag, the board and the stall lock's nut outside the
+  circle the horn sweeps, three mounts keyed to the four-arm horn (a camera
+  mount for the horn's tag, a stall mount whose long arm bolts the horn to
+  the base, and a load mount with a screwed-on block of four coin cups), a
+  two-piece cap that carries a tag paper flat onto the camera mount, the
+  load mount or the pad,
+  and a fit test print that tries
   the key and the servo pocket first. What to measure, the print and the
   assembly are in its [README](servorig/README.md).
