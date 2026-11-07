@@ -1,0 +1,353 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/sag/capture-1",
+  "notes": "stage 3 sag of mg90-d on dev-v006-2A-D, capture-1 (thirteen rails 8.4 to 6.0 V, 0.2 V apart, from the DPS-150 over the feed diode, each trimmed at rest; at each a 300 ms stop lap of 1.5 V effective into the low stop, a crawl both ways, a 150 ms kick at 1.5 V effective then a hold at 0.5 V effective then a 400 ms coast, and a 30 % spin and coast both ways) and held-5 (a 12 % stall into the horn lock while the DPS stepped down, two 100 ms windows, the hold unstreamed). Current through stage 1 current-scale over each sweep's torque-off zero with the in-drive offset out, the crest sample; terminal and rail volts through stage 1 terminal-chain, the rail from the three torque-off probes per rail in the sitting manifest (TEL rows carry no vbus_raw). rail_read_minus_set_mv is the mean of the 13 per-rail differences of the graded line from the level with their range as bounds; rail_line_slope the line of the graded rail on the level, its se as bounds, rail_read_rms_mv its rms; rail_probe_spread_counts the median and range of the three probes' spread per rail; diode_drop_v the DPS setpoint less the runner's read, mean and range (dps_read is a setpoint echo); rail_minus_crest_von_mv the rail at rest less the crest tap difference under the 0.33 A stop lap, mean and range; cap_5v_pct_* the cap 100 x 5 / rail at 8.4 and 6.0 V; cap_step_pts_per_0v2 its step per 0.2 V, at 8.4 V with 8.4 V (lo) and 6.0 V (hi) as bounds. zero_asleep_counts the mean of the 39 sweeps' baseline means, the range of the baseline medians as bounds; zero_asleep_per_v_counts its line on the rail, se bounds, report only; zero_awake_step_* the last 100 ms of each of the 52 coast tails, bridge open and rotor at rest, over the same sweep's asleep zero, mean +/- sd; zero_awake_step_per_v_counts its line on the rail, se bounds. r_stop_lap_ohm is mean V_eff over mean crest current from 2 ms into each lap, mean of the 13 laps with their range as bounds, a candidate with V0 and any constant crest offset folded in, one commutator angle (the seat never moved, the pot blind on the ADC rail at the low stop); r_stop_lap_sd_pct its sd; r_stop_lap_per_v_ohm its line on the rail, se bounds; crest_over_read_per_von_locked_ma_per_v the reading term that slope implies through -R^2 G / V_eff with R the type-corrected mean, se bounds; r_stop_lap_type_reading_term_ohm the same ratio with the stage 2 type reading term (mg90-b, 4.29 mA/V) taken out of the current, comparison only, mean and range, rail dependent; lap_warming_pct the last 50 ms over the first 50 ms, mean +/- sd; lap_current_a mean and range. crawl_*: the hold's last 400 ms, speed through the nominal pot slope (19.8 counts per degree) and the counted 308.05:1 train, motor rev/s; crawl_kept_turning_n of crawl_hold_n holds had no 50 ms bin under 0.5 rev/s, one session; crawl_speed_rev_s mean and range, crawl_speed_sd_rev_s its sd; crawl_v_eff_v and crawl_current_ma mean and range; crawl_current_per_v_ma the mean of the two directions' slopes on the rail, their se in quadrature over two as bounds; crawl_current_excess_ma the crest current over (V_eff - Ke w_pot) / R with the type Ke (0.2 % from this motor's) and r_stop_lap_ohm, mean +/- sd, the hi end reaching the type-corrected R's value; crawl_ripple_over_pot_pct the ripple count over the pot, mean +/- sd; crawl_*_bin_cv_pct the sd over mean of the 50 ms bins after 200 ms, mean and range; crawl_pattern_pos_corr the pairwise r of the pot's bin speeds against position across rails, mean of the two directions with each direction as a bound; crawl_bemf_speed_*_pct the BEMF speed (V_eff - R_type I) / Ke_type on the crest current and with the type term out, over the pot. kick_breakaway_ms_fwd the first row 3 counts past the seat in direction +1, mean +/- sd (the reverse stream opens with the shaft moving, no breakaway); kick_current_at_move_a the peak of a 5-row boxcar of the current from the drive's start to that row, mean +/- sd. cycle_*: the 30 % spin's last 100 ms; cycle_speed_per_v_rev_s_fwd and _rev the ripple speed's line on the rail per direction, se bounds, from spins that had not settled; cycle_speed_settle_pct the last 100 ms over the 100 ms before, cycle_direction_split_pct +1 over -1, cycle_ripple_over_pot_pct and coast_window_under_spin_pct mean +/- sd; ke_* bemf-coast's coast route on the 26 coasts, mean +/- sd, ke_over_type_pct against mg90-b; cycle_bemf_speed_*_pct the BEMF speed with the type R and Ke over the ripple speed, on the crest current and with the type term out, mean +/- sd. held_*: held_reset false, the after window's first 5 rows within 10 mA of its mean, the sweep's rows all present and the plant stamp matched; held_i_*_a and held_v_eff_*_v the last 50 ms of the window before the first step (8.4 V) and after the hold; the DPS steps took 3.8 s against the plan's 2.0, so the after window saw 6.6 V (held_after_window_rail_v) and the last three steps ran with the drive over; held_r_app_change_pct the change of V_eff / I between the two, a candidate (warming and the crest over-read are inseparable); held_seat_shift_counts the horn lock's seat change over the hold; duty_for_1v_pct_* the duty that holds 1.0 V effective at 8.4 and 6.0 V from capture-1's rails, duty_step_for_1v_pts_per_0v2 its step per 0.2 V, smallest with the range as bounds. The DPS-150 is a stiff source trimmed at rest, so the rail axis is the state of charge and holds nothing of a pack's source impedance.",
+  "rail_read_minus_set_mv": {
+    "value": -8.026180171523396,
+    "lo": -19.028047114665547,
+    "hi": 13.170774201586077,
+    "unit": "mV"
+  },
+  "rail_read_rms_mv": {
+    "value": 7.53126017425025,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rail_line_slope": {
+    "value": 1.0049557674995537,
+    "lo": 1.0019213363013233,
+    "hi": 1.0079901986977842,
+    "unit": "ratio"
+  },
+  "rail_probe_spread_counts": {
+    "value": 5.0,
+    "lo": 1.0,
+    "hi": 9.0,
+    "unit": "counts"
+  },
+  "diode_drop_v": {
+    "value": 0.26507692307692327,
+    "lo": 0.2480000000000011,
+    "hi": 0.2790000000000008,
+    "unit": "V"
+  },
+  "rail_minus_crest_von_mv": {
+    "value": 281.6052197594054,
+    "lo": 261.18329578658006,
+    "hi": 303.6462066160057,
+    "unit": "mV"
+  },
+  "cap_5v_pct_8v4": {
+    "value": 59.502688978413346,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "cap_5v_pct_6v0": {
+    "value": 83.45544356446297,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "cap_step_pts_per_0v2": {
+    "value": 1.4162279982647172,
+    "lo": 1.4162279982647172,
+    "hi": 2.785924424216505,
+    "unit": "points"
+  },
+  "zero_asleep_counts": {
+    "value": 1207.2210769230771,
+    "lo": 1206.0,
+    "hi": 1208.0,
+    "unit": "counts"
+  },
+  "zero_asleep_per_v_counts": {
+    "value": 0.2363736263736298,
+    "lo": 0.15770829296508387,
+    "hi": 0.3150389597821757,
+    "unit": "counts/V"
+  },
+  "zero_awake_step_counts": {
+    "value": 9.203999999999986,
+    "lo": 8.50165762357273,
+    "hi": 9.906342376427244,
+    "unit": "counts"
+  },
+  "zero_awake_step_ma": {
+    "value": 8.109155152361488,
+    "lo": 7.490358618188638,
+    "hi": 8.727951686534338,
+    "unit": "mA"
+  },
+  "zero_awake_step_per_v_counts": {
+    "value": 0.03180975274725585,
+    "lo": -0.09956103188004357,
+    "hi": 0.1631805373745553,
+    "unit": "counts/V"
+  },
+  "r_stop_lap_ohm": {
+    "value": 4.34399166903985,
+    "lo": 4.308532071926922,
+    "hi": 4.377743851265744,
+    "unit": "ohm"
+  },
+  "r_stop_lap_sd_pct": {
+    "value": 0.43442357365919626,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_stop_lap_per_v_ohm": {
+    "value": -0.005508152297409657,
+    "lo": -0.012585233643743563,
+    "hi": 0.0015689290489242485,
+    "unit": "ohm/V"
+  },
+  "crest_over_read_per_von_locked_ma_per_v": {
+    "value": 0.3470963960042144,
+    "lo": -0.09886611499903945,
+    "hi": 0.7930589070074682,
+    "unit": "mA/V"
+  },
+  "r_stop_lap_type_reading_term_ohm": {
+    "value": 4.772155480374601,
+    "lo": 4.690630461354769,
+    "hi": 4.849451893653436,
+    "unit": "ohm"
+  },
+  "lap_warming_pct": {
+    "value": 0.04560562338600676,
+    "lo": -0.15829909852644014,
+    "hi": 0.24951034529845367,
+    "unit": "%"
+  },
+  "lap_current_a": {
+    "value": 0.33036138413813343,
+    "lo": 0.32345491705198925,
+    "hi": 0.33948289144263827,
+    "unit": "A"
+  },
+  "crawl_kept_turning_n": {
+    "value": 26.0,
+    "lo": null,
+    "hi": null,
+    "unit": "holds"
+  },
+  "crawl_hold_n": {
+    "value": 26.0,
+    "lo": null,
+    "hi": null,
+    "unit": "holds"
+  },
+  "crawl_speed_rev_s": {
+    "value": 31.392870629179342,
+    "lo": 27.260392611884924,
+    "hi": 36.89218344224315,
+    "unit": "rev/s"
+  },
+  "crawl_speed_sd_rev_s": {
+    "value": 2.829934354237537,
+    "lo": null,
+    "hi": null,
+    "unit": "rev/s"
+  },
+  "crawl_v_eff_v": {
+    "value": 0.4836584188591631,
+    "lo": 0.4379917868856073,
+    "hi": 0.523271456119613,
+    "unit": "V"
+  },
+  "crawl_current_ma": {
+    "value": 71.15496977752346,
+    "lo": 65.11175934353372,
+    "hi": 78.3783424590782,
+    "unit": "mA"
+  },
+  "crawl_current_per_v_ma": {
+    "value": 3.6240970715886287,
+    "lo": 3.2345906950119274,
+    "hi": 4.0136034481653295,
+    "unit": "mA/V"
+  },
+  "crawl_current_excess_ma": {
+    "value": 12.86781088530369,
+    "lo": 7.634479465596553,
+    "hi": 18.10114230501083,
+    "unit": "mA"
+  },
+  "crawl_ripple_over_pot_pct": {
+    "value": 2.396443037420737,
+    "lo": -2.3323641774252937,
+    "hi": 7.125250252266767,
+    "unit": "%"
+  },
+  "crawl_pot_bin_cv_pct": {
+    "value": 21.4058054212939,
+    "lo": 12.297713798865384,
+    "hi": 31.71704523903571,
+    "unit": "%"
+  },
+  "crawl_ripple_bin_cv_pct": {
+    "value": 5.158012672082748,
+    "lo": 1.8624522507620525,
+    "hi": 7.1914976065311516,
+    "unit": "%"
+  },
+  "crawl_pattern_pos_corr": {
+    "value": 0.7313931591097043,
+    "lo": 0.7068028941070778,
+    "hi": 0.7559834241123307,
+    "unit": "r"
+  },
+  "crawl_bemf_speed_crest_pct": {
+    "value": -27.69130313524436,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "crawl_bemf_speed_corrected_pct": {
+    "value": 30.085777917685185,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "kick_breakaway_ms_fwd": {
+    "value": 9.557692307692308,
+    "lo": 8.815834798393816,
+    "hi": 10.299549816990801,
+    "unit": "ms"
+  },
+  "kick_current_at_move_a": {
+    "value": 0.31830278251911953,
+    "lo": 0.31249839107272426,
+    "hi": 0.3241071739655148,
+    "unit": "A"
+  },
+  "cycle_speed_per_v_rev_s_fwd": {
+    "value": 31.486802473785087,
+    "lo": 31.242137186448403,
+    "hi": 31.73146776112177,
+    "unit": "rev/s per V"
+  },
+  "cycle_speed_per_v_rev_s_rev": {
+    "value": 33.708055919638845,
+    "lo": 33.50719118148911,
+    "hi": 33.90892065778858,
+    "unit": "rev/s per V"
+  },
+  "cycle_speed_settle_pct": {
+    "value": 4.877857775843169,
+    "lo": 1.4340009224753696,
+    "hi": 8.321714629210968,
+    "unit": "%"
+  },
+  "cycle_direction_split_pct": {
+    "value": -2.098733384146043,
+    "lo": -2.724547184413329,
+    "hi": -1.4729195838787574,
+    "unit": "%"
+  },
+  "cycle_ripple_over_pot_pct": {
+    "value": 1.1958592982225,
+    "lo": -1.5766224640250837,
+    "hi": 3.9683410604700837,
+    "unit": "%"
+  },
+  "coast_window_under_spin_pct": {
+    "value": -9.437312723140204,
+    "lo": -10.938858056699411,
+    "hi": -7.935767389580997,
+    "unit": "%"
+  },
+  "ke_v_s_per_rad": {
+    "value": 0.0011660899189083439,
+    "lo": 0.00116279501735619,
+    "hi": 0.0011693848204604978,
+    "unit": "V s/rad"
+  },
+  "ke_mv_per_rev_s": {
+    "value": 7.326759045335139,
+    "lo": 7.306056568314043,
+    "hi": 7.347461522356236,
+    "unit": "mV per rev/s"
+  },
+  "ke_over_type_pct": {
+    "value": -0.19590748265102542,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "cycle_bemf_speed_crest_pct": {
+    "value": -0.5299922807980131,
+    "lo": -1.051116779179865,
+    "hi": -0.008867782416161152,
+    "unit": "%"
+  },
+  "cycle_bemf_speed_corrected_pct": {
+    "value": 8.078022779194772,
+    "lo": 7.489889327830958,
+    "hi": 8.666156230558586,
+    "unit": "%"
+  },
+  "held_reset": false,
+  "held_i_before_a": {
+    "value": 0.22988668194416004,
+    "lo": null,
+    "hi": null,
+    "unit": "A"
+  },
+  "held_i_after_a": {
+    "value": 0.17679568017034952,
+    "lo": null,
+    "hi": null,
+    "unit": "A"
+  },
+  "held_v_eff_before_v": {
+    "value": 0.9822197967463825,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "held_v_eff_after_v": {
+    "value": 0.7725715329208243,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "held_r_app_change_pct": {
+    "value": 2.275634191387299,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "held_seat_shift_counts": {
+    "value": 5.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "held_after_window_rail_v": {
+    "value": 6.6,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "duty_for_1v_pct_8v4": {
+    "value": 11.900537795682668,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "duty_for_1v_pct_6v0": {
+    "value": 16.691088712892594,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "duty_step_for_1v_pts_per_0v2": {
+    "value": 0.2847005756225176,
+    "lo": 0.2847005756225176,
+    "hi": 0.5443756287500641,
+    "unit": "points"
+  }
+}
