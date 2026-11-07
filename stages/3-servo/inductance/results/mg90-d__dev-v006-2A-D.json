@@ -1,0 +1,1618 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4, telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5, telemetry/mg90-d__dev-v006-2A-D/inductance/stop-6",
+  "notes": "stage 3 inductance of mg90-d on dev-v006-2A-D: duty-step bursts into the held horn on a 5 V rail at three seats, inductance/locked-4 (the horn lock at mid travel, sitting 4), inductance/wound-5 (the same lock after a 24 % 300 ms reverse press, sitting 5) and inductance/stop-6 (the low end stop after the same press, sitting 6); at each, five groups in the order g1 25 % forward (the first after the seat was set, also after a reverse), g2 40 % forward, g3 40 % reverse, g4 25 % reverse, five bursts each, and g5 25 % reverse, three bursts after a 20 s rest. One burst is set aside by the rule that a burst reading a different current from its group from its first period on, at the same applied volts, reads a different circuit: stop-6/g1-fwd-25 burst 4 (first window current 19 % over its group's others); it stays in the edge pools, the fits table, its group's references and the length scan, and is out of every seat number and every key below but the stop_moving_burst_* keys. Estimators are stage 2 inductance's: the winding current per period is the window line at the middle of the bridge's window over the burst's own pre-step zero, nothing more taken off; the applied volts the two-part period mean of the tap difference with the edge correction pooled per seat, duty and sign; R and L by least squares of L (i[n+1] - i[n]) = T (V[n] - R (i[n] + i[n+1]) / 2) over the burst's period pairs, divided by sample-timing's window_scale k. l_ripple_mh is (V_on - R i) over the window's slope with R = r_locked_lap_100_ohm, the median of the last three periods, l_ripple_first_mh of the first three; early_* is the fit over the first three pairs; l_mh_r_pinned_by_duty is L with R pinned at r_locked_lap_100_ohm. The headline seat is the lock: l_mh, tau_us, r_burst_ohm, l_ripple_mh, l_ripple_first_mh, early_l_mh and early_r_ohm pool both duties (two populations, stage 2's form), *_by_duty carry each duty, the value the median over the lock's bursts after the first of each group and the bounds the range of its five group medians; r_burst_ohm is the end of the fit's slide, not the winding's resistance. applied_volts_drop_pct is the last period's volts over the first's, the lock's median with the three seats' medians as bounds; captures counts the held bursts after the first over the three seats; *_first_capture and *_other_captures are the lock's first bursts and the others with their full range; *_by_duty_sign the lock's medians; *_first_jump_pct_by_change and leftover_flux_uvs_by_change are the lock's first burst of each group over the median of its others and its volt-seconds beyond the others' R and L, one group per change, no bounds (the change keys name this stage's changes, g1 the seat set and a reversal); leftover_per_amp_uvs_per_a is g3's leftover over the g2 and g3 others' last window currents added, the lock with the two locks as bounds; l_slide_pct_by_duty and r_slide_pct_by_duty the fit's move from 3 to 8 pairs, the lock with the three seats as bounds; ripple_over_fit the ripple L over the fit, the two signs' medians averaged, the lock's group range; ripple_over_fit_inductors bridge-states' three inductive wirings, quoted; l_ripple_vs_current_mh_per_a the line of the window's L on its current over periods 1 and later at the lock, se bounds, the time trend and not a current dependence; l_of_i_l1_mh_per_a_by_duty the lock's L1 in L = L0 + L1 i over all pairs; v0_three_term_v the lock's constant drop as a third term over both duties, the two signs' mean with both as bounds, the wrong sign for a contact. crest_sample_less_window_mean_ma the window line at the crest shunt sample's instant (+31 ticks) less the line at the window middle (+27), median and 16-84 % over every held period of the three seats. g_hold_bound_ms is the held loss conductance the stage 3 sag stop laps allow (13 laps, 0.330 A, 4.344 ohm, rail slope -0.0055 +/- 0.0071 ohm/V, read from the sag result file), the slope over -R/I, +/- 2 sigma, a likely bound from one sitting; crest_less_mean_stop_lap_ma the crest's excess over the mean at the resistance stop chain's 24 and 36 % on 5 V (V_on 4.85 V) under that held bound, G (1 - D) V_on, the lower bound no correction and the upper the bound's +2 sigma, the systematic the resistance notebook carries; type_g_locked_ms (motor-model's fast locked-burst fit), type_g_spin_ms (spinning) and type_term_a_per_v (bemf-coast's meter term) are mg90-b's, carried for comparison only. r_locked_lap_100_ohm is the anchor, rest-resistance's read (V/I at the drive's first row from a line over 60 ms to the end) on resistance/locked-4's six 3.7 V laps, the mean with their range, this notebook's reading of those laps and the resistance notebook's to confirm (the 3.3 V laps sit off stage 1's graded lines). *_by_seat are each seat's median over its held bursts after the first per duty, bounds 16-84 % of a 4000-draw bootstrap over bursts (seed 0); seat_diff_pct_by_pair the second seat over the first in %, +/- one bootstrap sigma of the bursts' scatter only (the commutator angle's spread, about 8 % on L on the type, is not in it); first_jump_pct_by_seat_and_change the first-burst jumps and leftover at every seat; stop_forward_walk_uvs each held burst's leftover in the stop's two forward groups, the walk through the play, likely. stop_moving_burst_r_ohm, _l_ripple_mh and _i_first_ma are the burst set aside, a brush bridging two segments the leading reading, moderate. seat_pos_* are pot counts: the lock's seats.csv median with the burst metas' range; the wound lock's reading before the press, after it (with the burst metas' range) and after the groups; the stop's, blind on the pot's ADC rail; lock_span_sittings_4_5_counts the span of every manifest probe of sittings 4 and 5 and lock_probe_pos_sittings_4_5_counts their median and range, two seatings plus the lock's give; board_ntc_c the board NTC's median per sitting by the board's beta. Candidates: the reversal jump's size over the type's, the duty-up g2 jump, the ripple-over-fit gap 3 to 5 points under the type's, the wound lock's extra g1 leftover. Left out against stage 2's file: reversal_*, steps_*, fast_*, *_by_hole, even_over_odd_*, travel_bound_*, drive_offset_twice_pct, the bridge-states-k keys and leftover_rotor_angle_mrad_by_change (no such runs here, no holes, no mg90-d Ke result).",
+  "l_mh": {
+    "value": 0.8197583711407872,
+    "lo": 0.781413050847874,
+    "hi": 0.8739765387856037,
+    "unit": "mH"
+  },
+  "l_ripple_mh": {
+    "value": 0.6447251310497084,
+    "lo": 0.6329798441695634,
+    "hi": 0.6552902198681907,
+    "unit": "mH"
+  },
+  "l_ripple_first_mh": {
+    "value": 0.7033486254459419,
+    "lo": 0.6650116913771416,
+    "hi": 0.7717830243647035,
+    "unit": "mH"
+  },
+  "tau_us": {
+    "value": 198.50472057551252,
+    "lo": 186.00294972164835,
+    "hi": 204.68356495429617,
+    "unit": "us"
+  },
+  "r_burst_ohm": {
+    "value": 4.217170021927037,
+    "lo": 4.112154173509275,
+    "hi": 4.284639937262543,
+    "unit": "ohm"
+  },
+  "early_l_mh": {
+    "value": 0.7665692878273249,
+    "lo": 0.7160143145887844,
+    "hi": 0.8374436963519076,
+    "unit": "mH"
+  },
+  "early_r_ohm": {
+    "value": 4.575503770969542,
+    "lo": 4.488885367522925,
+    "hi": 4.692215146076439,
+    "unit": "ohm"
+  },
+  "l_mh_by_duty": {
+    "25": {
+      "value": 0.7951988306888025,
+      "lo": 0.781413050847874,
+      "hi": 0.8197583711407872,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8694803590090392,
+      "lo": 0.8659174632664941,
+      "hi": 0.8739765387856037,
+      "unit": "mH"
+    }
+  },
+  "tau_us_by_duty": {
+    "25": {
+      "value": 191.34405137316782,
+      "lo": 186.00294972164835,
+      "hi": 199.34849683489398,
+      "unit": "us"
+    },
+    "40": {
+      "value": 203.21733438924954,
+      "lo": 202.09806951164688,
+      "hi": 204.68356495429617,
+      "unit": "us"
+    }
+  },
+  "r_burst_ohm_by_duty": {
+    "25": {
+      "value": 4.1558570236420085,
+      "lo": 4.112154173509275,
+      "hi": 4.201128778404342,
+      "unit": "ohm"
+    },
+    "40": {
+      "value": 4.278484064691385,
+      "lo": 4.269895807952253,
+      "hi": 4.284639937262543,
+      "unit": "ohm"
+    }
+  },
+  "l_ripple_first_mh_by_duty": {
+    "25": {
+      "value": 0.6866986045824679,
+      "lo": 0.6650116913771416,
+      "hi": 0.7011697679952433,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.7654373151097339,
+      "lo": 0.7599861197626645,
+      "hi": 0.7717830243647035,
+      "unit": "mH"
+    }
+  },
+  "early_l_mh_by_duty": {
+    "25": {
+      "value": 0.7359434938291101,
+      "lo": 0.7160143145887844,
+      "hi": 0.7659459021751153,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8354237076375892,
+      "lo": 0.8354237076375892,
+      "hi": 0.8374436963519076,
+      "unit": "mH"
+    }
+  },
+  "early_r_ohm_by_duty": {
+    "25": {
+      "value": 4.600855330255808,
+      "lo": 4.488885367522925,
+      "hi": 4.692215146076439,
+      "unit": "ohm"
+    },
+    "40": {
+      "value": 4.5476692052736,
+      "lo": 4.515140052020795,
+      "hi": 4.575503770969542,
+      "unit": "ohm"
+    }
+  },
+  "l_mh_r_pinned_by_duty": {
+    "25": {
+      "value": 0.7834552311383467,
+      "lo": 0.7769576765099033,
+      "hi": 0.7941832920000479,
+      "unit": "mH"
+    },
+    "40": {
+      "value": 0.8829049091316226,
+      "lo": 0.8806451638718882,
+      "hi": 0.8855356469835916,
+      "unit": "mH"
+    }
+  },
+  "window_scale": {
+    "value": 1.006331915441961,
+    "lo": 1.0045500774479592,
+    "hi": 1.0081137534359628,
+    "unit": "ratio"
+  },
+  "applied_volts_drop_pct": {
+    "value": -5.351754911692669,
+    "lo": -5.466688040774226,
+    "hi": -5.351754911692669,
+    "unit": "%"
+  },
+  "captures": {
+    "value": 53.0,
+    "lo": null,
+    "hi": null,
+    "unit": "captures"
+  },
+  "l_first_capture_mh": {
+    "value": 0.8271398993034796,
+    "lo": 0.8087080890082053,
+    "hi": 0.9975048016141019,
+    "unit": "mH"
+  },
+  "l_other_captures_mh": {
+    "value": 0.8197583711407872,
+    "lo": 0.7695786118844753,
+    "hi": 0.8924423478944294,
+    "unit": "mH"
+  },
+  "tau_first_capture_us": {
+    "value": 196.01635304929115,
+    "lo": 192.60660461723631,
+    "hi": 235.75562636175184,
+    "unit": "us"
+  },
+  "tau_other_captures_us": {
+    "value": 198.50472057551252,
+    "lo": 182.2628578706369,
+    "hi": 208.95951755190353,
+    "unit": "us"
+  },
+  "l_mh_by_duty_sign": {
+    "25_rev": 0.8024,
+    "25_fwd": 0.7814,
+    "40_rev": 0.8659,
+    "40_fwd": 0.874
+  },
+  "l_ripple_mh_by_duty_sign": {
+    "25_rev": 0.6386,
+    "25_fwd": 0.6368,
+    "40_rev": 0.6553,
+    "40_fwd": 0.6499
+  },
+  "tau_us_by_duty_sign": {
+    "25_rev": 193.4467,
+    "25_fwd": 186.0029,
+    "40_rev": 202.0981,
+    "40_fwd": 204.6836
+  },
+  "r_burst_ohm_by_duty_sign": {
+    "25_rev": 4.1481,
+    "25_fwd": 4.2011,
+    "40_rev": 4.2846,
+    "40_fwd": 4.2699
+  },
+  "l_first_jump_pct_by_change": {
+    "g1_seat_set_and_reversal": {
+      "value": 5.851815298706553,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": -3.9661007339360066,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 15.19629109352083,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 1.4490669710721882,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": -1.3479925941108917,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "tau_first_jump_pct_by_change": {
+    "g1_seat_set_and_reversal": {
+      "value": 5.739084776236147,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": -5.900307794500515,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 16.654071427518158,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 1.301074495634924,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": -1.671516885508595,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "r_first_jump_pct_by_change": {
+    "g1_seat_set_and_reversal": {
+      "value": 0.10542132115778369,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": 2.0553753578580913,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": -1.2496605259840976,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 0.14555706042758132,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": 0.3298339442369791,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "l_ripple_first_jump_pct_by_change": {
+    "g1_seat_set_and_reversal": {
+      "value": 0.2815515777052191,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g2_duty_25_to_40": {
+      "value": 2.508695703704533,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g3_reversal": {
+      "value": 2.801378038002511,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g4_duty_40_to_25": {
+      "value": 1.0172853453761066,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g5_rest_20s": {
+      "value": 1.8328255858004905,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "leftover_flux_uvs_by_change": {
+    "g1": {
+      "value": 8.638068216867678,
+      "lo": null,
+      "hi": null,
+      "unit": "uV s"
+    },
+    "g2": {
+      "value": -0.29534530652503826,
+      "lo": null,
+      "hi": null,
+      "unit": "uV s"
+    },
+    "g3": {
+      "value": 31.70657023443246,
+      "lo": null,
+      "hi": null,
+      "unit": "uV s"
+    },
+    "g4": {
+      "value": 2.7132897222081382,
+      "lo": null,
+      "hi": null,
+      "unit": "uV s"
+    },
+    "g5": {
+      "value": -0.8074631985392252,
+      "lo": null,
+      "hi": null,
+      "unit": "uV s"
+    }
+  },
+  "leftover_per_amp_uvs_per_a": {
+    "value": 42.8138277688611,
+    "lo": 39.58870595150305,
+    "hi": 42.8138277688611,
+    "unit": "uV s/A"
+  },
+  "l_slide_pct_by_duty": {
+    "25": {
+      "value": 8.051615016172953,
+      "lo": 6.689917098034126,
+      "hi": 8.051615016172953,
+      "unit": "%"
+    },
+    "40": {
+      "value": 4.076572290216096,
+      "lo": 4.076572290216096,
+      "hi": 4.976570840800676,
+      "unit": "%"
+    }
+  },
+  "r_slide_pct_by_duty": {
+    "25": {
+      "value": -9.672077791436607,
+      "lo": -9.672077791436607,
+      "hi": -7.726936295415998,
+      "unit": "%"
+    },
+    "40": {
+      "value": -5.91918911494399,
+      "lo": -6.317393111216818,
+      "hi": -5.91918911494399,
+      "unit": "%"
+    }
+  },
+  "ripple_over_fit": {
+    "25": {
+      "value": 0.8053735527986526,
+      "lo": 0.7721541693910363,
+      "hi": 0.8149572903601604,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.7502110601815555,
+      "lo": 0.7436638291095262,
+      "hi": 0.7567582912535846,
+      "unit": "ratio"
+    }
+  },
+  "ripple_over_fit_inductors": {
+    "25": {
+      "value": 0.9817553109449711,
+      "lo": 0.9701855238874252,
+      "hi": 0.9956539164799828,
+      "unit": "ratio"
+    },
+    "40": {
+      "value": 0.9115575179059159,
+      "lo": 0.9111624559269715,
+      "hi": 0.9594763551607993,
+      "unit": "ratio"
+    }
+  },
+  "l_ripple_vs_current_mh_per_a": {
+    "value": -0.12808300268867803,
+    "lo": -0.17172520011810213,
+    "hi": -0.08444080525925393,
+    "unit": "mH/A"
+  },
+  "l_of_i_l1_mh_per_a_by_duty": {
+    "25": {
+      "value": 1.5435034452498466,
+      "lo": null,
+      "hi": null,
+      "unit": "mH/A"
+    },
+    "40": {
+      "value": 0.528793254304222,
+      "lo": null,
+      "hi": null,
+      "unit": "mH/A"
+    }
+  },
+  "v0_three_term_v": {
+    "value": -0.14613011308651008,
+    "lo": -0.14938990524830636,
+    "hi": -0.14287032092471377,
+    "unit": "V"
+  },
+  "crest_sample_less_window_mean_ma": {
+    "25": {
+      "value": 0.5580669312483244,
+      "lo": 0.5292634767323223,
+      "hi": 0.586870385764382,
+      "unit": "mA"
+    },
+    "40": {
+      "value": 0.4618411047773163,
+      "lo": 0.4335434252066728,
+      "hi": 0.4794575032983306,
+      "unit": "mA"
+    }
+  },
+  "g_hold_bound_ms": {
+    "value": 0.41889601906582313,
+    "lo": -0.6575307180737533,
+    "hi": 1.4953227562053995,
+    "unit": "mS"
+  },
+  "crest_less_mean_stop_lap_ma": {
+    "24": {
+      "value": 1.5440507262766239,
+      "lo": 0.0,
+      "hi": 5.511759679373101,
+      "unit": "mA"
+    },
+    "36": {
+      "value": 1.300253243180315,
+      "lo": 0.0,
+      "hi": 4.64148183526156,
+      "unit": "mA"
+    }
+  },
+  "type_g_locked_ms": {
+    "value": 2.4931640747711086,
+    "lo": 1.7745108590058212,
+    "hi": 3.998787202019548,
+    "unit": "mS"
+  },
+  "type_g_spin_ms": {
+    "value": 3.3489216285122403,
+    "lo": 2.8423265830677447,
+    "hi": 4.726386359089767,
+    "unit": "mS"
+  },
+  "type_term_a_per_v": {
+    "value": 0.004287794200351041,
+    "lo": 0.004076481633760655,
+    "hi": 0.004514032228630319,
+    "unit": "A/V"
+  },
+  "r_locked_lap_100_ohm": {
+    "value": 4.2188705084081874,
+    "lo": 4.206494831397831,
+    "hi": 4.23004332394171,
+    "unit": "ohm"
+  },
+  "l_mh_by_seat": {
+    "lock": {
+      "25": {
+        "value": 0.7951988306888025,
+        "lo": 0.7920071437974167,
+        "hi": 0.799901337988951,
+        "unit": "mH"
+      },
+      "40": {
+        "value": 0.8694803590090392,
+        "lo": 0.8657742404787276,
+        "hi": 0.8750530456073893,
+        "unit": "mH"
+      }
+    },
+    "wound": {
+      "25": {
+        "value": 0.7934061156815715,
+        "lo": 0.7891568626772393,
+        "hi": 0.797431669242452,
+        "unit": "mH"
+      },
+      "40": {
+        "value": 0.866035686475902,
+        "lo": 0.8601256664902439,
+        "hi": 0.8707353498329721,
+        "unit": "mH"
+      }
+    },
+    "stop": {
+      "25": {
+        "value": 0.8129682606846554,
+        "lo": 0.8075708069594816,
+        "hi": 0.8149969135104265,
+        "unit": "mH"
+      },
+      "40": {
+        "value": 0.8792570659051742,
+        "lo": 0.8725854601095846,
+        "hi": 0.8832205688279376,
+        "unit": "mH"
+      }
+    }
+  },
+  "tau_us_by_seat": {
+    "lock": {
+      "25": {
+        "value": 191.34405137316782,
+        "lo": 189.36792194306005,
+        "hi": 192.7648595556036,
+        "unit": "us"
+      },
+      "40": {
+        "value": 203.21733438924954,
+        "lo": 202.09806951164688,
+        "hi": 205.05816613310552,
+        "unit": "us"
+      }
+    },
+    "wound": {
+      "25": {
+        "value": 190.17380494254445,
+        "lo": 188.76741340850216,
+        "hi": 191.53882456723497,
+        "unit": "us"
+      },
+      "40": {
+        "value": 201.03571347144566,
+        "lo": 199.49884817853447,
+        "hi": 203.39859924008098,
+        "unit": "us"
+      }
+    },
+    "stop": {
+      "25": {
+        "value": 196.28232676526852,
+        "lo": 195.30308834856766,
+        "hi": 197.81993830004396,
+        "unit": "us"
+      },
+      "40": {
+        "value": 203.10482317568398,
+        "lo": 201.48930275147296,
+        "hi": 203.87461149379584,
+        "unit": "us"
+      }
+    }
+  },
+  "r_burst_ohm_by_seat": {
+    "lock": {
+      "25": {
+        "value": 4.1558570236420085,
+        "lo": 4.149622186497208,
+        "hi": 4.182372260680775,
+        "unit": "ohm"
+      },
+      "40": {
+        "value": 4.278484064691385,
+        "lo": 4.270886334108976,
+        "hi": 4.284762722491698,
+        "unit": "ohm"
+      }
+    },
+    "wound": {
+      "25": {
+        "value": 4.181444141403759,
+        "lo": 4.165618371340167,
+        "hi": 4.1874245936662335,
+        "unit": "ohm"
+      },
+      "40": {
+        "value": 4.294312706846829,
+        "lo": 4.285995411318265,
+        "hi": 4.305308155894622,
+        "unit": "ohm"
+      }
+    },
+    "stop": {
+      "25": {
+        "value": 4.136758177245405,
+        "lo": 4.12999844957212,
+        "hi": 4.141831177989212,
+        "unit": "ohm"
+      },
+      "40": {
+        "value": 4.3290854086148975,
+        "lo": 4.324009043209111,
+        "hi": 4.341290487165189,
+        "unit": "ohm"
+      }
+    }
+  },
+  "l_ripple_mh_by_seat": {
+    "lock": {
+      "25": {
+        "value": 0.6374840829294368,
+        "lo": 0.6366760195345188,
+        "hi": 0.6391323740985173,
+        "unit": "mH"
+      },
+      "40": {
+        "value": 0.6530652683826526,
+        "lo": 0.6505820191572151,
+        "hi": 0.6550086111151636,
+        "unit": "mH"
+      }
+    },
+    "wound": {
+      "25": {
+        "value": 0.6325475049620558,
+        "lo": 0.6272109821845646,
+        "hi": 0.6349915376071736,
+        "unit": "mH"
+      },
+      "40": {
+        "value": 0.6511653559976387,
+        "lo": 0.6484997451825434,
+        "hi": 0.6543893876654414,
+        "unit": "mH"
+      }
+    },
+    "stop": {
+      "25": {
+        "value": 0.6106894744882726,
+        "lo": 0.5972156499129403,
+        "hi": 0.6183362390308572,
+        "unit": "mH"
+      },
+      "40": {
+        "value": 0.6490361872257987,
+        "lo": 0.6485379423083589,
+        "hi": 0.6510258496857737,
+        "unit": "mH"
+      }
+    }
+  },
+  "seat_diff_pct_by_pair": {
+    "l_mh": {
+      "25": {
+        "wound_minus_lock": {
+          "value": -0.22544235957667863,
+          "lo": -1.072962243857685,
+          "hi": 0.6220775247043275,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 2.2345895529626283,
+          "lo": 1.2334459175399906,
+          "hi": 3.2357331883852662,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 2.465590397709399,
+          "lo": 1.6046562916082572,
+          "hi": 3.326524503810541,
+          "unit": "%"
+        }
+      },
+      "40": {
+        "wound_minus_lock": {
+          "value": -0.39617600299368827,
+          "lo": -1.3050432771044738,
+          "hi": 0.5126912711170972,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 1.124431023062745,
+          "lo": 0.24994637922841967,
+          "hi": 1.9989156668970702,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 1.5266552678761978,
+          "lo": 0.6033736632698365,
+          "hi": 2.449936872482559,
+          "unit": "%"
+        }
+      }
+    },
+    "tau_us": {
+      "25": {
+        "wound_minus_lock": {
+          "value": -0.6115927943540286,
+          "lo": -1.854392672285981,
+          "hi": 0.6312070835779237,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 2.580835597794393,
+          "lo": 1.2136952680147313,
+          "hi": 3.947975927574055,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 3.2120732003913925,
+          "lo": 2.118793285707139,
+          "hi": 4.305353115075646,
+          "unit": "%"
+        }
+      },
+      "40": {
+        "wound_minus_lock": {
+          "value": -1.0735407608610448,
+          "lo": -2.3403976140089666,
+          "hi": 0.19331609228687685,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": -0.055364968694088114,
+          "lo": -1.103812557983107,
+          "hi": 0.9930826205949309,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 1.029224941434201,
+          "lo": -0.19342858355535864,
+          "hi": 2.2518784664237605,
+          "unit": "%"
+        }
+      }
+    },
+    "r_burst_ohm": {
+      "25": {
+        "wound_minus_lock": {
+          "value": 0.6156881147784763,
+          "lo": 0.16006030306365482,
+          "hi": 1.0713159264932979,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": -0.4595645684621196,
+          "lo": -0.9302424232070259,
+          "hi": 0.011113286282786572,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": -1.0686729906513082,
+          "lo": -1.4612292014044659,
+          "hi": -0.6761167798981504,
+          "unit": "%"
+        }
+      },
+      "40": {
+        "wound_minus_lock": {
+          "value": 0.3699591237483127,
+          "lo": 0.07705005750787652,
+          "hi": 0.6628681899887489,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 1.182693289455133,
+          "lo": 0.9189240592889301,
+          "hi": 1.4464625196213359,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 0.8097384643793497,
+          "lo": 0.4921605640472028,
+          "hi": 1.1273163647114965,
+          "unit": "%"
+        }
+      }
+    },
+    "l_ripple_mh": {
+      "25": {
+        "wound_minus_lock": {
+          "value": -0.7743845061504754,
+          "lo": -1.3557120583605882,
+          "hi": -0.1930569539403626,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": -4.203180778731712,
+          "lo": -6.101475510657623,
+          "hi": -2.304886046805801,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": -3.455555559434922,
+          "lo": -5.395465504186906,
+          "hi": -1.5156456146829376,
+          "unit": "%"
+        }
+      },
+      "40": {
+        "wound_minus_lock": {
+          "value": -0.29092228250310753,
+          "lo": -0.8596777906217934,
+          "hi": 0.2778332256155784,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": -0.6169492318634653,
+          "lo": -1.3540561231383403,
+          "hi": 0.12015765941140966,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": -0.3269782018083463,
+          "lo": -1.1296264145696109,
+          "hi": 0.47567001095291833,
+          "unit": "%"
+        }
+      }
+    },
+    "l_pinned_mh": {
+      "25": {
+        "wound_minus_lock": {
+          "value": 0.41156754887978175,
+          "lo": -0.14404361251271536,
+          "hi": 0.9671787102722789,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 1.1627134390164857,
+          "lo": 0.5138595003358755,
+          "hi": 1.811567377697096,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 0.7480670887555365,
+          "lo": 0.040144336756282706,
+          "hi": 1.4559898407547904,
+          "unit": "%"
+        }
+      },
+      "40": {
+        "wound_minus_lock": {
+          "value": 0.1034003742107836,
+          "lo": -0.558920288644539,
+          "hi": 0.7657210370661063,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 2.413004245633438,
+          "lo": 1.7356602792015656,
+          "hi": 3.0903482120653103,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 2.307218199170852,
+          "lo": 1.5101345642825525,
+          "hi": 3.1043018340591515,
+          "unit": "%"
+        }
+      }
+    },
+    "early_r_ohm": {
+      "25": {
+        "wound_minus_lock": {
+          "value": -1.5053181924283778,
+          "lo": -2.928580405742009,
+          "hi": -0.0820559791147466,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": -1.2052006028850508,
+          "lo": -2.767262736076171,
+          "hi": 0.35686153030606915,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 0.30470435970305965,
+          "lo": -1.1286051516575077,
+          "hi": 1.738013871063627,
+          "unit": "%"
+        }
+      },
+      "40": {
+        "wound_minus_lock": {
+          "value": 0.7965881443974296,
+          "lo": -0.19620147018422507,
+          "hi": 1.7893777589790845,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 1.548664474640986,
+          "lo": 0.4450163480714955,
+          "hi": 2.6523126012104767,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 0.7461327254114594,
+          "lo": -0.34338900653793436,
+          "hi": 1.835654457360853,
+          "unit": "%"
+        }
+      }
+    },
+    "i_last_a": {
+      "25": {
+        "wound_minus_lock": {
+          "value": 0.574817855566363,
+          "lo": 0.3961861590052357,
+          "hi": 0.7534495521274903,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 1.1038017263689097,
+          "lo": 0.8713248527316315,
+          "hi": 1.336278600006188,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 0.525960555615632,
+          "lo": 0.3228402673978602,
+          "hi": 0.7290808438334039,
+          "unit": "%"
+        }
+      },
+      "40": {
+        "wound_minus_lock": {
+          "value": 0.24696758375751782,
+          "lo": 0.05527272668461117,
+          "hi": 0.4386624408304245,
+          "unit": "%"
+        },
+        "stop_minus_lock": {
+          "value": 0.2643551258147573,
+          "lo": 0.09707040054919,
+          "hi": 0.43163985108032454,
+          "unit": "%"
+        },
+        "stop_minus_wound": {
+          "value": 0.01734470625529094,
+          "lo": -0.1995276585002696,
+          "hi": 0.23421707101085149,
+          "unit": "%"
+        }
+      }
+    }
+  },
+  "first_jump_pct_by_seat_and_change": {
+    "lock": {
+      "g1_seat_set_and_reversal": {
+        "l": {
+          "value": 5.851815298706553,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 5.739084776236147,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 0.10542132115778369,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 0.2815515777052191,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 8.638068216867678,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g2_duty_25_to_40": {
+        "l": {
+          "value": -3.9661007339360066,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": -5.900307794500515,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 2.0553753578580913,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 2.508695703704533,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": -0.29534530652503826,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g3_reversal": {
+        "l": {
+          "value": 15.19629109352083,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 16.654071427518158,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": -1.2496605259840976,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 2.801378038002511,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 31.70657023443246,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g4_duty_40_to_25": {
+        "l": {
+          "value": 1.4490669710721882,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 1.301074495634924,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 0.14555706042758132,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 1.0172853453761066,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 2.7132897222081382,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g5_rest_20s": {
+        "l": {
+          "value": -1.3479925941108917,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": -1.671516885508595,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 0.3298339442369791,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 1.8328255858004905,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": -0.8074631985392252,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      }
+    },
+    "wound": {
+      "g1_seat_set_and_reversal": {
+        "l": {
+          "value": 11.143771161640203,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 11.471437832201836,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": -0.6486983602189578,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": -1.1601068442364415,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 14.126974691957477,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g2_duty_25_to_40": {
+        "l": {
+          "value": -3.255522579140291,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": -4.904048498770786,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 1.733393334367217,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 2.4335548944162566,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 0.06337309673730834,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g3_reversal": {
+        "l": {
+          "value": 13.24551753486416,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 14.318144282435675,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": -0.6633655260114057,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 1.629899094943732,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 29.3479531750505,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g4_duty_40_to_25": {
+        "l": {
+          "value": 0.6354947934263944,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 0.5765260807855999,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 0.05514637398460476,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": -1.9212375223767952,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 1.225128839159853,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g5_rest_20s": {
+        "l": {
+          "value": -0.6866976002283476,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": -0.5208766138942944,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": -0.16936015153937722,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 0.7170741166212302,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": -1.3552217712458505,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      }
+    },
+    "stop": {
+      "g1_seat_set_and_reversal": {
+        "l": {
+          "value": 12.111916807014156,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 6.382445579015927,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 2.1592527928003147,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 1.7685133432498557,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 23.42346625841408,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g2_duty_25_to_40": {
+        "l": {
+          "value": 2.9117990494635926,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 2.289435014713881,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 0.2963725313915866,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 3.871777400422083,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 8.842908550431597,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g3_reversal": {
+        "l": {
+          "value": -0.11340416886610472,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": -2.393300863678083,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 2.3357393401862714,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": 2.7275304235227615,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 11.013253558346431,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g4_duty_40_to_25": {
+        "l": {
+          "value": 1.2894676760150103,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 0.36594131201375113,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": 0.7315565895827714,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": -2.8142011999653715,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": 4.255754432600171,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      },
+      "g5_rest_20s": {
+        "l": {
+          "value": -0.1803002381558172,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "tau": {
+          "value": 0.16044995182307176,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "r": {
+          "value": -0.34543530355524155,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "l_ripple": {
+          "value": -0.21997365957906467,
+          "lo": null,
+          "hi": null,
+          "unit": "%"
+        },
+        "leftover_uvs": {
+          "value": -1.0814112846460333,
+          "lo": null,
+          "hi": null,
+          "unit": "uV s"
+        }
+      }
+    }
+  },
+  "stop_forward_walk_uvs": {
+    "g1": {
+      "burst_0": {
+        "value": 23.42346625841408,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      },
+      "burst_1": {
+        "value": 6.568090667087056,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      },
+      "burst_2": {
+        "value": 3.077991336782858,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      },
+      "burst_3": {
+        "value": -0.2669395393696351,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      }
+    },
+    "g2": {
+      "burst_0": {
+        "value": 8.842908550431597,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      },
+      "burst_1": {
+        "value": 4.90992153449355,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      },
+      "burst_2": {
+        "value": 1.0239424767685883,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      },
+      "burst_3": {
+        "value": -3.726125011563688,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      },
+      "burst_4": {
+        "value": -5.751859900644012,
+        "lo": null,
+        "hi": null,
+        "unit": "uV s"
+      }
+    }
+  },
+  "stop_moving_burst_r_ohm": {
+    "value": 3.2009705640109063,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "stop_moving_burst_l_ripple_mh": {
+    "value": 0.47122998949391487,
+    "lo": null,
+    "hi": null,
+    "unit": "mH"
+  },
+  "stop_moving_burst_i_first_ma": {
+    "value": 66.5741021512729,
+    "lo": null,
+    "hi": null,
+    "unit": "mA"
+  },
+  "seat_pos_lock": {
+    "value": 2016.0,
+    "lo": 2015.0,
+    "hi": 2024.0,
+    "unit": "counts"
+  },
+  "seat_pos_wound": {
+    "before_press": {
+      "value": 2017.0,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "after_press": {
+      "value": 2022.0,
+      "lo": 2022.0,
+      "hi": 2029.0,
+      "unit": "counts"
+    },
+    "after_groups": {
+      "value": 2026.0,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "seat_pos_stop": {
+    "value": 3.0,
+    "lo": 2.0,
+    "hi": 3.0,
+    "unit": "counts"
+  },
+  "lock_span_sittings_4_5_counts": {
+    "value": 14.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "lock_probe_pos_sittings_4_5_counts": {
+    "value": 2018.0,
+    "lo": 2014.0,
+    "hi": 2028.0,
+    "unit": "counts"
+  },
+  "board_ntc_c": {
+    "4": {
+      "value": 26.258312893998323,
+      "lo": null,
+      "hi": null,
+      "unit": "C"
+    },
+    "5": {
+      "value": 25.495328685403706,
+      "lo": null,
+      "hi": null,
+      "unit": "C"
+    },
+    "6": {
+      "value": 26.5247597636793,
+      "lo": null,
+      "hi": null,
+      "unit": "C"
+    }
+  }
+}
