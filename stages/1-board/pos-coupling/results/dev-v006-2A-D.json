@@ -1,0 +1,849 @@
+{
+  "capture": "telemetry/dev-v006-2A-D/pos-coupling",
+  "notes": "board D with a 3.3 k / 2.2 k divider on the POS connector in the pot's place and the RL dummy, the resistor plus one inductor, on the motor terminals; capture-1 rows pos, rail, NTC, shunt and both taps, capture-2 trades tap B for vref_raw; 18 sweeps each, 3.7, 5.0 and 7.4 V, slow and fast decay, 3 repeats, 10 to 100 % both directions; a rung is its rows 200 to 6000 less its sweep's torque-off baseline, the second half; NTC and vref drift out by one line per rail through the baselines; bounds are one standard error unless a key says range or sd: *_range_*, *_corr_*, slot_aperture_ticks and fast_tap_difference_over_rail_v are the lowest to highest, pos_direction_asymmetry_counts and leg_asymmetry_mv one sd either side, *_frame_pp_drive_counts the mean and range of the decay and duty groups under drive; onsets are the 100 % rungs aligned on the drive's first row with the frame pattern out, VDD dip = VDD s / (1 + s) from vref_raw's share s with terminal-chain's VDD; noise sd is per window with its own tick % 16 pattern out, both captures pooled; per-group standard errors understate the 0.1 count run-to-run floor",
+  "pos_dc_coupling_counts_per_a": {
+    "value": 0.5627868511118299,
+    "lo": 0.5297599757480376,
+    "hi": 0.5958137264756223,
+    "unit": "counts/A"
+  },
+  "pos_dc_coupling_through_zero_counts_per_a": {
+    "value": 0.4530807467441784,
+    "lo": 0.4432262269719223,
+    "hi": 0.4629352665164345,
+    "unit": "counts/A"
+  },
+  "pos_dc_intercept_counts": {
+    "value": -0.10935420325061762,
+    "lo": -0.14098009962946237,
+    "hi": -0.07772830687177287,
+    "unit": "counts"
+  },
+  "pos_dc_coupling_by_capture_counts_per_a": {
+    "capture_1": {
+      "value": 0.5941067118621102,
+      "lo": 0.5428496814535616,
+      "hi": 0.6453637422706587,
+      "unit": "counts/A"
+    },
+    "capture_2": {
+      "value": 0.531480750119375,
+      "lo": 0.4891905494590977,
+      "hi": 0.5737709507796523,
+      "unit": "counts/A"
+    }
+  },
+  "pos_dc_coupling_by_direction_counts_per_a": {
+    "dir_p1": {
+      "value": 0.5737578953704096,
+      "lo": 0.5241589165896907,
+      "hi": 0.6233568741511284,
+      "unit": "counts/A"
+    },
+    "dir_m1": {
+      "value": 0.48823442786133353,
+      "lo": 0.4242526923192117,
+      "hi": 0.5522161634034554,
+      "unit": "counts/A"
+    }
+  },
+  "pos_dc_residual_rms_counts": {
+    "value": 0.07348499770491207,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "pos_rest_rail_slope_counts_per_v": {
+    "value": -0.004908711667091129,
+    "lo": -0.014698574988705717,
+    "hi": 0.004881151654523457,
+    "unit": "counts/V"
+  },
+  "pos_at_0p77a_counts": {
+    "value": 0.3239916721054914,
+    "lo": 0.28340944051802186,
+    "hi": 0.36457390369296094,
+    "unit": "counts"
+  },
+  "pos_direction_asymmetry_counts": {
+    "value": -0.009402937420190934,
+    "lo": -0.07507445841602295,
+    "hi": 0.056268583575641073,
+    "unit": "counts"
+  },
+  "pos_capture_repeat_slope": {
+    "value": 0.984299536897153,
+    "lo": 0.9717123093540856,
+    "hi": 0.9968867644402204,
+    "unit": "ratio"
+  },
+  "pos_capture_repeat_rms": {
+    "value": 0.031785012802159784,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "pos_capture_repeat_corr": {
+    "value": 0.9972314773780597,
+    "lo": null,
+    "hi": null,
+    "unit": "ratio"
+  },
+  "ntc_capture_repeat_slope": {
+    "value": 0.9379271868307241,
+    "lo": 0.9128424586434908,
+    "hi": 0.9630119150179574,
+    "unit": "ratio"
+  },
+  "pos_partial_duty_max_counts": {
+    "value": 1.6321885057470809,
+    "lo": 1.613799609093183,
+    "hi": 1.6505774024009787,
+    "unit": "counts"
+  },
+  "pos_partial_duty_max_at": {
+    "decay": "fast",
+    "duty": {
+      "value": 60.0,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "rail": {
+      "value": 7.4,
+      "lo": null,
+      "hi": null,
+      "unit": "V"
+    }
+  },
+  "pos_partial_duty_group_range_counts": {
+    "value": 1.6937896551723195,
+    "lo": -0.16149770114945264,
+    "hi": 1.6937896551723195,
+    "unit": "counts"
+  },
+  "pos_fast_bump_rail_slope_counts_per_v": {
+    "10pct": {
+      "value": 0.17743928272381937,
+      "lo": 0.1590057937080258,
+      "hi": 0.19587277173961293,
+      "unit": "counts/V"
+    },
+    "60pct": {
+      "value": 0.17651229116728276,
+      "lo": 0.16891511556804947,
+      "hi": 0.18410946676651604,
+      "unit": "counts/V"
+    }
+  },
+  "pos_rung_half_diff_sd_counts": {
+    "value": 0.02758044798475818,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "vdd_onset_dip_mv": {
+    "3v7": {
+      "value": 49.3108448674746,
+      "lo": 48.57757367955819,
+      "hi": 50.04411605539101,
+      "unit": "mV"
+    },
+    "5v0": {
+      "value": 14.35504883736869,
+      "lo": 12.646759354657428,
+      "hi": 16.063338320079954,
+      "unit": "mV"
+    },
+    "7v4": {
+      "value": 18.64532467584012,
+      "lo": 17.098037827743827,
+      "hi": 20.19261152393641,
+      "unit": "mV"
+    }
+  },
+  "vdd_onset_half_width_us": {
+    "3v7": {
+      "value": 500.0,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    },
+    "5v0": {
+      "value": 200.0,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    },
+    "7v4": {
+      "value": 150.0,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    }
+  },
+  "vdd_onset_settle_us": {
+    "3v7": {
+      "value": 800.0,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    },
+    "5v0": {
+      "value": 450.0,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    },
+    "7v4": {
+      "value": 450.0,
+      "lo": null,
+      "hi": null,
+      "unit": "us"
+    }
+  },
+  "vref_onset_peak_pct": {
+    "3v7": {
+      "value": 1.5201249575177112,
+      "lo": 1.4971730863169026,
+      "hi": 1.5430768287185197,
+      "unit": "%"
+    },
+    "5v0": {
+      "value": 0.4378109456608861,
+      "lo": 0.38549086197233756,
+      "hi": 0.4901310293494346,
+      "unit": "%"
+    },
+    "7v4": {
+      "value": 0.5694040198699527,
+      "lo": 0.521894139253339,
+      "hi": 0.6169139004865664,
+      "unit": "%"
+    }
+  },
+  "pos_onset_peak_pct": {
+    "3v7": {
+      "value": 1.202766988796095,
+      "lo": 1.1905659338904702,
+      "hi": 1.2149680437017198,
+      "unit": "%"
+    },
+    "5v0": {
+      "value": 0.40412643318924973,
+      "lo": 0.36688901718179884,
+      "hi": 0.44136384919670063,
+      "unit": "%"
+    },
+    "7v4": {
+      "value": 0.5351985323528188,
+      "lo": 0.4929266449126025,
+      "hi": 0.577470419793035,
+      "unit": "%"
+    }
+  },
+  "ntc_onset_peak_pct": {
+    "3v7": {
+      "value": 0.9583050166216655,
+      "lo": 0.88723126735505,
+      "hi": 1.029378765888281,
+      "unit": "%"
+    },
+    "5v0": {
+      "value": 0.2675966537157131,
+      "lo": 0.21108505793014604,
+      "hi": 0.3241082495012802,
+      "unit": "%"
+    },
+    "7v4": {
+      "value": 0.3525775481596211,
+      "lo": 0.30367085600179056,
+      "hi": 0.40148424031745167,
+      "unit": "%"
+    }
+  },
+  "pos_onset_share_of_vref": {
+    "3v7": {
+      "value": 0.7912290255138985,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "5v0": {
+      "value": 0.92306151135443,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "7v4": {
+      "value": 0.9399275622870625,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "pos_onset_peak_counts": {
+    "3v7": {
+      "value": 19.938133333333365,
+      "lo": 19.611712399166105,
+      "hi": 20.264554267500625,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": 6.975466666666686,
+      "lo": 6.5195344087177896,
+      "hi": 7.431398924615583,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": 7.618533333333308,
+      "lo": 7.159182309352382,
+      "hi": 8.077884357314232,
+      "unit": "counts"
+    }
+  },
+  "vdd_dc_drop_100pct_mv": {
+    "3v7": {
+      "value": 3.70688837544248,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "5v0": {
+      "value": 1.6778213078266342,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "7v4": {
+      "value": 1.298931507721386,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    }
+  },
+  "vdd_frame_ripple_mv_pp": {
+    "value": 5.010496425066404,
+    "lo": 4.90282505878117,
+    "hi": 5.118167791351638,
+    "unit": "mV"
+  },
+  "vdd_frame_ripple_mv_rms": {
+    "value": 1.3988177261562043,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "pos_rest_sd_counts": {
+    "capture_1": {
+      "value": 1.1266140502910473,
+      "lo": 1.1187847813491367,
+      "hi": 1.134443319232958,
+      "unit": "counts"
+    },
+    "capture_2": {
+      "value": 1.0842550053788096,
+      "lo": 1.0749854985496374,
+      "hi": 1.0935245122079817,
+      "unit": "counts"
+    }
+  },
+  "pos_rest_sd_pattern_removed_counts": {
+    "capture_1": {
+      "value": 0.6559649024620968,
+      "lo": 0.6547300580220876,
+      "hi": 0.657199746902106,
+      "unit": "counts"
+    },
+    "capture_2": {
+      "value": 0.6657860048834494,
+      "lo": 0.6641690980647794,
+      "hi": 0.6674029117021194,
+      "unit": "counts"
+    }
+  },
+  "pos_frame_share_over_vref": {
+    "value": 1.238869483133274,
+    "lo": 1.2234135249812788,
+    "hi": 1.2543254412852693,
+    "unit": "ratio"
+  },
+  "ntc_frame_share_over_vref": {
+    "value": 0.9468172134328577,
+    "lo": 0.9237060137917424,
+    "hi": 0.969928413073973,
+    "unit": "ratio"
+  },
+  "rail_frame_share_over_vref": {
+    "value": 0.8445820424732514,
+    "lo": 0.8326119413257399,
+    "hi": 0.8565521436207629,
+    "unit": "ratio"
+  },
+  "pos_frame_corr_with_vref": {
+    "value": 0.9756169068641208,
+    "lo": 0.9633809339667802,
+    "hi": 0.9870603709513549,
+    "unit": "ratio"
+  },
+  "pos_frame_pp_rest_counts": {
+    "value": 3.0246222222222183,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "pos_frame_pp_drive_counts": {
+    "value": 2.738570128428657,
+    "lo": 2.4274073397629334,
+    "hi": 2.9473852876665774,
+    "unit": "counts"
+  },
+  "vref_frame_pp_rest_counts": {
+    "value": 2.2687111111111387,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "vref_frame_pp_drive_counts": {
+    "value": 2.143358567538209,
+    "lo": 2.0348880568619356,
+    "hi": 2.340739979740508,
+    "unit": "counts"
+  },
+  "pos_sd_rest_counts": {
+    "value": 0.660875453672773,
+    "lo": 0.6595738397841323,
+    "hi": 0.6621770675614137,
+    "unit": "counts"
+  },
+  "pos_sd_drive_counts": {
+    "value": 0.6295769357463702,
+    "lo": 0.6276071121851078,
+    "hi": 0.6315467593076326,
+    "unit": "counts"
+  },
+  "ntc_sd_rest_counts": {
+    "value": 0.5495576882016205,
+    "lo": 0.5414458810034455,
+    "hi": 0.5576694953997956,
+    "unit": "counts"
+  },
+  "ntc_sd_drive_counts": {
+    "value": 0.548810727456552,
+    "lo": 0.5463983104070217,
+    "hi": 0.5512231445060823,
+    "unit": "counts"
+  },
+  "vref_sd_rest_counts": {
+    "value": 1.126021516567179,
+    "lo": 1.1060681758883177,
+    "hi": 1.1459748572460402,
+    "unit": "counts"
+  },
+  "vref_sd_drive_counts": {
+    "value": 1.0866718647401206,
+    "lo": 1.081534395244779,
+    "hi": 1.0918093342354622,
+    "unit": "counts"
+  },
+  "rail_sd_rest_counts": {
+    "value": 1.144762889860196,
+    "lo": 1.1050614207741716,
+    "hi": 1.1844643589462205,
+    "unit": "counts"
+  },
+  "rail_sd_drive_counts": {
+    "value": 1.1851262878844824,
+    "lo": 1.1723682113154823,
+    "hi": 1.1978843644534825,
+    "unit": "counts"
+  },
+  "shunt_sd_rest_counts": {
+    "value": 0.9620347267180135,
+    "lo": 0.9574404233795016,
+    "hi": 0.9666290300565253,
+    "unit": "counts"
+  },
+  "shunt_sd_drive_counts": {
+    "value": 1.2130868733659605,
+    "lo": 1.2006764523586195,
+    "hi": 1.2254972943733016,
+    "unit": "counts"
+  },
+  "pos_sd_drive_range_counts": {
+    "value": 0.6295769357463702,
+    "lo": 0.5072631825222393,
+    "hi": 0.6993344325294383,
+    "unit": "counts"
+  },
+  "pos_sd_rest_raw_counts": {
+    "value": 1.1054898037070453,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "pos_sd_drive_raw_counts": {
+    "value": 1.0032684867532158,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "tap_sd_rest_counts": {
+    "value": 0.5364300961455839,
+    "lo": 0.5350048219790937,
+    "hi": 0.5378553703120741,
+    "unit": "counts"
+  },
+  "tap_sd_drive_slow_counts": {
+    "value": 0.8633164081004383,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "tap_sd_fast40_counts": {
+    "vmotor_a": {
+      "value": 2.5247021355216734,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "vmotor_b": {
+      "value": 2.0694668580143927,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "pos_vref_prediction_slope": {
+    "value": -0.0013642908918155233,
+    "lo": -0.009238046645096474,
+    "hi": 0.006509464861465428,
+    "unit": "ratio"
+  },
+  "pos_rung_shift_rms_counts": {
+    "raw": {
+      "value": 0.6826384451953054,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "scaled": {
+      "value": 3.699227793222924,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "slot_aperture_ticks": {
+    "pos": {
+      "value": 187.0,
+      "lo": 160.0,
+      "hi": 187.0,
+      "unit": "ticks after the crest"
+    },
+    "vref": {
+      "value": 295.0,
+      "lo": 212.0,
+      "hi": 295.0,
+      "unit": "ticks after the crest"
+    },
+    "vbus": {
+      "value": 347.0,
+      "lo": 320.0,
+      "hi": 347.0,
+      "unit": "ticks after the crest"
+    },
+    "ntc": {
+      "value": 399.0,
+      "lo": 372.0,
+      "hi": 399.0,
+      "unit": "ticks after the crest"
+    }
+  },
+  "vref_slow10_dir_m1_counts": {
+    "3v7": {
+      "value": 8.282436872300705,
+      "lo": 8.110408965200936,
+      "hi": 8.454464779400475,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": 11.40740210411652,
+      "lo": 11.12808609788878,
+      "hi": 11.686718110344259,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": 17.750203810280038,
+      "lo": 17.67435910691266,
+      "hi": 17.826048513647414,
+      "unit": "counts"
+    }
+  },
+  "vref_fast40_dir_p1_counts": {
+    "3v7": {
+      "value": -4.483798339955559,
+      "lo": -4.716970404669151,
+      "hi": -4.250626275241967,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": -7.931342085827986,
+      "lo": -8.179583874065496,
+      "hi": -7.683100297590476,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": -7.646058200237028,
+      "lo": -7.726473365837891,
+      "hi": -7.565643034636165,
+      "unit": "counts"
+    }
+  },
+  "vref_fast80_dir_m1_counts": {
+    "3v7": {
+      "value": -2.0763597624080323,
+      "lo": -2.195404771461573,
+      "hi": -1.9573147533544915,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": -3.212989745003659,
+      "lo": -3.4377622783344135,
+      "hi": -2.9882172116729047,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": -5.55893008464145,
+      "lo": -5.693163140471241,
+      "hi": -5.42469702881166,
+      "unit": "counts"
+    }
+  },
+  "ntc_fast80_dip_counts": {
+    "3v7": {
+      "value": -2.284542656146188,
+      "lo": -2.477632195659246,
+      "hi": -2.0914531166331303,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": -2.3547198312206774,
+      "lo": -2.615910158718597,
+      "hi": -2.093529503722758,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": -3.789927020110287,
+      "lo": -4.014189615969056,
+      "hi": -3.5656644242515174,
+      "unit": "counts"
+    }
+  },
+  "ntc_fast80_dip_mc": {
+    "3v7": {
+      "value": 50.78998364884327,
+      "lo": 46.497214359442296,
+      "hi": 55.08275293824424,
+      "unit": "mC, the apparent warming"
+    },
+    "5v0": {
+      "value": 52.35016356711538,
+      "lo": 46.543376625682825,
+      "hi": 58.156950508547936,
+      "unit": "mC, the apparent warming"
+    },
+    "7v4": {
+      "value": 84.25770946488875,
+      "lo": 79.27190035947751,
+      "hi": 89.24351857029998,
+      "unit": "mC, the apparent warming"
+    }
+  },
+  "ntc_mc_per_count": {
+    "value": 22.232013708389786,
+    "lo": null,
+    "hi": null,
+    "unit": "mC/count"
+  },
+  "ntc_drift_counts_per_s": {
+    "3v7": {
+      "value": 0.020989687277006047,
+      "lo": 0.013069073625751926,
+      "hi": 0.028910300928260167,
+      "unit": "counts/s"
+    },
+    "5v0": {
+      "value": -0.13895074974507268,
+      "lo": -0.14614307800327697,
+      "hi": -0.1317584214868684,
+      "unit": "counts/s"
+    },
+    "7v4": {
+      "value": -0.3193221445367654,
+      "lo": -0.3300550441835785,
+      "hi": -0.30858924488995226,
+      "unit": "counts/s"
+    }
+  },
+  "ntc_fast80_step_counts": {
+    "3v7": {
+      "value": -0.028333333333383354,
+      "lo": -0.047456472313256545,
+      "hi": -0.00921019435351016,
+      "unit": "counts"
+    },
+    "5v0": {
+      "value": -0.029583333333372746,
+      "lo": -0.04205691653057987,
+      "hi": -0.01710975013616562,
+      "unit": "counts"
+    },
+    "7v4": {
+      "value": -0.07958333333328937,
+      "lo": -0.12417133931895546,
+      "hi": -0.034995327347623284,
+      "unit": "counts"
+    }
+  },
+  "rail_sag_v_per_a": {
+    "value": 0.17329452145571256,
+    "lo": 0.17195465734676685,
+    "hi": 0.17463438556465827,
+    "unit": "V/A"
+  },
+  "rail_sag_offset_mv": {
+    "value": 69.82738596191594,
+    "lo": 68.54406417245313,
+    "hi": 71.11070775137874,
+    "unit": "mV"
+  },
+  "rail_sag_counts_per_a": {
+    "value": 42.8968060341804,
+    "lo": null,
+    "hi": null,
+    "unit": "counts/A"
+  },
+  "rail_sag_by_rail_v_per_a": {
+    "3v7": {
+      "value": 0.18114194431432196,
+      "lo": 0.17745092873722523,
+      "hi": 0.18483295989141868,
+      "unit": "V/A"
+    },
+    "5v0": {
+      "value": 0.16533793339551198,
+      "lo": 0.16219033299376542,
+      "hi": 0.16848553379725853,
+      "unit": "V/A"
+    },
+    "7v4": {
+      "value": 0.1656458820025796,
+      "lo": 0.16322650260523158,
+      "hi": 0.1680652613999276,
+      "unit": "V/A"
+    }
+  },
+  "rail_sag_beyond_connector_ohm": {
+    "value": 0.02420379319654528,
+    "lo": 0.02152982494436745,
+    "hi": 0.026877761448723114,
+    "unit": "ohm"
+  },
+  "bridge_path_ohm": {
+    "3v7": {
+      "value": 0.322181709552132,
+      "lo": 0.3137038505431967,
+      "hi": 0.33065956856106726,
+      "unit": "ohm"
+    },
+    "5v0": {
+      "value": 0.3138384568342361,
+      "lo": 0.30793929383125906,
+      "hi": 0.31973761983721316,
+      "unit": "ohm"
+    },
+    "7v4": {
+      "value": 0.31581636867843027,
+      "lo": 0.3074365809113564,
+      "hi": 0.32419615644550415,
+      "unit": "ohm"
+    }
+  },
+  "bridge_path_across_rails_ohm": {
+    "value": 0.3652283097310807,
+    "lo": 0.35891812283262237,
+    "hi": 0.3715384966295391,
+    "unit": "ohm"
+  },
+  "low_side_ohm": {
+    "3v7": {
+      "value": 0.32915906601284295,
+      "lo": 0.3232190217042268,
+      "hi": 0.3350991103214591,
+      "unit": "ohm"
+    },
+    "5v0": {
+      "value": 0.32005388496435794,
+      "lo": 0.3149749233903325,
+      "hi": 0.32513284653838337,
+      "unit": "ohm"
+    },
+    "7v4": {
+      "value": 0.32414798590301835,
+      "lo": 0.31942970069353505,
+      "hi": 0.32886627111250166,
+      "unit": "ohm"
+    }
+  },
+  "high_side_ohm": {
+    "3v7": {
+      "value": -0.00678042686075049,
+      "lo": -0.016164659727693594,
+      "hi": 0.002603806006192615,
+      "unit": "ohm"
+    },
+    "5v0": {
+      "value": -0.0060131186461845525,
+      "lo": -0.012024952880460092,
+      "hi": -1.2844119090119413e-06,
+      "unit": "ohm"
+    },
+    "7v4": {
+      "value": -0.00814482634165214,
+      "lo": -0.01488860011456815,
+      "hi": -0.0014010525687361292,
+      "unit": "ohm"
+    }
+  },
+  "leg_asymmetry_mv": {
+    "value": 5.040447005630575,
+    "lo": 0.9510142070946843,
+    "hi": 9.129879804166464,
+    "unit": "mV"
+  },
+  "fast_tap_difference_over_rail_v": {
+    "value": 1.5921518455062362,
+    "lo": 1.381119181119116,
+    "hi": 1.9076894108769489,
+    "unit": "V"
+  },
+  "dummy_r_ohm": {
+    "value": 5.217658169099441,
+    "lo": 5.217207739518278,
+    "hi": 5.218108598680605,
+    "unit": "ohm"
+  },
+  "dummy_tau_us": {
+    "value": 168.25155725337228,
+    "lo": 167.25144037320806,
+    "hi": 169.2516741335365,
+    "unit": "us"
+  },
+  "dummy_l_mh": {
+    "value": 0.8778791121667603,
+    "lo": null,
+    "hi": null,
+    "unit": "mH"
+  }
+}
