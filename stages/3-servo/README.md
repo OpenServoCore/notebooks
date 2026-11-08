@@ -102,7 +102,9 @@ stops with no lock, graded against the locked one.
 Needs: the `servo` state with the horn lock; the stage 1 current-scale,
 terminal-chain and sample-timing results; for `stop`, the inductance
 result's window model for the crest correction at partial duty; mg90-b's
-rest-resistance result for the grade.
+rest-resistance result for the grade; for `meter`, the `servo-meter` state,
+the stage 0 dmm result for the meter's class and stage 1's current-scale
+series laps as the DC reference.
 
 How: `locked` is stage 2's stall pass in situ. The lock holds the horn at
 mid travel and each sweep drives a 100 % lap of 300 ms in each direction,
