@@ -11,6 +11,12 @@ through the registry's nominal conversions.
 The zero a reading is taken over stays an argument: the current over the
 lap's rest zero, the tap difference over the terminal offset under drive or
 over its own rest difference on a coast.
+
+The volts a motor sees at partial duty are formed from the crest volts and
+the duty. Construction A is the duty times the crest volts. B takes the
+edge lags off the window, the on-share, and the brake's drop through the
+low-side loop between the windows off the volts. C is B with a crest term
+taken off the current.
 """
 from dataclasses import dataclass
 
@@ -22,6 +28,8 @@ STAGE = "1-board"
 # the two rails sample-timing graded; a rail between them, 5.0 V among
 # them, reads at the mean of the two
 GRADED_RAILS = ("7v4", "3v7")
+# the same rails low first with their volts, for a lag read on the rail
+RAIL_LINE = (("3v7", 3.7), ("7v4", 7.4))
 
 
 @dataclass(frozen=True)
@@ -81,17 +89,57 @@ class Scales:
         counts = np.asarray(counts, float)
         return (counts - self.rail_offset_counts) / self.rail_counts_per_v
 
-    def edge_lags(self, rails=GRADED_RAILS):
-        """The bridge's slow-decay edges in ticks, the mean over `rails`."""
+    def _timing(self):
         if self.sample_timing is None:
             raise ValueError(f"{self.board}: no sample-timing result")
+        return self.sample_timing
+
+    def edge_lags(self, rails=GRADED_RAILS):
+        """The bridge's slow-decay edges in ticks, the mean over `rails`."""
+        timing = self._timing()
         keys = {"on": "on_edge_lag", "tap_on": "tap_on_edge_lag",
                 "off": "off_edge_lag", "settle": "shunt_settle"}
         lags = {}
         for name, key in keys.items():
-            values = [self.sample_timing[f"{key}_{r}"]["value"] for r in rails]
+            values = [timing[f"{key}_{r}"]["value"] for r in rails]
             lags[name] = np.mean(values)
         return lags
+
+    def edge_lags_at(self, rail_v):
+        """(ON, OFF, lowest ON - OFF, highest ON - OFF) tap edge lags in
+        ticks on the line through the graded rails, extrapolated past them."""
+        timing = self._timing()
+        (_, lo_v), (_, hi_v) = RAIL_LINE
+        f = (rail_v - lo_v) / (hi_v - lo_v)
+
+        def at(key, end):
+            a, b = (timing[f"{key}_{r}"][end] for r, _ in RAIL_LINE)
+            return a + f * (b - a)
+
+        on = at("tap_on_edge_lag", "value")
+        off = at("off_edge_lag", "value")
+        lo = at("tap_on_edge_lag", "lo") - at("off_edge_lag", "hi")
+        hi = at("tap_on_edge_lag", "hi") - at("off_edge_lag", "lo")
+        return on, off, lo, hi
+
+    def share_of(self, half_ticks, rail_v, period):
+        """(on-share, lowest, highest) of a half window on `rail_v`, the
+        bounds at the widest ON - OFF the lags' bounds allow."""
+        on, off, lo, hi = self.edge_lags_at(rail_v)
+        h = np.asarray(half_ticks, float)
+        return (on_share(h, period, on, off), (2 * h - hi) / period,
+                (2 * h - lo) / period)
+
+    def edge_ticks_at(self, rail_v, which="value"):
+        """The tap ON lag less the OFF lag in ticks, interpolated between
+        the graded rails and held flat outside; "lo" and "hi" the widest
+        combination of the two lags' bounds."""
+        timing = self._timing()
+        on, off = {"value": ("value", "value"), "lo": ("lo", "hi"),
+                   "hi": ("hi", "lo")}[which]
+        lags = [timing[f"tap_on_edge_lag_{r}"][on]
+                - timing[f"off_edge_lag_{r}"][off] for r, _ in RAIL_LINE]
+        return float(np.interp(rail_v, [v for _, v in RAIL_LINE], lags))
 
     def fast_edge_lags(self):
         """The bridge's fast-decay edges in ticks, from bridge-states."""
@@ -124,6 +172,31 @@ class Scales:
             fast = self.fast_edge_lags()
             print(f"fast decay: ON edge {fast['on']:.0f} ticks after the "
                   f"commanded start, OFF edge {fast['off']:.0f} after the end")
+
+
+def on_share(half_ticks, period, on, off):
+    """Construction B's on-share: the window shortened by the edge lags."""
+    h = np.asarray(half_ticks, float)
+    return (2 * h - on + off) / period
+
+
+def volts_ab(duty, share, v_on, amps, r_brake):
+    """The applied volts under construction A and under B, the brake's
+    drop through the low-side loop r_brake between the on-windows."""
+    return duty * v_on, share * v_on - (1 - share) * r_brake * amps
+
+
+def constructions(duty, share, v_on, amps, share_lo, share_hi, r_brake,
+                  g_spin):
+    """The applied volts under A, B and C and C's current, B also at the
+    lags' two bounds; C is B with the crest term g_spin x (1 - D) x V_on
+    taken off the current."""
+    v_a, v_b = volts_ab(duty, share, v_on, amps, r_brake)
+    i_c = amps - g_spin * (1 - duty) * v_on
+    return {"v_a": v_a, "v_b": v_b, "i_c": i_c,
+            "v_c": volts_ab(duty, share, v_on, i_c, r_brake)[1],
+            "v_b_lo": volts_ab(duty, share_lo, v_on, amps, r_brake)[1],
+            "v_b_hi": volts_ab(duty, share_hi, v_on, amps, r_brake)[1]}
 
 
 def _optional(experiment, key):

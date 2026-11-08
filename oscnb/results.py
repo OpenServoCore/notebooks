@@ -33,6 +33,41 @@ def mean_sd(x, unit, scale=1.0):
     return quantity(mean, mean - sd, mean + sd, unit)
 
 
+def mean_se(x, unit, scale=1.0):
+    """The mean of `x`, one standard error either side as the bounds."""
+    x = pd.Series(x).dropna() * scale
+    return pm(x.mean(), x.std() / np.sqrt(len(x)), unit)
+
+
+def wmean(x):
+    """(mean, sd, the mean's standard error, count) of x, nan dropped."""
+    x = pd.Series(np.asarray(x, float)).dropna()
+    if len(x) == 0:
+        return np.nan, np.nan, np.nan, 0
+    if len(x) == 1:
+        return float(x.mean()), np.nan, np.nan, 1
+    sd = float(x.std(ddof=1))
+    return float(x.mean()), sd, sd / np.sqrt(len(x)), int(len(x))
+
+
+def fit_line(x, y):
+    """Least-squares line of y on x over the finite points: slope,
+    intercept, their standard errors, the residuals, rms and count."""
+    x = np.asarray(x, float)
+    y = np.asarray(y, float)
+    ok = np.isfinite(x) & np.isfinite(y)
+    x, y = x[ok], y[ok]
+    design = np.c_[x, np.ones_like(x)]
+    coef = np.linalg.lstsq(design, y, rcond=None)[0]
+    resid = y - design @ coef
+    s2 = (resid ** 2).sum() / max(len(x) - 2, 1)
+    cov = s2 * np.linalg.inv(design.T @ design)
+    return {"slope": coef[0], "intercept": coef[1],
+            "slope_se": np.sqrt(cov[0, 0]),
+            "intercept_se": np.sqrt(cov[1, 1]), "resid": resid,
+            "rms": np.sqrt((resid ** 2).mean()), "n": len(x)}
+
+
 def median_range(x, unit, value=None):
     """The median of `x`, or `value` when given, the range as the bounds."""
     x = pd.Series(x).dropna()
