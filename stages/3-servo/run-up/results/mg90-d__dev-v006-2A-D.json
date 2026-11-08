@@ -1,0 +1,1847 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/run-up/runup-open-1, telemetry/mg90-d__dev-v006-2A-D/run-up/runup-close-1, telemetry/mg90-d__dev-v006-2A-D/run-up/runup-open-6, telemetry/mg90-d__dev-v006-2A-D/run-up/runup-close-6",
+  "notes": "stage 3 run-up of mg90-d on dev-v006-2A-D, horn free, DPS-150 over the feed diode, experiment image: runup-open-1, runup-close-1, runup-open-6 and runup-close-6, three cycles each of a 5 V 100 % spin from rest at the near guard and a 500 ms coast with the bridge open, both directions, at the open and the close of sittings 1 and 6; the runway cut the 200 ms spin to 52 ms (1031 to 1040 driven rows). Current through stage 1 current-scale over each sweep's torque-off zero with the in-drive offset out, the crest sample, which at 100 % is the period mean; volts through terminal-chain; rail and board NTC from the manifest probe before each sweep. R the resistance result's r_term_ohm, L the inductance result's l_mh, Ke the ladder result's ke_mv_per_rev_s, Kt = Ke untested. Speed by the ripple tach, stage 2 speed-torque's order tracking (6 events per rev, band-pass +/- 25 %, five passes, the current's integral before the tenth crossing), its rough speed the EMF u - R i - L di/dt over Ke scaled to the pot's slope over 15 to 45 ms; the pot seeds only. Acceleration a_d from a quadratic of the counted angle over +/- 5 ms every 0.5 ms; fits kept when the angle residual is under twice the run's median and no turn window inside them is flagged (local quadratic at 5 %, cross-run median at 6 %). Coast a_c(w) from a quadratic of the bridged coast EMF over +/- 5 ms, interpolated on speed per run-up. j_kg_m2: J of the rotor plus the reflected train, J (a_d - a_c(w)) = Kt i through the origin, the mean over 24 run-ups; lo the concave form i (1 - k i) per run-up mean, hi the line with an intercept per run-up mean; the bounds are the method's ambiguity between three forms that fit to the same residual, not noise. j_origin_kg_m2 the same +/- se; *_by_direction and *_by_set mean +/- sd; j_line_* stage 2's line, j_line_extra_drag_a its intercept as a current (negative: the drive carries less drag than the coast), a fit-form property and not a measured drag; j_ratio the median of Kt i / (a_d - a_c) per run-up, +/- se; j_concave_kg_m2 the concave form per run-up, mean +/- sd over the 23 run-ups whose fit converged (runup-open-1 k2 +1 did not); j_concave_k_per_a its k pooled, +/- se; j_pooled_fit_rms_rad_s2 the three pooled forms' rms. j_pooled_coast, j_awake_zero, j_ke_sag, j_type_drag_curve: the line's J under the direction's pooled coast, the awake-zero current, the sag's Ke, and the type's bare drag curve in place of the coast, +/- se, alternatives. j_over_type over mg90-b's j_kg_m2 (j_type_kg_m2, quoted). j_windows the kept fits, lo and hi their first and last center in s. coast_drag_current_ma_by_speed: -J a_c / Kt with j_kg_m2 in 25 rev/s bins per direction, the train's drag as a current, scale tied to J; coast_decel_by_speed_rad_s2 the bins' median a_c +/- sd; coast_stop_ms median and range. measured_rise_63_ms: t0 + tau of a first-order fit through the turn windows, to 63 % of its asymptote, mean +/- sd per direction (the type's was to a measured settled speed); rise_63_of_cut_speed_ms to 63 % of the speed at the cut, model free; rise_tau_ms, rise_fit_rms_rev_s mean +/- sd. no_load_speed_rev_s and no_load_speed_by_direction: the fit's asymptote, EXTRAPOLATED about 10 % past the 52 ms cut, a candidate no-load speed at 5 V; value the mean, lo and hi the +1 and -1 means. speed_at_cut_rev_s the count's last 5 ms; speed_at_cut_coast_e0_rev_s the coast's E0 (line over 1 to 6 ms back to the cut) over Ke; cut_over_no_load the cut over the asymptote. stall_current_a and stall_terminal_v: 0.8 to 1.5 ms, mean +/- sd. stall_torque_n_m: the torque-on-speed line per direction at zero speed, mean with the two directions as bounds; stall_torque_first_ms_n_m Kt (stall current - the coast's drag under 60 rev/s). peak_power_w: the pooled 0.05 mN m bins' median J a_d w, bounds the per-direction peaks; peak_power_per_run_w per run-up +/- sd; peak_power_line_j_w the same under the line's J (x 1.10); peak_power_torque_n_m and peak_power_rev_s the peak's bin. peak_efficiency the bins' median J a_d w / (u i) at the terminals, bounds by direction, peak_efficiency_torque_n_m its bin. Every torque and power scales with J and carries its bracket. key_numbers_by_direction: per direction the line's stall and zero-torque ends (w0 extrapolated past the counted part), the peaks of power and efficiency, the cut and the asymptote, report only. curve: the pooled bins with at least 10 fits. terminal_source the line of u on i over the fits, report only. output_side_lossless the stall torque x the gear ratio and the asymptote at the horn, before gear loss, comparison only, the no-load speed extrapolated. speed_count_start_ms and _rev_s the first turn window, mean with range; crossings_total, crossings_repaired (added + removed), windows_flagged (either window flag), fits_flagged (the residual flag's count plus the window flag's), report only. count_over_cut_emf_by_direction: the count's last 5 ms over E0 / Ke, mean +/- sd; the -1 count ends about 2.3 % under (the last row 2.4 %), the -1 tach undercounting the leading reading, moderate. oscnb_count_over_order_count ripple.count_cycles over the order count on the last 10 ms, mean +/- sd. pot_over_count_15_45ms the nominal pot slope over the count, the pot's local gain, a seed only. emf_seed_count_maxdiff_pct the EMF-only seed's count against the pot seed's, worst speed difference past 10 ms per run-up, median and range; one run-up fails at 28.5 %. dropouts_*: tel.dropout_rows (quarter of a running mean) over the drive, its first 2 ms and last 1 ms left out, rows per second +/- Poisson (one row as an empty count's floor); by direction and set, over the last 20 ms, by sitting, by 50 rev/s band of the count's speed (bands over 400 rows); dropouts_plus_sitting6_over_1_sigma the +1 rise from sitting 1 to 6 in Poisson sigma, likely; dropout_rows_per_run the rows per run-up. The settled rate is not measured. x_100pct_mv_by_knot: X = u - R i - L di/dt - Ke w over the kept fits within 12.5 rev/s of each knot, mean +/- sd over the run-ups there (3 or more), the current in the unit; x_100pct_ladder_a and _b the ladder's tables 'A - g V_on' and 'B - g (1-D) V_on' at the knots, quoted. x_cut_e0_mv_by_direction u - R i - E0 over the drive's last 5 ms, Ke-free, mean +/- sd; x_cut_count_mv by the count's speed. x_stall_end_mv X at 0.8 to 1.5 ms with the speed from the current's integral, +/- sd. x_vs_ladder_100_dx_di_ohm the run-up's X less the ladder's 3.7 V 100 % rung's at matched speed over the current difference, X's growth with current at one speed, high confidence that X is not a speed table alone; not a series resistance (the stall end reads 67 mV). Readings alive: a brush drop set by speed and current (leading, low to moderate), an EMF falling with current (low), the -1 tach and a running R (partial). The 100 % data does not choose between the ladder's tables A and B. awake_zero_step_counts the coast's last 100 ms over the rest zero, mean +/- sd; crest_less_coast_zero_minus_stage1_ma that zero less stage 1's in-drive offset as a current, the 100 % check of the inductance result's reading term (absent at 100 % to 0.5 mA). x_speed_table_fit_rms_mv the rms of X = c0 + c_dir + c_w w over the fits and the stall ends, report only. rows_missing, rows_dropped, current_raw_max, spin_ms, rail_v (median, range), board_ntc_c_by_sitting: the capture's checks and conditions, report only. ke_used, r_used, l_used, j_type: quoted.",
+  "j_kg_m2": {
+    "value": 6.433118992563836e-09,
+    "lo": 5.860118662057509e-09,
+    "hi": 7.0746079785920765e-09,
+    "unit": "kg m^2"
+  },
+  "j_origin_kg_m2": {
+    "value": 6.433118992563836e-09,
+    "lo": 6.4005874155513484e-09,
+    "hi": 6.465650569576324e-09,
+    "unit": "kg m^2"
+  },
+  "j_origin_by_direction": {
+    "+1": {
+      "value": 6.561504199589834e-09,
+      "lo": 6.441093977863066e-09,
+      "hi": 6.6819144213166014e-09,
+      "unit": "kg m^2"
+    },
+    "-1": {
+      "value": 6.3047337855378426e-09,
+      "lo": 6.253288824694627e-09,
+      "hi": 6.356178746381058e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_origin_by_set": {
+    "runup-open-1": {
+      "value": 6.5269233742236e-09,
+      "lo": 6.312388006633158e-09,
+      "hi": 6.7414587418140424e-09,
+      "unit": "kg m^2"
+    },
+    "runup-close-1": {
+      "value": 6.377304776630661e-09,
+      "lo": 6.267121333508345e-09,
+      "hi": 6.487488219752976e-09,
+      "unit": "kg m^2"
+    },
+    "runup-open-6": {
+      "value": 6.441513927497324e-09,
+      "lo": 6.294646495828699e-09,
+      "hi": 6.588381359165949e-09,
+      "unit": "kg m^2"
+    },
+    "runup-close-6": {
+      "value": 6.386733891903764e-09,
+      "lo": 6.244828995249678e-09,
+      "hi": 6.5286387885578496e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_line_kg_m2": {
+    "value": 7.0746079785920765e-09,
+    "lo": 6.987954102107813e-09,
+    "hi": 7.16126185507634e-09,
+    "unit": "kg m^2"
+  },
+  "j_line_by_direction": {
+    "+1": {
+      "value": 7.305588581664018e-09,
+      "lo": 6.873626712986293e-09,
+      "hi": 7.737550450341742e-09,
+      "unit": "kg m^2"
+    },
+    "-1": {
+      "value": 6.843627375520134e-09,
+      "lo": 6.571939200787769e-09,
+      "hi": 7.115315550252499e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_line_by_set": {
+    "runup-open-1": {
+      "value": 7.0996973531238875e-09,
+      "lo": 6.7398206044644544e-09,
+      "hi": 7.45957410178332e-09,
+      "unit": "kg m^2"
+    },
+    "runup-close-1": {
+      "value": 7.182371575124724e-09,
+      "lo": 6.733334694312765e-09,
+      "hi": 7.631408455936683e-09,
+      "unit": "kg m^2"
+    },
+    "runup-open-6": {
+      "value": 7.134528497944682e-09,
+      "lo": 6.591011636668662e-09,
+      "hi": 7.678045359220701e-09,
+      "unit": "kg m^2"
+    },
+    "runup-close-6": {
+      "value": 6.881834488175013e-09,
+      "lo": 6.5092321657035766e-09,
+      "hi": 7.25443681064645e-09,
+      "unit": "kg m^2"
+    }
+  },
+  "j_line_extra_drag_a": {
+    "value": -0.04282048976284636,
+    "lo": -0.07046412651477804,
+    "hi": -0.01517685301091468,
+    "unit": "A"
+  },
+  "j_ratio_kg_m2": {
+    "value": 6.399481559206768e-09,
+    "lo": 6.3598444923291915e-09,
+    "hi": 6.439118626084344e-09,
+    "unit": "kg m^2"
+  },
+  "j_concave_kg_m2": {
+    "value": 5.860118662057509e-09,
+    "lo": 5.525416450469021e-09,
+    "hi": 6.194820873645997e-09,
+    "unit": "kg m^2"
+  },
+  "j_concave_k_per_a": {
+    "value": 0.21564111680382803,
+    "lo": 0.20570738245564837,
+    "hi": 0.22557485115200768,
+    "unit": "1/A"
+  },
+  "j_pooled_fit_rms_rad_s2": {
+    "line": {
+      "value": 3814.4138829853177,
+      "lo": null,
+      "hi": null,
+      "unit": "rad/s^2"
+    },
+    "origin": {
+      "value": 4311.817741377671,
+      "lo": null,
+      "hi": null,
+      "unit": "rad/s^2"
+    },
+    "concave": {
+      "value": 3854.3268938231845,
+      "lo": null,
+      "hi": null,
+      "unit": "rad/s^2"
+    }
+  },
+  "j_pooled_coast_kg_m2": {
+    "value": 7.018936973090939e-09,
+    "lo": 6.951530360085216e-09,
+    "hi": 7.086343586096662e-09,
+    "unit": "kg m^2"
+  },
+  "j_awake_zero_kg_m2": {
+    "value": 7.074607978592083e-09,
+    "lo": 6.987954102107817e-09,
+    "hi": 7.161261855076349e-09,
+    "unit": "kg m^2"
+  },
+  "j_ke_sag_kg_m2": {
+    "value": 7.109763387108396e-09,
+    "lo": 7.023107924968598e-09,
+    "hi": 7.1964188492481945e-09,
+    "unit": "kg m^2"
+  },
+  "j_type_drag_curve_kg_m2": {
+    "value": 6.25990910853351e-09,
+    "lo": 6.223486356467235e-09,
+    "hi": 6.296331860599785e-09,
+    "unit": "kg m^2"
+  },
+  "j_over_type": {
+    "origin": {
+      "value": 1.028450503179172,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "line": {
+      "value": 1.1310041278248915,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "j_windows": {
+    "value": 1404.0,
+    "lo": 0.010165537142880899,
+    "hi": 0.0461645699903557,
+    "unit": "fits, from lo to hi s into the run-up"
+  },
+  "coast_drag_current_ma_by_speed": {
+    "+1": {
+      "12 rev/s": {
+        "value": 43.1973997498042,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "37 rev/s": {
+        "value": 48.7891329623735,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "62 rev/s": {
+        "value": 58.27972331123543,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "87 rev/s": {
+        "value": 65.33812196316407,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "112 rev/s": {
+        "value": 73.03469671924272,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "137 rev/s": {
+        "value": 82.46089965759677,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "162 rev/s": {
+        "value": 86.3184462871473,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "187 rev/s": {
+        "value": 90.76117761220029,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "212 rev/s": {
+        "value": 95.92812485544427,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "237 rev/s": {
+        "value": 101.9734189420348,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "262 rev/s": {
+        "value": 110.02668855632584,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "287 rev/s": {
+        "value": 118.80645328918145,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "312 rev/s": {
+        "value": 120.3534605416527,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "337 rev/s": {
+        "value": 130.76883644143928,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "362 rev/s": {
+        "value": 134.59931756657267,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "387 rev/s": {
+        "value": 145.24802660443896,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "412 rev/s": {
+        "value": 156.0038580597884,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "437 rev/s": {
+        "value": 156.99132162094165,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "462 rev/s": {
+        "value": 160.02721651639865,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      }
+    },
+    "-1": {
+      "12 rev/s": {
+        "value": 42.91335440344803,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "37 rev/s": {
+        "value": 51.33784877832325,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "62 rev/s": {
+        "value": 62.500802400114004,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "87 rev/s": {
+        "value": 66.38683903431416,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "112 rev/s": {
+        "value": 72.55862874154894,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "137 rev/s": {
+        "value": 83.0438051527268,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "162 rev/s": {
+        "value": 87.43012626857337,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "187 rev/s": {
+        "value": 90.85405502735703,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "212 rev/s": {
+        "value": 97.39336579457132,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "237 rev/s": {
+        "value": 103.05575421867192,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "262 rev/s": {
+        "value": 109.28252963487985,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "287 rev/s": {
+        "value": 116.19420476286315,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "312 rev/s": {
+        "value": 120.80673651562721,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "337 rev/s": {
+        "value": 128.1095794074494,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "362 rev/s": {
+        "value": 135.7454704536241,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "387 rev/s": {
+        "value": 139.30358713430763,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "412 rev/s": {
+        "value": 143.20671777129846,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "437 rev/s": {
+        "value": 146.97936418699268,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "462 rev/s": {
+        "value": 150.30129872913193,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      },
+      "487 rev/s": {
+        "value": 148.8226674878198,
+        "lo": null,
+        "hi": null,
+        "unit": "mA, -J alpha_c / Kt with j_kg_m2"
+      }
+    }
+  },
+  "coast_decel_by_speed_rad_s2": {
+    "+1": {
+      "12 rev/s": {
+        "value": -7783.17233096514,
+        "lo": -10139.471080824722,
+        "hi": -5426.873581105557,
+        "unit": "rad/s^2"
+      },
+      "37 rev/s": {
+        "value": -8790.673325800031,
+        "lo": -10825.851890453581,
+        "hi": -6755.494761146481,
+        "unit": "rad/s^2"
+      },
+      "62 rev/s": {
+        "value": -10500.658200714217,
+        "lo": -12353.694607177946,
+        "hi": -8647.621794250488,
+        "unit": "rad/s^2"
+      },
+      "87 rev/s": {
+        "value": -11772.418385512414,
+        "lo": -13532.000323658927,
+        "hi": -10012.8364473659,
+        "unit": "rad/s^2"
+      },
+      "112 rev/s": {
+        "value": -13159.163144031996,
+        "lo": -15005.05329135686,
+        "hi": -11313.272996707132,
+        "unit": "rad/s^2"
+      },
+      "137 rev/s": {
+        "value": -14857.546896776097,
+        "lo": -16744.682241816336,
+        "hi": -12970.411551735857,
+        "unit": "rad/s^2"
+      },
+      "162 rev/s": {
+        "value": -15552.58757900285,
+        "lo": -17448.61180336382,
+        "hi": -13656.563354641878,
+        "unit": "rad/s^2"
+      },
+      "187 rev/s": {
+        "value": -16353.065008740301,
+        "lo": -18151.592664974803,
+        "hi": -14554.537352505798,
+        "unit": "rad/s^2"
+      },
+      "212 rev/s": {
+        "value": -17284.029396691807,
+        "lo": -19081.300298109752,
+        "hi": -15486.758495273863,
+        "unit": "rad/s^2"
+      },
+      "237 rev/s": {
+        "value": -18373.251570707314,
+        "lo": -20156.66150189845,
+        "hi": -16589.84163951618,
+        "unit": "rad/s^2"
+      },
+      "262 rev/s": {
+        "value": -19824.26449275331,
+        "lo": -21698.67586390861,
+        "hi": -17949.85312159801,
+        "unit": "rad/s^2"
+      },
+      "287 rev/s": {
+        "value": -21406.175032205516,
+        "lo": -23781.384155102387,
+        "hi": -19030.965909308645,
+        "unit": "rad/s^2"
+      },
+      "312 rev/s": {
+        "value": -21684.90995868199,
+        "lo": -23849.919659183128,
+        "hi": -19519.900258180853,
+        "unit": "rad/s^2"
+      },
+      "337 rev/s": {
+        "value": -23561.51980069424,
+        "lo": -25950.382388374936,
+        "hi": -21172.657213013546,
+        "unit": "rad/s^2"
+      },
+      "362 rev/s": {
+        "value": -24251.683905017617,
+        "lo": -26367.946971781585,
+        "hi": -22135.42083825365,
+        "unit": "rad/s^2"
+      },
+      "387 rev/s": {
+        "value": -26170.334981796725,
+        "lo": -29077.623075272157,
+        "hi": -23263.046888321292,
+        "unit": "rad/s^2"
+      },
+      "412 rev/s": {
+        "value": -28108.287040593495,
+        "lo": -31262.839206101387,
+        "hi": -24953.734875085604,
+        "unit": "rad/s^2"
+      },
+      "437 rev/s": {
+        "value": -28286.205135467695,
+        "lo": -31739.126733580513,
+        "hi": -24833.283537354877,
+        "unit": "rad/s^2"
+      },
+      "462 rev/s": {
+        "value": -28833.20317902809,
+        "lo": -32088.21907137003,
+        "hi": -25578.18728668615,
+        "unit": "rad/s^2"
+      }
+    },
+    "-1": {
+      "12 rev/s": {
+        "value": -7731.993929179306,
+        "lo": -10508.730438486105,
+        "hi": -4955.257419872506,
+        "unit": "rad/s^2"
+      },
+      "37 rev/s": {
+        "value": -9249.892967099928,
+        "lo": -11451.151042961392,
+        "hi": -7048.634891238464,
+        "unit": "rad/s^2"
+      },
+      "62 rev/s": {
+        "value": -11261.199024042922,
+        "lo": -13381.810653644474,
+        "hi": -9140.58739444137,
+        "unit": "rad/s^2"
+      },
+      "87 rev/s": {
+        "value": -11961.37294616796,
+        "lo": -14056.31371595477,
+        "hi": -9866.43217638115,
+        "unit": "rad/s^2"
+      },
+      "112 rev/s": {
+        "value": -13073.386705331854,
+        "lo": -14869.397194791036,
+        "hi": -11277.376215872671,
+        "unit": "rad/s^2"
+      },
+      "137 rev/s": {
+        "value": -14962.572985094856,
+        "lo": -17111.276396348414,
+        "hi": -12813.869573841297,
+        "unit": "rad/s^2"
+      },
+      "162 rev/s": {
+        "value": -15752.886599833666,
+        "lo": -17978.422915866544,
+        "hi": -13527.350283800788,
+        "unit": "rad/s^2"
+      },
+      "187 rev/s": {
+        "value": -16369.799370808536,
+        "lo": -18319.012704134268,
+        "hi": -14420.586037482804,
+        "unit": "rad/s^2"
+      },
+      "212 rev/s": {
+        "value": -17548.031924660238,
+        "lo": -19339.868997174566,
+        "hi": -15756.194852145909,
+        "unit": "rad/s^2"
+      },
+      "237 rev/s": {
+        "value": -18568.263354442926,
+        "lo": -20509.884751246318,
+        "hi": -16626.641957639535,
+        "unit": "rad/s^2"
+      },
+      "262 rev/s": {
+        "value": -19690.184266610402,
+        "lo": -21587.2052889899,
+        "hi": -17793.163244230906,
+        "unit": "rad/s^2"
+      },
+      "287 rev/s": {
+        "value": -20935.508265932454,
+        "lo": -22780.45020724718,
+        "hi": -19090.56632461773,
+        "unit": "rad/s^2"
+      },
+      "312 rev/s": {
+        "value": -21766.57980546358,
+        "lo": -23551.677184498858,
+        "hi": -19981.482426428305,
+        "unit": "rad/s^2"
+      },
+      "337 rev/s": {
+        "value": -23082.383188589054,
+        "lo": -24983.145940456012,
+        "hi": -21181.620436722096,
+        "unit": "rad/s^2"
+      },
+      "362 rev/s": {
+        "value": -24458.194146125246,
+        "lo": -26324.451395034193,
+        "hi": -22591.9368972163,
+        "unit": "rad/s^2"
+      },
+      "387 rev/s": {
+        "value": -25099.284477021076,
+        "lo": -27091.65233356953,
+        "hi": -23106.91662047262,
+        "unit": "rad/s^2"
+      },
+      "412 rev/s": {
+        "value": -25802.53834308525,
+        "lo": -27771.46560154156,
+        "hi": -23833.611084628938,
+        "unit": "rad/s^2"
+      },
+      "437 rev/s": {
+        "value": -26482.28197041502,
+        "lo": -28689.870201208454,
+        "hi": -24274.693739621587,
+        "unit": "rad/s^2"
+      },
+      "462 rev/s": {
+        "value": -27080.817742554238,
+        "lo": -29201.109268966735,
+        "hi": -24960.52621614174,
+        "unit": "rad/s^2"
+      },
+      "487 rev/s": {
+        "value": -26814.402591833663,
+        "lo": -29586.04289717792,
+        "hi": -24042.762286489407,
+        "unit": "rad/s^2"
+      }
+    }
+  },
+  "coast_stop_ms": {
+    "value": 182.60000000000002,
+    "lo": 168.75,
+    "hi": 195.6,
+    "unit": "ms"
+  },
+  "measured_rise_63_ms": {
+    "+1": {
+      "value": 19.781404112198402,
+      "lo": 19.295658083430073,
+      "hi": 20.26715014096673,
+      "unit": "ms, to 63 % of the fit's asymptote"
+    },
+    "-1": {
+      "value": 20.20826119264697,
+      "lo": 19.82622659684976,
+      "hi": 20.590295788444177,
+      "unit": "ms, to 63 % of the fit's asymptote"
+    }
+  },
+  "rise_63_of_cut_speed_ms": {
+    "+1": {
+      "value": 16.927941055669336,
+      "lo": 16.69875760530799,
+      "hi": 17.157124506030684,
+      "unit": "ms"
+    },
+    "-1": {
+      "value": 16.89463373414962,
+      "lo": 16.538502205557094,
+      "hi": 17.25076526274215,
+      "unit": "ms"
+    }
+  },
+  "rise_tau_ms": {
+    "value": 20.43493731199914,
+    "lo": 19.63457102617629,
+    "hi": 21.23530359782199,
+    "unit": "ms"
+  },
+  "rise_fit_rms_rev_s": {
+    "value": 4.245850916432334,
+    "lo": 2.5141714141087776,
+    "hi": 5.977530418755891,
+    "unit": "rev/s"
+  },
+  "no_load_speed_rev_s": {
+    "value": 533.7211404557644,
+    "lo": 521.9105824000354,
+    "hi": 545.5316985114935,
+    "unit": "rev/s, the first-order fit's asymptote, extrapolated past the 52 ms cut"
+  },
+  "no_load_speed_by_direction": {
+    "+1": {
+      "value": 521.9105824000354,
+      "lo": 515.2935853454189,
+      "hi": 528.5275794546519,
+      "unit": "rev/s, extrapolated"
+    },
+    "-1": {
+      "value": 545.5316985114935,
+      "lo": 543.8344310173277,
+      "hi": 547.2289660056592,
+      "unit": "rev/s, extrapolated"
+    }
+  },
+  "speed_at_cut_rev_s": {
+    "+1": {
+      "value": 475.21007185843024,
+      "lo": 470.6374063481651,
+      "hi": 479.7827373686954,
+      "unit": "rev/s"
+    },
+    "-1": {
+      "value": 491.54855812947744,
+      "lo": 489.22542411138,
+      "hi": 493.8716921475749,
+      "unit": "rev/s"
+    }
+  },
+  "speed_at_cut_coast_e0_rev_s": {
+    "+1": {
+      "value": 481.7976776818014,
+      "lo": 472.81711229516975,
+      "hi": 490.7782430684331,
+      "unit": "rev/s"
+    },
+    "-1": {
+      "value": 505.27405002833615,
+      "lo": 499.7905441477398,
+      "hi": 510.7575559089325,
+      "unit": "rev/s"
+    }
+  },
+  "cut_over_no_load": {
+    "value": 0.9058102380735183,
+    "lo": 0.8984312817770009,
+    "hi": 0.9131891943700358,
+    "unit": "ratio"
+  },
+  "stall_current_a": {
+    "value": 0.9808318557845555,
+    "lo": 0.9697553214103941,
+    "hi": 0.9919083901587168,
+    "unit": "A"
+  },
+  "stall_terminal_v": {
+    "value": 4.406817029679416,
+    "lo": 4.394116128189137,
+    "hi": 4.419517931169694,
+    "unit": "V"
+  },
+  "stall_torque_n_m": {
+    "value": 0.0010456040991134643,
+    "lo": 0.0010422392649550854,
+    "hi": 0.001048968933271843,
+    "unit": "N m"
+  },
+  "stall_torque_first_ms_n_m": {
+    "value": 0.0010829144654235573,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "peak_power_w": {
+    "value": 0.906053632010377,
+    "lo": 0.8639782023298317,
+    "hi": 0.9305315857051958,
+    "unit": "W"
+  },
+  "peak_power_per_run_w": {
+    "value": 0.8846510646085463,
+    "lo": 0.8437797123149827,
+    "hi": 0.9255224169021098,
+    "unit": "W"
+  },
+  "peak_power_line_j_w": {
+    "value": 0.9964022523852509,
+    "lo": null,
+    "hi": null,
+    "unit": "W"
+  },
+  "peak_power_torque_n_m": {
+    "value": 0.0006250000000000001,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "peak_power_rev_s": {
+    "value": 230.11445341979507,
+    "lo": null,
+    "hi": null,
+    "unit": "rev/s"
+  },
+  "peak_efficiency": {
+    "value": 0.3898260597069394,
+    "lo": 0.3730025864884081,
+    "hi": 0.40030611821043216,
+    "unit": ""
+  },
+  "peak_efficiency_torque_n_m": {
+    "value": 0.000275,
+    "lo": null,
+    "hi": null,
+    "unit": "N m"
+  },
+  "key_numbers_by_direction": {
+    "+1": {
+      "stall_line_mnm": 1.0422392649550853,
+      "w0_line_rev_s": 524.7582449315364,
+      "p_max_w": 0.8639782023298317,
+      "p_max_torque_mnm": 0.6250000000000001,
+      "p_max_rev_s": 222.3433758112893,
+      "p_line_w": 0.8591056564934554,
+      "eff_max": 0.3730025864884081,
+      "eff_max_torque_mnm": 0.32500000000000007,
+      "eff_max_rev_s": 360.6980576044232,
+      "w_cut_rev_s": 475.21007185843024,
+      "w_inf_rev_s": 521.9105824000354
+    },
+    "-1": {
+      "stall_line_mnm": 1.048968933271843,
+      "w0_line_rev_s": 545.0653164179158,
+      "p_max_w": 0.9305315857051958,
+      "p_max_torque_mnm": 0.6250000000000001,
+      "p_max_rev_s": 237.88280651502535,
+      "p_line_w": 0.8981131412240383,
+      "eff_max": 0.40030611821043216,
+      "eff_max_torque_mnm": 0.37500000000000006,
+      "eff_max_rev_s": 352.11746499833424,
+      "w_cut_rev_s": 491.54855812947744,
+      "w_inf_rev_s": 545.5316985114935
+    }
+  },
+  "curve": [
+    {
+      "torque_mnm": 0.075,
+      "n": 26,
+      "speed_rev_s": 473.36,
+      "current_a": 0.24229,
+      "terminal_v": 4.7878,
+      "power_w": 0.26933,
+      "efficiency": 0.2301
+    },
+    {
+      "torque_mnm": 0.125,
+      "n": 158,
+      "speed_rev_s": 472.98,
+      "current_a": 0.25611,
+      "terminal_v": 4.7817,
+      "power_w": 0.39402,
+      "efficiency": 0.3186
+    },
+    {
+      "torque_mnm": 0.175,
+      "n": 214,
+      "speed_rev_s": 451.81,
+      "current_a": 0.28902,
+      "terminal_v": 4.7638,
+      "power_w": 0.48549,
+      "efficiency": 0.3594
+    },
+    {
+      "torque_mnm": 0.225,
+      "n": 179,
+      "speed_rev_s": 421.99,
+      "current_a": 0.33202,
+      "terminal_v": 4.742,
+      "power_w": 0.60425,
+      "efficiency": 0.3873
+    },
+    {
+      "torque_mnm": 0.275,
+      "n": 181,
+      "speed_rev_s": 396.7,
+      "current_a": 0.3707,
+      "terminal_v": 4.7217,
+      "power_w": 0.6822,
+      "efficiency": 0.3898
+    },
+    {
+      "torque_mnm": 0.325,
+      "n": 153,
+      "speed_rev_s": 367.43,
+      "current_a": 0.41531,
+      "terminal_v": 4.6981,
+      "power_w": 0.75374,
+      "efficiency": 0.3886
+    },
+    {
+      "torque_mnm": 0.375,
+      "n": 116,
+      "speed_rev_s": 341.62,
+      "current_a": 0.45567,
+      "terminal_v": 4.678,
+      "power_w": 0.80134,
+      "efficiency": 0.3784
+    },
+    {
+      "torque_mnm": 0.425,
+      "n": 130,
+      "speed_rev_s": 317.16,
+      "current_a": 0.4953,
+      "terminal_v": 4.6582,
+      "power_w": 0.84105,
+      "efficiency": 0.3651
+    },
+    {
+      "torque_mnm": 0.475,
+      "n": 85,
+      "speed_rev_s": 290.91,
+      "current_a": 0.53897,
+      "terminal_v": 4.6361,
+      "power_w": 0.85607,
+      "efficiency": 0.3432
+    },
+    {
+      "torque_mnm": 0.525,
+      "n": 82,
+      "speed_rev_s": 267.29,
+      "current_a": 0.57739,
+      "terminal_v": 4.6181,
+      "power_w": 0.88262,
+      "efficiency": 0.33
+    },
+    {
+      "torque_mnm": 0.575,
+      "n": 51,
+      "speed_rev_s": 244.13,
+      "current_a": 0.61437,
+      "terminal_v": 4.598,
+      "power_w": 0.87009,
+      "efficiency": 0.3058
+    },
+    {
+      "torque_mnm": 0.625,
+      "n": 25,
+      "speed_rev_s": 230.11,
+      "current_a": 0.63512,
+      "terminal_v": 4.5857,
+      "power_w": 0.90605,
+      "efficiency": 0.3115
+    }
+  ],
+  "terminal_source": {
+    "form": "u = v_s - r_s i at the motor's terminals over the acceleration fits",
+    "v_s": {
+      "value": 4.913590182397524,
+      "lo": null,
+      "hi": null,
+      "unit": "V"
+    },
+    "r_s": {
+      "value": 0.5159352900340629,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    }
+  },
+  "output_side_lossless": {
+    "stall_torque_n_m": {
+      "value": 0.3221017932254297,
+      "lo": null,
+      "hi": null,
+      "unit": "N m at the horn before gear loss"
+    },
+    "no_load_speed_deg_s": {
+      "value": 623.7219681271883,
+      "lo": null,
+      "hi": null,
+      "unit": "deg/s at the horn, extrapolated"
+    }
+  },
+  "speed_count_start_ms": {
+    "value": 8.61116693222977,
+    "lo": 7.87663945050196,
+    "hi": 9.375379733015876,
+    "unit": "ms"
+  },
+  "speed_count_start_rev_s": {
+    "value": 190.274169471007,
+    "lo": 174.02010308637597,
+    "hi": 220.3932561978173,
+    "unit": "rev/s"
+  },
+  "crossings_total": {
+    "value": 2475.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  },
+  "crossings_repaired": {
+    "value": 2.0,
+    "lo": null,
+    "hi": null,
+    "unit": "count"
+  },
+  "windows_flagged": {
+    "value": 41.0,
+    "lo": null,
+    "hi": null,
+    "unit": "of 2331 turn windows"
+  },
+  "fits_flagged": {
+    "value": 425.0,
+    "lo": null,
+    "hi": null,
+    "unit": "of 1701 fits, the two flags' counts added, a fit failing both counted twice; 297 left out"
+  },
+  "count_over_cut_emf_by_direction": {
+    "+1": {
+      "value": 0.9916377083621977,
+      "lo": 0.9706543026518945,
+      "hi": 1.0126211140725008,
+      "unit": "ratio"
+    },
+    "-1": {
+      "value": 0.9773207102823706,
+      "lo": 0.9680310809582623,
+      "hi": 0.9866103396064788,
+      "unit": "ratio"
+    }
+  },
+  "oscnb_count_over_order_count": {
+    "+1": {
+      "value": 1.0055661138252079,
+      "lo": 0.9944129985217147,
+      "hi": 1.016719229128701,
+      "unit": "ratio"
+    },
+    "-1": {
+      "value": 0.9986091652983621,
+      "lo": 0.9872727642641085,
+      "hi": 1.0099455663326158,
+      "unit": "ratio"
+    }
+  },
+  "pot_over_count_15_45ms": {
+    "value": 1.0587633719842335,
+    "lo": 1.019958660408636,
+    "hi": 1.0975680835598312,
+    "unit": "ratio, nominal pot slope x gear over the count"
+  },
+  "emf_seed_count_maxdiff_pct": {
+    "value": 0.6199209126206695,
+    "lo": 0.07472872914426887,
+    "hi": 28.5085151862329,
+    "unit": "%"
+  },
+  "dropouts_per_s_by_direction_and_set": {
+    "-1 runup-close-1": {
+      "value": 6.439150032195751,
+      "lo": 0.0,
+      "hi": 12.878300064391501,
+      "unit": "1/s"
+    },
+    "+1 runup-close-1": {
+      "value": 38.6349001931745,
+      "lo": 22.862268237069042,
+      "hi": 54.40753214927996,
+      "unit": "1/s"
+    },
+    "-1 runup-close-6": {
+      "value": 0.0,
+      "lo": -6.428801028608165,
+      "hi": 6.428801028608165,
+      "unit": "1/s"
+    },
+    "+1 runup-close-6": {
+      "value": 77.269800386349,
+      "lo": 54.96393035970539,
+      "hi": 99.57567041299262,
+      "unit": "1/s"
+    },
+    "-1 runup-open-1": {
+      "value": 6.4412238325281805,
+      "lo": 0.0,
+      "hi": 12.882447665056361,
+      "unit": "1/s"
+    },
+    "+1 runup-open-1": {
+      "value": 12.890750886239122,
+      "lo": 3.775613519992941,
+      "hi": 22.005888252485303,
+      "unit": "1/s"
+    },
+    "-1 runup-open-6": {
+      "value": 0.0,
+      "lo": -6.45577792123951,
+      "hi": 6.45577792123951,
+      "unit": "1/s"
+    },
+    "+1 runup-open-6": {
+      "value": 64.45375443119562,
+      "lo": 44.07168765602076,
+      "hi": 84.83582120637048,
+      "unit": "1/s"
+    }
+  },
+  "dropouts_last20ms_per_s_by_direction_and_set": {
+    "-1 runup-close-1": {
+      "value": 16.666666666666668,
+      "lo": 0.0,
+      "hi": 33.333333333333336,
+      "unit": "1/s"
+    },
+    "+1 runup-close-1": {
+      "value": 100.0,
+      "lo": 59.1751709536137,
+      "hi": 140.8248290463863,
+      "unit": "1/s"
+    },
+    "-1 runup-close-6": {
+      "value": 0.0,
+      "lo": -16.666666666666668,
+      "hi": 16.666666666666668,
+      "unit": "1/s"
+    },
+    "+1 runup-close-6": {
+      "value": 200.0,
+      "lo": 142.26497308103743,
+      "hi": 257.7350269189626,
+      "unit": "1/s"
+    },
+    "-1 runup-open-1": {
+      "value": 16.666666666666668,
+      "lo": 0.0,
+      "hi": 33.333333333333336,
+      "unit": "1/s"
+    },
+    "+1 runup-open-1": {
+      "value": 33.333333333333336,
+      "lo": 9.76310729378175,
+      "hi": 56.90355937288492,
+      "unit": "1/s"
+    },
+    "-1 runup-open-6": {
+      "value": 0.0,
+      "lo": -16.666666666666668,
+      "hi": 16.666666666666668,
+      "unit": "1/s"
+    },
+    "+1 runup-open-6": {
+      "value": 133.33333333333334,
+      "lo": 86.19288125423017,
+      "hi": 180.4737854124365,
+      "unit": "1/s"
+    }
+  },
+  "dropouts_per_s_by_direction_and_sitting": {
+    "-1 sitting 1": {
+      "value": 6.440186765416197,
+      "lo": 1.8862870314825466,
+      "hi": 10.994086499349848,
+      "unit": "1/s"
+    },
+    "+1 sitting 1": {
+      "value": 25.769044934772104,
+      "lo": 16.658311725733,
+      "hi": 34.87977814381121,
+      "unit": "1/s"
+    },
+    "-1 sitting 6": {
+      "value": 0.0,
+      "lo": -3.221130616846513,
+      "hi": 3.221130616846513,
+      "unit": "1/s"
+    },
+    "+1 sitting 6": {
+      "value": 70.86487357062329,
+      "lo": 55.75643176091664,
+      "hi": 85.97331538032994,
+      "unit": "1/s"
+    }
+  },
+  "dropouts_plus_sitting6_over_1_sigma": {
+    "value": 2.556038601690775,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma, Poisson"
+  },
+  "dropouts_per_s_by_speed": {
+    "-1 sitting 1 275 rev/s": {
+      "value": 0.0,
+      "lo": -40.65040650406504,
+      "hi": 40.65040650406504,
+      "unit": "1/s"
+    },
+    "-1 sitting 1 325 rev/s": {
+      "value": 0.0,
+      "lo": -26.80965147453083,
+      "hi": 26.80965147453083,
+      "unit": "1/s"
+    },
+    "-1 sitting 1 375 rev/s": {
+      "value": 0.0,
+      "lo": -26.560424966799467,
+      "hi": 26.560424966799467,
+      "unit": "1/s"
+    },
+    "-1 sitting 1 425 rev/s": {
+      "value": 0.0,
+      "lo": -18.95734597156398,
+      "hi": 18.95734597156398,
+      "unit": "1/s"
+    },
+    "-1 sitting 1 475 rev/s": {
+      "value": 21.436227224008576,
+      "lo": 6.278525590856429,
+      "hi": 36.59392885716072,
+      "unit": "1/s"
+    },
+    "-1 sitting 6 275 rev/s": {
+      "value": 0.0,
+      "lo": -44.84304932735426,
+      "hi": 44.84304932735426,
+      "unit": "1/s"
+    },
+    "-1 sitting 6 325 rev/s": {
+      "value": 0.0,
+      "lo": -26.490066225165563,
+      "hi": 26.490066225165563,
+      "unit": "1/s"
+    },
+    "-1 sitting 6 375 rev/s": {
+      "value": 0.0,
+      "lo": -27.2108843537415,
+      "hi": 27.2108843537415,
+      "unit": "1/s"
+    },
+    "-1 sitting 6 425 rev/s": {
+      "value": 0.0,
+      "lo": -19.249278152069298,
+      "hi": 19.249278152069298,
+      "unit": "1/s"
+    },
+    "-1 sitting 6 475 rev/s": {
+      "value": 0.0,
+      "lo": -10.27221366204417,
+      "hi": 10.27221366204417,
+      "unit": "1/s"
+    },
+    "+1 sitting 1 275 rev/s": {
+      "value": 0.0,
+      "lo": -32.94892915980231,
+      "hi": 32.94892915980231,
+      "unit": "1/s"
+    },
+    "+1 sitting 1 325 rev/s": {
+      "value": 0.0,
+      "lo": -29.15451895043732,
+      "hi": 29.15451895043732,
+      "unit": "1/s"
+    },
+    "+1 sitting 1 375 rev/s": {
+      "value": 0.0,
+      "lo": -23.04147465437788,
+      "hi": 23.04147465437788,
+      "unit": "1/s"
+    },
+    "+1 sitting 1 425 rev/s": {
+      "value": 29.390154298310065,
+      "lo": 8.608176893856058,
+      "hi": 50.17213170276408,
+      "unit": "1/s"
+    },
+    "+1 sitting 1 475 rev/s": {
+      "value": 92.3076923076923,
+      "lo": 54.62323472641265,
+      "hi": 129.99214988897197,
+      "unit": "1/s"
+    },
+    "+1 sitting 6 275 rev/s": {
+      "value": 0.0,
+      "lo": -35.842293906810035,
+      "hi": 35.842293906810035,
+      "unit": "1/s"
+    },
+    "+1 sitting 6 325 rev/s": {
+      "value": 0.0,
+      "lo": -28.28854314002829,
+      "hi": 28.28854314002829,
+      "unit": "1/s"
+    },
+    "+1 sitting 6 375 rev/s": {
+      "value": 22.321428571428573,
+      "lo": 0.0,
+      "hi": 44.642857142857146,
+      "unit": "1/s"
+    },
+    "+1 sitting 6 425 rev/s": {
+      "value": 90.09009009009009,
+      "lo": 49.80057698198576,
+      "hi": 130.37960319819442,
+      "unit": "1/s"
+    },
+    "+1 sitting 6 475 rev/s": {
+      "value": 176.6304347826087,
+      "lo": 127.64196636597839,
+      "hi": 225.61890319923899,
+      "unit": "1/s"
+    }
+  },
+  "dropout_rows_per_run": {
+    "runup-open-1 k0 +1": {
+      "value": 1.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-1 k0 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-1 k1 +1": {
+      "value": 1.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-1 k1 -1": {
+      "value": 1.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-1 k2 +1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-1 k2 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-1 k0 +1": {
+      "value": 1.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-1 k0 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-1 k1 +1": {
+      "value": 3.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-1 k1 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-1 k2 +1": {
+      "value": 2.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-1 k2 -1": {
+      "value": 1.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-6 k0 +1": {
+      "value": 5.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-6 k0 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-6 k1 +1": {
+      "value": 4.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-6 k1 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-6 k2 +1": {
+      "value": 1.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-open-6 k2 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-6 k0 +1": {
+      "value": 7.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-6 k0 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-6 k1 +1": {
+      "value": 4.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-6 k1 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-6 k2 +1": {
+      "value": 1.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    },
+    "runup-close-6 k2 -1": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "rows in 52 ms"
+    }
+  },
+  "x_100pct_mv_by_knot": {
+    "+1 250 rev/s": {
+      "value": 264.6155543311554,
+      "lo": 248.37506966002243,
+      "hi": 280.8560390022884,
+      "unit": "mV, +/- sd over 11 runs, at 0.602 A"
+    },
+    "+1 300 rev/s": {
+      "value": 279.6531410871579,
+      "lo": 263.08367460385756,
+      "hi": 296.22260757045825,
+      "unit": "mV, +/- sd over 12 runs, at 0.520 A"
+    },
+    "+1 350 rev/s": {
+      "value": 287.1932568579668,
+      "lo": 269.06728633023886,
+      "hi": 305.3192273856947,
+      "unit": "mV, +/- sd over 12 runs, at 0.442 A"
+    },
+    "+1 400 rev/s": {
+      "value": 292.72719773315146,
+      "lo": 263.08985406651163,
+      "hi": 322.3645413997913,
+      "unit": "mV, +/- sd over 10 runs, at 0.363 A"
+    },
+    "+1 450 rev/s": {
+      "value": 347.1159280042811,
+      "lo": 305.253188817782,
+      "hi": 388.9786671907802,
+      "unit": "mV, +/- sd over 8 runs, at 0.274 A"
+    },
+    "-1 250 rev/s": {
+      "value": 229.24146026634526,
+      "lo": 217.99823838890038,
+      "hi": 240.48468214379014,
+      "unit": "mV, +/- sd over 9 runs, at 0.608 A"
+    },
+    "-1 300 rev/s": {
+      "value": 251.7671436884972,
+      "lo": 239.3988259756599,
+      "hi": 264.1354614013345,
+      "unit": "mV, +/- sd over 11 runs, at 0.526 A"
+    },
+    "-1 350 rev/s": {
+      "value": 265.6473810479798,
+      "lo": 258.2375597351875,
+      "hi": 273.0572023607721,
+      "unit": "mV, +/- sd over 12 runs, at 0.444 A"
+    },
+    "-1 400 rev/s": {
+      "value": 262.2529529268533,
+      "lo": 253.22428793204529,
+      "hi": 271.28161792166134,
+      "unit": "mV, +/- sd over 12 runs, at 0.368 A"
+    },
+    "-1 450 rev/s": {
+      "value": 249.53508836226086,
+      "lo": 239.19791110358855,
+      "hi": 259.8722656209332,
+      "unit": "mV, +/- sd over 12 runs, at 0.293 A"
+    }
+  },
+  "x_100pct_ladder_a_mv_by_knot": {
+    "+1 150 rev/s": {
+      "value": 82.98490125386778,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 200 rev/s": {
+      "value": 106.76155231555445,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 250 rev/s": {
+      "value": 130.76154354445273,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 300 rev/s": {
+      "value": 158.76655137276157,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 350 rev/s": {
+      "value": 181.73975789527694,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 400 rev/s": {
+      "value": 236.53339337796194,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 450 rev/s": {
+      "value": 405.69941380596487,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 150 rev/s": {
+      "value": 75.48216142848857,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 200 rev/s": {
+      "value": 90.4331855473897,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 250 rev/s": {
+      "value": 114.57571225783272,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 300 rev/s": {
+      "value": 127.77257749552977,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 350 rev/s": {
+      "value": 155.5457370270724,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 400 rev/s": {
+      "value": 192.53257728421997,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 450 rev/s": {
+      "value": 299.7193674200972,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    }
+  },
+  "x_100pct_ladder_b_mv_by_knot": {
+    "+1 150 rev/s": {
+      "value": 43.55741291563682,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 200 rev/s": {
+      "value": 54.56971724551532,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 250 rev/s": {
+      "value": 68.5340169211093,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 300 rev/s": {
+      "value": 87.57202848993606,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 350 rev/s": {
+      "value": 108.33687048013587,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 400 rev/s": {
+      "value": 141.5533118118243,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "+1 450 rev/s": {
+      "value": 277.890050593943,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 150 rev/s": {
+      "value": 36.44589098738756,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 200 rev/s": {
+      "value": 41.27125768101237,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 250 rev/s": {
+      "value": 56.10927118725915,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 300 rev/s": {
+      "value": 55.24461031061649,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 350 rev/s": {
+      "value": 83.50096133610907,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 400 rev/s": {
+      "value": 108.82192649930204,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    },
+    "-1 450 rev/s": {
+      "value": 179.7048548871212,
+      "lo": null,
+      "hi": null,
+      "unit": "mV, quoted"
+    }
+  },
+  "x_cut_e0_mv_by_direction": {
+    "+1": {
+      "value": 370.110017240181,
+      "lo": 269.70974937661646,
+      "hi": 470.5102851037455,
+      "unit": "mV, Ke-free, E0 from the coast"
+    },
+    "-1": {
+      "value": 166.27601318323613,
+      "lo": 131.7368538978778,
+      "hi": 200.81517246859445,
+      "unit": "mV, Ke-free, E0 from the coast"
+    }
+  },
+  "x_cut_count_mv_by_direction": {
+    "+1": {
+      "value": 400.49995877023065,
+      "lo": 338.931020784507,
+      "hi": 462.0688967559543,
+      "unit": "mV, by the count"
+    },
+    "-1": {
+      "value": 250.02474160905135,
+      "lo": 235.63870821846317,
+      "hi": 264.4107749996395,
+      "unit": "mV, by the count"
+    }
+  },
+  "x_stall_end_mv": {
+    "value": 67.26150923678743,
+    "lo": 8.561636158053034,
+    "hi": 125.96138231552183,
+    "unit": "mV, 0.8 to 1.5 ms, +/- sd"
+  },
+  "x_vs_ladder_100_dx_di_ohm": {
+    "-1": {
+      "value": 0.5328394121845937,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm, from 0.143 to 0.389 A at 387 rev/s"
+    },
+    "+1": {
+      "value": 0.548756338372998,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm, from 0.160 to 0.406 A at 373 rev/s"
+    }
+  },
+  "awake_zero_step_counts": {
+    "value": 5.742166666666681,
+    "lo": 5.186869964410803,
+    "hi": 6.297463368922559,
+    "unit": "counts over the rest zero, the coast's last 100 ms"
+  },
+  "crest_less_coast_zero_minus_stage1_ma": {
+    "value": 0.4243455881596279,
+    "lo": null,
+    "hi": null,
+    "unit": "mA, the two zeros' difference at 100 %"
+  },
+  "x_speed_table_fit_rms_mv": {
+    "value": 30.56749999840916,
+    "lo": null,
+    "hi": null,
+    "unit": "mV, X = c0 + c_dir + c_w w over fits + stall"
+  },
+  "rows_missing": {
+    "value": 0.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rows"
+  },
+  "rows_dropped": {
+    "value": 0.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rows"
+  },
+  "current_raw_max": {
+    "value": 2597.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "spin_ms": {
+    "value": 52.0,
+    "lo": null,
+    "hi": null,
+    "unit": "ms, the runway's cut of the 200 ms asked"
+  },
+  "rail_v": {
+    "value": 4.98733060181946,
+    "lo": 4.9772311015607675,
+    "hi": 5.0055097022851065,
+    "unit": "V, manifest probe before each sweep"
+  },
+  "board_ntc_c_by_sitting": {
+    "1": {
+      "value": 25.41866376478842,
+      "lo": 25.021978832712136,
+      "hi": 25.992426136985046,
+      "unit": "C"
+    },
+    "6": {
+      "value": 26.424954735275463,
+      "lo": 25.94816472696226,
+      "hi": 26.70271213261333,
+      "unit": "C"
+    }
+  },
+  "ke_used_mv_per_rev_s": {
+    "value": 7.282835390658132,
+    "lo": null,
+    "hi": null,
+    "unit": "mV per rev/s, the ladder result, quoted"
+  },
+  "r_used_ohm": {
+    "value": 4.2188705084081874,
+    "lo": 4.206494831397831,
+    "hi": 4.23004332394171,
+    "unit": "ohm, the resistance result's r_term_ohm, quoted"
+  },
+  "l_used_mh": {
+    "value": 0.8197583711407872,
+    "lo": null,
+    "hi": null,
+    "unit": "mH, the inductance result, quoted"
+  },
+  "j_type_kg_m2": {
+    "value": 6.2551566387275e-09,
+    "lo": 5.8267346243479815e-09,
+    "hi": 6.833594431134479e-09,
+    "unit": "kg m^2, mg90-b stage 2, quoted"
+  }
+}
