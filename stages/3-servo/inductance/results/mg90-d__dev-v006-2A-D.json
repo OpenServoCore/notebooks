@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-d__dev-v006-2A-D/inductance/locked-4, telemetry/mg90-d__dev-v006-2A-D/inductance/wound-5, telemetry/mg90-d__dev-v006-2A-D/inductance/stop-6",
-  "notes": "stage 3 inductance of mg90-d on dev-v006-2A-D: duty-step bursts into the held horn on a 5 V rail at three seats, inductance/locked-4 (the horn lock at mid travel, sitting 4), inductance/wound-5 (the same lock after a 24 % 300 ms reverse press, sitting 5) and inductance/stop-6 (the low end stop after the same press, sitting 6); at each, five groups in the order g1 25 % forward (the first after the seat was set, also after a reverse), g2 40 % forward, g3 40 % reverse, g4 25 % reverse, five bursts each, and g5 25 % reverse, three bursts after a 20 s rest. One burst is set aside by the rule that a burst reading a different current from its group from its first period on, at the same applied volts, reads a different circuit: stop-6/g1-fwd-25 burst 4 (first window current 19 % over its group's others); it stays in the edge pools, the fits table, its group's references and the length scan, and is out of every seat number and every key below but the stop_moving_burst_* keys. Estimators are stage 2 inductance's: the winding current per period is the window line at the middle of the bridge's window over the burst's own pre-step zero, nothing more taken off; the applied volts the two-part period mean of the tap difference with the edge correction pooled per seat, duty and sign; R and L by least squares of L (i[n+1] - i[n]) = T (V[n] - R (i[n] + i[n+1]) / 2) over the burst's period pairs, divided by sample-timing's window_scale k. l_ripple_mh is (V_on - R i) over the window's slope with R = r_locked_lap_100_ohm, the median of the last three periods, l_ripple_first_mh of the first three; early_* is the fit over the first three pairs; l_mh_r_pinned_by_duty is L with R pinned at r_locked_lap_100_ohm. The headline seat is the lock: l_mh, tau_us, r_burst_ohm, l_ripple_mh, l_ripple_first_mh, early_l_mh and early_r_ohm pool both duties (two populations, stage 2's form), *_by_duty carry each duty, the value the median over the lock's bursts after the first of each group and the bounds the range of its five group medians; r_burst_ohm is the end of the fit's slide, not the winding's resistance. applied_volts_drop_pct is the last period's volts over the first's, the lock's median with the three seats' medians as bounds; captures counts the held bursts after the first over the three seats; *_first_capture and *_other_captures are the lock's first bursts and the others with their full range; *_by_duty_sign the lock's medians; *_first_jump_pct_by_change and leftover_flux_uvs_by_change are the lock's first burst of each group over the median of its others and its volt-seconds beyond the others' R and L, one group per change, no bounds (the change keys name this stage's changes, g1 the seat set and a reversal); leftover_per_amp_uvs_per_a is g3's leftover over the g2 and g3 others' last window currents added, the lock with the two locks as bounds; l_slide_pct_by_duty and r_slide_pct_by_duty the fit's move from 3 to 8 pairs, the lock with the three seats as bounds; ripple_over_fit the ripple L over the fit, the two signs' medians averaged, the lock's group range; ripple_over_fit_inductors bridge-states' three inductive wirings, quoted; l_ripple_vs_current_mh_per_a the line of the window's L on its current over periods 1 and later at the lock, se bounds, the time trend and not a current dependence; l_of_i_l1_mh_per_a_by_duty the lock's L1 in L = L0 + L1 i over all pairs; v0_three_term_v the lock's constant drop as a third term over both duties, the two signs' mean with both as bounds, the wrong sign for a contact. crest_sample_less_window_mean_ma the window line at the crest shunt sample's instant (+31 ticks) less the line at the window middle (+27), median and 16-84 % over every held period of the three seats. g_hold_bound_ms is the held loss conductance the stage 3 sag stop laps allow (13 laps, 0.330 A, 4.344 ohm, rail slope -0.0055 +/- 0.0071 ohm/V, read from the sag result file), the slope over -R/I, +/- 2 sigma, a likely bound from one sitting; crest_less_mean_stop_lap_ma the crest's excess over the mean at the resistance stop chain's 24 and 36 % on 5 V (V_on 4.85 V) under that held bound, G (1 - D) V_on, the lower bound no correction and the upper the bound's +2 sigma, the systematic the resistance notebook carries; type_g_locked_ms (motor-model's fast locked-burst fit), type_g_spin_ms (spinning) and type_term_a_per_v (bemf-coast's meter term) are mg90-b's, carried for comparison only. r_locked_lap_100_ohm is the anchor, rest-resistance's read (V/I at the drive's first row from a line over 60 ms to the end) on resistance/locked-4's six 3.7 V laps, the mean with their range, this notebook's reading of those laps and the resistance notebook's to confirm (the 3.3 V laps sit off stage 1's graded lines). *_by_seat are each seat's median over its held bursts after the first per duty, bounds 16-84 % of a 4000-draw bootstrap over bursts (seed 0); seat_diff_pct_by_pair the second seat over the first in %, +/- one bootstrap sigma of the bursts' scatter only (the commutator angle's spread, about 8 % on L on the type, is not in it); first_jump_pct_by_seat_and_change the first-burst jumps and leftover at every seat; stop_forward_walk_uvs each held burst's leftover in the stop's two forward groups, the walk through the play, likely. stop_moving_burst_r_ohm, _l_ripple_mh and _i_first_ma are the burst set aside, a brush bridging two segments the leading reading, moderate. seat_pos_* are pot counts: the lock's seats.csv median with the burst metas' range; the wound lock's reading before the press, after it (with the burst metas' range) and after the groups; the stop's, blind on the pot's ADC rail; lock_span_sittings_4_5_counts the span of every manifest probe of sittings 4 and 5 and lock_probe_pos_sittings_4_5_counts their median and range, two seatings plus the lock's give; board_ntc_c the board NTC's median per sitting by the board's beta. Candidates: the reversal jump's size over the type's, the duty-up g2 jump, the ripple-over-fit gap 3 to 5 points under the type's, the wound lock's extra g1 leftover. Left out against stage 2's file: reversal_*, steps_*, fast_*, *_by_hole, even_over_odd_*, travel_bound_*, drive_offset_twice_pct, the bridge-states-k keys and leftover_rotor_angle_mrad_by_change (no such runs here, no holes, no mg90-d Ke result).",
+  "notes": "stage 3 inductance of mg90-d on dev-v006-2A-D: duty-step bursts into the held horn on a 5 V rail at three seats, inductance/locked-4 (the horn lock at mid travel, sitting 4), inductance/wound-5 (the same lock after a 24 % 300 ms reverse press, sitting 5) and inductance/stop-6 (the low end stop after the same press, sitting 6); at each, five groups in the order g1 25 % forward (the first after the seat was set, also after a reverse), g2 40 % forward, g3 40 % reverse, g4 25 % reverse, five bursts each, and g5 25 % reverse, three bursts after a 20 s rest. One burst is set aside by the rule that a burst reading a different current from its group from its first period on, at the same applied volts, reads a different circuit: stop-6/g1-fwd-25 burst 4 (first window current 19 % over its group's others); it stays in the edge pools, the fits table, its group's references and the length scan, and is out of every seat number and every key below but the stop_moving_burst_* keys. Estimators are stage 2 inductance's: the winding current per period is the window line at the middle of the bridge's window over the burst's own pre-step zero, nothing more taken off; the applied volts the two-part period mean of the tap difference with the edge correction pooled per seat, duty and sign; R and L by least squares of L (i[n+1] - i[n]) = T (V[n] - R (i[n] + i[n+1]) / 2) over the burst's period pairs, divided by sample-timing's window_scale k. l_ripple_mh is (V_on - R i) over the window's slope with R = r_locked_lap_100_ohm, the median of the last three periods, l_ripple_first_mh of the first three; early_* is the fit over the first three pairs; l_mh_r_pinned_by_duty is L with R pinned at r_locked_lap_100_ohm. The headline seat is the lock: l_mh, tau_us, r_burst_ohm, l_ripple_mh, l_ripple_first_mh, early_l_mh and early_r_ohm pool both duties (two populations, stage 2's form), *_by_duty carry each duty, the value the median over the lock's bursts after the first of each group and the bounds the range of its five group medians; r_burst_ohm is the end of the fit's slide, not the winding's resistance. applied_volts_drop_pct is the last period's volts over the first's, the lock's median with the three seats' medians as bounds; captures counts the held bursts after the first over the three seats; *_first_capture and *_other_captures are the lock's first bursts and the others with their full range; *_by_duty_sign the lock's medians; *_first_jump_pct_by_change and leftover_flux_uvs_by_change are the lock's first burst of each group over the median of its others and its volt-seconds beyond the others' R and L, one group per change, no bounds (the change keys name this stage's changes, g1 the seat set and a reversal); leftover_per_amp_uvs_per_a is g3's leftover over the g2 and g3 others' last window currents added, the lock with the two locks as bounds; l_slide_pct_by_duty and r_slide_pct_by_duty the fit's move from 3 to 8 pairs, the lock with the three seats as bounds; ripple_over_fit the ripple L over the fit, the two signs' medians averaged, the lock's group range; ripple_over_fit_inductors bridge-states' three inductive wirings, quoted; l_ripple_vs_current_mh_per_a the line of the window's L on its current over periods 1 and later at the lock, se bounds, the time trend and not a current dependence; l_of_i_l1_mh_per_a_by_duty the lock's L1 in L = L0 + L1 i over all pairs; v0_three_term_v the lock's constant drop as a third term over both duties, the two signs' mean with both as bounds, the wrong sign for a contact. crest_sample_less_window_mean_ma the window line at the crest shunt sample's instant (+31 ticks) less the line at the window middle (+27), median and 16-84 % over every held period of the three seats. g_hold_bound_ms is the held loss conductance the stage 3 sag stop laps allow (13 laps, 0.330 A, 4.344 ohm, rail slope -0.0055 +/- 0.0071 ohm/V, read from the sag result file), the slope over -R/I, +/- 2 sigma, a likely bound from one sitting; crest_less_mean_stop_lap_ma the crest's excess over the mean at the resistance stop chain's 24 and 36 % on 5 V (V_on 4.85 V) under that held bound, G (1 - D) V_on, the lower bound no correction and the upper the bound's +2 sigma, the systematic the resistance notebook carries; type_g_locked_ms (motor-model's fast locked-burst fit), type_g_spin_ms (spinning) and type_term_a_per_v (bemf-coast's meter term) are mg90-b's, carried for comparison only. r_locked_lap_100_ohm is the anchor, rest-resistance's read (V/I at the drive's first row from a line over 60 ms to the end) on resistance/locked-4's six 3.7 V laps, the mean with their range, this notebook's reading of those laps and the resistance notebook's to confirm (the 3.3 V laps sit off stage 1's graded lines). *_by_seat are each seat's median over its held bursts after the first per duty, bounds 16-84 % of a 4000-draw bootstrap over bursts (seed 0); seat_diff_pct_by_pair the second seat over the first in %, +/- one bootstrap sigma of the bursts' scatter only (the commutator angle's spread, about 8 % on L on the type, is not in it); first_jump_pct_by_seat_and_change the first-burst jumps and leftover at every seat; stop_forward_walk_uvs each held burst's leftover in the stop's two forward groups, the walk through the play, likely. stop_moving_burst_r_ohm, _l_ripple_mh and _i_first_ma are the burst set aside, a brush bridging two segments the leading reading, moderate. seat_pos_* are pot counts: the lock's seats.csv median with the burst metas' range; the wound lock's reading before the press, after it (with the burst metas' range) and after the groups; the stop's, blind on the pot's ADC rail; lock_span_sittings_4_5_counts the span of every manifest probe of sittings 4 and 5 and lock_probe_pos_sittings_4_5_counts their median and range, two seatings plus the lock's give; board_ntc_c the board NTC's median per sitting by the board's beta. Candidates: the reversal jump's size over the type's, the duty-up g2 jump, the ripple-over-fit gap 3 to 5 points under the type's, the wound lock's extra g1 leftover. Left out against stage 2's file: reversal_*, steps_*, fast_*, *_by_hole, even_over_odd_*, travel_bound_*, drive_offset_twice_pct, the bridge-states-k keys and leftover_rotor_angle_mrad_by_change (no such runs here, no holes, no mg90-d Ke result). edge_area_ticks_motor, _rl_dummy and _resistor are the window shortening at 5 V by area, the driven tap's ON area-equivalent edge (the sharp step holding the pooled profile's area, the dips clipped) less its OFF one, with every held burst of the three seats (53), bridge-states' RL dummy wirings ra, rab and rb (60 slow-decay bursts) and its bare resistor r (20) each pooled into one 2-tick profile in sample-timing's normalization, +/- the se of a 300-draw bootstrap over bursts (seed 0); edge_motor_less_rl_dummy_ticks the motor less the RL dummy, the se in quadrature. dip_mv_per_period_* is the pooled tap profile's area under zero around both edges, the dead-time diode conduction, times the tap's swing over the 2400-tick period, +/- bootstrap se; fold_dense_mv_* the pooled profile's volt-ticks beyond the two-part step at sample-timing's mean lags over the period, no bounds. brake_line_motor_intercept_mv and _slope_ohm are delta and rho of -v_off / i = rho + delta / i over every period after the first of the 53 held bursts, +/- se; brake_line_motor_plain the plain line -v_off = c + s i on the same periods, +/- se, the form the resistance notebook's construction takes; brake_line_rl_dummy_* delta and rho on the RL dummy's three wirings, the median with the range over wirings. as_read_volts_error_late_mv per seat and duty is the firmware's D x V_on with the taps read at its instants (high tap +83, low tap -37 ticks from the crest) less the period table's volts, the mean over the held bursts of each burst's mean over periods 6 on, +/- se over bursts, with its parts (window shortening at sample-timing's lags, brake interval, the pool's fold, the taps' instants), the window current and V_on. Standing: the bridge's edges on the motor equal the RL dummy's (confirmed, high); the fold's residual is the dead-time dips, a constant per period shared with the RL dummy (confirmed, high); the per-pool fold's spread is the phase pattern of one arming (likely, high); the 8.8 mV intercept as the motor's or a tap convention, open.",
   "l_mh": {
     "value": 0.8197583711407872,
     "lo": 0.781413050847874,
@@ -1613,6 +1613,370 @@
       "lo": null,
       "hi": null,
       "unit": "C"
+    }
+  },
+  "edge_area_ticks_motor": {
+    "value": 26.47821945471634,
+    "lo": 26.081334168171637,
+    "hi": 26.87510474126104,
+    "unit": "ticks"
+  },
+  "dip_mv_per_period_motor": {
+    "value": -6.089938895799545,
+    "lo": -6.198213509448088,
+    "hi": -5.9816642821510015,
+    "unit": "mV"
+  },
+  "fold_dense_mv_motor": {
+    "value": -6.804396199046125,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "edge_area_ticks_rl_dummy": {
+    "value": 27.074493100589592,
+    "lo": 26.962973933870476,
+    "hi": 27.18601226730871,
+    "unit": "ticks"
+  },
+  "dip_mv_per_period_rl_dummy": {
+    "value": -6.306155389225471,
+    "lo": -6.3720832330605495,
+    "hi": -6.240227545390392,
+    "unit": "mV"
+  },
+  "fold_dense_mv_rl_dummy": {
+    "value": -8.825569339676264,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "edge_area_ticks_resistor": {
+    "value": 26.442726056359696,
+    "lo": 26.07413829472301,
+    "hi": 26.811313817996382,
+    "unit": "ticks"
+  },
+  "dip_mv_per_period_resistor": {
+    "value": -0.9870646259182484,
+    "lo": -1.0650541415577202,
+    "hi": -0.9090751102787766,
+    "unit": "mV"
+  },
+  "fold_dense_mv_resistor": {
+    "value": 0.37289914323608,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "edge_motor_less_rl_dummy_ticks": {
+    "value": -0.5962736458732536,
+    "lo": -1.0085289735785432,
+    "hi": -0.184018318167964,
+    "unit": "ticks"
+  },
+  "brake_line_motor_intercept_mv": {
+    "value": 8.82031744373191,
+    "lo": 8.443728671850279,
+    "hi": 9.196906215613541,
+    "unit": "mV"
+  },
+  "brake_line_motor_slope_ohm": {
+    "value": 0.23941131633969442,
+    "lo": 0.23751100446213425,
+    "hi": 0.2413116282172546,
+    "unit": "ohm"
+  },
+  "brake_line_motor_plain": {
+    "intercept_mv": {
+      "value": 8.747878489694438,
+      "lo": 8.32051049679892,
+      "hi": 9.175246482589955,
+      "unit": "mV"
+    },
+    "slope_ohm": {
+      "value": 0.23971693457009915,
+      "lo": 0.237988767721378,
+      "hi": 0.2414451014188203,
+      "unit": "ohm"
+    }
+  },
+  "brake_line_rl_dummy_intercept_mv": {
+    "value": 12.616114072989129,
+    "lo": 11.861384092178556,
+    "hi": 13.11821132738797,
+    "unit": "mV"
+  },
+  "brake_line_rl_dummy_slope_ohm": {
+    "value": 0.244418919669137,
+    "lo": 0.24245785412349874,
+    "hi": 0.24595502877911074,
+    "unit": "ohm"
+  },
+  "as_read_volts_error_late_mv": {
+    "lock_25": {
+      "error_mv": {
+        "value": 113.9538226689203,
+        "lo": 113.01068824603897,
+        "hi": 114.89695709180161,
+        "unit": "mV"
+      },
+      "window_current_a": {
+        "value": 0.22952893540231983,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.812757232863669,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "edge_mv": {
+        "value": 51.13554559917647,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "brake_mv": {
+        "value": 47.438496630353875,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "fold_mv": {
+        "value": 17.432542618816235,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "taps_mv": {
+        "value": -2.0527621794263595,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "lock_40": {
+      "error_mv": {
+        "value": 121.75186326868736,
+        "lo": 121.00856196000326,
+        "hi": 122.49516457737144,
+        "unit": "mV"
+      },
+      "window_current_a": {
+        "value": 0.35667922155450527,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.727485911876412,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "edge_mv": {
+        "value": 50.22953781368686,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "brake_mv": {
+        "value": 57.790442582376166,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "fold_mv": {
+        "value": 14.215428502190763,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "taps_mv": {
+        "value": -0.4835456295665323,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "stop_25": {
+      "error_mv": {
+        "value": 103.2954340564072,
+        "lo": 102.9005273252171,
+        "hi": 103.69034078759731,
+        "unit": "mV"
+      },
+      "window_current_a": {
+        "value": 0.23226465644970468,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.813346268668983,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "edge_mv": {
+        "value": 51.14180410460792,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "brake_mv": {
+        "value": 47.24693158216449,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "fold_mv": {
+        "value": 6.723955559896205,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "taps_mv": {
+        "value": -1.8172571902613832,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "stop_40": {
+      "error_mv": {
+        "value": 99.28949004709298,
+        "lo": 96.87435075633279,
+        "hi": 101.70462933785316,
+        "unit": "mV"
+      },
+      "window_current_a": {
+        "value": 0.3572559296570397,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.724927520601751,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "edge_mv": {
+        "value": 50.20235490639358,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "brake_mv": {
+        "value": 57.644099006536365,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "fold_mv": {
+        "value": -8.193562613406481,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "taps_mv": {
+        "value": -0.3634012524306988,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "wound_25": {
+      "error_mv": {
+        "value": 107.18112423482359,
+        "lo": 105.85870796707992,
+        "hi": 108.50354050256723,
+        "unit": "mV"
+      },
+      "window_current_a": {
+        "value": 0.23076666502476365,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.814613814072822,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "edge_mv": {
+        "value": 51.15527177452371,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "brake_mv": {
+        "value": 47.80571548506562,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "fold_mv": {
+        "value": 10.052548430752008,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "taps_mv": {
+        "value": -1.8324114555178461,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "wound_40": {
+      "error_mv": {
+        "value": 113.97644424888365,
+        "lo": 113.75603404996573,
+        "hi": 114.19685444780156,
+        "unit": "mV"
+      },
+      "window_current_a": {
+        "value": 0.35746319870333876,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "v_on_v": {
+        "value": 4.7246926518945696,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "edge_mv": {
+        "value": 50.19985942637978,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "brake_mv": {
+        "value": 57.60263499338178,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "fold_mv": {
+        "value": 6.313774139139088,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "taps_mv": {
+        "value": -0.13982431001728915,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
     }
   }
 }

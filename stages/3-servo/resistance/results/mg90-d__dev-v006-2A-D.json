@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4, telemetry/mg90-d__dev-v006-2A-D/resistance/stop-1, telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7",
-  "notes": "stage 3 resistance of mg90-d on dev-v006-2A-D from two datasets: resistance/locked-4 (sitting 4, the horn lock at mid travel, six sweeps 20 s apart, three on 3.3 V and three on 3.7 V, each 300 ms at 100 % in direction +1 and, after a 20 s rest, 300 ms in -1) and resistance/stop-1 (sitting 1, 5.0 V, six chains 20 s apart of 24, 36 and 24 % for 300 ms each after a 49 % stall seek, chains 0, 2, 4 direction -1 into the low stop, 1, 3, 5 direction +1 into the high stop). Current and terminal volts through stage 1's current-scale and terminal-chain over each sweep's torque-off zero. A lap or step is read as stage 2 rest-resistance reads a lap: from its first row at the held duty, V/I at that row by a line through V/I from 60 ms to the end, I and V the same way. r_term_ohm (the headline) is that read on the six 3.7 V laps, both directions, the mean with the range as bounds: V/I at r_term_amps with V0 inside, stage 2's r_term read with no holes and no construction. r_term_median_ohm is the median of the same six laps with the same range, written for stage 2's key, the same definition otherwise. r_term_lap_scatter_pct is their sd over their mean; r_term_amps their first-row current, mean and range; r_term_by_direction_ohm_fwd and _rev each direction's three laps, mean and range; direction_gap_pct the -1 lap over the +1 lap of each 3.7 V sweep, 20 s later, mean and range (direction and order confounded), direction_gap_pct_3v3 the same at 3.3 V, report-only. r_term_plateau_ohm is mean V over mean I from 30 to 60 ms on the six 3.7 V laps, mean with range, a secondary check; r_term_plateau_less_copper_ohm the same less mg90-b's copper warming per joule at these laps' power to the window's middle. r_3v3_ohm is the 3.3 V laps' first-row read, mean and range, report-only (that rail sits off stage 1's graded lines); v_over_i_3v3_excess_pct the 3.3 V laps over the 3.7 V laps, value over both directions, bounds the two directions; v_over_i_3v3_stage1_pct stage 1's bare-load factor at 3.3 V, quoted; v0_two_level_lever_mv_per_0p1pct the V0 that 0.1 % of V/I between the two levels moves. v0_all_rails_v and r_stall_all_rails_ohm are the line V = V0 + R I through all twelve first-row points with the 3.3 V volts as read, +/- one standard error, *_scaled_* the same with the 3.3 V volts over the stage 1 factor, all four report-only (the levels are 0.03 A apart). free_spin_dip_pct is the current's low point after the L/R rise under its 30 to 60 ms plateau, free_spin_emf_rev_s that low point's EMF at the plateau's V_on / I through the sag result's ke_mv_per_rev_s, free_spin_until_ms when the current is back within 1 % of the plateau, each the mean and range over the twelve laps. warming_pct_per_j is the 3.7 V laps' line slope per watt, mean with range, which carries rotor creep and is not the copper's; warming_pct_per_j_3v3 the 3.3 V laps'; copper_heat_capacity_max_j_per_c and copper_mass_max_g the bound the 3.7 V warming gives if every ohm were copper keeping all its heat, report-only. quiet_gate_i_sd_counts is the current's sd over 60 to 300 ms per lap, mean and range over the twelve, against the plant traps' 4.5 counts: every 3.7 V lap is over it there, and over 30 to 60 ms chain 4's -1 lap (3.7 V) and chains 1 and 2's -1 laps (3.3 V). lap_joules is the largest lap's energy with the range over the twelve; board_ntc_c the board NTC by its nominal beta from the manifest probes before, inside and after each sweep (the TEL rows carry no ntc_raw), median with range; seat_pos_lock the lock's seats.csv median and range; seat_shift_per_lap_counts the largest probe shift across a sweep with the smallest and largest. r_type_gap_pct_mg90b and _mg90c are r_term_ohm over each type motor's r_term_median_ohm at its own board temperature, r_type_gap_common_t_pct_* with the type scaled to this board's median at 0.39 %/C on the whole R, an upper bound on that correction. The stop keys carry the plain construction as read, V_eff = D x V_on (the commanded duty and the crest tap difference) over the crest current, unless their name says otherwise. Each step is read from its first row at the held duty, the seek's and the previous step's rows out, settled means from 2 ms. r_stop_ohm and v0_stop_v are the mean over six chains of each chain's line through two points, the two 24 % steps averaged against the 36 % step, +/- one sd over the chains; *_first_row_* the same from the first-row reads; r_stop_pooled_ohm and v0_stop_pooled_v least squares through all 18 settled points, +/- se, the check; r_stop_by_stop_ohm_low and _high, v0_stop_by_stop_v_low and _high three chains each, mean and range (the direction is confounded with the stop); r_stop_by_chain_ohm and v0_stop_by_chain_v per chain 0 to 5; stop_step_amps_24 and _36, stop_v_on_v_* and stop_vi_as_read_ohm_* the settled current, V_on and V_eff / I per step kind, mean and range; stop_chain_warming_pct step 3's V/I over step 1's; stop_lever_per_a 1/I between the levels; stop_seek_amps the seek press's current before step 1, mean and range. r_stop_over_k_ohm is r_stop_ohm over sample-timing's window scale k with k's bounds; r_stop_crest_bound_ohm and v0_stop_crest_bound_v the pooled two-level line with the inductance result's crest_less_mean_stop_lap_ma +2 sigma bound (5.51 and 4.64 mA) taken off the current, *_crest_value_* at its value; stop_over_locked_pct_as_read the stop line's V/I at r_term_amps over r_term_ohm. Keys with edge_brake carry the construction with stage 1's two board terms: the window shortened by edge_ticks (sample-timing's tap ON lag less its OFF lag, the mean of the 3.7 and 7.4 V rails, bounds the widest per-rail combinations) of the 2400 tick period, and the brake interval's drop low_side_loop_ohm x i (bridge-states) over the rest of the period. r_stop_edge_brake_ohm is +/- one sd over chains; r_stop_edge_brake_loop_ohm its range over the loop's bounds; r_stop_edge_brake_lags_ohm and v0_stop_edge_brake_v the range over the edge lags' bounds; *_edge_brake_g_*_spin and _locked add a crest over-read G x (1 - D) x V_on with mg90-b's spinning or locked-burst G from motor-model, comparison values, not mg90-d's. The rails chains decided the standing of r_stop_edge_brake_ohm and the r_stop_edge_brake_g_* keys. Edge + brake at stage 1's lags fails the three rails (rails_chi2_b), and so does a crest term fixed at the type's G at those lags (rails_chi2_c_g_type_spin), so these keys record the one-rail reading and not the motor's line. stop_over_locked_pct_edge_brake and _edge_brake_g_spin as for as_read. joint_r_ohm and joint_v0_v are the line through the lock's point, the 18 stop points and the sag laps' mean point under edge + brake + G spinning, equal weights, joint_resid_mv_lock, _stop_rms and _sag its residuals. sag_slope_board_terms_predict_ohm_per_v is the as-read rail slope edge + brake predict for the sag laps over a flat true R (the sag result quoted: 1.5 V effective at round(150 / rail) % on 13 rails, V_on the rail less rail_minus_crest_von_mv), sag_slope_board_terms_sigma its distance from the measured slope in the sag's se; sag_slope_g_needed_ms the per-volt crest term that brings that prediction to the measured slope, bounds from its se, its standing decided by the rails chains (a per-volt crest term confirmed, this g inside the joint band at edge lags near 12 ticks, not at stage 1's; g_rails_joint_sag_ms); reading2_offset_ma the rail-independent crest offset that closes lock and stop under edge + brake, which the sag slope rejects if the board terms stand. Standing of the readings: edge + brake + a crest term near the type's spinning G leading, moderate; edge lags smaller than stage 1's on the motor and no crest term alive, low to moderate; a constant offset, V0 alone and temperature dead. Every edge_brake, g and joint key is a candidate reading, not a correction; the next capture (the stop chains at a second rail) decides, and the rails chains (the rails_* keys) decided it, reading 1's crest term confirmed with smaller edge lags and reading 2 dead (rails_chi2_b_lags_lo). construction_check_dummy_pct_plain_25, _plain_40, _both_25 and _both_40 are the plain construction and the one with both board terms on stage 1's bridge-states sweep-slow rungs into the RL dummy (wirings ra, rab, rb, both directions), V/I from 30 ms over each wiring's dc_r_ohm, mean and range, a check of the construction for the stage 1 notebook to own, no result derived from it; edge_ticks and low_side_loop_ohm the stage 1 terms as used, quoted. resistance/rails-7 (sitting 7, the stop chains again on 3.7 V at 32/49/32 % after a 66 % seek and on 7.4 V at 16/24/16 % after a 33 % seek, six chains each, alternate stops, every chain pressed into its stop) adds the rails keys, read with the stop chains' step reading beside resistance/stop-1 (5 V) and the six 3.7 V locked laps. rails_vi_as_read_ohm_<rail>_<level> (rail 3v7, 5v or 7v4; level low, about 0.26 A, or high, about 0.38 A) is the settled as-read V_eff / I_crest, the mean over six chains of each chain's mean at the level, +/- one sd over chains; rails_step_amps_* and rails_v_on_v_* its current and V_on the same way. rails_vi_as_read_rail_slope_ohm_per_v_<level> is the line of that read on the rail at one level, weighted by the levels' se, +/- se; rails_vi_as_read_7v4_less_3v7_ohm_<level> the 7.4 V level less the 3.7 V level and rails_vi_as_read_7v4_less_3v7_sigma_<level> that difference over the two levels' se in quadrature. r_stop_as_read_ohm_<rail> and v0_stop_as_read_v_<rail> are the user's pass at each rail as read, each chain's two-point bracket, mean +/- sd over six chains; rails_chain_scatter_pct_<rail> the sd over chains of the low level's as-read V/I over its mean, its lo the high level's (not a bound). r_rails_<k>_ohm and v0_rails_<k>_v are V_applied = V0 + R i_mean through the six level means (weights the chains' se in volts) and the lock (its measured volts and current, no construction, weight its laps' se) under construction k, +/- se scaled by chi2 / dof where over 1; rails_chi2_<k> the chi2 (dof in its unit), rails_rms_mv_<k> the rms residual, rails_lock_pull_sigma_<k> the lock's residual over its se. The applied volts and winding current come from the notebook's construct with stage 1's edge lags per rail (sample-timing's tap ON lag less OFF lag at 3.7 and 7.4 V, interpolated on the rail; edge_ticks_stage1_by_rail with the widest bounds), bridge-states' low_side_loop_ohm, and a crest over-read g x (1 - D) x V_on. k is a as read; b stage 1's lags + the brake drop; b_lags_lo b with the lags at their low bound; c b + g free; c_g_sag and c_g_type_spin c with g fixed at sag_slope_g_needed_ms or mg90-b's spinning G; d the brake drop + a free scale on the lags, no g; e d + g free; f lags, loop and g free (rho_rails_f_ohm the loop); brake_g the brake drop + g free, no lags; a_offset and b_offset a and b + a free rail-independent crest offset (offset_rails_*_ma). g_rails_<k>_ms is g, +/- se where free, a bare value where fixed; edge_ticks_rails_<k> the edge lags at 5 V, +/- se where fitted, stage 1's where fixed. rails_sag_slope_pred_ohm_per_v_<k> is the as-read rail slope the fitted line predicts for the sag laps (the sag result quoted, the lags per rail), against r_stop_lap_per_v_ohm there. g_rails_c_sitting7_ms, r_rails_c_sitting7_ohm and rails_chi2_c_sitting7 are c on the 3.7 and 7.4 V levels and the lock alone. The *_valley keys come from the chi2 surface over the edge lags (-0.5 to 1.5 x stage 1's) and g (-1 to 8 mS) with the loop at low_side_loop_ohm, R and V0 refitted at each point; g_rails_valley_ms and edge_ticks_rails_valley the minimum with the chi2 + 1 band as bounds, their _2sigma keys the chi2 + 4 band, r_rails_valley_ohm and v0_rails_valley_v the minimum's R and V0 with their range over the chi2 + 1 band, rails_chi2_valley_min the minimum's chi2 over 3 dof. The *_joint_sag keys are the same with the sag laps' measured rail slope joined as one datum in its se; rails_joint_sag_chi2 the joint minimum, its lo the chains' part and hi the sag slope's (not bounds); rails_joint_sag_slope_pred_ohm_per_v the slope it predicts. g_rails_<k>_jackknife_se_ms and r_rails_<k>_jackknife_se_ohm (k c, e, brake_g) are leave-one-chain-out jackknife se over the 18 chains, lo and hi the leave-one-out range (not bounds on the se). rails_lock_pred_from_chains_pct_<k> (c, brake_g, a) is the fit with the lock left out, its line's V/I at r_term_amps over r_term_ohm. g_type_spin_ms_quoted and g_type_locked_ms_quoted are mg90-b's motor-model G, ladder_rail_term_a_g_ms_quoted and _b_ the ladder result's rail terms, quoted for comparison. Standing: a per-volt crest term is confirmed (no construction without one fits the three rails, high); R 4.17 to 4.19 ohm and V0 +0.02 to +0.04 V along the valley, likely; g and the edge lags a candidate pair along the valley, never a point (g 5.0 mS only at stage 1's lags, 3.4 mS at 14 ticks with the sag slope joined); the edge lags on the motor about half the RL dummy's, a candidate at about 2 sigma. rails_chain_warming_pct is step 3's settled V/I over step 1's on the rails-7 chains, mean and range; rails_first_row_over_settled_pct the first-row read over the settled one (formed as minus settled over first), mean and range; rails_quiet_gate_i_sd_counts the current's sd from 60 ms to the end per step, mean and range, against 4.5 counts; rails_dropout_rows, rails_missing_rows and rails_window_valid_frac_min over every held rails-7 row; rails_seek_amps the current over the rows before each step's held duty, mean and range over every rails-7 step with such rows (the seek press before step 1, the previous step's rows before steps 2 and 3). rails_seat_pos_high_<rail> and _low_<rail> are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; rails_seat_shift_counts seats.csv's shift_counts, the largest with the range; rails_von_gap_v_<rail> the torque-off rail read less the settled crest V_on, mean and range over the steps; rails_board_ntc_c_<rail> the board NTC around the chains, mean with the probes' range; rails_rail_read_v_<rail> the rail the runner read torque off. bracket_ref_current_ma_<set> is the 5 V 30 % reference spin's crest current over its last 100 ms in the ladder's ref-open and ref-close sets of sittings 1, 6 and 7, mean with the range over both directions, state only. The rails block holds the six levels, every chain's bracket points as read, every construction's fit with its residual and pull per level, and the locked anchor. seat_pos_stop_low and _high are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; board_ntc_c_stop the board NTC around the chains, mean and range; stop_minutes_into_sitting the first chain's start after sitting 1's first event. Left out against stage 2's file: *_by_hole, hole_map_* and r_term_angle_pct (no holes), r_stall_ohm, v0_brush_v, v0_mean_v and the graded lines (no V0 holds on these rails), early_excess_pct (the early window holds the free spin), copper_tau_s and direction_gap_* kept and offset (20 s between the directions), and the run-up, ohms and room keys (not run).",
+  "notes": "stage 3 resistance of mg90-d on dev-v006-2A-D from two datasets: resistance/locked-4 (sitting 4, the horn lock at mid travel, six sweeps 20 s apart, three on 3.3 V and three on 3.7 V, each 300 ms at 100 % in direction +1 and, after a 20 s rest, 300 ms in -1) and resistance/stop-1 (sitting 1, 5.0 V, six chains 20 s apart of 24, 36 and 24 % for 300 ms each after a 49 % stall seek, chains 0, 2, 4 direction -1 into the low stop, 1, 3, 5 direction +1 into the high stop). Current and terminal volts through stage 1's current-scale and terminal-chain over each sweep's torque-off zero. A lap or step is read as stage 2 rest-resistance reads a lap: from its first row at the held duty, V/I at that row by a line through V/I from 60 ms to the end, I and V the same way. r_term_ohm (the headline) is that read on the six 3.7 V laps, both directions, the mean with the range as bounds: V/I at r_term_amps with V0 inside, stage 2's r_term read with no holes and no construction. r_term_median_ohm is the median of the same six laps with the same range, written for stage 2's key, the same definition otherwise. r_term_lap_scatter_pct is their sd over their mean; r_term_amps their first-row current, mean and range; r_term_by_direction_ohm_fwd and _rev each direction's three laps, mean and range; direction_gap_pct the -1 lap over the +1 lap of each 3.7 V sweep, 20 s later, mean and range (direction and order confounded), direction_gap_pct_3v3 the same at 3.3 V, report-only. r_term_plateau_ohm is mean V over mean I from 30 to 60 ms on the six 3.7 V laps, mean with range, a secondary check; r_term_plateau_less_copper_ohm the same less mg90-b's copper warming per joule at these laps' power to the window's middle. r_3v3_ohm is the 3.3 V laps' first-row read, mean and range, report-only (that rail sits off stage 1's graded lines); v_over_i_3v3_excess_pct the 3.3 V laps over the 3.7 V laps, value over both directions, bounds the two directions; v_over_i_3v3_stage1_pct stage 1's bare-load factor at 3.3 V, quoted; v0_two_level_lever_mv_per_0p1pct the V0 that 0.1 % of V/I between the two levels moves. v0_all_rails_v and r_stall_all_rails_ohm are the line V = V0 + R I through all twelve first-row points with the 3.3 V volts as read, +/- one standard error, *_scaled_* the same with the 3.3 V volts over the stage 1 factor, all four report-only (the levels are 0.03 A apart). free_spin_dip_pct is the current's low point after the L/R rise under its 30 to 60 ms plateau, free_spin_emf_rev_s that low point's EMF at the plateau's V_on / I through the sag result's ke_mv_per_rev_s, free_spin_until_ms when the current is back within 1 % of the plateau, each the mean and range over the twelve laps. warming_pct_per_j is the 3.7 V laps' line slope per watt, mean with range, which carries rotor creep and is not the copper's; warming_pct_per_j_3v3 the 3.3 V laps'; copper_heat_capacity_max_j_per_c and copper_mass_max_g the bound the 3.7 V warming gives if every ohm were copper keeping all its heat, report-only. quiet_gate_i_sd_counts is the current's sd over 60 to 300 ms per lap, mean and range over the twelve, against the plant traps' 4.5 counts: every 3.7 V lap is over it there, and over 30 to 60 ms chain 4's -1 lap (3.7 V) and chains 1 and 2's -1 laps (3.3 V). lap_joules is the largest lap's energy with the range over the twelve; board_ntc_c the board NTC by its nominal beta from the manifest probes before, inside and after each sweep (the TEL rows carry no ntc_raw), median with range; seat_pos_lock the lock's seats.csv median and range; seat_shift_per_lap_counts the largest probe shift across a sweep with the smallest and largest. r_type_gap_pct_mg90b and _mg90c are r_term_ohm over each type motor's r_term_median_ohm at its own board temperature, r_type_gap_common_t_pct_* with the type scaled to this board's median at 0.39 %/C on the whole R, an upper bound on that correction. The stop keys carry the plain construction as read, V_eff = D x V_on (the commanded duty and the crest tap difference) over the crest current, unless their name says otherwise. Each step is read from its first row at the held duty, the seek's and the previous step's rows out, settled means from 2 ms. r_stop_ohm and v0_stop_v are the mean over six chains of each chain's line through two points, the two 24 % steps averaged against the 36 % step, +/- one sd over the chains; *_first_row_* the same from the first-row reads; r_stop_pooled_ohm and v0_stop_pooled_v least squares through all 18 settled points, +/- se, the check; r_stop_by_stop_ohm_low and _high, v0_stop_by_stop_v_low and _high three chains each, mean and range (the direction is confounded with the stop); r_stop_by_chain_ohm and v0_stop_by_chain_v per chain 0 to 5; stop_step_amps_24 and _36, stop_v_on_v_* and stop_vi_as_read_ohm_* the settled current, V_on and V_eff / I per step kind, mean and range; stop_chain_warming_pct step 3's V/I over step 1's; stop_lever_per_a 1/I between the levels; stop_seek_amps the seek press's current before step 1, mean and range. r_stop_over_k_ohm is r_stop_ohm over sample-timing's window scale k with k's bounds; r_stop_crest_bound_ohm and v0_stop_crest_bound_v the pooled two-level line with the inductance result's crest_less_mean_stop_lap_ma +2 sigma bound (5.51 and 4.64 mA) taken off the current, *_crest_value_* at its value; stop_over_locked_pct_as_read the stop line's V/I at r_term_amps over r_term_ohm. Keys with edge_brake carry the construction with stage 1's two board terms: the window shortened by edge_ticks (sample-timing's tap ON lag less its OFF lag, the mean of the 3.7 and 7.4 V rails, bounds the widest per-rail combinations) of the 2400 tick period, and the brake interval's drop low_side_loop_ohm x i (bridge-states) over the rest of the period. r_stop_edge_brake_ohm is +/- one sd over chains; r_stop_edge_brake_loop_ohm its range over the loop's bounds; r_stop_edge_brake_lags_ohm and v0_stop_edge_brake_v the range over the edge lags' bounds; *_edge_brake_g_*_spin and _locked add a crest over-read G x (1 - D) x V_on with mg90-b's spinning or locked-burst G from motor-model, comparison values, not mg90-d's. The rails chains decided the standing of r_stop_edge_brake_ohm and the r_stop_edge_brake_g_* keys. Edge + brake at stage 1's lags fails the three rails (rails_chi2_b), and so does a crest term fixed at the type's G at those lags (rails_chi2_c_g_type_spin), so these keys record the one-rail reading and not the motor's line. stop_over_locked_pct_edge_brake and _edge_brake_g_spin as for as_read. joint_r_ohm and joint_v0_v are the line through the lock's point, the 18 stop points and the sag laps' mean point under edge + brake + G spinning, equal weights, joint_resid_mv_lock, _stop_rms and _sag its residuals. sag_slope_board_terms_predict_ohm_per_v is the as-read rail slope edge + brake predict for the sag laps over a flat true R (the sag result quoted: 1.5 V effective at round(150 / rail) % on 13 rails, V_on the rail less rail_minus_crest_von_mv), sag_slope_board_terms_sigma its distance from the measured slope in the sag's se; sag_slope_g_needed_ms the per-volt crest term that brings that prediction to the measured slope, bounds from its se, its standing decided by the rails chains (a per-volt crest term confirmed, this g inside the joint band at edge lags near 12 ticks, not at stage 1's; g_rails_joint_sag_ms); reading2_offset_ma the rail-independent crest offset that closes lock and stop under edge + brake, which the sag slope rejects if the board terms stand. Standing of the readings: edge + brake + a crest term near the type's spinning G leading, moderate; edge lags smaller than stage 1's on the motor and no crest term alive, low to moderate; a constant offset, V0 alone and temperature dead. Every edge_brake, g and joint key is a candidate reading, not a correction; the next capture (the stop chains at a second rail) decides, and the rails chains (the rails_* keys) decided it, reading 1's crest term confirmed with smaller edge lags and reading 2 dead (rails_chi2_b_lags_lo). construction_check_dummy_pct_plain_25, _plain_40, _both_25 and _both_40 are the plain construction and the one with both board terms on stage 1's bridge-states sweep-slow rungs into the RL dummy (wirings ra, rab, rb, both directions), V/I from 30 ms over each wiring's dc_r_ohm, mean and range, a check of the construction for the stage 1 notebook to own, no result derived from it; edge_ticks and low_side_loop_ohm the stage 1 terms as used, quoted. resistance/rails-7 (sitting 7, the stop chains again on 3.7 V at 32/49/32 % after a 66 % seek and on 7.4 V at 16/24/16 % after a 33 % seek, six chains each, alternate stops, every chain pressed into its stop) adds the rails keys, read with the stop chains' step reading beside resistance/stop-1 (5 V) and the six 3.7 V locked laps. rails_vi_as_read_ohm_<rail>_<level> (rail 3v7, 5v or 7v4; level low, about 0.26 A, or high, about 0.38 A) is the settled as-read V_eff / I_crest, the mean over six chains of each chain's mean at the level, +/- one sd over chains; rails_step_amps_* and rails_v_on_v_* its current and V_on the same way. rails_vi_as_read_rail_slope_ohm_per_v_<level> is the line of that read on the rail at one level, weighted by the levels' se, +/- se; rails_vi_as_read_7v4_less_3v7_ohm_<level> the 7.4 V level less the 3.7 V level and rails_vi_as_read_7v4_less_3v7_sigma_<level> that difference over the two levels' se in quadrature. r_stop_as_read_ohm_<rail> and v0_stop_as_read_v_<rail> are the user's pass at each rail as read, each chain's two-point bracket, mean +/- sd over six chains; rails_chain_scatter_pct_<rail> the sd over chains of the low level's as-read V/I over its mean, its lo the high level's (not a bound). r_rails_<k>_ohm and v0_rails_<k>_v are V_applied = V0 + R i_mean through the six level means (weights the chains' se in volts) and the lock (its measured volts and current, no construction, weight its laps' se) under construction k, +/- se scaled by chi2 / dof where over 1; rails_chi2_<k> the chi2 (dof in its unit), rails_rms_mv_<k> the rms residual, rails_lock_pull_sigma_<k> the lock's residual over its se. The applied volts and winding current come from the notebook's construct with stage 1's edge lags per rail (sample-timing's tap ON lag less OFF lag at 3.7 and 7.4 V, interpolated on the rail; edge_ticks_stage1_by_rail with the widest bounds), bridge-states' low_side_loop_ohm, and a crest over-read g x (1 - D) x V_on. k is a as read; b stage 1's lags + the brake drop; b_lags_lo b with the lags at their low bound; c b + g free; c_g_sag and c_g_type_spin c with g fixed at sag_slope_g_needed_ms or mg90-b's spinning G; d the brake drop + a free scale on the lags, no g; e d + g free; f lags, loop and g free (rho_rails_f_ohm the loop); brake_g the brake drop + g free, no lags; a_offset and b_offset a and b + a free rail-independent crest offset (offset_rails_*_ma). g_rails_<k>_ms is g, +/- se where free, a bare value where fixed; edge_ticks_rails_<k> the edge lags at 5 V, +/- se where fitted, stage 1's where fixed. rails_sag_slope_pred_ohm_per_v_<k> is the as-read rail slope the fitted line predicts for the sag laps (the sag result quoted, the lags per rail), against r_stop_lap_per_v_ohm there. g_rails_c_sitting7_ms, r_rails_c_sitting7_ohm and rails_chi2_c_sitting7 are c on the 3.7 and 7.4 V levels and the lock alone. The *_valley keys come from the chi2 surface over the edge lags (-0.5 to 1.5 x stage 1's) and g (-1 to 8 mS) with the loop at low_side_loop_ohm, R and V0 refitted at each point; g_rails_valley_ms and edge_ticks_rails_valley the minimum with the chi2 + 1 band as bounds, their _2sigma keys the chi2 + 4 band, r_rails_valley_ohm and v0_rails_valley_v the minimum's R and V0 with their range over the chi2 + 1 band, rails_chi2_valley_min the minimum's chi2 over 3 dof. The *_joint_sag keys are the same with the sag laps' measured rail slope joined as one datum in its se; rails_joint_sag_chi2 the joint minimum, its lo the chains' part and hi the sag slope's (not bounds); rails_joint_sag_slope_pred_ohm_per_v the slope it predicts. The valley and joint keys, g_rails_valley_ms and g_rails_joint_sag_ms among them, are superseded as a position by the *_at_measured_e keys, since the minimum moves with the brake form (16 to 31 ticks) while g at the measured edges moves little; they stay as the record. g_rails_<k>_jackknife_se_ms and r_rails_<k>_jackknife_se_ohm (k c, e, brake_g) are leave-one-chain-out jackknife se over the 18 chains, lo and hi the leave-one-out range (not bounds on the se). rails_lock_pred_from_chains_pct_<k> (c, brake_g, a) is the fit with the lock left out, its line's V/I at r_term_amps over r_term_ohm. g_type_spin_ms_quoted and g_type_locked_ms_quoted are mg90-b's motor-model G, ladder_rail_term_a_g_ms_quoted and _b_ the ladder result's rail terms, quoted for comparison. Standing: a per-volt crest term is confirmed (no construction without one fits the three rails, high); R 4.17 to 4.19 ohm and V0 +0.02 to +0.04 V along the valley, likely; g and the edge lags a candidate pair along the valley, never a point (g 5.0 mS only at stage 1's lags, 3.4 mS at 14 ticks with the sag slope joined); the edge lags on the motor about half the RL dummy's, a candidate at about 2 sigma. rails_chain_warming_pct is step 3's settled V/I over step 1's on the rails-7 chains, mean and range; rails_first_row_over_settled_pct the first-row read over the settled one (formed as minus settled over first), mean and range; rails_quiet_gate_i_sd_counts the current's sd from 60 ms to the end per step, mean and range, against 4.5 counts; rails_dropout_rows, rails_missing_rows and rails_window_valid_frac_min over every held rails-7 row; rails_seek_amps the current over the rows before each step's held duty, mean and range over every rails-7 step with such rows (the seek press before step 1, the previous step's rows before steps 2 and 3). rails_seat_pos_high_<rail> and _low_<rail> are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; rails_seat_shift_counts seats.csv's shift_counts, the largest with the range; rails_von_gap_v_<rail> the torque-off rail read less the settled crest V_on, mean and range over the steps; rails_board_ntc_c_<rail> the board NTC around the chains, mean with the probes' range; rails_rail_read_v_<rail> the rail the runner read torque off. bracket_ref_current_ma_<set> is the 5 V 30 % reference spin's crest current over its last 100 ms in the ladder's ref-open and ref-close sets of sittings 1, 6 and 7, mean with the range over both directions, state only. The rails block holds the six levels, every chain's bracket points as read, every construction's fit with its residual and pull per level, and the locked anchor.  The *_at_measured_e keys pin the edge lags at stage 1's per rail (edge_ticks_measured_5v, sample-timing's 5 V value +/- 1 tick, the motor less the RL dummy under either edge definition, from the inductance result's edge_area_ticks_* and edge_motor_less_rl_dummy_ticks) and fit g free with R and V0 on the six level means and the lock. g_rails_at_measured_e_by_variant holds six constructions, the brake drop as low_side_loop_ohm x i (construct_0p301), as the motor's plain brake line from the inductance result's brake_line_motor_plain (motor_line) or its slope alone (motor_line_no_intercept), each without and with sample-timing's window_scale per rail on the crest current (_k); per construction g +/- se scaled by chi2 / dof where over 1, g over the edge lags +/- 1 tick as bounds, chi2, R, V0, V0 less the dead-time dips (dip_mv_per_period_motor), the sag slope's pull, and the chains' own minimum on an 81 x 91 grid (edge scale -0.5 to 1.5, g -1 to 8 mS). g_rails_at_measured_e_ms is motor_line's g, the carried value; r_rails_at_measured_e_ohm, v0_rails_at_measured_e_v and v0_rails_at_measured_e_less_dips_v motor_line's, the range over the six as bounds. rails_volts_budget_lock_mv per seat and duty of the inductance bursts (5 V, 25 and 40 %) holds the firmware's volts error quoted from as_read_volts_error_late_mv, construction C's volts side at the measured edges (the window shortening and the brake drop at low_side_loop_ohm with g_rails_at_measured_e_ms off the window current) and R g (1 - D) V_on, what a volts-side crest term would add. Standing: the edge lags on the motor are stage 1's (confirmed, high, inductance notebook); g 4.5 to 5.0 +/- 0.3 mS at the measured edges, R 4.17 to 4.19 ohm, V0 +0.01 to +0.03 V after the dips (likely); the term on the current side (likely), a window-only current in the motor, the type's loss conductance, leading, moderate; a sense-path term alive, low; the valley's position not a finding.seat_pos_stop_low and _high are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; board_ntc_c_stop the board NTC around the chains, mean and range; stop_minutes_into_sitting the first chain's start after sitting 1's first event. Left out against stage 2's file: *_by_hole, hole_map_* and r_term_angle_pct (no holes), r_stall_ohm, v0_brush_v, v0_mean_v and the graded lines (no V0 holds on these rails), early_excess_pct (the early window holds the free spin), copper_tau_s and direction_gap_* kept and offset (20 s between the directions), and the run-up, ohms and room keys (not run).",
   "r_term_ohm": {
     "value": 4.2188705084081874,
     "lo": 4.206494831397831,
@@ -3124,6 +3124,532 @@
       "i_a": 0.7666429148253577,
       "v_v": 3.234360566423701,
       "v_se_v": 0.0021081873605641264
+    }
+  },
+  "g_rails_at_measured_e_ms": {
+    "value": 4.73317029618898,
+    "lo": 4.4309032585867305,
+    "hi": 5.03543733379123,
+    "unit": "mS"
+  },
+  "g_rails_at_measured_e_by_variant": {
+    "construct_0p301": {
+      "g_ms": {
+        "value": 5.003881099630699,
+        "lo": 4.684902792874518,
+        "hi": 5.32285940638688,
+        "unit": "mS"
+      },
+      "g_over_edge_band_ms": {
+        "value": 5.003881099630699,
+        "lo": 4.880051629105312,
+        "hi": 5.127699032375673,
+        "unit": "mS"
+      },
+      "chi2": {
+        "value": 7.4746698348386165,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 4 dof"
+      },
+      "r_ohm": {
+        "value": 4.176568075092867,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "v0_v": {
+        "value": 0.031304160526164,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "v0_less_dips_v": {
+        "value": 0.025214221630364454,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "sag_slope_pull_sigma": {
+        "value": 2.9836471458727507,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "valley_min_edge_ticks": {
+        "value": 16.28513513513514,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "valley_min_g_ms": {
+        "value": 3.9000000000000004,
+        "lo": null,
+        "hi": null,
+        "unit": "mS"
+      },
+      "valley_min_chi2": {
+        "value": 3.876774391411871,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 3 dof"
+      }
+    },
+    "motor_line": {
+      "g_ms": {
+        "value": 4.73317029618898,
+        "lo": 4.4309032585867305,
+        "hi": 5.03543733379123,
+        "unit": "mS"
+      },
+      "g_over_edge_band_ms": {
+        "value": 4.73317029618898,
+        "lo": 4.6077993412308285,
+        "hi": 4.858531424640643,
+        "unit": "mS"
+      },
+      "chi2": {
+        "value": 6.575580503217198,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 4 dof"
+      },
+      "r_ohm": {
+        "value": 4.1767417953059445,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "v0_v": {
+        "value": 0.0332177954728346,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "v0_less_dips_v": {
+        "value": 0.027127856577035054,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "sag_slope_pull_sigma": {
+        "value": 2.3895637705394734,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "valley_min_edge_ticks": {
+        "value": 31.317567567567565,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "valley_min_g_ms": {
+        "value": 5.5,
+        "lo": null,
+        "hi": null,
+        "unit": "mS"
+      },
+      "valley_min_chi2": {
+        "value": 5.032579343703313,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 3 dof"
+      }
+    },
+    "motor_line_no_intercept": {
+      "g_ms": {
+        "value": 4.614498179099808,
+        "lo": 4.283257513704368,
+        "hi": 4.945738844495248,
+        "unit": "mS"
+      },
+      "g_over_edge_band_ms": {
+        "value": 4.614498179099808,
+        "lo": 4.488916394380504,
+        "hi": 4.740070580528355,
+        "unit": "mS"
+      },
+      "chi2": {
+        "value": 7.876354128752551,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 4 dof"
+      },
+      "r_ohm": {
+        "value": 4.167627855761983,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "v0_v": {
+        "value": 0.04038172077279152,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "v0_less_dips_v": {
+        "value": 0.03429178187699197,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "sag_slope_pull_sigma": {
+        "value": 2.2014171241484894,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "valley_min_edge_ticks": {
+        "value": 31.94391891891892,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "valley_min_g_ms": {
+        "value": 5.5,
+        "lo": null,
+        "hi": null,
+        "unit": "mS"
+      },
+      "valley_min_chi2": {
+        "value": 5.611818994655933,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 3 dof"
+      }
+    },
+    "construct_0p301_k": {
+      "g_ms": {
+        "value": 4.921492202079399,
+        "lo": 4.270648932724312,
+        "hi": 5.572335471434487,
+        "unit": "mS"
+      },
+      "g_over_edge_band_ms": {
+        "value": 4.921492202079399,
+        "lo": 4.797849115521023,
+        "hi": 5.045123813506881,
+        "unit": "mS"
+      },
+      "chi2": {
+        "value": 31.346773708824955,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 4 dof"
+      },
+      "r_ohm": {
+        "value": 4.193103825748852,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "v0_v": {
+        "value": 0.016335132539668153,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "v0_less_dips_v": {
+        "value": 0.010245193643868607,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "sag_slope_pull_sigma": {
+        "value": 3.26187683827826,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "valley_min_edge_ticks": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "valley_min_g_ms": {
+        "value": 1.8000000000000003,
+        "lo": null,
+        "hi": null,
+        "unit": "mS"
+      },
+      "valley_min_chi2": {
+        "value": 2.444302093383644,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 3 dof"
+      }
+    },
+    "motor_line_k": {
+      "g_ms": {
+        "value": 4.649177915104337,
+        "lo": 4.310538967852456,
+        "hi": 4.987816862356218,
+        "unit": "mS"
+      },
+      "g_over_edge_band_ms": {
+        "value": 4.649177915104337,
+        "lo": 4.52400597140516,
+        "hi": 4.774341482815532,
+        "unit": "mS"
+      },
+      "chi2": {
+        "value": 8.31491169251055,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 4 dof"
+      },
+      "r_ohm": {
+        "value": 4.193229051913686,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "v0_v": {
+        "value": 0.018321342481087206,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "v0_less_dips_v": {
+        "value": 0.01223140358528766,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "sag_slope_pull_sigma": {
+        "value": 2.6587976163904465,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "valley_min_edge_ticks": {
+        "value": 14.40608108108108,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "valley_min_g_ms": {
+        "value": 3.3,
+        "lo": null,
+        "hi": null,
+        "unit": "mS"
+      },
+      "valley_min_chi2": {
+        "value": 3.4451370547846967,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 3 dof"
+      }
+    },
+    "motor_line_no_intercept_k": {
+      "g_ms": {
+        "value": 4.530582673906924,
+        "lo": 4.203981049174109,
+        "hi": 4.857184298639739,
+        "unit": "mS"
+      },
+      "g_over_edge_band_ms": {
+        "value": 4.530582673906924,
+        "lo": 4.405201115962436,
+        "hi": 4.655955542797155,
+        "unit": "mS"
+      },
+      "chi2": {
+        "value": 7.714553013103557,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 4 dof"
+      },
+      "r_ohm": {
+        "value": 4.184095976357497,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "v0_v": {
+        "value": 0.025506267199973585,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "v0_less_dips_v": {
+        "value": 0.01941632830417404,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "sag_slope_pull_sigma": {
+        "value": 2.4678299579048097,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "valley_min_edge_ticks": {
+        "value": 16.28513513513514,
+        "lo": null,
+        "hi": null,
+        "unit": "ticks"
+      },
+      "valley_min_g_ms": {
+        "value": 3.4000000000000004,
+        "lo": null,
+        "hi": null,
+        "unit": "mS"
+      },
+      "valley_min_chi2": {
+        "value": 3.9813779627222385,
+        "lo": null,
+        "hi": null,
+        "unit": "chi2 over 3 dof"
+      }
+    }
+  },
+  "r_rails_at_measured_e_ohm": {
+    "value": 4.1767417953059445,
+    "lo": 4.167627855761983,
+    "hi": 4.193229051913686,
+    "unit": "ohm"
+  },
+  "v0_rails_at_measured_e_v": {
+    "value": 0.0332177954728346,
+    "lo": 0.016335132539668153,
+    "hi": 0.04038172077279152,
+    "unit": "V"
+  },
+  "v0_rails_at_measured_e_less_dips_v": {
+    "value": 0.027127856577035054,
+    "lo": 0.010245193643868607,
+    "hi": 0.03429178187699197,
+    "unit": "V"
+  },
+  "edge_ticks_measured_5v": {
+    "value": 25.054054054054053,
+    "lo": 24.054054054054053,
+    "hi": 26.054054054054053,
+    "unit": "ticks"
+  },
+  "rails_volts_budget_lock_mv": {
+    "lock_25": {
+      "as_read_error_mv": {
+        "value": 113.9538226689203,
+        "lo": 113.01068824603897,
+        "hi": 114.89695709180161,
+        "unit": "mV"
+      },
+      "construction_c_volts_mv": {
+        "value": 98.84164309564578,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "volts_side_term_mv": {
+        "value": 71.3583792263167,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "lock_40": {
+      "as_read_error_mv": {
+        "value": 121.75186326868736,
+        "lo": 121.00856196000326,
+        "hi": 122.49516457737144,
+        "unit": "mV"
+      },
+      "construction_c_volts_mv": {
+        "value": 112.3869650757869,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "volts_side_term_mv": {
+        "value": 56.075254356600134,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "stop_25": {
+      "as_read_error_mv": {
+        "value": 103.2954340564072,
+        "lo": 102.9005273252171,
+        "hi": 103.69034078759731,
+        "unit": "mV"
+      },
+      "construction_c_volts_mv": {
+        "value": 99.47315816012328,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "volts_side_term_mv": {
+        "value": 71.36711281464034,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "stop_40": {
+      "as_read_error_mv": {
+        "value": 99.28949004709298,
+        "lo": 96.87435075633279,
+        "hi": 101.70462933785316,
+        "unit": "mV"
+      },
+      "construction_c_volts_mv": {
+        "value": 112.46749974800701,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "volts_side_term_mv": {
+        "value": 56.044907900969264,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "wound_25": {
+      "as_read_error_mv": {
+        "value": 107.18112423482359,
+        "lo": 105.85870796707992,
+        "hi": 108.50354050256723,
+        "unit": "mV"
+      },
+      "construction_c_volts_mv": {
+        "value": 99.14266902016527,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "volts_side_term_mv": {
+        "value": 71.3859066122988,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "wound_40": {
+      "as_read_error_mv": {
+        "value": 113.97644424888365,
+        "lo": 113.75603404996573,
+        "hi": 114.19685444780156,
+        "unit": "mV"
+      },
+      "construction_c_volts_mv": {
+        "value": 112.50323373961902,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "volts_side_term_mv": {
+        "value": 56.04212199684578,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
     }
   }
 }
