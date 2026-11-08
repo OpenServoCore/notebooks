@@ -1,0 +1,548 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4, telemetry/mg90-d__dev-v006-2A-D/resistance/stop-1",
+  "notes": "stage 3 resistance of mg90-d on dev-v006-2A-D from two datasets: resistance/locked-4 (sitting 4, the horn lock at mid travel, six sweeps 20 s apart, three on 3.3 V and three on 3.7 V, each 300 ms at 100 % in direction +1 and, after a 20 s rest, 300 ms in -1) and resistance/stop-1 (sitting 1, 5.0 V, six chains 20 s apart of 24, 36 and 24 % for 300 ms each after a 49 % stall seek, chains 0, 2, 4 direction -1 into the low stop, 1, 3, 5 direction +1 into the high stop). Current and terminal volts through stage 1's current-scale and terminal-chain over each sweep's torque-off zero. A lap or step is read as stage 2 rest-resistance reads a lap: from its first row at the held duty, V/I at that row by a line through V/I from 60 ms to the end, I and V the same way. r_term_ohm (the headline) is that read on the six 3.7 V laps, both directions, the mean with the range as bounds: V/I at r_term_amps with V0 inside, stage 2's r_term read with no holes and no construction. r_term_median_ohm is the median of the same six laps with the same range, written for stage 2's key, the same definition otherwise. r_term_lap_scatter_pct is their sd over their mean; r_term_amps their first-row current, mean and range; r_term_by_direction_ohm_fwd and _rev each direction's three laps, mean and range; direction_gap_pct the -1 lap over the +1 lap of each 3.7 V sweep, 20 s later, mean and range (direction and order confounded), direction_gap_pct_3v3 the same at 3.3 V, report-only. r_term_plateau_ohm is mean V over mean I from 30 to 60 ms on the six 3.7 V laps, mean with range, a secondary check; r_term_plateau_less_copper_ohm the same less mg90-b's copper warming per joule at these laps' power to the window's middle. r_3v3_ohm is the 3.3 V laps' first-row read, mean and range, report-only (that rail sits off stage 1's graded lines); v_over_i_3v3_excess_pct the 3.3 V laps over the 3.7 V laps, value over both directions, bounds the two directions; v_over_i_3v3_stage1_pct stage 1's bare-load factor at 3.3 V, quoted; v0_two_level_lever_mv_per_0p1pct the V0 that 0.1 % of V/I between the two levels moves. v0_all_rails_v and r_stall_all_rails_ohm are the line V = V0 + R I through all twelve first-row points with the 3.3 V volts as read, +/- one standard error, *_scaled_* the same with the 3.3 V volts over the stage 1 factor, all four report-only (the levels are 0.03 A apart). free_spin_dip_pct is the current's low point after the L/R rise under its 30 to 60 ms plateau, free_spin_emf_rev_s that low point's EMF at the plateau's V_on / I through the sag result's ke_mv_per_rev_s, free_spin_until_ms when the current is back within 1 % of the plateau, each the mean and range over the twelve laps. warming_pct_per_j is the 3.7 V laps' line slope per watt, mean with range, which carries rotor creep and is not the copper's; warming_pct_per_j_3v3 the 3.3 V laps'; copper_heat_capacity_max_j_per_c and copper_mass_max_g the bound the 3.7 V warming gives if every ohm were copper keeping all its heat, report-only. quiet_gate_i_sd_counts is the current's sd over 60 to 300 ms per lap, mean and range over the twelve, against the plant traps' 4.5 counts: every 3.7 V lap is over it there, and over 30 to 60 ms chain 4's -1 lap (3.7 V) and chains 1 and 2's -1 laps (3.3 V). lap_joules is the largest lap's energy with the range over the twelve; board_ntc_c the board NTC by its nominal beta from the manifest probes before, inside and after each sweep (the TEL rows carry no ntc_raw), median with range; seat_pos_lock the lock's seats.csv median and range; seat_shift_per_lap_counts the largest probe shift across a sweep with the smallest and largest. r_type_gap_pct_mg90b and _mg90c are r_term_ohm over each type motor's r_term_median_ohm at its own board temperature, r_type_gap_common_t_pct_* with the type scaled to this board's median at 0.39 %/C on the whole R, an upper bound on that correction. The stop keys carry the plain construction as read, V_eff = D x V_on (the commanded duty and the crest tap difference) over the crest current, unless their name says otherwise. Each step is read from its first row at the held duty, the seek's and the previous step's rows out, settled means from 2 ms. r_stop_ohm and v0_stop_v are the mean over six chains of each chain's line through two points, the two 24 % steps averaged against the 36 % step, +/- one sd over the chains; *_first_row_* the same from the first-row reads; r_stop_pooled_ohm and v0_stop_pooled_v least squares through all 18 settled points, +/- se, the check; r_stop_by_stop_ohm_low and _high, v0_stop_by_stop_v_low and _high three chains each, mean and range (the direction is confounded with the stop); r_stop_by_chain_ohm and v0_stop_by_chain_v per chain 0 to 5; stop_step_amps_24 and _36, stop_v_on_v_* and stop_vi_as_read_ohm_* the settled current, V_on and V_eff / I per step kind, mean and range; stop_chain_warming_pct step 3's V/I over step 1's; stop_lever_per_a 1/I between the levels; stop_seek_amps the seek press's current before step 1, mean and range. r_stop_over_k_ohm is r_stop_ohm over sample-timing's window scale k with k's bounds; r_stop_crest_bound_ohm and v0_stop_crest_bound_v the pooled two-level line with the inductance result's crest_less_mean_stop_lap_ma +2 sigma bound (5.51 and 4.64 mA) taken off the current, *_crest_value_* at its value; stop_over_locked_pct_as_read the stop line's V/I at r_term_amps over r_term_ohm. Keys with edge_brake carry the construction with stage 1's two board terms: the window shortened by edge_ticks (sample-timing's tap ON lag less its OFF lag, the mean of the 3.7 and 7.4 V rails, bounds the widest per-rail combinations) of the 2400 tick period, and the brake interval's drop low_side_loop_ohm x i (bridge-states) over the rest of the period. r_stop_edge_brake_ohm is +/- one sd over chains; r_stop_edge_brake_loop_ohm its range over the loop's bounds; r_stop_edge_brake_lags_ohm and v0_stop_edge_brake_v the range over the edge lags' bounds; *_edge_brake_g_*_spin and _locked add a crest over-read G x (1 - D) x V_on with mg90-b's spinning or locked-burst G from motor-model, comparison values, not mg90-d's; stop_over_locked_pct_edge_brake and _edge_brake_g_spin as for as_read. joint_r_ohm and joint_v0_v are the line through the lock's point, the 18 stop points and the sag laps' mean point under edge + brake + G spinning, equal weights, joint_resid_mv_lock, _stop_rms and _sag its residuals. sag_slope_board_terms_predict_ohm_per_v is the as-read rail slope edge + brake predict for the sag laps over a flat true R (the sag result quoted: 1.5 V effective at round(150 / rail) % on 13 rails, V_on the rail less rail_minus_crest_von_mv), sag_slope_board_terms_sigma its distance from the measured slope in the sag's se; sag_slope_g_needed_ms the per-volt crest term that brings that prediction to the measured slope, bounds from its se; reading2_offset_ma the rail-independent crest offset that closes lock and stop under edge + brake, which the sag slope rejects if the board terms stand. Standing of the readings: edge + brake + a crest term near the type's spinning G leading, moderate; edge lags smaller than stage 1's on the motor and no crest term alive, low to moderate; a constant offset, V0 alone and temperature dead. Every edge_brake, g and joint key is a candidate reading, not a correction; the next capture (the stop chains at a second rail) decides. construction_check_dummy_pct_plain_25, _plain_40, _both_25 and _both_40 are the plain construction and the one with both board terms on stage 1's bridge-states sweep-slow rungs into the RL dummy (wirings ra, rab, rb, both directions), V/I from 30 ms over each wiring's dc_r_ohm, mean and range, a check of the construction for the stage 1 notebook to own, no result derived from it; edge_ticks and low_side_loop_ohm the stage 1 terms as used, quoted. seat_pos_stop_low and _high are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; board_ntc_c_stop the board NTC around the chains, mean and range; stop_minutes_into_sitting the first chain's start after sitting 1's first event. Left out against stage 2's file: *_by_hole, hole_map_* and r_term_angle_pct (no holes), r_stall_ohm, v0_brush_v, v0_mean_v and the graded lines (no V0 holds on these rails), early_excess_pct (the early window holds the free spin), copper_tau_s and direction_gap_* kept and offset (20 s between the directions), and the run-up, ohms and room keys (not run).",
+  "r_term_ohm": {
+    "value": 4.2188705084081874,
+    "lo": 4.206494831397831,
+    "hi": 4.23004332394171,
+    "unit": "ohm"
+  },
+  "r_term_median_ohm": {
+    "value": 4.219213866478265,
+    "lo": 4.206494831397831,
+    "hi": 4.23004332394171,
+    "unit": "ohm"
+  },
+  "r_term_lap_scatter_pct": {
+    "value": 0.24963568274747194,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_term_amps": {
+    "value": 0.7666429148253577,
+    "lo": 0.765495764085,
+    "hi": 0.7676791604299541,
+    "unit": "A"
+  },
+  "r_term_by_direction_ohm_fwd": {
+    "value": 4.22831288960024,
+    "lo": 4.226742297944317,
+    "hi": 4.23004332394171,
+    "unit": "ohm"
+  },
+  "r_term_by_direction_ohm_rev": {
+    "value": 4.2094281272161345,
+    "lo": 4.206494831397831,
+    "hi": 4.211685435012214,
+    "unit": "ohm"
+  },
+  "direction_gap_pct": {
+    "value": -0.446599960732134,
+    "lo": -0.5566962496718841,
+    "hi": -0.35622855312059665,
+    "unit": "%"
+  },
+  "direction_gap_pct_3v3": {
+    "value": 0.1393495854882909,
+    "lo": 0.04283681916392723,
+    "hi": 0.20714738914167086,
+    "unit": "%"
+  },
+  "r_term_plateau_ohm": {
+    "value": 4.249065536766364,
+    "lo": 4.2008057648078525,
+    "hi": 4.269487446922678,
+    "unit": "ohm"
+  },
+  "r_term_plateau_less_copper_ohm": {
+    "value": 4.235968087822493,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "r_3v3_ohm": {
+    "value": 4.333043613050591,
+    "lo": 4.321800470627249,
+    "hi": 4.340621760040976,
+    "unit": "ohm"
+  },
+  "v_over_i_3v3_excess_pct": {
+    "value": 2.7062481395164095,
+    "lo": 2.40557759320692,
+    "hi": 3.0082675844533613,
+    "unit": "%"
+  },
+  "v_over_i_3v3_stage1_pct": {
+    "value": 3.9412220770681294,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "v0_two_level_lever_mv_per_0p1pct": {
+    "value": 83.16573453024125,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "v0_all_rails_v": {
+    "value": 2.2302975599603783,
+    "lo": 2.1634050149622452,
+    "hi": 2.2971901049585113,
+    "unit": "V"
+  },
+  "r_stall_all_rails_ohm": {
+    "value": 1.3113428567523462,
+    "lo": 1.2224409858000405,
+    "hi": 1.400244727704652,
+    "unit": "ohm"
+  },
+  "v0_all_rails_scaled_v": {
+    "value": -0.984818432977798,
+    "lo": -1.1032353476358974,
+    "hi": -0.8664015183196988,
+    "unit": "V"
+  },
+  "r_stall_all_rails_scaled_ohm": {
+    "value": 5.504503084615067,
+    "lo": 5.347124033394958,
+    "hi": 5.661882135835175,
+    "unit": "ohm"
+  },
+  "free_spin_dip_pct": {
+    "value": -49.18383901414777,
+    "lo": -57.551431545214726,
+    "hi": -44.71685839611912,
+    "unit": "%"
+  },
+  "free_spin_emf_rev_s": {
+    "value": 237.3876309663957,
+    "lo": 220.29302642306686,
+    "hi": 276.3493723512652,
+    "unit": "rev/s"
+  },
+  "free_spin_until_ms": {
+    "value": 27.05416666666667,
+    "lo": 22.450000000000003,
+    "hi": 28.9,
+    "unit": "ms"
+  },
+  "warming_pct_per_j": {
+    "value": 4.957845972968123,
+    "lo": 3.8208607056346677,
+    "hi": 6.696511597637081,
+    "unit": "%/J"
+  },
+  "warming_pct_per_j_3v3": {
+    "value": 3.114812551215086,
+    "lo": 2.8736982592345286,
+    "hi": 3.255360001181618,
+    "unit": "%/J"
+  },
+  "copper_heat_capacity_max_j_per_c": {
+    "value": 0.07735151044331119,
+    "lo": null,
+    "hi": null,
+    "unit": "J/C"
+  },
+  "copper_mass_max_g": {
+    "value": 0.20091301413847062,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "quiet_gate_i_sd_counts": {
+    "value": 5.3919109860731345,
+    "lo": 3.706086056118292,
+    "hi": 8.977590657283372,
+    "unit": "counts"
+  },
+  "lap_joules": {
+    "value": 0.7235145628988253,
+    "lo": 0.6820786878484971,
+    "hi": 0.7235145628988253,
+    "unit": "J"
+  },
+  "board_ntc_c": {
+    "value": 26.258318085906645,
+    "lo": 26.0957642228614,
+    "hi": 26.317474633098282,
+    "unit": "C"
+  },
+  "seat_pos_lock": {
+    "value": 2018.0,
+    "lo": 2015.0,
+    "hi": 2020.0,
+    "unit": "counts"
+  },
+  "seat_shift_per_lap_counts": {
+    "value": 5.0,
+    "lo": 0.0,
+    "hi": 5.0,
+    "unit": "counts"
+  },
+  "r_type_gap_pct_mg90b": {
+    "value": -5.3065318972429605,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_type_gap_common_t_pct_mg90b": {
+    "value": -5.52091429132231,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_type_gap_pct_mg90c": {
+    "value": -4.161108553005777,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_type_gap_common_t_pct_mg90c": {
+    "value": -5.4638575297283225,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_stop_ohm": {
+    "value": 4.37743040378762,
+    "lo": 4.362822893388684,
+    "hi": 4.392037914186555,
+    "unit": "ohm"
+  },
+  "v0_stop_v": {
+    "value": 0.011135908230467543,
+    "lo": 0.006480198497012635,
+    "hi": 0.01579161796392245,
+    "unit": "V"
+  },
+  "r_stop_first_row_ohm": {
+    "value": 4.342769677985435,
+    "lo": 4.32445849808278,
+    "hi": 4.361080857888089,
+    "unit": "ohm"
+  },
+  "v0_stop_first_row_v": {
+    "value": 0.020243278406678427,
+    "lo": 0.016068466848396325,
+    "hi": 0.02441808996496053,
+    "unit": "V"
+  },
+  "r_stop_pooled_ohm": {
+    "value": 4.376489511487453,
+    "lo": 4.361072040506831,
+    "hi": 4.3919069824680745,
+    "unit": "ohm"
+  },
+  "v0_stop_pooled_v": {
+    "value": 0.01141763047937732,
+    "lo": 0.006694423760121898,
+    "hi": 0.016140837198632744,
+    "unit": "V"
+  },
+  "r_stop_by_stop_ohm_low": {
+    "value": 4.370315059479334,
+    "lo": 4.356246563443581,
+    "hi": 4.388005493303639,
+    "unit": "ohm"
+  },
+  "v0_stop_by_stop_v_low": {
+    "value": 0.014816553395444817,
+    "lo": 0.01090900035757203,
+    "hi": 0.01725881618452263,
+    "unit": "V"
+  },
+  "r_stop_by_stop_ohm_high": {
+    "value": 4.384545748095906,
+    "lo": 4.372823156959348,
+    "hi": 4.39446948598043,
+    "unit": "ohm"
+  },
+  "v0_stop_by_stop_v_high": {
+    "value": 0.00745526306549027,
+    "lo": 0.0065981213509223036,
+    "hi": 0.009026755827786781,
+    "unit": "V"
+  },
+  "r_stop_by_chain_ohm": [
+    4.3667,
+    4.3945,
+    4.388,
+    4.3863,
+    4.3562,
+    4.3728
+  ],
+  "v0_stop_by_chain_v": [
+    0.0163,
+    0.0066,
+    0.0109,
+    0.009,
+    0.0173,
+    0.0067
+  ],
+  "stop_step_amps_24": {
+    "value": 0.2594359627034948,
+    "lo": 0.2583674079979141,
+    "hi": 0.26131168267225935,
+    "unit": "A"
+  },
+  "stop_v_on_v_24": {
+    "value": 4.7783293821107,
+    "lo": 4.775820480078451,
+    "hi": 4.781265355665688,
+    "unit": "V"
+  },
+  "stop_vi_as_read_ohm_24": {
+    "value": 4.420404297460479,
+    "lo": 4.389268062155715,
+    "hi": 4.437713081091477,
+    "unit": "ohm"
+  },
+  "stop_step_amps_36": {
+    "value": 0.3833306056840538,
+    "lo": 0.3821983235049054,
+    "hi": 0.38500190557270036,
+    "unit": "A"
+  },
+  "stop_v_on_v_36": {
+    "value": 4.692040840506611,
+    "lo": 4.68876054419906,
+    "hi": 4.695239333832062,
+    "unit": "V"
+  },
+  "stop_vi_as_read_ohm_36": {
+    "value": 4.406488004226763,
+    "lo": 4.390331932682768,
+    "hi": 4.41654826726856,
+    "unit": "ohm"
+  },
+  "stop_chain_warming_pct": {
+    "value": 0.4475527643952611,
+    "lo": 0.26178121214168737,
+    "hi": 0.623227961662387,
+    "unit": "%"
+  },
+  "stop_lever_per_a": {
+    "value": 1.2458015184471858,
+    "lo": null,
+    "hi": null,
+    "unit": "1/A"
+  },
+  "r_stop_over_k_ohm": {
+    "value": 4.349887285314944,
+    "lo": 4.342198872764096,
+    "hi": 4.357602972774041,
+    "unit": "ohm"
+  },
+  "r_stop_crest_bound_ohm": {
+    "value": 4.346860057226697,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "v0_stop_crest_bound_v": {
+    "value": 0.0430260760178911,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "r_stop_crest_value_ohm": {
+    "value": 4.36879703700317,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "v0_stop_crest_value_v": {
+    "value": 0.02012163079341489,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "r_stop_edge_brake_ohm": {
+    "value": 4.264693766556233,
+    "lo": 4.249840275263972,
+    "hi": 4.279547257848494,
+    "unit": "ohm"
+  },
+  "r_stop_edge_brake_loop_ohm": {
+    "value": 4.264693766556233,
+    "lo": 4.249441998686759,
+    "hi": 4.27249436503131,
+    "unit": "ohm"
+  },
+  "r_stop_edge_brake_lags_ohm": {
+    "value": 4.264693766556233,
+    "lo": 4.259830615840822,
+    "hi": 4.269062359571773,
+    "unit": "ohm"
+  },
+  "v0_stop_edge_brake_v": {
+    "value": -0.07053144102366544,
+    "lo": -0.12528723536080028,
+    "hi": -0.009576877516289254,
+    "unit": "V"
+  },
+  "r_stop_edge_brake_g_ohm_spin": {
+    "value": 4.186682854680456,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "v0_stop_edge_brake_g_v_spin": {
+    "value": 0.003444039507382183,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "r_stop_edge_brake_g_ohm_locked": {
+    "value": 4.206368134351121,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "v0_stop_edge_brake_g_v_locked": {
+    "value": -0.01521624674575143,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "stop_over_locked_pct_as_read": {
+    "value": 4.102648866266034,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "stop_over_locked_pct_edge_brake": {
+    "value": -1.0945375963237969,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "stop_over_locked_pct_edge_brake_g_spin": {
+    "value": -0.6564621751649069,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "joint_r_ohm": {
+    "value": 4.2210396746791705,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "joint_v0_v": {
+    "value": -0.007445980298403951,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "joint_resid_mv_lock": {
+    "value": 5.783004345676801,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "joint_resid_mv_stop_rms": {
+    "value": 4.296633060300204,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "joint_resid_mv_sag": {
+    "value": -22.889111951129415,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "sag_slope_board_terms_predict_ohm_per_v": {
+    "value": 0.04121280614133975,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "sag_slope_board_terms_sigma": {
+    "value": -6.601726919947297,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "sag_slope_g_needed_ms": {
+    "value": 3.219699347678711,
+    "lo": 2.7319937235714336,
+    "hi": 3.7074049717859885,
+    "unit": "mS"
+  },
+  "reading2_offset_ma": {
+    "value": 8.305460663439968,
+    "lo": null,
+    "hi": null,
+    "unit": "mA"
+  },
+  "construction_check_dummy_pct_plain_25": {
+    "value": 8.498787180546003,
+    "lo": 8.303123706007698,
+    "hi": 8.828286975748378,
+    "unit": "%"
+  },
+  "construction_check_dummy_pct_both_25": {
+    "value": -0.45906357068574893,
+    "lo": -0.680260554134926,
+    "hi": -0.17741672335819247,
+    "unit": "%"
+  },
+  "construction_check_dummy_pct_plain_40": {
+    "value": 5.347012774850686,
+    "lo": 5.0778646513579995,
+    "hi": 5.474084638041865,
+    "unit": "%"
+  },
+  "construction_check_dummy_pct_both_40": {
+    "value": -0.9407325710028095,
+    "lo": -1.226963307904727,
+    "hi": -0.7656302620804301,
+    "unit": "%"
+  },
+  "edge_ticks": {
+    "value": 25.5,
+    "lo": -4.0,
+    "hi": 52.0,
+    "unit": "ticks"
+  },
+  "low_side_loop_ohm": {
+    "value": 0.30083616429222926,
+    "lo": 0.2813025753490391,
+    "hi": 0.3390283318766815,
+    "unit": "ohm"
+  },
+  "seat_pos_stop_low": {
+    "value": 2.0,
+    "lo": 0.0,
+    "hi": 4.0,
+    "unit": "counts"
+  },
+  "seat_pos_stop_high": {
+    "value": 3807.0,
+    "lo": 3795.0,
+    "hi": 3817.0,
+    "unit": "counts"
+  },
+  "board_ntc_c_stop": {
+    "value": 26.028097751026362,
+    "lo": 25.999809913155577,
+    "hi": 26.04408383728378,
+    "unit": "C"
+  },
+  "stop_minutes_into_sitting": {
+    "value": 8.634766666094462,
+    "lo": null,
+    "hi": null,
+    "unit": "min"
+  },
+  "stop_seek_amps": {
+    "value": 0.5157274016371977,
+    "lo": 0.5120992017864758,
+    "hi": 0.518266529694617,
+    "unit": "A"
+  }
+}
