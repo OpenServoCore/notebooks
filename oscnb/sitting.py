@@ -14,6 +14,7 @@ reads it, so a notebook never knows which sitting produced its data.
   uv run python -m oscnb.sitting servo [N] ...
   uv run python -m oscnb.sitting servo-camera [N] ...
   uv run python -m oscnb.sitting servo-load [N] ...
+  uv run python -m oscnb.sitting servo-meter [N] ...
   uv run python -m oscnb.sitting list
 
 N numbers every dataset of the sitting, `<name>-N`, and its manifest,
@@ -37,7 +38,8 @@ The servo states are the assembled servo of stage 3, OSC_SERVO picking it,
 its datasets under `telemetry/<servo>__<board>/`. `servo` is the servo on
 the board and the DPS with no instrument, `servo-camera` the servo in the
 printed rig under the phone, `servo-load` the rig on its side with the arm
-and its mass on the horn. The horn lock is no state: a plan marked `lock`
+and its mass on the horn, `servo-meter` the servo hornless with the DMM in
+series on the motor, its polarity checked by one forward spin as in `meter`. The horn lock is no state: a plan marked `lock`
 runs with the horn held at mid travel, and the runner centers the horn and
 asks for the lock on before the first such plan and off before the next
 free one. On top of the rated voltage, a lap into the horn lock draws at
@@ -65,11 +67,12 @@ import numpy as np
 
 from . import b41t, bench, boards, capture, motors, osc, results, servos, tel
 
-SERVO_STATES = ("servo", "servo-camera", "servo-load")
+SERVO_STATES = ("servo", "servo-meter", "servo-camera", "servo-load")
 STATES = ("free", "meter", "locked", *SERVO_STATES)
 REST_S = 20                   # torque-off between cycles and between holes, the bench rule for a bare motor
 HOLES = list(range(12))       # the rig's bolt circle, 30 degrees apart
 POLARITY = (5.0, 30, 1000)    # the meter check: rail, duty, ms of one forward spin
+POLARITY_SERVO_MS = 500       # the same spin on the servo, inside its runway from the guard
 STALL = (3.3, 300, 300)       # the locked check: rail, lap ms, counts over the zero a locked rotor draws (a free one at 100 % stays under half)
 ENTRY = {
     "free": "Motor leads on the board's motor connector, the bar OFF the pinion, the rotor free, no meter.",
@@ -80,6 +83,12 @@ ENTRY = {
     "servo": "The servo's motor and pot leads on the board, the board on "
              "the DPS, the adapter on the bus, no instrument. The horn free "
              "and the lock off, the lock to hand.",
+    "servo-meter": "The servo's motor and pot leads on the board, the board "
+                   "on the DPS, the adapter on the bus, the horn off and the "
+                   "rotor free. DMM on DC A, red probe in the A jack on the "
+                   "22.000 A range, in series on the MOT_A side with its red "
+                   "lead toward MOT_A: MOT_A -> meter -> motor lead -> motor "
+                   "-> other lead -> MOT_B. Bluetooth on.",
     "servo-camera": "The servo in the printed rig with the tag horn, the "
                     "reference pad beside it, the board on the DPS, the "
                     "phone overhead in SLO-MO at 240 fps with the tags and "
@@ -735,12 +744,38 @@ def run_locked(s, plans):
             p.finish(s, outs[p.name])
 
 
+def servo_polarity_check(s):
+    """One short forward spin from the guard with the meter logging: the
+    meter must read it positive, as `polarity_check` asks of the bare motor."""
+    v, d, _ = POLARITY
+    out = s.root / "telemetry" / s.group / "sittings" / f"{s.state}-{s.n}-polarity"
+    with s.meter.log(out / "dmm.csv", expect="DC A"):
+        s.drive(out, v, [f"{d}@{POLARITY_SERVO_MS}", "coast:300"], dirs="fwd")
+    with open(out / "dmm.csv", newline="") as f:
+        amps = [float(r["value"]) for r in csv.DictReader(f) if abs(float(r["value"])) > 2e-3]
+    if not amps:
+        raise SystemExit("the meter logged no current through the forward spin: is it in the loop, on DC A, Bluetooth on?")
+    mean = sum(amps) / len(amps)
+    if mean <= 0:
+        raise SystemExit(f"the meter reads the forward spin at {mean * 1e3:+.1f} mA: turn the meter around, red toward MOT_A")
+    s.note("check", f"meter polarity: the forward spin reads {mean * 1e3:+.1f} mA")
+    s.rest("the check's spin done, the motor resting")
+
+
 def run_servo(s, plans):
     """A servo state: the brackets at the open and, mirrored, at the close;
     the horn lock on and off at the prompt as the plans ask; a plan that
     cannot run here noted and passed, and after a moved seat every seated
-    plan left out."""
+    plan left out. `servo-meter` opens the meter and checks its polarity."""
     s.prompt(ENTRY[s.state])
+    with (b41t.Meter() if s.state == "servo-meter" else nullcontext()) as meter:
+        s.meter = meter
+        if meter:
+            servo_polarity_check(s)
+        run_servo_plans(s, plans)
+
+
+def run_servo_plans(s, plans):
     brackets = [p for p in plans if p.bracket]
     body = [p for p in plans if not p.bracket]
     sequence = ([(p, "-open") for p in brackets] + [(p, "") for p in body]

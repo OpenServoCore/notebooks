@@ -120,10 +120,13 @@ each stop chain. `rails`, optional, runs the same chains on 3.7 and 7.4 V
 at the same two effective volts, so the terms a partial-duty read may
 carry, the bridge's edge lags, the brake interval's drop and a crest
 over-read per volt, separate by how each scales with the duty and the
-rail.
+rail. `meter` holds the same six levels into a stop for 2.5 s with the DMM
+in series on the motor, so the crest sample's error against the true mean
+current is read at each level with no construction in it.
 
 Run: the `locked` and `stop` plans of `uv run python -m oscnb.sitting
-servo`, `--include resistance/rails` for the other rails, then the
+servo`, `--include resistance/rails` for the other rails, `uv run python
+-m oscnb.sitting servo-meter` with the meter in the loop, then the
 notebook.
 
 ## inductance

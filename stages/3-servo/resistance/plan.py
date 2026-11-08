@@ -28,8 +28,16 @@ interval's drop and a crest over-read per volt, scale as 1/D, (1 - D) and
 (1 - D) V_on, so the same two currents on three rails separate them with
 no meter.
 
+`meter`, in the `servo-meter` state with the DMM in series on the motor,
+holds each of the six levels of `stop` and `rails` into a stop for
+METER_HOLD_S with the hold unstreamed between two short windows, the meter
+logging into `dmm.csv` through the plan. The meter's mean current through
+the hold against the crest sample's in the windows is the as-read current
+error at each level with no construction in it: a term proportional to
+(1 - D) V_on, a constant offset and no term each predict a different six.
+
 A dataset is `chains.csv`, one row per sweep, `chains/K` sweeps and
-`seats.csv`.
+`seats.csv`; `meter` writes `holds.csv`, `holds/K` and `dmm.csv`.
 """
 import time
 
@@ -42,6 +50,10 @@ RAILS = (3.7, 7.4)         # the pass again at the other two rails
 LAP_MS = 300               # each lap or level, the copper cold after
 REPEATS = 3                # laps per rail when locked, chains per stop
 STOPS = ("rev", "fwd")     # the low stop, then the high, alternated
+METER_RAILS = (3.7, 5.0, 7.4)  # the chains' three rails, ascending
+METER_HOLD_S = 2.5         # a hold long enough for four of the meter's 0.51 s packets
+METER_WINDOW_MS = 300      # the streamed window either side of the hold
+METER_REPEATS = 3          # holds per level per stop
 
 
 def duties(rail):
@@ -111,6 +123,39 @@ def stop(s, out):
     chains_at(s, out, (STOP_RAIL,))
 
 
+def held(duty):
+    """One level held into the stop: a window, the hold unstreamed, a window."""
+    return [f"{duty}@{METER_WINDOW_MS}",
+            f"hold:{duty}@{int(METER_HOLD_S * 1000)}",
+            f"then:{duty}@{METER_WINDOW_MS}"]
+
+
+def meter(s, out):
+    for rail in METER_RAILS:
+        for duty in duties(rail):
+            s.check(rail, held(duty), seat="stop")
+    k = 0
+    with s.meter_log(out):
+        for rail in METER_RAILS:
+            for level_v, duty in zip(LEVELS_V, duties(rail)):
+                for _ in range(METER_REPEATS):
+                    for side in STOPS:
+                        sub = f"holds/{k}"
+                        t0 = time.time()
+                        s.drive(out / sub, rail, held(duty), dirs=side,
+                                seat="stop")
+                        (pos,) = seat_pos(out / sub).values()
+                        log_row(out / "holds.csv", row(k, s, rail, sub, t0,
+                                                       level_v=level_v,
+                                                       duty_pct=duty,
+                                                       stop=side,
+                                                       seat_pos=pos))
+                        s.seat(out, side, round(pos))
+                        k += 1
+                        s.rest(f"hold {k - 1} done ({rail} V {duty} %, "
+                               f"{side} stop), the copper resting")
+
+
 def rails(s, out):
     chains_at(s, out, RAILS)
 
@@ -126,4 +171,8 @@ PLANS = [
     Plan("rails", "resistance", "servo",
          "the same chains on 3.7 and 7.4 V at the same effective volts",
          run=rails, order=21, seated=True, optional=True, minutes=8, mb=40),
+    Plan("meter", "resistance", "servo-meter",
+         "the six levels held 2.5 s into the stops with the DMM in series, "
+         "the crest sample against the meter",
+         run=meter, order=22, seated=True, minutes=29, mb=36),
 ]
