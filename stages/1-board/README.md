@@ -31,8 +31,10 @@ scripts turn it on with the leads connected.
 
 Run in this order. The lap experiments share one wiring and the heated
 experiments share another, opamp-temperature reads the ntc-curve result, and
-bridge-states comes last on the RL dummy, the bare load in series with two
-power inductors. compensation captures nothing of its own and closes the
+bridge-states comes after them on the RL dummy, the bare load in series with
+two power inductors. pos-coupling follows bridge-states on the same wiring
+less one inductor, with a fixed divider on the POS connector in the pot's
+place. compensation captures nothing of its own and closes the
 stage: it reads this stage's results and datasets and, as earlier-stage data,
 two motors' stage 2 coast datasets taken on the same board, one of them with
 the trough shunt sample in every row.
@@ -95,6 +97,12 @@ the edges are in timer ticks after the commanded edge, about 0.02 us each.
 | First burst after a sign change, L jump, slow decay | +3.8 | +1.1 to +5.7, range, lowest to highest of the twelve sets | % | moderate confidence, the cores' history or the set boundary is open | [bridge-states](bridge-states/bridge-states.ipynb) |
 | First burst after a sign change, L jump, fast decay | 0.0 | -1.8 to +4.6, range, lowest to highest of the sets | % | measured, within the other bursts' scatter | [bridge-states](bridge-states/bridge-states.ipynb) |
 | First burst after a sign change, leftover volt-seconds | 10 | 4 to 16, range, lowest to highest of the first bursts | uV s | measured | [bridge-states](bridge-states/bridge-states.ipynb) |
+| Pos shift per amp of load current, DC | +0.56 | +0.53 to +0.60, statistical, one standard error of the line over both captures | counts/A | high, the same sign both directions, a rung mean carries about 0.1 count run to run | [pos-coupling](pos-coupling/pos-coupling.ipynb) |
+| Pos shift at partial duty, the largest group | +1.63 | +1.61 to +1.65, statistical, one standard error over 3 repeats x 2 directions | counts | a bound, fast decay 60 % at 7.4 V, repeats across captures to 0.03 counts, mechanism open | [pos-coupling](pos-coupling/pos-coupling.ipynb) |
+| VDD dip at a 100 % onset, 3.7 V | 49.3 | 48.6 to 50.0, statistical, one standard error over the 11 onsets | mV | high, read from vref_raw, over half its peak for 0.5 ms, +20 counts on pos | [pos-coupling](pos-coupling/pos-coupling.ipynb) |
+| VDD ripple at the TEL frame | 5.0 | 4.9 to 5.1, statistical, one standard error over the 18 baselines | mV pp | high, read from vref_raw, 2.5 kHz locked to the frame | [pos-coupling](pos-coupling/pos-coupling.ipynb) |
+| Pos floor at rest, frame pattern removed | 0.67 | 0.66 to 0.67, statistical, one standard error over the 18 baselines | counts rms | measured, 0.66 on capture-1 too, 1.08 to 1.13 with the pattern in | [pos-coupling](pos-coupling/pos-coupling.ipynb) |
+| Pos sample noise under drive, frame pattern removed | 0.63 | 0.51 to 0.70, range, lowest to highest of the 432 rungs | counts rms | measured on both captures, 0.66 at rest, 1.0 with the pattern in | [pos-coupling](pos-coupling/pos-coupling.ipynb) |
 | Awake zero over the asleep zero, 3.7 V | 2.53 | 2.48 to 2.58, statistical, one standard error over the coasts | counts | measured on 96 coasts of mg90-c, per-spin sd 0.5 counts, mg90-b within 0.3 | [compensation](compensation/compensation.ipynb) |
 | Awake zero over the asleep zero, 5 V | 5.88 | 5.84 to 5.92, statistical, one standard error over the coasts | counts | measured on 156 coasts of mg90-c, per-spin sd 0.5 counts, mg90-b 0.3 above | [compensation](compensation/compensation.ipynb) |
 | Awake zero over the asleep zero, 7.4 V | 9.43 | 9.38 to 9.48, statistical, one standard error over the coasts | counts | measured on 144 coasts of mg90-c, per-spin sd 0.6 counts, mg90-b within 0.1 | [compensation](compensation/compensation.ipynb) |
@@ -161,6 +169,18 @@ the edges are in timer ticks after the commanded edge, about 0.02 us each.
   the step at three rails would hold every spin inside 0.5 rev/s at 0.24
   counts rms; it stays as the bound the tracker is graded against, since
   reading it needs three supplies on every bench.
+- The board couples about half a count per amp of load current into the
+  position reading at DC, 0.56 +/- 0.03 counts/A over two captures with a
+  fixed divider in the pot's place, the same sign in both directions. That
+  clears the board of stage 3's locked-horn pot shift, which the bench
+  traced to the lock's play. Under switching the reading carries steady
+  shifts of up to +1.7 counts by duty and decay, repeated to 0.03 counts and
+  carried as a bound with its mechanism open. VDD dips by 49 mV for about
+  half a millisecond at each 100 % onset on a 3.7 V rail, +20 counts on the
+  position, and ripples by 5.0 mV peak to peak at the telemetry frame, which
+  raises the position's floor from 0.66 to about 1.1 counts rms. The
+  bridge's switching adds no noise to the position, the NTC or the chip's
+  reference.
 
 ### Open questions
 
@@ -393,6 +413,24 @@ first full period and show the turn-off, the return on the taps, the amplifier's
 tail and the discontinuous current inside one period.
 
 Run: `uv run python stages/1-board/bridge-states/capture.py`, then the notebook.
+
+## [pos-coupling](pos-coupling/pos-coupling.ipynb)
+
+Targets: what the board adds to the position reading, the NTC, the chip's
+1.2 V reference, the rail tap and the terminal taps when the bridge drives a
+load and nothing can move. The DC coupling per amp, the shifts at partial
+duty, VDD at the rung onsets and at the frame rate, the edges near each
+slot, and the noise under drive.
+
+Needs: board, DPS, the RL dummy with one inductor, a 3.3 k / 2.2 k divider on
+the POS connector in the pot's place, host.
+
+How: duty sweeps of 10 to 100 % in both directions and both decays, 300 ms a
+rung against a torque-off baseline, three repeats at 3.7, 5.0 and 7.4 V. A
+second capture trades tap B in the row for the chip's 1.2 V reference, which
+reads VDD at the sample.
+
+Run: `capture.py 1`, `capture.py 2 vref`, then the notebook.
 
 ## [compensation](compensation/compensation.ipynb)
 

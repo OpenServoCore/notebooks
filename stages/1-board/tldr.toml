@@ -343,6 +343,62 @@ bounds = "range, lowest to highest of the first bursts"
 confidence = "measured"
 
 [[constant]]
+label = "Pos shift per amp of load current, DC"
+experiment = "pos-coupling"
+key = "pos_dc_coupling_counts_per_a"
+decimals = 2
+signed = true
+bounds = "statistical, one standard error of the line over both captures"
+confidence = "high, the same sign both directions, a rung mean carries about 0.1 count run to run"
+
+[[constant]]
+label = "Pos shift at partial duty, the largest group"
+experiment = "pos-coupling"
+key = "pos_partial_duty_max_counts"
+decimals = 2
+signed = true
+bounds = "statistical, one standard error over 3 repeats x 2 directions"
+confidence = "a bound, fast decay 60 % at 7.4 V, repeats across captures to 0.03 counts, mechanism open"
+
+[[constant]]
+label = "VDD dip at a 100 % onset, 3.7 V"
+experiment = "pos-coupling"
+key = "vdd_onset_dip_mv.3v7"
+decimals = 1
+bounds = "statistical, one standard error over the 11 onsets"
+confidence = "high, read from vref_raw, over half its peak for 0.5 ms, +20 counts on pos"
+
+[[constant]]
+label = "VDD ripple at the TEL frame"
+experiment = "pos-coupling"
+key = "vdd_frame_ripple_mv_pp"
+unit = "mV pp"
+scale = 1.0
+decimals = 1
+bounds = "statistical, one standard error over the 18 baselines"
+confidence = "high, read from vref_raw, 2.5 kHz locked to the frame"
+
+[[constant]]
+label = "Pos floor at rest, frame pattern removed"
+experiment = "pos-coupling"
+key = "pos_rest_sd_pattern_removed_counts.capture_2"
+unit = "counts rms"
+scale = 1.0
+decimals = 2
+bounds = "statistical, one standard error over the 18 baselines"
+confidence = "measured, 0.66 on capture-1 too, 1.08 to 1.13 with the pattern in"
+
+[[constant]]
+label = "Pos sample noise under drive, frame pattern removed"
+experiment = "pos-coupling"
+key = "pos_sd_drive_range_counts"
+unit = "counts rms"
+scale = 1.0
+decimals = 2
+bounds = "range, lowest to highest of the 432 rungs"
+confidence = "measured on both captures, 0.66 at rest, 1.0 with the pattern in"
+
+[[constant]]
 label = "Awake zero over the asleep zero, 3.7 V"
 experiment = "compensation"
 key = "awake_step_counts.3v7"
