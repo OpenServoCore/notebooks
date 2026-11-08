@@ -1,0 +1,928 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/steps/capture-1, telemetry/mg90-d__dev-v006-2A-D/steps/reversal-1",
+  "notes": "stage 3 steps of mg90-d on dev-v006-2A-D, horn free, 5 V from the DPS-150 over the feed diode, experiment image, sitting 1: steps/capture-1 (27 chains of a base duty, a step up and the step back, bases 20, 30 and 40 %, steps 2, 5 and 10 %, from the guards and the guards moved in by a sixth and a third of the travel, directions +1 and -1: 54 chain-directions, 108 edges, 162 levels, 54 starts from rest) and steps/reversal-1 (d then -d at 10, 20 and 30 %, both orders, 6 reversals). Current through stage 1 current-scale over each sweep's torque-off zero with the in-drive offset out, the crest sample; volts through terminal-chain; construction A = D x V_on, B = share x V_on - (1 - share) R_brk i with sample-timing's edge lags (mean of the graded rails) and bridge-states' low-side loop. Speed by the tracked ripple tach on the drive current (6 events per rev), never the pot. Ke the ladder result's, R the resistance result's locked laps, J mg90-b's speed-torque value in the current route only. Bounds are mean +/- sd over the repeats unless the unit says otherwise: the ensemble groups' bootstrap sd over the edges (200 resamples, seeded), a line's se, or a reversal pair's two values. Velocity loop. tau_m_ms the one-constant whole-chain model's time constant, tau_m_se_ms its standard error; tau_m_by_base, _by_direction and _by_start report only; tau_m_step_up_ms, tau_m_step_down_ms and tau_m_runup_from_rest_ms the three-constant model at bases 20 and 30 % with every constant under 100 ms (run-up under 150 ms), report only; tau_m_from_current_ms the up 10 % ensemble's slow fall, an open discrepancy against tau_m_ms. speed_delay_ms bound-only, value the median fitted delay (at its bound 0), hi the 90th percentile, under the tach's cycle; speed_delay_max_ms report only. k_w_rev_s_per_pct the gain per % of duty on 5 V; k_w_up, k_w_down and k_w_by_* report only; k_w_per_v_a_rev_s_per_v and k_w_per_v_a_after_rev_s_per_v construction-dependent (A, the crest volts before and after the edge); k_w_per_v_b_over_a construction B's gain per volt over A's, steps up. k_w_vs_*_slope a line's slope with se bounds, none a finding, start and minutes collinear by the capture's order. step_down_over_up report only, 1.3 sigma from 1. speed_duty_line_* a line through the settled levels, se bounds. k_i_settled_ma_per_pct and di_settled_per_pct_ma the same quantity, the settled current's change per %. travel_per_step_counts report only, signed. Current loop. current_delay_up_us and _down_us the ensemble's start t0 from the flip row; current_delay_bound_us bound-only, one 50 us row either side of the flip row. tau_e_up_us and tau_e_down_us at 10 % are the numbers of record, their difference 2.8 sigma (likely, cause open); tau_e_*_5pct_us and tau_e_by_group_us report only. tau_e_inductance_notebook_us and l_inductance_notebook_mh comparisons. di_e_per_v_up_ma_per_v and _down the plateau per volt of applied change under A at the edge, construction-dependent; di_e_per_v_up_at_2ms the fast fit's plateau, report only. r_step_* is the resistance a small step reads on the crest current, an open discrepancy against the locked laps and NOT a value of R; the per-edge r_step_a_ohm, _up, _down, _after and r_takeback_ensemble_ohm count each edge twice (its 18-edge and its 6-edge group's shape); r_step_a_* and r_step_b_* construction-dependent; r_takeback_ohm and r_takeback_ensemble_ohm volts-free, resting on Ke. r_locked_ohm quoted. l_step_up_mh tau_e up x the locked R, bounds from tau_e's bootstrap sd; l_step_up_r_step_mh and l_step_down_mh report only. jump_term_up_ma report only, not a finding. current_ensemble_rms_ma value up 10 %, lo down 10 %, hi up 5 %, three residuals, not bounds. Levels. level_{20,30,40}_speed_rev_s and _current_ma the settled levels (speed change under 2.5 % across the last 40 ms, at least 20 tach cycles) pooled over both directions, mean +/- sd; level_*_x_a_mv and _x_b_mv the EMF balance V - R_locked i - Ke w under A and B, construction-dependent. pot_over_tach and counts_per_motor_turn_measured report only, pot-table grades the slope. Starts and reversals. takeup_still_ms_dir_* and play_from_rest_*_dir_* per direction (pos +1, neg -1), the play by the current route with the type J; pot_shift_at_start_counts_dir_* in the drive's frame, so negative for -1 means the raw pos reads up. backlash_bound_*: value the +1 starts' mean play, lo 0 (the -1 starts cross none), hi the +1 mean plus its sd; moderate on the value, high on the bound under 0.35 turns; the tag pass pins it. reversal_{10,20,30}_*: value the mean of the two orders, bounds their two values; t_zero_emf_a unusable at 10 %; play_turns resolves nothing beyond +/-0.3 turns, report only; tau_after_ms report only. pot_jump_per_amp_counts the pot's current-coupled offset on the -1 leg, likely, bounds the six reversals' range. reversal_limit_engaged 0 when no duty was cut. chains the count.",
+  "tau_m_ms": {
+    "value": 20.856992549517283,
+    "lo": 16.83055501401041,
+    "hi": 24.883430085024155,
+    "unit": "ms, mechanical time constant of the speed's response, one whole-chain first-order model per chain and direction, mean +/- sd over 54"
+  },
+  "tau_m_se_ms": {
+    "value": 0.5479287468434033,
+    "lo": null,
+    "hi": null,
+    "unit": "ms, the mean's standard error"
+  },
+  "tau_m_by_base_ms": {
+    "20": {
+      "value": 19.974210617537736,
+      "lo": 15.201644260549084,
+      "hi": 24.746776974526387,
+      "unit": "ms"
+    },
+    "30": {
+      "value": 22.188269618347494,
+      "lo": 19.113430017016462,
+      "hi": 25.263109219678526,
+      "unit": "ms"
+    },
+    "40": {
+      "value": 20.408497412666627,
+      "lo": 16.48456952425165,
+      "hi": 24.332425301081603,
+      "unit": "ms"
+    }
+  },
+  "tau_m_by_direction_ms": {
+    "+1": {
+      "value": 21.175816950248525,
+      "lo": 15.978020326296292,
+      "hi": 26.373613574200757,
+      "unit": "ms"
+    },
+    "-1": {
+      "value": 20.538168148786045,
+      "lo": 18.125754899754632,
+      "hi": 22.95058139781746,
+      "unit": "ms"
+    }
+  },
+  "tau_m_by_start_ms": {
+    "0.000": {
+      "value": 23.036713301668456,
+      "lo": 18.505681265601552,
+      "hi": 27.56774533773536,
+      "unit": "ms"
+    },
+    "0.167": {
+      "value": 20.303069415677104,
+      "lo": 17.852454960587583,
+      "hi": 22.753683870766626,
+      "unit": "ms"
+    },
+    "0.333": {
+      "value": 19.231194931206304,
+      "lo": 15.249498330235932,
+      "hi": 23.212891532176673,
+      "unit": "ms"
+    }
+  },
+  "tau_m_step_up_ms": {
+    "value": 21.250185028543996,
+    "lo": 12.638829394141395,
+    "hi": 29.861540662946595,
+    "unit": "ms, the step up's own time constant in the three-constant chain model, bases 20 and 30 %"
+  },
+  "tau_m_step_down_ms": {
+    "value": 18.701822334469778,
+    "lo": 15.23488348295398,
+    "hi": 22.168761185985574,
+    "unit": "ms, the step back's own, the same model"
+  },
+  "tau_m_runup_from_rest_ms": {
+    "value": 26.32695702762372,
+    "lo": 14.177911583343946,
+    "hi": 38.4760024719035,
+    "unit": "ms, the base segment's approach from rest (after the take-up), slower than the small steps"
+  },
+  "tau_m_from_current_ms": {
+    "value": 17.00457092619658,
+    "lo": 16.273261437911994,
+    "hi": 17.735880414481162,
+    "unit": "ms, the time constant of the current's fall after the 10 % step up, ensemble of 18 edges, bootstrap sd"
+  },
+  "speed_delay_ms": {
+    "value": 7.878199028225888e-13,
+    "lo": 0.0,
+    "hi": 1.0142420085375876,
+    "unit": "ms, the speed's delay after the duty register's flip: the median over 54 chains with the 90th percentile as the upper bound; under the tach's cycle resolution, a bound not a value"
+  },
+  "speed_delay_max_ms": {
+    "value": 1.9817430353127239,
+    "lo": null,
+    "hi": null,
+    "unit": "ms, the largest fitted delay"
+  },
+  "k_w_rev_s_per_pct": {
+    "value": 5.642444052106323,
+    "lo": 4.87678597261939,
+    "hi": 6.408102131593256,
+    "unit": "rev/s per % of duty on 5 V, settled speed change of the chain model, 5 and 10 % steps up and down, mean +/- sd over 72 edges"
+  },
+  "k_w_up_rev_s_per_pct": {
+    "value": 5.818990455457779,
+    "lo": 5.0909943464446386,
+    "hi": 6.54698656447092,
+    "unit": "rev/s per %, steps up"
+  },
+  "k_w_down_rev_s_per_pct": {
+    "value": 5.465897648754864,
+    "lo": 4.694459110066429,
+    "hi": 6.237336187443299,
+    "unit": "rev/s per %, steps down"
+  },
+  "k_w_by_step_rev_s_per_pct": {
+    "up 2": {
+      "value": 6.756800347452302,
+      "lo": 4.893298705135866,
+      "hi": 8.620301989768738,
+      "unit": "rev/s per %"
+    },
+    "up 5": {
+      "value": 5.988421591615445,
+      "lo": 5.128053511337195,
+      "hi": 6.848789671893695,
+      "unit": "rev/s per %"
+    },
+    "up 10": {
+      "value": 5.6495593193001135,
+      "lo": 5.1109430098933375,
+      "hi": 6.188175628706889,
+      "unit": "rev/s per %"
+    },
+    "down 2": {
+      "value": 6.207936858268413,
+      "lo": 4.973827840838271,
+      "hi": 7.442045875698555,
+      "unit": "rev/s per %"
+    },
+    "down 5": {
+      "value": 5.598326888809742,
+      "lo": 4.746917141486711,
+      "hi": 6.449736636132774,
+      "unit": "rev/s per %"
+    },
+    "down 10": {
+      "value": 5.3334684086999875,
+      "lo": 4.6528767953619425,
+      "hi": 6.0140600220380325,
+      "unit": "rev/s per %"
+    }
+  },
+  "k_w_by_base_rev_s_per_pct": {
+    "20": {
+      "value": 5.703890855705822,
+      "lo": 5.21274338398559,
+      "hi": 6.1950383274260545,
+      "unit": "rev/s per %"
+    },
+    "30": {
+      "value": 5.750354874160261,
+      "lo": 5.1657079787661235,
+      "hi": 6.335001769554399,
+      "unit": "rev/s per %"
+    },
+    "40": {
+      "value": 5.473086426452883,
+      "lo": 4.386524962376622,
+      "hi": 6.559647890529145,
+      "unit": "rev/s per %"
+    }
+  },
+  "k_w_by_start_rev_s_per_pct": {
+    "0.000": {
+      "value": 5.791497701435168,
+      "lo": 5.171259412715941,
+      "hi": 6.411735990154396,
+      "unit": "rev/s per %"
+    },
+    "0.167": {
+      "value": 5.710212486497742,
+      "lo": 5.140565987327561,
+      "hi": 6.279858985667923,
+      "unit": "rev/s per %"
+    },
+    "0.333": {
+      "value": 5.425621968386056,
+      "lo": 4.413964939153569,
+      "hi": 6.437278997618543,
+      "unit": "rev/s per %"
+    }
+  },
+  "k_w_by_direction_rev_s_per_pct": {
+    "+1": {
+      "value": 5.716947110983722,
+      "lo": 4.770620255343356,
+      "hi": 6.663273966624088,
+      "unit": "rev/s per %"
+    },
+    "-1": {
+      "value": 5.56794099322892,
+      "lo": 5.036658609704727,
+      "hi": 6.0992233767531125,
+      "unit": "rev/s per %"
+    }
+  },
+  "k_w_per_v_a_rev_s_per_v": {
+    "value": 115.64530911789133,
+    "lo": 99.97407566727871,
+    "hi": 131.31654256850396,
+    "unit": "rev/s per V of applied volts under construction A (the duty step times the crest tap volts before the edge)"
+  },
+  "k_w_per_v_a_after_rev_s_per_v": {
+    "value": 121.20681374936132,
+    "lo": 104.90529332397385,
+    "hi": 137.5083341747488,
+    "unit": "rev/s per V, A with the tap volts after the edge (the rail's move on the step in)"
+  },
+  "k_w_per_v_b_over_a": {
+    "value": 0.9937710958958246,
+    "lo": null,
+    "hi": null,
+    "unit": "ratio, construction B's gain per volt over A's: the brake term's change on a step"
+  },
+  "k_w_vs_base_slope": {
+    "value": -0.011540221462647016,
+    "lo": -0.02258440285298506,
+    "hi": -0.0004960400723089727,
+    "unit": "rev/s per % per % of base, a line through the 72 edges"
+  },
+  "k_w_vs_start_slope": {
+    "value": -1.0981114865658517,
+    "lo": -1.7535661198888843,
+    "hi": -0.4426568532428189,
+    "unit": "rev/s per % per unit of start share"
+  },
+  "k_w_vs_minutes_slope": {
+    "value": -0.01818401919665408,
+    "lo": -0.02705834679528072,
+    "hi": -0.00930969159802744,
+    "unit": "rev/s per % per minute through the capture"
+  },
+  "step_down_over_up": {
+    "value": 0.9605729290530668,
+    "lo": 0.7423423250211726,
+    "hi": 1.1788035330849609,
+    "unit": "ratio of the speed change back to the change up, paired by chain, mean +/- sd over 54"
+  },
+  "speed_duty_line_slope_rev_s_per_pct": {
+    "value": 5.411828273957721,
+    "lo": 5.352361942465922,
+    "hi": 5.47129460544952,
+    "unit": "rev/s per %, a line through the settled levels 20 to 50 %"
+  },
+  "speed_duty_line_intercept_rev_s": {
+    "value": -21.91261856604278,
+    "lo": -23.956108152528753,
+    "hi": -19.86912897955681,
+    "unit": "rev/s at zero duty by that line (negative: the floor)"
+  },
+  "k_i_settled_ma_per_pct": {
+    "value": 1.0764893188882623,
+    "lo": 0.35580160805112226,
+    "hi": 1.7971770297254022,
+    "unit": "mA per % of duty, the settled current's change, chain model levels"
+  },
+  "travel_per_step_counts": {
+    "up 2": {
+      "value": 0.1111111111111111,
+      "lo": -416.6651568269037,
+      "hi": 416.88737904912585,
+      "unit": "raw pot counts the stepped segment traveled, signed by the direction, so the mean sits near zero and the sd carries the size; window as cut by the runway"
+    },
+    "up 5": {
+      "value": -1.3333333333333333,
+      "lo": -428.40365403418633,
+      "hi": 425.7369873675197,
+      "unit": "raw pot counts the stepped segment traveled, signed by the direction, so the mean sits near zero and the sd carries the size; window as cut by the runway"
+    },
+    "up 10": {
+      "value": -1.0,
+      "lo": -444.35379578311284,
+      "hi": 442.35379578311284,
+      "unit": "raw pot counts the stepped segment traveled, signed by the direction, so the mean sits near zero and the sd carries the size; window as cut by the runway"
+    },
+    "down 2": {
+      "value": -4.611111111111111,
+      "lo": -392.6144675078869,
+      "hi": 383.3922452856647,
+      "unit": "raw pot counts the stepped segment traveled, signed by the direction, so the mean sits near zero and the sd carries the size; window as cut by the runway"
+    },
+    "down 5": {
+      "value": -0.6111111111111112,
+      "lo": -355.6362367984081,
+      "hi": 354.41401457618593,
+      "unit": "raw pot counts the stepped segment traveled, signed by the direction, so the mean sits near zero and the sd carries the size; window as cut by the runway"
+    },
+    "down 10": {
+      "value": -0.2222222222222222,
+      "lo": -326.81453068601996,
+      "hi": 326.3700862415755,
+      "unit": "raw pot counts the stepped segment traveled, signed by the direction, so the mean sits near zero and the sd carries the size; window as cut by the runway"
+    }
+  },
+  "current_delay_up_us": {
+    "value": -22.155349112510798,
+    "lo": -37.76130270073036,
+    "hi": -6.549395524291233,
+    "unit": "us after the duty register's flip row, the exponential's start, 10 % steps up, ensemble of 18, bootstrap sd"
+  },
+  "current_delay_down_us": {
+    "value": 11.230012835880009,
+    "lo": 2.1659129058817204,
+    "hi": 20.294112765878296,
+    "unit": "us, 10 % steps down"
+  },
+  "current_delay_bound_us": {
+    "value": 0.0,
+    "lo": -50.0,
+    "hi": 50.0,
+    "unit": "us, the delay from the command's edge as the stream shows it: within one row of the flip either way"
+  },
+  "tau_e_up_us": {
+    "value": 204.17296062154975,
+    "lo": 176.6457180184029,
+    "hi": 231.7002032246966,
+    "unit": "us, electrical time constant of the crest current's rise, 10 % steps up, bootstrap sd"
+  },
+  "tau_e_up_5pct_us": {
+    "value": 188.93160542897277,
+    "lo": 119.63626603875467,
+    "hi": 258.22694481919086,
+    "unit": "us, 5 % steps up"
+  },
+  "tau_e_down_us": {
+    "value": 116.00646442161766,
+    "lo": 99.75220161718477,
+    "hi": 132.26072722605056,
+    "unit": "us, 10 % steps down"
+  },
+  "tau_e_down_5pct_us": {
+    "value": 167.37528885069003,
+    "lo": 133.4432691592997,
+    "hi": 201.30730854208036,
+    "unit": "us, 5 % steps down"
+  },
+  "tau_e_by_group_us": {
+    "up 20 + 2 %": {
+      "value": 54.16830941168445,
+      "lo": -434.81865550942496,
+      "hi": 543.1552743327939,
+      "unit": "us"
+    },
+    "up 20 + 5 %": {
+      "value": 258.06119933663354,
+      "lo": 113.38452166331916,
+      "hi": 402.7378770099479,
+      "unit": "us"
+    },
+    "up 20 + 10 %": {
+      "value": 184.97532957006874,
+      "lo": 155.11329182470777,
+      "hi": 214.8373673154297,
+      "unit": "us"
+    },
+    "up 30 + 2 %": {
+      "value": 70.90485328980229,
+      "lo": 46.911977609744525,
+      "hi": 94.89772896986005,
+      "unit": "us"
+    },
+    "up 30 + 5 %": {
+      "value": 93.59884704960857,
+      "lo": -8.517780732797277,
+      "hi": 195.71547483201442,
+      "unit": "us"
+    },
+    "up 30 + 10 %": {
+      "value": 273.4984846625088,
+      "lo": 246.8726166243638,
+      "hi": 300.12435270065384,
+      "unit": "us"
+    },
+    "up 40 + 2 %": {
+      "value": 52.80397890752575,
+      "lo": -125.51436935099431,
+      "hi": 231.12232716604584,
+      "unit": "us"
+    },
+    "up 40 + 5 %": {
+      "value": 119.64383740705895,
+      "lo": 63.087746754757205,
+      "hi": 176.1999280593607,
+      "unit": "us"
+    },
+    "up 40 + 10 %": {
+      "value": 183.0090976213659,
+      "lo": 131.65492692507854,
+      "hi": 234.36326831765325,
+      "unit": "us"
+    },
+    "down 20 + 2 %": {
+      "value": 132.02681875030672,
+      "lo": 94.98999046478198,
+      "hi": 169.06364703583145,
+      "unit": "us"
+    },
+    "down 20 + 5 %": {
+      "value": 232.32301287622258,
+      "lo": 168.63424822498683,
+      "hi": 296.0117775274583,
+      "unit": "us"
+    },
+    "down 20 + 10 %": {
+      "value": 115.52236466053809,
+      "lo": 94.23372250920414,
+      "hi": 136.81100681187203,
+      "unit": "us"
+    },
+    "down 30 + 2 %": {
+      "value": 71.23158006066993,
+      "lo": 49.50335828416947,
+      "hi": 92.95980183717037,
+      "unit": "us"
+    },
+    "down 30 + 5 %": {
+      "value": 95.61702912873831,
+      "lo": 77.49160912835929,
+      "hi": 113.74244912911733,
+      "unit": "us"
+    },
+    "down 30 + 10 %": {
+      "value": 93.19882142269928,
+      "lo": 45.92681838362463,
+      "hi": 140.47082446177393,
+      "unit": "us"
+    },
+    "down 40 + 2 %": {
+      "value": 25.000000000000007,
+      "lo": 3.426430216347317,
+      "hi": 46.5735697836527,
+      "unit": "us"
+    },
+    "down 40 + 5 %": {
+      "value": 181.12768355863477,
+      "lo": 81.27611976304198,
+      "hi": 280.9792473542276,
+      "unit": "us"
+    },
+    "down 40 + 10 %": {
+      "value": 147.49271703344374,
+      "lo": 118.99946301530775,
+      "hi": 175.98597105157972,
+      "unit": "us"
+    }
+  },
+  "tau_e_inductance_notebook_us": {
+    "value": 198.50472057551252,
+    "lo": 186.00294972164835,
+    "hi": 204.68356495429617,
+    "unit": "us, the inductance notebook's locked bursts, comparison"
+  },
+  "di_e_per_v_up_ma_per_v": {
+    "value": 190.34180159349208,
+    "lo": 187.38371609444846,
+    "hi": 193.2998870925357,
+    "unit": "mA per V of applied change (A), the plateau the slow fit extrapolates to the edge, steps up, bootstrap sd"
+  },
+  "di_e_per_v_down_ma_per_v": {
+    "value": 193.62631697931727,
+    "lo": 190.99252173761676,
+    "hi": 196.26011222101778,
+    "unit": "mA per V, steps down"
+  },
+  "di_e_per_v_up_at_2ms_ma_per_v": {
+    "value": 182.87344203228974,
+    "lo": 165.38108177124687,
+    "hi": 200.36580229333262,
+    "unit": "mA per V, the electrical fit's plateau (1 to 2 ms)"
+  },
+  "r_step_a_ohm": {
+    "value": 5.35425950749241,
+    "lo": 4.503307475956416,
+    "hi": 6.2052115390284035,
+    "unit": "ohm, dV_A / di_e per edge, 10 % steps up and down, the group's shape scaled to each edge, mean +/- sd over 72 rows: the 36 edges, each with its 18-edge group's shape and its 6-edge base group's"
+  },
+  "r_step_a_up_ohm": {
+    "value": 4.951493761156833,
+    "lo": 4.10865459569678,
+    "hi": 5.794332926616885,
+    "unit": "ohm, steps up"
+  },
+  "r_step_a_down_ohm": {
+    "value": 5.757025253827988,
+    "lo": 5.105227919928596,
+    "hi": 6.4088225877273794,
+    "unit": "ohm, steps down"
+  },
+  "r_step_a_after_ohm": {
+    "value": 5.10625994883871,
+    "lo": 4.291382182157782,
+    "hi": 5.921137715519639,
+    "unit": "ohm, with the tap volts after the edge"
+  },
+  "r_step_a_ensemble_up_ohm": {
+    "value": 4.8296165913116225,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm, the 18-edge ensemble's dV_A / di"
+  },
+  "r_step_b_ensemble_up_ohm": {
+    "value": 4.67758692878381,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm, the same under B (the brake term's change at the plateau)"
+  },
+  "r_step_b_over_a": {
+    "value": 0.9685213805995881,
+    "lo": null,
+    "hi": null,
+    "unit": "ratio"
+  },
+  "r_takeback_ohm": {
+    "value": 5.084043938568257,
+    "lo": 4.480778790854991,
+    "hi": 5.687309086281523,
+    "unit": "ohm, Ke x dw / (plateau - settled change) from the chain model's jumps and levels, no volts in it, 5 and 10 % steps"
+  },
+  "r_takeback_ensemble_ohm": {
+    "value": 5.034331428049139,
+    "lo": 4.088368640535238,
+    "hi": 5.98029421556304,
+    "unit": "ohm, the same with the ensemble plateau per edge"
+  },
+  "r_locked_ohm": {
+    "value": 4.2188705084081874,
+    "lo": 4.206494831397831,
+    "hi": 4.23004332394171,
+    "unit": "ohm, the resistance notebook's locked laps, comparison"
+  },
+  "l_step_up_mh": {
+    "value": 0.8613792821806424,
+    "lo": 0.7452454101844288,
+    "hi": 0.977513154176856,
+    "unit": "mH, tau_e (up) x the locked R"
+  },
+  "l_step_up_r_step_mh": {
+    "value": 0.9860771181150513,
+    "lo": null,
+    "hi": null,
+    "unit": "mH, tau_e (up) x the step's own R under A"
+  },
+  "l_step_down_mh": {
+    "value": 0.4894162515330664,
+    "lo": null,
+    "hi": null,
+    "unit": "mH, tau_e (down) x the locked R"
+  },
+  "l_inductance_notebook_mh": {
+    "value": 0.8197583711407872,
+    "lo": 0.781413050847874,
+    "hi": 0.8739765387856037,
+    "unit": "mH, comparison"
+  },
+  "jump_term_up_ma": {
+    "value": 23.723674339094487,
+    "lo": null,
+    "hi": null,
+    "unit": "mA, an instant jump added to the up 10 % ensemble model; its residual gain is under 1 %, not a finding"
+  },
+  "current_ensemble_rms_ma": {
+    "value": 3.645113939503909,
+    "lo": 2.358536367069188,
+    "hi": 4.143077990379195,
+    "unit": "mA, the residual of the ensemble fits (up 10, down 10, up 5)"
+  },
+  "di_settled_per_pct_ma": {
+    "value": 1.0764893188882623,
+    "lo": 0.35580160805112226,
+    "hi": 1.7971770297254022,
+    "unit": "mA per %, settled"
+  },
+  "level_20_speed_rev_s": {
+    "value": 86.28575629167042,
+    "lo": 85.38591646773754,
+    "hi": 87.1855961156033,
+    "unit": "rev/s, tach, settled levels at this duty"
+  },
+  "level_20_current_ma": {
+    "value": 82.07207628720495,
+    "lo": 80.87154846594768,
+    "hi": 83.27260410846222,
+    "unit": "mA"
+  },
+  "level_20_x_a_mv": {
+    "value": 6.349973199765769,
+    "lo": 4.398328335699802,
+    "hi": 8.301618063831734,
+    "unit": "mV, V_A - R_locked i - Ke_ladder w"
+  },
+  "level_20_x_b_mv": {
+    "value": -65.78052432910181,
+    "lo": -67.56327952196496,
+    "hi": -63.99776913623866,
+    "unit": "mV, under B"
+  },
+  "level_30_speed_rev_s": {
+    "value": 139.58509650422505,
+    "lo": 136.16123701976127,
+    "hi": 143.00895598868883,
+    "unit": "rev/s, tach, settled levels at this duty"
+  },
+  "level_30_current_ma": {
+    "value": 99.78039788326474,
+    "lo": 94.70084245055926,
+    "hi": 104.85995331597022,
+    "unit": "mA"
+  },
+  "level_30_x_a_mv": {
+    "value": 28.021293747270985,
+    "lo": 23.287112793015975,
+    "hi": 32.755474701526,
+    "unit": "mV, V_A - R_locked i - Ke_ladder w"
+  },
+  "level_30_x_b_mv": {
+    "value": -45.215078415948916,
+    "lo": -49.52932540477853,
+    "hi": -40.9008314271193,
+    "unit": "mV, under B"
+  },
+  "level_40_speed_rev_s": {
+    "value": 196.66096885077454,
+    "lo": 190.51922856657563,
+    "hi": 202.80270913497344,
+    "unit": "rev/s, tach, settled levels at this duty"
+  },
+  "level_40_current_ma": {
+    "value": 110.3399785838277,
+    "lo": 101.82939415156221,
+    "hi": 118.85056301609319,
+    "unit": "mA"
+  },
+  "level_40_x_a_mv": {
+    "value": 52.62484603632863,
+    "lo": 44.9303750523714,
+    "hi": 60.31931702028585,
+    "unit": "mV, V_A - R_locked i - Ke_ladder w"
+  },
+  "level_40_x_b_mv": {
+    "value": -19.451481886965947,
+    "lo": -25.969476331569457,
+    "hi": -12.933487442362438,
+    "unit": "mV, under B"
+  },
+  "pot_over_tach": {
+    "value": 0.9695228025872245,
+    "lo": 0.8332230306383624,
+    "hi": 1.1058225745360866,
+    "unit": "ratio of the pot's speed (nominal counts per turn) to the tach's over the settled windows"
+  },
+  "counts_per_motor_turn_measured": {
+    "value": 22.433645530957584,
+    "lo": null,
+    "hi": null,
+    "unit": "pot counts per motor turn by that ratio"
+  },
+  "takeup_still_ms_dir_pos": {
+    "value": 9.472222222222221,
+    "lo": 7.5287749809812405,
+    "hi": 11.415669463463203,
+    "unit": "ms the pot stays within 2.5 counts after the drive starts from rest"
+  },
+  "play_from_rest_turns_dir_pos": {
+    "value": 0.23030890412957172,
+    "lo": 0.12882131454145224,
+    "hi": 0.3317964937176912,
+    "unit": "motor turns the rotor makes before the output moves, current route (type J, this Ke), less the output's own 2.5 counts"
+  },
+  "play_from_rest_turns_drag_dir_pos": {
+    "value": 0.190255562186777,
+    "lo": 0.09937827336159014,
+    "hi": 0.28113285101196384,
+    "unit": "motor turns, the same with 30 mA of rotor drag taken off"
+  },
+  "play_from_rest_counts_dir_pos": {
+    "value": 5.329083858655588,
+    "lo": 2.980777450043456,
+    "hi": 7.67739026726772,
+    "unit": "pot counts (nominal counts per turn)"
+  },
+  "play_from_rest_deg_dir_pos": {
+    "value": 0.2691456494270499,
+    "lo": 0.1505443156587604,
+    "hi": 0.3877469831953394,
+    "unit": "output degrees (nominal)"
+  },
+  "pot_shift_at_start_counts_dir_pos": {
+    "value": 0.3,
+    "lo": -1.1648663192705788,
+    "hi": 1.764866319270579,
+    "unit": "raw pot counts the reading moves the moment the drive starts, before motion"
+  },
+  "takeup_still_ms_dir_neg": {
+    "value": 7.042592592592591,
+    "lo": 5.615404414087004,
+    "hi": 8.46978077109818,
+    "unit": "ms the pot stays within 2.5 counts after the drive starts from rest"
+  },
+  "play_from_rest_turns_dir_neg": {
+    "value": 0.024114995381649677,
+    "lo": -0.09996178851838797,
+    "hi": 0.14819177928168734,
+    "unit": "motor turns the rotor makes before the output moves, current route (type J, this Ke), less the output's own 2.5 counts"
+  },
+  "play_from_rest_turns_drag_dir_neg": {
+    "value": 0.0022308679938988444,
+    "lo": -0.11564918829256877,
+    "hi": 0.12011092428036647,
+    "unit": "motor turns, the same with 30 mA of rotor drag taken off"
+  },
+  "play_from_rest_counts_dir_neg": {
+    "value": 0.5579933312851993,
+    "lo": -2.313001122075529,
+    "hi": 3.428987784645928,
+    "unit": "pot counts (nominal counts per turn)"
+  },
+  "play_from_rest_deg_dir_neg": {
+    "value": 0.028181481378040368,
+    "lo": -0.11681823848866306,
+    "hi": 0.1731812012447438,
+    "unit": "output degrees (nominal)"
+  },
+  "pot_shift_at_start_counts_dir_neg": {
+    "value": -1.98,
+    "lo": -5.9838523116285565,
+    "hi": 2.023852311628556,
+    "unit": "raw pot counts the reading moves the moment the drive starts, before motion"
+  },
+  "backlash_bound_turns": {
+    "value": 0.23030890412957172,
+    "lo": 0.0,
+    "hi": 0.3317964937176912,
+    "unit": "motor turns: the leading value from the +1 starts, the bracket from the -1 starts (none) to the +1 starts' upper sd"
+  },
+  "backlash_bound_counts": {
+    "value": 5.329083858655587,
+    "lo": 0.0,
+    "hi": 7.67739026726772,
+    "unit": "pot counts"
+  },
+  "backlash_bound_deg": {
+    "value": 0.2691456494270499,
+    "lo": 0.0,
+    "hi": 0.3877469831953394,
+    "unit": "output degrees"
+  },
+  "reversal_10_t_zero_ms": {
+    "value": 7.125,
+    "lo": 6.45,
+    "hi": 7.8,
+    "unit": "ms from the flip to the motor's zero crossing, current route, two orders"
+  },
+  "reversal_10_t_zero_emf_a_ms": {
+    "value": 3.475,
+    "lo": 0.5,
+    "hi": 6.45,
+    "unit": "ms, the EMF route under A"
+  },
+  "reversal_10_pot_restart_ms": {
+    "value": 22.05,
+    "lo": 21.55,
+    "hi": 22.55,
+    "unit": "ms from the flip to the pot leaving its extremum by 2.5 counts"
+  },
+  "reversal_10_dead_ms": {
+    "value": 14.925,
+    "lo": 14.75,
+    "hi": 15.100000000000001,
+    "unit": "ms, restart less zero crossing"
+  },
+  "reversal_10_play_turns": {
+    "value": 0.2889291852613931,
+    "lo": 0.18336133895093304,
+    "hi": 0.3944970315718531,
+    "unit": "motor turns, the gap at the restart by the current route, pot jump removed, two orders (one each)"
+  },
+  "reversal_10_peak_current_ma": {
+    "value": 145.58371467409154,
+    "lo": 136.33272281187993,
+    "hi": 154.83470653630317,
+    "unit": "mA, plugging peak"
+  },
+  "reversal_10_tau_after_ms": {
+    "value": 61.99686505111391,
+    "lo": 14.596494404993978,
+    "hi": 109.39723569723384,
+    "unit": "ms, the approach to the new speed after the restart"
+  },
+  "reversal_10_pot_jump_counts": {
+    "value": 4.504529035843173,
+    "lo": 0.715254237288154,
+    "hi": 8.293803834398192,
+    "unit": "raw pot counts the reading jumps at the flip"
+  },
+  "reversal_20_t_zero_ms": {
+    "value": 11.05,
+    "lo": 10.35,
+    "hi": 11.75,
+    "unit": "ms from the flip to the motor's zero crossing, current route, two orders"
+  },
+  "reversal_20_t_zero_emf_a_ms": {
+    "value": 7.9,
+    "lo": 7.7,
+    "hi": 8.1,
+    "unit": "ms, the EMF route under A"
+  },
+  "reversal_20_pot_restart_ms": {
+    "value": 16.575000000000003,
+    "lo": 13.75,
+    "hi": 19.400000000000002,
+    "unit": "ms from the flip to the pot leaving its extremum by 2.5 counts"
+  },
+  "reversal_20_dead_ms": {
+    "value": 5.525,
+    "lo": 2.0,
+    "hi": 9.05,
+    "unit": "ms, restart less zero crossing"
+  },
+  "reversal_20_play_turns": {
+    "value": 0.043434708606192196,
+    "lo": -0.08461193056940158,
+    "hi": 0.17148134778178598,
+    "unit": "motor turns, the gap at the restart by the current route, pot jump removed, two orders (one each)"
+  },
+  "reversal_20_peak_current_ma": {
+    "value": 334.56826271641467,
+    "lo": 333.6872158723945,
+    "hi": 335.4493095604348,
+    "unit": "mA, plugging peak"
+  },
+  "reversal_20_tau_after_ms": {
+    "value": 25.465279948916248,
+    "lo": 14.353496311905094,
+    "hi": 36.577063585927405,
+    "unit": "ms, the approach to the new speed after the restart"
+  },
+  "reversal_20_pot_jump_counts": {
+    "value": 4.8710891914419765,
+    "lo": 4.335009724923481,
+    "hi": 5.407168657960473,
+    "unit": "raw pot counts the reading jumps at the flip"
+  },
+  "reversal_30_t_zero_ms": {
+    "value": 12.7,
+    "lo": 12.65,
+    "hi": 12.75,
+    "unit": "ms from the flip to the motor's zero crossing, current route, two orders"
+  },
+  "reversal_30_t_zero_emf_a_ms": {
+    "value": 10.25,
+    "lo": 10.200000000000001,
+    "hi": 10.3,
+    "unit": "ms, the EMF route under A"
+  },
+  "reversal_30_pot_restart_ms": {
+    "value": 15.55,
+    "lo": 14.85,
+    "hi": 16.25,
+    "unit": "ms from the flip to the pot leaving its extremum by 2.5 counts"
+  },
+  "reversal_30_dead_ms": {
+    "value": 2.85,
+    "lo": 2.2,
+    "hi": 3.5,
+    "unit": "ms, restart less zero crossing"
+  },
+  "reversal_30_play_turns": {
+    "value": -0.10905727206953975,
+    "lo": -0.2299079165865402,
+    "hi": 0.011793372447460704,
+    "unit": "motor turns, the gap at the restart by the current route, pot jump removed, two orders (one each)"
+  },
+  "reversal_30_peak_current_ma": {
+    "value": 527.0769981348185,
+    "lo": 518.707053116627,
+    "hi": 535.4469431530099,
+    "unit": "mA, plugging peak"
+  },
+  "reversal_30_tau_after_ms": {
+    "value": 23.85130148761712,
+    "lo": 13.256652749482292,
+    "hi": 34.44595022575195,
+    "unit": "ms, the approach to the new speed after the restart"
+  },
+  "reversal_30_pot_jump_counts": {
+    "value": 12.613212003334358,
+    "lo": 12.251180883578924,
+    "hi": 12.975243123089793,
+    "unit": "raw pot counts the reading jumps at the flip"
+  },
+  "pot_jump_per_amp_counts": {
+    "value": 22.639016051518634,
+    "lo": 5.246387092811934,
+    "hi": 53.56553462678338,
+    "unit": "raw pot counts per A of plugging current at the flip, both orders"
+  },
+  "reversal_limit_engaged": {
+    "value": 0.0,
+    "lo": null,
+    "hi": null,
+    "unit": "1 if the current limit cut any duty at a reversal (0: none did)"
+  },
+  "chains": {
+    "value": 54.0,
+    "lo": null,
+    "hi": null,
+    "unit": "chains x directions in steps/capture-1"
+  }
+}
