@@ -1,6 +1,6 @@
 {
-  "capture": "telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4, telemetry/mg90-d__dev-v006-2A-D/resistance/stop-1",
-  "notes": "stage 3 resistance of mg90-d on dev-v006-2A-D from two datasets: resistance/locked-4 (sitting 4, the horn lock at mid travel, six sweeps 20 s apart, three on 3.3 V and three on 3.7 V, each 300 ms at 100 % in direction +1 and, after a 20 s rest, 300 ms in -1) and resistance/stop-1 (sitting 1, 5.0 V, six chains 20 s apart of 24, 36 and 24 % for 300 ms each after a 49 % stall seek, chains 0, 2, 4 direction -1 into the low stop, 1, 3, 5 direction +1 into the high stop). Current and terminal volts through stage 1's current-scale and terminal-chain over each sweep's torque-off zero. A lap or step is read as stage 2 rest-resistance reads a lap: from its first row at the held duty, V/I at that row by a line through V/I from 60 ms to the end, I and V the same way. r_term_ohm (the headline) is that read on the six 3.7 V laps, both directions, the mean with the range as bounds: V/I at r_term_amps with V0 inside, stage 2's r_term read with no holes and no construction. r_term_median_ohm is the median of the same six laps with the same range, written for stage 2's key, the same definition otherwise. r_term_lap_scatter_pct is their sd over their mean; r_term_amps their first-row current, mean and range; r_term_by_direction_ohm_fwd and _rev each direction's three laps, mean and range; direction_gap_pct the -1 lap over the +1 lap of each 3.7 V sweep, 20 s later, mean and range (direction and order confounded), direction_gap_pct_3v3 the same at 3.3 V, report-only. r_term_plateau_ohm is mean V over mean I from 30 to 60 ms on the six 3.7 V laps, mean with range, a secondary check; r_term_plateau_less_copper_ohm the same less mg90-b's copper warming per joule at these laps' power to the window's middle. r_3v3_ohm is the 3.3 V laps' first-row read, mean and range, report-only (that rail sits off stage 1's graded lines); v_over_i_3v3_excess_pct the 3.3 V laps over the 3.7 V laps, value over both directions, bounds the two directions; v_over_i_3v3_stage1_pct stage 1's bare-load factor at 3.3 V, quoted; v0_two_level_lever_mv_per_0p1pct the V0 that 0.1 % of V/I between the two levels moves. v0_all_rails_v and r_stall_all_rails_ohm are the line V = V0 + R I through all twelve first-row points with the 3.3 V volts as read, +/- one standard error, *_scaled_* the same with the 3.3 V volts over the stage 1 factor, all four report-only (the levels are 0.03 A apart). free_spin_dip_pct is the current's low point after the L/R rise under its 30 to 60 ms plateau, free_spin_emf_rev_s that low point's EMF at the plateau's V_on / I through the sag result's ke_mv_per_rev_s, free_spin_until_ms when the current is back within 1 % of the plateau, each the mean and range over the twelve laps. warming_pct_per_j is the 3.7 V laps' line slope per watt, mean with range, which carries rotor creep and is not the copper's; warming_pct_per_j_3v3 the 3.3 V laps'; copper_heat_capacity_max_j_per_c and copper_mass_max_g the bound the 3.7 V warming gives if every ohm were copper keeping all its heat, report-only. quiet_gate_i_sd_counts is the current's sd over 60 to 300 ms per lap, mean and range over the twelve, against the plant traps' 4.5 counts: every 3.7 V lap is over it there, and over 30 to 60 ms chain 4's -1 lap (3.7 V) and chains 1 and 2's -1 laps (3.3 V). lap_joules is the largest lap's energy with the range over the twelve; board_ntc_c the board NTC by its nominal beta from the manifest probes before, inside and after each sweep (the TEL rows carry no ntc_raw), median with range; seat_pos_lock the lock's seats.csv median and range; seat_shift_per_lap_counts the largest probe shift across a sweep with the smallest and largest. r_type_gap_pct_mg90b and _mg90c are r_term_ohm over each type motor's r_term_median_ohm at its own board temperature, r_type_gap_common_t_pct_* with the type scaled to this board's median at 0.39 %/C on the whole R, an upper bound on that correction. The stop keys carry the plain construction as read, V_eff = D x V_on (the commanded duty and the crest tap difference) over the crest current, unless their name says otherwise. Each step is read from its first row at the held duty, the seek's and the previous step's rows out, settled means from 2 ms. r_stop_ohm and v0_stop_v are the mean over six chains of each chain's line through two points, the two 24 % steps averaged against the 36 % step, +/- one sd over the chains; *_first_row_* the same from the first-row reads; r_stop_pooled_ohm and v0_stop_pooled_v least squares through all 18 settled points, +/- se, the check; r_stop_by_stop_ohm_low and _high, v0_stop_by_stop_v_low and _high three chains each, mean and range (the direction is confounded with the stop); r_stop_by_chain_ohm and v0_stop_by_chain_v per chain 0 to 5; stop_step_amps_24 and _36, stop_v_on_v_* and stop_vi_as_read_ohm_* the settled current, V_on and V_eff / I per step kind, mean and range; stop_chain_warming_pct step 3's V/I over step 1's; stop_lever_per_a 1/I between the levels; stop_seek_amps the seek press's current before step 1, mean and range. r_stop_over_k_ohm is r_stop_ohm over sample-timing's window scale k with k's bounds; r_stop_crest_bound_ohm and v0_stop_crest_bound_v the pooled two-level line with the inductance result's crest_less_mean_stop_lap_ma +2 sigma bound (5.51 and 4.64 mA) taken off the current, *_crest_value_* at its value; stop_over_locked_pct_as_read the stop line's V/I at r_term_amps over r_term_ohm. Keys with edge_brake carry the construction with stage 1's two board terms: the window shortened by edge_ticks (sample-timing's tap ON lag less its OFF lag, the mean of the 3.7 and 7.4 V rails, bounds the widest per-rail combinations) of the 2400 tick period, and the brake interval's drop low_side_loop_ohm x i (bridge-states) over the rest of the period. r_stop_edge_brake_ohm is +/- one sd over chains; r_stop_edge_brake_loop_ohm its range over the loop's bounds; r_stop_edge_brake_lags_ohm and v0_stop_edge_brake_v the range over the edge lags' bounds; *_edge_brake_g_*_spin and _locked add a crest over-read G x (1 - D) x V_on with mg90-b's spinning or locked-burst G from motor-model, comparison values, not mg90-d's; stop_over_locked_pct_edge_brake and _edge_brake_g_spin as for as_read. joint_r_ohm and joint_v0_v are the line through the lock's point, the 18 stop points and the sag laps' mean point under edge + brake + G spinning, equal weights, joint_resid_mv_lock, _stop_rms and _sag its residuals. sag_slope_board_terms_predict_ohm_per_v is the as-read rail slope edge + brake predict for the sag laps over a flat true R (the sag result quoted: 1.5 V effective at round(150 / rail) % on 13 rails, V_on the rail less rail_minus_crest_von_mv), sag_slope_board_terms_sigma its distance from the measured slope in the sag's se; sag_slope_g_needed_ms the per-volt crest term that brings that prediction to the measured slope, bounds from its se; reading2_offset_ma the rail-independent crest offset that closes lock and stop under edge + brake, which the sag slope rejects if the board terms stand. Standing of the readings: edge + brake + a crest term near the type's spinning G leading, moderate; edge lags smaller than stage 1's on the motor and no crest term alive, low to moderate; a constant offset, V0 alone and temperature dead. Every edge_brake, g and joint key is a candidate reading, not a correction; the next capture (the stop chains at a second rail) decides. construction_check_dummy_pct_plain_25, _plain_40, _both_25 and _both_40 are the plain construction and the one with both board terms on stage 1's bridge-states sweep-slow rungs into the RL dummy (wirings ra, rab, rb, both directions), V/I from 30 ms over each wiring's dc_r_ohm, mean and range, a check of the construction for the stage 1 notebook to own, no result derived from it; edge_ticks and low_side_loop_ohm the stage 1 terms as used, quoted. seat_pos_stop_low and _high are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; board_ntc_c_stop the board NTC around the chains, mean and range; stop_minutes_into_sitting the first chain's start after sitting 1's first event. Left out against stage 2's file: *_by_hole, hole_map_* and r_term_angle_pct (no holes), r_stall_ohm, v0_brush_v, v0_mean_v and the graded lines (no V0 holds on these rails), early_excess_pct (the early window holds the free spin), copper_tau_s and direction_gap_* kept and offset (20 s between the directions), and the run-up, ohms and room keys (not run).",
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/resistance/locked-4, telemetry/mg90-d__dev-v006-2A-D/resistance/stop-1, telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7",
+  "notes": "stage 3 resistance of mg90-d on dev-v006-2A-D from two datasets: resistance/locked-4 (sitting 4, the horn lock at mid travel, six sweeps 20 s apart, three on 3.3 V and three on 3.7 V, each 300 ms at 100 % in direction +1 and, after a 20 s rest, 300 ms in -1) and resistance/stop-1 (sitting 1, 5.0 V, six chains 20 s apart of 24, 36 and 24 % for 300 ms each after a 49 % stall seek, chains 0, 2, 4 direction -1 into the low stop, 1, 3, 5 direction +1 into the high stop). Current and terminal volts through stage 1's current-scale and terminal-chain over each sweep's torque-off zero. A lap or step is read as stage 2 rest-resistance reads a lap: from its first row at the held duty, V/I at that row by a line through V/I from 60 ms to the end, I and V the same way. r_term_ohm (the headline) is that read on the six 3.7 V laps, both directions, the mean with the range as bounds: V/I at r_term_amps with V0 inside, stage 2's r_term read with no holes and no construction. r_term_median_ohm is the median of the same six laps with the same range, written for stage 2's key, the same definition otherwise. r_term_lap_scatter_pct is their sd over their mean; r_term_amps their first-row current, mean and range; r_term_by_direction_ohm_fwd and _rev each direction's three laps, mean and range; direction_gap_pct the -1 lap over the +1 lap of each 3.7 V sweep, 20 s later, mean and range (direction and order confounded), direction_gap_pct_3v3 the same at 3.3 V, report-only. r_term_plateau_ohm is mean V over mean I from 30 to 60 ms on the six 3.7 V laps, mean with range, a secondary check; r_term_plateau_less_copper_ohm the same less mg90-b's copper warming per joule at these laps' power to the window's middle. r_3v3_ohm is the 3.3 V laps' first-row read, mean and range, report-only (that rail sits off stage 1's graded lines); v_over_i_3v3_excess_pct the 3.3 V laps over the 3.7 V laps, value over both directions, bounds the two directions; v_over_i_3v3_stage1_pct stage 1's bare-load factor at 3.3 V, quoted; v0_two_level_lever_mv_per_0p1pct the V0 that 0.1 % of V/I between the two levels moves. v0_all_rails_v and r_stall_all_rails_ohm are the line V = V0 + R I through all twelve first-row points with the 3.3 V volts as read, +/- one standard error, *_scaled_* the same with the 3.3 V volts over the stage 1 factor, all four report-only (the levels are 0.03 A apart). free_spin_dip_pct is the current's low point after the L/R rise under its 30 to 60 ms plateau, free_spin_emf_rev_s that low point's EMF at the plateau's V_on / I through the sag result's ke_mv_per_rev_s, free_spin_until_ms when the current is back within 1 % of the plateau, each the mean and range over the twelve laps. warming_pct_per_j is the 3.7 V laps' line slope per watt, mean with range, which carries rotor creep and is not the copper's; warming_pct_per_j_3v3 the 3.3 V laps'; copper_heat_capacity_max_j_per_c and copper_mass_max_g the bound the 3.7 V warming gives if every ohm were copper keeping all its heat, report-only. quiet_gate_i_sd_counts is the current's sd over 60 to 300 ms per lap, mean and range over the twelve, against the plant traps' 4.5 counts: every 3.7 V lap is over it there, and over 30 to 60 ms chain 4's -1 lap (3.7 V) and chains 1 and 2's -1 laps (3.3 V). lap_joules is the largest lap's energy with the range over the twelve; board_ntc_c the board NTC by its nominal beta from the manifest probes before, inside and after each sweep (the TEL rows carry no ntc_raw), median with range; seat_pos_lock the lock's seats.csv median and range; seat_shift_per_lap_counts the largest probe shift across a sweep with the smallest and largest. r_type_gap_pct_mg90b and _mg90c are r_term_ohm over each type motor's r_term_median_ohm at its own board temperature, r_type_gap_common_t_pct_* with the type scaled to this board's median at 0.39 %/C on the whole R, an upper bound on that correction. The stop keys carry the plain construction as read, V_eff = D x V_on (the commanded duty and the crest tap difference) over the crest current, unless their name says otherwise. Each step is read from its first row at the held duty, the seek's and the previous step's rows out, settled means from 2 ms. r_stop_ohm and v0_stop_v are the mean over six chains of each chain's line through two points, the two 24 % steps averaged against the 36 % step, +/- one sd over the chains; *_first_row_* the same from the first-row reads; r_stop_pooled_ohm and v0_stop_pooled_v least squares through all 18 settled points, +/- se, the check; r_stop_by_stop_ohm_low and _high, v0_stop_by_stop_v_low and _high three chains each, mean and range (the direction is confounded with the stop); r_stop_by_chain_ohm and v0_stop_by_chain_v per chain 0 to 5; stop_step_amps_24 and _36, stop_v_on_v_* and stop_vi_as_read_ohm_* the settled current, V_on and V_eff / I per step kind, mean and range; stop_chain_warming_pct step 3's V/I over step 1's; stop_lever_per_a 1/I between the levels; stop_seek_amps the seek press's current before step 1, mean and range. r_stop_over_k_ohm is r_stop_ohm over sample-timing's window scale k with k's bounds; r_stop_crest_bound_ohm and v0_stop_crest_bound_v the pooled two-level line with the inductance result's crest_less_mean_stop_lap_ma +2 sigma bound (5.51 and 4.64 mA) taken off the current, *_crest_value_* at its value; stop_over_locked_pct_as_read the stop line's V/I at r_term_amps over r_term_ohm. Keys with edge_brake carry the construction with stage 1's two board terms: the window shortened by edge_ticks (sample-timing's tap ON lag less its OFF lag, the mean of the 3.7 and 7.4 V rails, bounds the widest per-rail combinations) of the 2400 tick period, and the brake interval's drop low_side_loop_ohm x i (bridge-states) over the rest of the period. r_stop_edge_brake_ohm is +/- one sd over chains; r_stop_edge_brake_loop_ohm its range over the loop's bounds; r_stop_edge_brake_lags_ohm and v0_stop_edge_brake_v the range over the edge lags' bounds; *_edge_brake_g_*_spin and _locked add a crest over-read G x (1 - D) x V_on with mg90-b's spinning or locked-burst G from motor-model, comparison values, not mg90-d's. The rails chains decided the standing of r_stop_edge_brake_ohm and the r_stop_edge_brake_g_* keys. Edge + brake at stage 1's lags fails the three rails (rails_chi2_b), and so does a crest term fixed at the type's G at those lags (rails_chi2_c_g_type_spin), so these keys record the one-rail reading and not the motor's line. stop_over_locked_pct_edge_brake and _edge_brake_g_spin as for as_read. joint_r_ohm and joint_v0_v are the line through the lock's point, the 18 stop points and the sag laps' mean point under edge + brake + G spinning, equal weights, joint_resid_mv_lock, _stop_rms and _sag its residuals. sag_slope_board_terms_predict_ohm_per_v is the as-read rail slope edge + brake predict for the sag laps over a flat true R (the sag result quoted: 1.5 V effective at round(150 / rail) % on 13 rails, V_on the rail less rail_minus_crest_von_mv), sag_slope_board_terms_sigma its distance from the measured slope in the sag's se; sag_slope_g_needed_ms the per-volt crest term that brings that prediction to the measured slope, bounds from its se, its standing decided by the rails chains (a per-volt crest term confirmed, this g inside the joint band at edge lags near 12 ticks, not at stage 1's; g_rails_joint_sag_ms); reading2_offset_ma the rail-independent crest offset that closes lock and stop under edge + brake, which the sag slope rejects if the board terms stand. Standing of the readings: edge + brake + a crest term near the type's spinning G leading, moderate; edge lags smaller than stage 1's on the motor and no crest term alive, low to moderate; a constant offset, V0 alone and temperature dead. Every edge_brake, g and joint key is a candidate reading, not a correction; the next capture (the stop chains at a second rail) decides, and the rails chains (the rails_* keys) decided it, reading 1's crest term confirmed with smaller edge lags and reading 2 dead (rails_chi2_b_lags_lo). construction_check_dummy_pct_plain_25, _plain_40, _both_25 and _both_40 are the plain construction and the one with both board terms on stage 1's bridge-states sweep-slow rungs into the RL dummy (wirings ra, rab, rb, both directions), V/I from 30 ms over each wiring's dc_r_ohm, mean and range, a check of the construction for the stage 1 notebook to own, no result derived from it; edge_ticks and low_side_loop_ohm the stage 1 terms as used, quoted. resistance/rails-7 (sitting 7, the stop chains again on 3.7 V at 32/49/32 % after a 66 % seek and on 7.4 V at 16/24/16 % after a 33 % seek, six chains each, alternate stops, every chain pressed into its stop) adds the rails keys, read with the stop chains' step reading beside resistance/stop-1 (5 V) and the six 3.7 V locked laps. rails_vi_as_read_ohm_<rail>_<level> (rail 3v7, 5v or 7v4; level low, about 0.26 A, or high, about 0.38 A) is the settled as-read V_eff / I_crest, the mean over six chains of each chain's mean at the level, +/- one sd over chains; rails_step_amps_* and rails_v_on_v_* its current and V_on the same way. rails_vi_as_read_rail_slope_ohm_per_v_<level> is the line of that read on the rail at one level, weighted by the levels' se, +/- se; rails_vi_as_read_7v4_less_3v7_ohm_<level> the 7.4 V level less the 3.7 V level and rails_vi_as_read_7v4_less_3v7_sigma_<level> that difference over the two levels' se in quadrature. r_stop_as_read_ohm_<rail> and v0_stop_as_read_v_<rail> are the user's pass at each rail as read, each chain's two-point bracket, mean +/- sd over six chains; rails_chain_scatter_pct_<rail> the sd over chains of the low level's as-read V/I over its mean, its lo the high level's (not a bound). r_rails_<k>_ohm and v0_rails_<k>_v are V_applied = V0 + R i_mean through the six level means (weights the chains' se in volts) and the lock (its measured volts and current, no construction, weight its laps' se) under construction k, +/- se scaled by chi2 / dof where over 1; rails_chi2_<k> the chi2 (dof in its unit), rails_rms_mv_<k> the rms residual, rails_lock_pull_sigma_<k> the lock's residual over its se. The applied volts and winding current come from the notebook's construct with stage 1's edge lags per rail (sample-timing's tap ON lag less OFF lag at 3.7 and 7.4 V, interpolated on the rail; edge_ticks_stage1_by_rail with the widest bounds), bridge-states' low_side_loop_ohm, and a crest over-read g x (1 - D) x V_on. k is a as read; b stage 1's lags + the brake drop; b_lags_lo b with the lags at their low bound; c b + g free; c_g_sag and c_g_type_spin c with g fixed at sag_slope_g_needed_ms or mg90-b's spinning G; d the brake drop + a free scale on the lags, no g; e d + g free; f lags, loop and g free (rho_rails_f_ohm the loop); brake_g the brake drop + g free, no lags; a_offset and b_offset a and b + a free rail-independent crest offset (offset_rails_*_ma). g_rails_<k>_ms is g, +/- se where free, a bare value where fixed; edge_ticks_rails_<k> the edge lags at 5 V, +/- se where fitted, stage 1's where fixed. rails_sag_slope_pred_ohm_per_v_<k> is the as-read rail slope the fitted line predicts for the sag laps (the sag result quoted, the lags per rail), against r_stop_lap_per_v_ohm there. g_rails_c_sitting7_ms, r_rails_c_sitting7_ohm and rails_chi2_c_sitting7 are c on the 3.7 and 7.4 V levels and the lock alone. The *_valley keys come from the chi2 surface over the edge lags (-0.5 to 1.5 x stage 1's) and g (-1 to 8 mS) with the loop at low_side_loop_ohm, R and V0 refitted at each point; g_rails_valley_ms and edge_ticks_rails_valley the minimum with the chi2 + 1 band as bounds, their _2sigma keys the chi2 + 4 band, r_rails_valley_ohm and v0_rails_valley_v the minimum's R and V0 with their range over the chi2 + 1 band, rails_chi2_valley_min the minimum's chi2 over 3 dof. The *_joint_sag keys are the same with the sag laps' measured rail slope joined as one datum in its se; rails_joint_sag_chi2 the joint minimum, its lo the chains' part and hi the sag slope's (not bounds); rails_joint_sag_slope_pred_ohm_per_v the slope it predicts. g_rails_<k>_jackknife_se_ms and r_rails_<k>_jackknife_se_ohm (k c, e, brake_g) are leave-one-chain-out jackknife se over the 18 chains, lo and hi the leave-one-out range (not bounds on the se). rails_lock_pred_from_chains_pct_<k> (c, brake_g, a) is the fit with the lock left out, its line's V/I at r_term_amps over r_term_ohm. g_type_spin_ms_quoted and g_type_locked_ms_quoted are mg90-b's motor-model G, ladder_rail_term_a_g_ms_quoted and _b_ the ladder result's rail terms, quoted for comparison. Standing: a per-volt crest term is confirmed (no construction without one fits the three rails, high); R 4.17 to 4.19 ohm and V0 +0.02 to +0.04 V along the valley, likely; g and the edge lags a candidate pair along the valley, never a point (g 5.0 mS only at stage 1's lags, 3.4 mS at 14 ticks with the sag slope joined); the edge lags on the motor about half the RL dummy's, a candidate at about 2 sigma. rails_chain_warming_pct is step 3's settled V/I over step 1's on the rails-7 chains, mean and range; rails_first_row_over_settled_pct the first-row read over the settled one (formed as minus settled over first), mean and range; rails_quiet_gate_i_sd_counts the current's sd from 60 ms to the end per step, mean and range, against 4.5 counts; rails_dropout_rows, rails_missing_rows and rails_window_valid_frac_min over every held rails-7 row; rails_seek_amps the current over the rows before each step's held duty, mean and range over every rails-7 step with such rows (the seek press before step 1, the previous step's rows before steps 2 and 3). rails_seat_pos_high_<rail> and _low_<rail> are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; rails_seat_shift_counts seats.csv's shift_counts, the largest with the range; rails_von_gap_v_<rail> the torque-off rail read less the settled crest V_on, mean and range over the steps; rails_board_ntc_c_<rail> the board NTC around the chains, mean with the probes' range; rails_rail_read_v_<rail> the rail the runner read torque off. bracket_ref_current_ma_<set> is the 5 V 30 % reference spin's crest current over its last 100 ms in the ladder's ref-open and ref-close sets of sittings 1, 6 and 7, mean with the range over both directions, state only. The rails block holds the six levels, every chain's bracket points as read, every construction's fit with its residual and pull per level, and the locked anchor. seat_pos_stop_low and _high are the steps' TEL pos, the median of the step medians with the row-to-row range, the low one blind on the pot's ADC rail; board_ntc_c_stop the board NTC around the chains, mean and range; stop_minutes_into_sitting the first chain's start after sitting 1's first event. Left out against stage 2's file: *_by_hole, hole_map_* and r_term_angle_pct (no holes), r_stall_ohm, v0_brush_v, v0_mean_v and the graded lines (no V0 holds on these rails), early_excess_pct (the early window holds the free spin), copper_tau_s and direction_gap_* kept and offset (20 s between the directions), and the run-up, ohms and room keys (not run).",
   "r_term_ohm": {
     "value": 4.2188705084081874,
     "lo": 4.206494831397831,
@@ -544,5 +544,2586 @@
     "lo": 0.5120992017864758,
     "hi": 0.518266529694617,
     "unit": "A"
+  },
+  "rails_vi_as_read_ohm_3v7_high": {
+    "value": 4.399482702186813,
+    "lo": 4.3721440153184785,
+    "hi": 4.426821389055147,
+    "unit": "ohm"
+  },
+  "rails_step_amps_3v7_high": {
+    "value": 0.3794710202579738,
+    "lo": 0.3772696580963015,
+    "hi": 0.38167238241964613,
+    "unit": "A"
+  },
+  "rails_v_on_v_3v7_high": {
+    "value": 3.4069928667394316,
+    "lo": 3.4038083859236714,
+    "hi": 3.4101773475551918,
+    "unit": "V"
+  },
+  "rails_vi_as_read_ohm_3v7_low": {
+    "value": 4.426536488129512,
+    "lo": 4.4017026210635,
+    "hi": 4.451370355195524,
+    "unit": "ohm"
+  },
+  "rails_step_amps_3v7_low": {
+    "value": 0.25203909174481204,
+    "lo": 0.25068254178499044,
+    "hi": 0.25339564170463363,
+    "unit": "A"
+  },
+  "rails_v_on_v_3v7_low": {
+    "value": 3.4863322681447833,
+    "lo": 3.484731791377213,
+    "hi": 3.4879327449123534,
+    "unit": "V"
+  },
+  "rails_vi_as_read_ohm_5v_high": {
+    "value": 4.406488004226763,
+    "lo": 4.397151882717132,
+    "hi": 4.415824125736394,
+    "unit": "ohm"
+  },
+  "rails_step_amps_5v_high": {
+    "value": 0.3833306056840538,
+    "lo": 0.38240218737713705,
+    "hi": 0.38425902399097056,
+    "unit": "A"
+  },
+  "rails_v_on_v_5v_high": {
+    "value": 4.692040840506611,
+    "lo": 4.689118117005879,
+    "hi": 4.6949635640073435,
+    "unit": "V"
+  },
+  "rails_vi_as_read_ohm_5v_low": {
+    "value": 4.420404297460479,
+    "lo": 4.408929590793805,
+    "hi": 4.431879004127153,
+    "unit": "ohm"
+  },
+  "rails_step_amps_5v_low": {
+    "value": 0.2594359627034948,
+    "lo": 0.25870953494640786,
+    "hi": 0.2601623904605817,
+    "unit": "A"
+  },
+  "rails_v_on_v_5v_low": {
+    "value": 4.7783293821107,
+    "lo": 4.776479436599788,
+    "hi": 4.780179327621612,
+    "unit": "V"
+  },
+  "rails_vi_as_read_ohm_7v4_high": {
+    "value": 4.376400251105804,
+    "lo": 4.347607649197711,
+    "hi": 4.405192853013897,
+    "unit": "ohm"
+  },
+  "rails_step_amps_7v4_high": {
+    "value": 0.38828713899795114,
+    "lo": 0.3858873526121515,
+    "hi": 0.39068692538375077,
+    "unit": "A"
+  },
+  "rails_v_on_v_7v4_high": {
+    "value": 7.080177071347626,
+    "lo": 7.075766182398695,
+    "hi": 7.084587960296558,
+    "unit": "V"
+  },
+  "rails_vi_as_read_ohm_7v4_low": {
+    "value": 4.348524481495033,
+    "lo": 4.308257785534029,
+    "hi": 4.388791177456036,
+    "unit": "ohm"
+  },
+  "rails_step_amps_7v4_low": {
+    "value": 0.26381759860912113,
+    "lo": 0.26144557000072627,
+    "hi": 0.266189627217516,
+    "unit": "A"
+  },
+  "rails_v_on_v_7v4_low": {
+    "value": 7.169582179984347,
+    "lo": 7.1666289897790545,
+    "hi": 7.172535370189639,
+    "unit": "V"
+  },
+  "rails_vi_as_read_rail_slope_ohm_per_v_high": {
+    "value": -0.007807253033902761,
+    "lo": -0.014860094629483726,
+    "hi": -0.0007544114383217964,
+    "unit": "ohm/V"
+  },
+  "rails_vi_as_read_7v4_less_3v7_ohm_high": {
+    "value": -0.023082451081008593,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "rails_vi_as_read_7v4_less_3v7_sigma_high": {
+    "value": -1.4240390360418849,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "rails_vi_as_read_rail_slope_ohm_per_v_low": {
+    "value": -0.019434449334724376,
+    "lo": -0.03050012277050481,
+    "hi": -0.00836877589894394,
+    "unit": "ohm/V"
+  },
+  "rails_vi_as_read_7v4_less_3v7_ohm_low": {
+    "value": -0.07801200663447982,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "rails_vi_as_read_7v4_less_3v7_sigma_low": {
+    "value": -4.03919330219433,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "r_stop_as_read_ohm_3v7": {
+    "value": 4.346032898199289,
+    "lo": 4.313384636260454,
+    "hi": 4.378681160138124,
+    "unit": "ohm"
+  },
+  "v0_stop_as_read_v_3v7": {
+    "value": 0.02029255372608807,
+    "lo": 0.017720261919706097,
+    "hi": 0.022864845532470042,
+    "unit": "V"
+  },
+  "rails_chain_scatter_pct_3v7": {
+    "value": 0.5613339285088124,
+    "lo": 0.6214068498267935,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_stop_as_read_ohm_5v": {
+    "value": 4.37743040378762,
+    "lo": 4.362822893388684,
+    "hi": 4.392037914186555,
+    "unit": "ohm"
+  },
+  "v0_stop_as_read_v_5v": {
+    "value": 0.011135908230467543,
+    "lo": 0.006480198497012635,
+    "hi": 0.01579161796392245,
+    "unit": "V"
+  },
+  "rails_chain_scatter_pct_5v": {
+    "value": 0.2596475434844618,
+    "lo": 0.21187216442382467,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_stop_as_read_ohm_7v4": {
+    "value": 4.43583306370835,
+    "lo": 4.407776719311207,
+    "hi": 4.463889408105493,
+    "unit": "ohm"
+  },
+  "v0_stop_as_read_v_7v4": {
+    "value": -0.023119636946595985,
+    "lo": -0.036222307035181166,
+    "hi": -0.010016966858010805,
+    "unit": "V"
+  },
+  "rails_chain_scatter_pct_7v4": {
+    "value": 0.9262837398579274,
+    "lo": 0.6579060473460632,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_rails_a_ohm": {
+    "value": 4.123682892390991,
+    "lo": 4.081830726605174,
+    "hi": 4.165535058176808,
+    "unit": "ohm"
+  },
+  "v0_rails_a_v": {
+    "value": 0.08609164052109457,
+    "lo": 0.06915113767393663,
+    "hi": 0.1030321433682525,
+    "unit": "V"
+  },
+  "rails_chi2_a": {
+    "value": 407.3149734268541,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 5 dof"
+  },
+  "rails_rms_mv_a": {
+    "value": 17.14155472836969,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_a": {
+    "value": -6.2249431815079825,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "rails_sag_slope_pred_ohm_per_v_a": {
+    "value": 0.0,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_b_ohm": {
+    "value": 4.328120507272754,
+    "lo": 4.281771313766959,
+    "hi": 4.3744697007785485,
+    "unit": "ohm"
+  },
+  "v0_rails_b_v": {
+    "value": -0.08881102659222603,
+    "lo": -0.10757179153248352,
+    "hi": -0.07005026165196855,
+    "unit": "V"
+  },
+  "rails_chi2_b": {
+    "value": 499.54988684494384,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 5 dof"
+  },
+  "rails_rms_mv_b": {
+    "value": 33.933476870677474,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_b": {
+    "value": 2.394792654285705,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "edge_ticks_rails_b": {
+    "value": 25.054054054054053,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "rails_sag_slope_pred_ohm_per_v_b": {
+    "value": 0.04992941447106895,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_b_lags_lo_ohm": {
+    "value": 4.2258589891285485,
+    "lo": 4.199969464497578,
+    "hi": 4.2517485137595195,
+    "unit": "ohm"
+  },
+  "v0_rails_b_lags_lo_v": {
+    "value": -0.004384280769562719,
+    "lo": -0.014863584707309412,
+    "hi": 0.006095023168183973,
+    "unit": "V"
+  },
+  "rails_chi2_b_lags_lo": {
+    "value": 155.86286468454404,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 5 dof"
+  },
+  "rails_rms_mv_b_lags_lo": {
+    "value": 19.795993234662998,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_b_lags_lo": {
+    "value": -0.4648571049796762,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "rails_sag_slope_pred_ohm_per_v_b_lags_lo": {
+    "value": 0.018206274638996957,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_c_ohm": {
+    "value": 4.176568074897476,
+    "lo": 4.170441452756265,
+    "hi": 4.182694697038688,
+    "unit": "ohm"
+  },
+  "v0_rails_c_v": {
+    "value": 0.03130416067977669,
+    "lo": 0.028890351903067733,
+    "hi": 0.03371796945648565,
+    "unit": "V"
+  },
+  "rails_chi2_c": {
+    "value": 7.474669834838984,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 4 dof"
+  },
+  "rails_rms_mv_c": {
+    "value": 2.6670078692600456,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_c": {
+    "value": 0.5313013724218097,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "g_rails_c_ms": {
+    "value": 5.003881106207173,
+    "lo": 4.6849027390432845,
+    "hi": 5.322859473371061,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_c": {
+    "value": 25.054054054054053,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "rails_sag_slope_pred_ohm_per_v_c": {
+    "value": -0.026623665954004016,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_c_g_sag_ohm": {
+    "value": 4.22994860172127,
+    "lo": 4.213298593592736,
+    "hi": 4.246598609849805,
+    "unit": "ohm"
+  },
+  "v0_rails_c_g_sag_v": {
+    "value": -0.01078013271390559,
+    "lo": -0.01740334053906737,
+    "hi": -0.0041569248887438105,
+    "unit": "V"
+  },
+  "rails_chi2_c_g_sag": {
+    "value": 67.36161528774048,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 5 dof"
+  },
+  "rails_rms_mv_c_g_sag": {
+    "value": 12.497698466408654,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_c_g_sag": {
+    "value": 1.0817698631659893,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "g_rails_c_g_sag_ms": {
+    "value": 3.219699347678711,
+    "lo": null,
+    "hi": null,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_c_g_sag": {
+    "value": 25.054054054054053,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "rails_sag_slope_pred_ohm_per_v_c_g_sag": {
+    "value": -5.249311459428637e-05,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_c_g_type_spin_ohm": {
+    "value": 4.2260576611535186,
+    "lo": 4.2105006234425115,
+    "hi": 4.241614698864526,
+    "unit": "ohm"
+  },
+  "v0_rails_c_g_type_spin_v": {
+    "value": -0.00770454094936259,
+    "lo": -0.013888666227659444,
+    "hi": -0.0015204156710657358,
+    "unit": "V"
+  },
+  "rails_chi2_c_g_type_spin": {
+    "value": 58.91130188715056,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 5 dof"
+  },
+  "rails_rms_mv_c_g_type_spin": {
+    "value": 11.66998373735034,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_c_g_type_spin": {
+    "value": 1.0378317635442402,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "g_rails_c_g_type_spin_ms": {
+    "value": 3.3489216285122403,
+    "lo": null,
+    "hi": null,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_c_g_type_spin": {
+    "value": 25.054054054054053,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "rails_sag_slope_pred_ohm_per_v_c_g_type_spin": {
+    "value": -0.0020035037672857013,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_d_ohm": {
+    "value": 4.190835291196378,
+    "lo": 4.175533288356155,
+    "hi": 4.206137294036601,
+    "unit": "ohm"
+  },
+  "v0_rails_d_v": {
+    "value": 0.02496398198461058,
+    "lo": 0.01877018967267533,
+    "hi": 0.03115777429654583,
+    "unit": "V"
+  },
+  "rails_chi2_d": {
+    "value": 43.55931535493091,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 4 dof"
+  },
+  "rails_rms_mv_d": {
+    "value": 7.733215011743554,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_d": {
+    "value": -1.6495681653964482,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "edge_ticks_rails_d": {
+    "value": -11.115180354108025,
+    "lo": -16.70466566790187,
+    "hi": -5.525695040314178,
+    "unit": "ticks"
+  },
+  "rails_sag_slope_pred_ohm_per_v_d": {
+    "value": -0.00966314764060873,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_e_ohm": {
+    "value": 4.176217184480174,
+    "lo": 4.171088541130339,
+    "hi": 4.181345827830008,
+    "unit": "ohm"
+  },
+  "v0_rails_e_v": {
+    "value": 0.03279529479655831,
+    "lo": 0.030762732785979345,
+    "hi": 0.03482785680713727,
+    "unit": "V"
+  },
+  "rails_chi2_e": {
+    "value": 3.870743158016552,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 3 dof"
+  },
+  "rails_rms_mv_e": {
+    "value": 2.228629785098811,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_e": {
+    "value": -0.048403490313671284,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "g_rails_e_ms": {
+    "value": 3.908733417536535,
+    "lo": 3.202348023511216,
+    "hi": 4.615118811561854,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_e": {
+    "value": 16.213296389668187,
+    "lo": 10.923663941922019,
+    "hi": 21.502928837414355,
+    "unit": "ticks"
+  },
+  "rails_sag_slope_pred_ohm_per_v_e": {
+    "value": -0.02404810331140122,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_f_ohm": {
+    "value": 4.187740598802382,
+    "lo": 4.18213825572538,
+    "hi": 4.193342941879384,
+    "unit": "ohm"
+  },
+  "v0_rails_f_v": {
+    "value": 0.023921573153354317,
+    "lo": 0.02167600168170615,
+    "hi": 0.026167144625002484,
+    "unit": "V"
+  },
+  "rails_chi2_f": {
+    "value": 2.9926511418096036,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 2 dof"
+  },
+  "rails_rms_mv_f": {
+    "value": 2.139084025051998,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_f": {
+    "value": -0.02972502784729451,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "g_rails_f_ms": {
+    "value": 1.810353663236392,
+    "lo": -0.9558420732875821,
+    "hi": 4.576549399760366,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_f": {
+    "value": -5.5280350878927775,
+    "lo": -34.347445970703255,
+    "hi": 23.291375794917702,
+    "unit": "ticks"
+  },
+  "rails_sag_slope_pred_ohm_per_v_f": {
+    "value": -0.025348314949364556,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_brake_g_ohm": {
+    "value": 4.1755907449279475,
+    "lo": 4.166438693982128,
+    "hi": 4.184742795873767,
+    "unit": "ohm"
+  },
+  "v0_rails_brake_g_v": {
+    "value": 0.03551810078134824,
+    "lo": 0.031851445641314445,
+    "hi": 0.039184755921382035,
+    "unit": "V"
+  },
+  "rails_chi2_brake_g": {
+    "value": 15.991992234645988,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 4 dof"
+  },
+  "rails_rms_mv_brake_g": {
+    "value": 3.9337722178895893,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_brake_g": {
+    "value": -1.1121374745215076,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "g_rails_brake_g_ms": {
+    "value": 1.8979766688770996,
+    "lo": 1.4405934063164347,
+    "hi": 2.3553599314377647,
+    "unit": "mS"
+  },
+  "rails_sag_slope_pred_ohm_per_v_brake_g": {
+    "value": -0.019593050434518127,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_a_offset_ohm": {
+    "value": 4.373224850371644,
+    "lo": 4.361109180532257,
+    "hi": 4.385340520211031,
+    "unit": "ohm"
+  },
+  "v0_rails_a_offset_v": {
+    "value": -0.11834127990901998,
+    "lo": -0.1234872673048322,
+    "hi": -0.11319529251320776,
+    "unit": "V"
+  },
+  "rails_chi2_a_offset": {
+    "value": 24.291623519715788,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 4 dof"
+  },
+  "rails_rms_mv_a_offset": {
+    "value": 7.8926998781635085,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_a_offset": {
+    "value": -6.777614635380587e-08,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "offset_rails_a_offset_ma": {
+    "value": -29.661782909896566,
+    "lo": -33.18444907306058,
+    "hi": -26.139116746732554,
+    "unit": "mA"
+  },
+  "rails_sag_slope_pred_ohm_per_v_a_offset": {
+    "value": 1.020902228615367e-15,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "r_rails_b_offset_ohm": {
+    "value": 4.222259126035642,
+    "lo": 4.17502814012746,
+    "hi": 4.269490111943823,
+    "unit": "ohm"
+  },
+  "v0_rails_b_offset_v": {
+    "value": -0.0022664765545999934,
+    "lo": -0.021004158007652166,
+    "hi": 0.016471204898452177,
+    "unit": "V"
+  },
+  "rails_chi2_b_offset": {
+    "value": 434.97960055412926,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 4 dof"
+  },
+  "rails_rms_mv_b_offset": {
+    "value": 32.604910168427594,
+    "lo": null,
+    "hi": null,
+    "unit": "mV"
+  },
+  "rails_lock_pull_sigma_b_offset": {
+    "value": -0.1603275685803587,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "edge_ticks_rails_b_offset": {
+    "value": 25.054054054054053,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "offset_rails_b_offset_ma": {
+    "value": 12.352905028083665,
+    "lo": -4.0464003321087425,
+    "hi": 28.752210388276072,
+    "unit": "mA"
+  },
+  "rails_sag_slope_pred_ohm_per_v_b_offset": {
+    "value": 0.04938479662006928,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "rho_rails_f_ohm": {
+    "value": 0.3876121652344299,
+    "lo": 0.27181010658251686,
+    "hi": 0.5034142238863429,
+    "unit": "ohm"
+  },
+  "g_rails_c_sitting7_ms": {
+    "value": 4.982200056485838,
+    "lo": 4.747108427576918,
+    "hi": 5.217291685394758,
+    "unit": "mS"
+  },
+  "r_rails_c_sitting7_ohm": {
+    "value": 4.185253681331655,
+    "lo": 4.179649254356531,
+    "hi": 4.19085810830678,
+    "unit": "ohm"
+  },
+  "rails_chi2_c_sitting7": {
+    "value": 0.6906342383811254,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 2 dof"
+  },
+  "g_rails_valley_ms": {
+    "value": 3.8000000000000007,
+    "lo": 3.4000000000000004,
+    "hi": 4.4,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_valley": {
+    "value": 15.032432432432433,
+    "lo": 12.527027027027026,
+    "hi": 20.043243243243243,
+    "unit": "ticks"
+  },
+  "g_rails_valley_2sigma_ms": {
+    "value": 3.8000000000000007,
+    "lo": 2.8000000000000003,
+    "hi": 5.0,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_valley_2sigma": {
+    "value": 15.032432432432433,
+    "lo": 7.5162162162162165,
+    "hi": 25.054054054054053,
+    "unit": "ticks"
+  },
+  "r_rails_valley_ohm": {
+    "value": 4.1750483699714955,
+    "lo": 4.170366205531777,
+    "hi": 4.18231166932114,
+    "unit": "ohm"
+  },
+  "v0_rails_valley_v": {
+    "value": 0.03387820914442857,
+    "lo": 0.028326406427260066,
+    "hi": 0.037738276253582614,
+    "unit": "V"
+  },
+  "g_rails_joint_sag_ms": {
+    "value": 3.4000000000000004,
+    "lo": 3.0,
+    "hi": 4.0,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_joint_sag": {
+    "value": 13.77972972972973,
+    "lo": 11.274324324324326,
+    "hi": 18.79054054054054,
+    "unit": "ticks"
+  },
+  "g_rails_joint_sag_2sigma_ms": {
+    "value": 3.4000000000000004,
+    "lo": 2.4000000000000004,
+    "hi": 4.6000000000000005,
+    "unit": "mS"
+  },
+  "edge_ticks_rails_joint_sag_2sigma": {
+    "value": 13.77972972972973,
+    "lo": 6.263513513513513,
+    "hi": 22.54864864864865,
+    "unit": "ticks"
+  },
+  "r_rails_joint_sag_ohm": {
+    "value": 4.18231166932114,
+    "lo": 4.177621773751286,
+    "hi": 4.188298305607521,
+    "unit": "ohm"
+  },
+  "v0_rails_joint_sag_v": {
+    "value": 0.028326406427260066,
+    "lo": 0.02360501355800462,
+    "hi": 0.03219489888527055,
+    "unit": "V"
+  },
+  "rails_chi2_valley_min": {
+    "value": 3.961427177654806,
+    "lo": null,
+    "hi": null,
+    "unit": "chi2 over 3 dof"
+  },
+  "rails_joint_sag_chi2": {
+    "value": 9.369635814677686,
+    "lo": 4.948046136478611,
+    "hi": 4.421589678199076,
+    "unit": "chi2 over 4 dof"
+  },
+  "rails_joint_sag_slope_pred_ohm_per_v": {
+    "value": -0.020389539143117152,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm/V"
+  },
+  "g_rails_c_jackknife_se_ms": {
+    "value": 0.3802128361350212,
+    "lo": 4.862821489986364,
+    "hi": 5.234238913365709,
+    "unit": "mS"
+  },
+  "r_rails_c_jackknife_se_ohm": {
+    "value": 0.014275517475198484,
+    "lo": 4.168268399021108,
+    "hi": 4.180493981931957,
+    "unit": "ohm"
+  },
+  "g_rails_e_jackknife_se_ms": {
+    "value": 0.6137442808042098,
+    "lo": 3.73149979335,
+    "hi": 4.225541693775503,
+    "unit": "mS"
+  },
+  "r_rails_e_jackknife_se_ohm": {
+    "value": 0.01193197502473902,
+    "lo": 4.169523349866177,
+    "hi": 4.180365919355461,
+    "unit": "ohm"
+  },
+  "g_rails_brake_g_jackknife_se_ms": {
+    "value": 0.43808130466683604,
+    "lo": 1.7358958391573378,
+    "hi": 2.1681053396702676,
+    "unit": "mS"
+  },
+  "r_rails_brake_g_jackknife_se_ohm": {
+    "value": 0.014141032752233267,
+    "lo": 4.168176749153443,
+    "hi": 4.1826022483726,
+    "unit": "ohm"
+  },
+  "rails_lock_pred_from_chains_pct_c": {
+    "value": -0.3688289576342707,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "rails_lock_pred_from_chains_pct_brake_g": {
+    "value": 0.7705826337582211,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "rails_lock_pred_from_chains_pct_a": {
+    "value": 4.010399026268652,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "g_type_spin_ms_quoted": {
+    "value": 3.3489216285122403,
+    "lo": null,
+    "hi": null,
+    "unit": "mS"
+  },
+  "g_type_locked_ms_quoted": {
+    "value": 2.4931640747711086,
+    "lo": null,
+    "hi": null,
+    "unit": "mS"
+  },
+  "ladder_rail_term_a_g_ms_quoted": {
+    "value": 2.5768273679171556,
+    "lo": 2.486243115751935,
+    "hi": 2.667411620082376,
+    "unit": "mS"
+  },
+  "ladder_rail_term_b_g_ms_quoted": {
+    "value": 6.137777975331357,
+    "lo": 6.042310063677768,
+    "hi": 6.233245886984946,
+    "unit": "mS"
+  },
+  "edge_ticks_stage1_by_rail": {
+    "3v7": {
+      "value": 24.0,
+      "lo": -4.0,
+      "hi": 46.0,
+      "unit": "ticks"
+    },
+    "5v": {
+      "value": 25.054054054054053,
+      "lo": -1.8918918918918923,
+      "hi": 48.108108108108105,
+      "unit": "ticks"
+    },
+    "7v4": {
+      "value": 27.0,
+      "lo": 2.0,
+      "hi": 52.0,
+      "unit": "ticks"
+    }
+  },
+  "rails_chain_warming_pct": {
+    "value": 0.40459446096646573,
+    "lo": 0.12504148001402093,
+    "hi": 0.6798613027035438,
+    "unit": "%"
+  },
+  "rails_first_row_over_settled_pct": {
+    "value": -0.07345792226132525,
+    "lo": -0.3145363262267553,
+    "hi": 0.18274611575089805,
+    "unit": "%"
+  },
+  "rails_quiet_gate_i_sd_counts": {
+    "value": 1.110618782499148,
+    "lo": 0.9833184144348496,
+    "hi": 1.4028021279495673,
+    "unit": "counts"
+  },
+  "rails_dropout_rows": {
+    "value": 0.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rows"
+  },
+  "rails_missing_rows": {
+    "value": 0.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rows"
+  },
+  "rails_window_valid_frac_min": {
+    "value": 1.0,
+    "lo": null,
+    "hi": null,
+    "unit": ""
+  },
+  "rails_seek_amps": {
+    "value": 0.38576418990217914,
+    "lo": 0.2508688125345,
+    "hi": 0.5269301569941485,
+    "unit": "A"
+  },
+  "rails_seat_pos_high_3v7": {
+    "value": 3811.0,
+    "lo": 3787.0,
+    "hi": 3828.0,
+    "unit": "counts"
+  },
+  "rails_seat_pos_low_3v7": {
+    "value": 2.0,
+    "lo": 0.0,
+    "hi": 4.0,
+    "unit": "counts"
+  },
+  "rails_von_gap_v_3v7": {
+    "value": 0.23211419899033434,
+    "lo": 0.2031815312112677,
+    "hi": 0.28966270748928213,
+    "unit": "V"
+  },
+  "rails_board_ntc_c_3v7": {
+    "value": 26.668097355138265,
+    "lo": 26.5247597636793,
+    "hi": 26.7249746113705,
+    "unit": "C"
+  },
+  "rails_rail_read_v_3v7": {
+    "value": 3.692,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "rails_seat_pos_high_7v4": {
+    "value": 3817.0,
+    "lo": 3809.0,
+    "hi": 3823.0,
+    "unit": "counts"
+  },
+  "rails_seat_pos_low_7v4": {
+    "value": 2.0,
+    "lo": 1.0,
+    "hi": 4.0,
+    "unit": "counts"
+  },
+  "rails_von_gap_v_7v4": {
+    "value": 0.28521952289455993,
+    "lo": 0.2516448084157519,
+    "hi": 0.3505707838317802,
+    "unit": "V"
+  },
+  "rails_board_ntc_c_7v4": {
+    "value": 27.041253266659204,
+    "lo": 26.5247597636793,
+    "hi": 27.506851509801436,
+    "unit": "C"
+  },
+  "rails_rail_read_v_7v4": {
+    "value": 7.425,
+    "lo": null,
+    "hi": null,
+    "unit": "V"
+  },
+  "rails_seat_shift_counts": {
+    "value": 8.0,
+    "lo": 0.0,
+    "hi": 8.0,
+    "unit": "counts"
+  },
+  "bracket_ref_current_ma_ref_close_1": {
+    "value": 93.36138837819978,
+    "lo": 79.94572479459006,
+    "hi": 111.22288775730554,
+    "unit": "mA"
+  },
+  "bracket_ref_current_ma_ref_close_6": {
+    "value": 97.77315083122001,
+    "lo": 78.18363110654974,
+    "hi": 120.91440304152724,
+    "unit": "mA"
+  },
+  "bracket_ref_current_ma_ref_close_7": {
+    "value": 95.51595839956319,
+    "lo": 75.54049057448928,
+    "hi": 114.08629000037104,
+    "unit": "mA"
+  },
+  "bracket_ref_current_ma_ref_open_1": {
+    "value": 104.01073210732974,
+    "lo": 83.46991217067068,
+    "hi": 120.80427218602472,
+    "unit": "mA"
+  },
+  "bracket_ref_current_ma_ref_open_6": {
+    "value": 98.79040637310901,
+    "lo": 85.67252928072105,
+    "hi": 117.72060823195417,
+    "unit": "mA"
+  },
+  "bracket_ref_current_ma_ref_open_7": {
+    "value": 95.33810263009106,
+    "lo": 84.2530649209108,
+    "hi": 107.06238877165481,
+    "unit": "mA"
+  },
+  "rails": {
+    "levels": [
+      {
+        "rail_v": 3.7,
+        "level": "high",
+        "sitting": 7,
+        "duty": 0.49,
+        "on_ticks": 1176,
+        "edge_ticks_stage1": 24.0,
+        "n_chains": 6,
+        "i_a": 0.3794710202579738,
+        "i_sd_a": 0.002201362161672349,
+        "v_on_v": 3.4069928667394316,
+        "v_eff_v": 1.6694265047023216,
+        "vi_as_read_ohm": 4.399482702186813,
+        "vi_sd_ohm": 0.027338686868333763,
+        "vi_se_ohm": 0.01116097217752412,
+        "board_c": 26.66809735513827
+      },
+      {
+        "rail_v": 3.7,
+        "level": "low",
+        "sitting": 7,
+        "duty": 0.32,
+        "on_ticks": 768,
+        "edge_ticks_stage1": 24.0,
+        "n_chains": 6,
+        "i_a": 0.25203909174481204,
+        "i_sd_a": 0.001356549959821588,
+        "v_on_v": 3.4863322681447833,
+        "v_eff_v": 1.1156263258063304,
+        "vi_as_read_ohm": 4.426536488129512,
+        "vi_sd_ohm": 0.02483386706601228,
+        "vi_se_ohm": 0.010138383775306344,
+        "board_c": 26.66809735513827
+      },
+      {
+        "rail_v": 5.0,
+        "level": "high",
+        "sitting": 1,
+        "duty": 0.36,
+        "on_ticks": 864,
+        "edge_ticks_stage1": 25.054054054054053,
+        "n_chains": 6,
+        "i_a": 0.3833306056840538,
+        "i_sd_a": 0.000928418306916782,
+        "v_on_v": 4.692040840506611,
+        "v_eff_v": 1.6891347025823797,
+        "vi_as_read_ohm": 4.406488004226763,
+        "vi_sd_ohm": 0.009336121509631437,
+        "vi_se_ohm": 0.0038114556458699344,
+        "board_c": 26.028097751026362
+      },
+      {
+        "rail_v": 5.0,
+        "level": "low",
+        "sitting": 1,
+        "duty": 0.24,
+        "on_ticks": 576,
+        "edge_ticks_stage1": 25.054054054054053,
+        "n_chains": 6,
+        "i_a": 0.2594359627034948,
+        "i_sd_a": 0.0007264277570869328,
+        "v_on_v": 4.7783293821107,
+        "v_eff_v": 1.1467990517065678,
+        "vi_as_read_ohm": 4.420404297460479,
+        "vi_sd_ohm": 0.011474706666674044,
+        "vi_se_ohm": 0.004684529380243971,
+        "board_c": 26.028097751026362
+      },
+      {
+        "rail_v": 7.4,
+        "level": "high",
+        "sitting": 7,
+        "duty": 0.24,
+        "on_ticks": 576,
+        "edge_ticks_stage1": 27.0,
+        "n_chains": 6,
+        "i_a": 0.38828713899795114,
+        "i_sd_a": 0.0023997863857996102,
+        "v_on_v": 7.080177071347626,
+        "v_eff_v": 1.6992424971234301,
+        "vi_as_read_ohm": 4.376400251105804,
+        "vi_sd_ohm": 0.028792601908093376,
+        "vi_se_ohm": 0.011754530506985682,
+        "board_c": 27.041253266659208
+      },
+      {
+        "rail_v": 7.4,
+        "level": "low",
+        "sitting": 7,
+        "duty": 0.16,
+        "on_ticks": 384,
+        "edge_ticks_stage1": 27.0,
+        "n_chains": 6,
+        "i_a": 0.26381759860912113,
+        "i_sd_a": 0.0023720286083948427,
+        "v_on_v": 7.169582179984347,
+        "v_eff_v": 1.1471331487974956,
+        "vi_as_read_ohm": 4.348524481495033,
+        "vi_sd_ohm": 0.040266695961003365,
+        "vi_se_ohm": 0.016438809788707764,
+        "board_c": 27.0412532666592
+      }
+    ],
+    "chains": [
+      {
+        "rail_v": 3.7,
+        "sitting": 7,
+        "chain": 0,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.32,
+        "d_hi": 0.49,
+        "edge_ticks": 24.0,
+        "i_lo": 0.25411225680326743,
+        "v_lo": 1.1150236901524542,
+        "von_lo": 3.4844490317264203,
+        "i_hi": 0.38265754115322137,
+        "v_hi": 1.6671452733302516,
+        "von_hi": 3.402337292510718,
+        "r_as_read": 4.295152373498914,
+        "v0_as_read": 0.023572827208734326,
+        "vi_lo": 4.387917781611378,
+        "vi_hi": 4.356755307385158,
+        "board_c": 26.710132958865717
+      },
+      {
+        "rail_v": 3.7,
+        "sitting": 7,
+        "chain": 1,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.32,
+        "d_hi": 0.49,
+        "edge_ticks": 24.0,
+        "i_lo": 0.2521863341735234,
+        "v_lo": 1.1159798948973925,
+        "von_lo": 3.487437171554352,
+        "i_hi": 0.3800912833798269,
+        "v_hi": 1.6707209217805876,
+        "von_hi": 3.4096345342460967,
+        "r_as_read": 4.3371349609656535,
+        "v0_as_read": 0.022213728275636946,
+        "vi_lo": 4.425219544725661,
+        "vi_hi": 4.395578101461035,
+        "board_c": 26.695295426043554
+      },
+      {
+        "rail_v": 3.7,
+        "sitting": 7,
+        "chain": 2,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.32,
+        "d_hi": 0.49,
+        "edge_ticks": 24.0,
+        "i_lo": 0.25050128743654765,
+        "v_lo": 1.1154067088167359,
+        "von_lo": 3.4856459650523,
+        "i_hi": 0.376838971884051,
+        "v_hi": 1.6688913931155323,
+        "von_hi": 3.405900802276597,
+        "r_as_read": 4.380994370122272,
+        "v0_as_read": 0.017961978848839655,
+        "vi_lo": 4.452698507983796,
+        "vi_hi": 4.428659235459943,
+        "board_c": 26.673037066969
+      },
+      {
+        "rail_v": 3.7,
+        "sitting": 7,
+        "chain": 3,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.32,
+        "d_hi": 0.49,
+        "edge_ticks": 24.0,
+        "i_lo": 0.25276841139370787,
+        "v_lo": 1.1158494627643998,
+        "von_lo": 3.48702957113875,
+        "i_hi": 0.38088953738132375,
+        "v_hi": 1.6704207861608074,
+        "von_hi": 3.409022012573077,
+        "r_as_read": 4.328492425597416,
+        "v0_as_read": 0.0217433086164438,
+        "vi_lo": 4.414513097629004,
+        "vi_hi": 4.385578027806215,
+        "board_c": 26.65819953414683
+      },
+      {
+        "rail_v": 3.7,
+        "sitting": 7,
+        "chain": 4,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.32,
+        "d_hi": 0.49,
+        "edge_ticks": 24.0,
+        "i_lo": 0.25203595783408683,
+        "v_lo": 1.1151595432835302,
+        "von_lo": 3.484873572761032,
+        "i_hi": 0.37900775623604327,
+        "v_hi": 1.6682973991252883,
+        "von_hi": 3.4046885696434455,
+        "r_as_read": 4.3563835655117815,
+        "v0_as_read": 0.01719423865709402,
+        "vi_lo": 4.424604936798861,
+        "vi_hi": 4.401750021406646,
+        "board_c": 26.65819953414683
+      },
+      {
+        "rail_v": 3.7,
+        "sitting": 7,
+        "chain": 5,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.32,
+        "d_hi": 0.49,
+        "edge_ticks": 24.0,
+        "i_lo": 0.2506303028277389,
+        "v_lo": 1.11633865492347,
+        "von_lo": 3.4885582966358437,
+        "i_hi": 0.3773410315133764,
+        "v_hi": 1.6710832547014616,
+        "von_hi": 3.410373989186657,
+        "r_as_read": 4.378039693499697,
+        "v0_as_read": 0.01906924074977967,
+        "vi_lo": 4.454124829792598,
+        "vi_hi": 4.428575519601884,
+        "board_c": 26.613719610657654
+      },
+      {
+        "rail_v": 5.0,
+        "sitting": 1,
+        "chain": 0,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.24,
+        "d_hi": 0.36,
+        "edge_ticks": 25.054054054054053,
+        "i_lo": 0.2588227564830708,
+        "v_lo": 1.1464813941159129,
+        "von_lo": 4.777005808816304,
+        "i_hi": 0.38298988106175946,
+        "v_hi": 1.688681122953795,
+        "von_hi": 4.690780897093876,
+        "r_as_read": 4.366693121690781,
+        "v0_as_read": 0.01628184364423979,
+        "vi_lo": 4.429600432722779,
+        "vi_hi": 4.409205585986448,
+        "board_c": 26.029342647988983
+      },
+      {
+        "rail_v": 5.0,
+        "sitting": 1,
+        "chain": 1,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.24,
+        "d_hi": 0.36,
+        "edge_ticks": 25.054054054054053,
+        "i_lo": 0.25958819366161756,
+        "v_lo": 1.1473505173176792,
+        "von_lo": 4.780627155490329,
+        "i_hi": 0.38306892175079993,
+        "v_hi": 1.6899828090122377,
+        "von_hi": 4.6943966917006605,
+        "r_as_read": 4.39446948598043,
+        "v0_as_read": 0.0065981213509223036,
+        "vi_lo": 4.419887134055455,
+        "vi_hi": 4.411693857304436,
+        "board_c": 25.999809913155577
+      },
+      {
+        "rail_v": 5.0,
+        "sitting": 1,
+        "chain": 2,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.24,
+        "d_hi": 0.36,
+        "edge_ticks": 25.054054054054053,
+        "i_lo": 0.2587666929963187,
+        "v_lo": 1.146378670709435,
+        "von_lo": 4.776577794622646,
+        "i_hi": 0.3821983235049054,
+        "v_hi": 1.6879973434285385,
+        "von_hi": 4.6888815095237195,
+        "r_as_read": 4.388005493303639,
+        "v0_as_read": 0.01090900035757203,
+        "vi_lo": 4.430163161399383,
+        "vi_hi": 4.41654826726856,
+        "board_c": 26.021942491634245
+      },
+      {
+        "rail_v": 5.0,
+        "sitting": 1,
+        "chain": 3,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.24,
+        "d_hi": 0.36,
+        "edge_ticks": 25.054054054054053,
+        "i_lo": 0.25949152503800993,
+        "v_lo": 1.1472460057738059,
+        "von_lo": 4.780191690724191,
+        "i_hi": 0.3832075180924395,
+        "v_hi": 1.6899069840085026,
+        "von_hi": 4.6941860666902855,
+        "r_as_read": 4.3863446013479415,
+        "v0_as_read": 0.009026755827786781,
+        "vi_lo": 4.421130923662185,
+        "vi_hi": 4.409900391361459,
+        "board_c": 26.036703808047793
+      },
+      {
+        "rail_v": 5.0,
+        "sitting": 1,
+        "chain": 4,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.24,
+        "d_hi": 0.36,
+        "edge_ticks": 25.054054054054053,
+        "i_lo": 0.2591952263252896,
+        "v_lo": 1.1463771301250465,
+        "von_lo": 4.776571375521026,
+        "i_hi": 0.38351708412171837,
+        "v_hi": 1.687953795911661,
+        "von_hi": 4.68876054419906,
+        "r_as_read": 4.356246563443581,
+        "v0_as_read": 0.01725881618452263,
+        "vi_lo": 4.422832728741482,
+        "vi_hi": 4.401247990756908,
+        "board_c": 26.036703808047793
+      },
+      {
+        "rail_v": 5.0,
+        "sitting": 1,
+        "chain": 5,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.24,
+        "d_hi": 0.36,
+        "edge_ticks": 25.054054054054053,
+        "i_lo": 0.26075138171666223,
+        "v_lo": 1.1469605921975288,
+        "von_lo": 4.779002467489704,
+        "i_hi": 0.38500190557270036,
+        "v_hi": 1.6902861601795423,
+        "von_hi": 4.695239333832062,
+        "r_as_read": 4.372823156959348,
+        "v0_as_read": 0.006740912017761724,
+        "vi_lo": 4.398675031543417,
+        "vi_hi": 4.390331932682768,
+        "board_c": 26.04408383728378
+      },
+      {
+        "rail_v": 7.4,
+        "sitting": 7,
+        "chain": 6,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.16,
+        "d_hi": 0.24,
+        "edge_ticks": 27.0,
+        "i_lo": 0.26569558234122026,
+        "v_lo": 1.146649224096732,
+        "von_lo": 7.166557650604576,
+        "i_hi": 0.3906104132613556,
+        "v_hi": 1.6978630118803721,
+        "von_hi": 7.07442921616822,
+        "r_as_read": 4.412716918586394,
+        "v0_as_read": -0.025790167294034827,
+        "vi_lo": 4.315650316775477,
+        "vi_hi": 4.346691624793781,
+        "board_c": 26.643400174453365
+      },
+      {
+        "rail_v": 7.4,
+        "sitting": 7,
+        "chain": 7,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.16,
+        "d_hi": 0.24,
+        "edge_ticks": 27.0,
+        "i_lo": 0.2643014377443025,
+        "v_lo": 1.1472703436091791,
+        "von_lo": 7.170439647557368,
+        "i_hi": 0.3880335365053327,
+        "v_hi": 1.6996567643669613,
+        "von_hi": 7.081903184862338,
+        "r_as_read": 4.464374453266431,
+        "v0_as_read": -0.032670243018072975,
+        "vi_lo": 4.340764671583444,
+        "vi_hi": 4.380180073284988,
+        "board_c": 26.739943262077418
+      },
+      {
+        "rail_v": 7.4,
+        "sitting": 7,
+        "chain": 8,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.16,
+        "d_hi": 0.24,
+        "edge_ticks": 27.0,
+        "i_lo": 0.266181994661825,
+        "v_lo": 1.1464854301257281,
+        "von_lo": 7.165533938285799,
+        "i_hi": 0.3912643221476023,
+        "v_hi": 1.6982211233040807,
+        "von_hi": 7.075921347100338,
+        "r_as_read": 4.410980386026864,
+        "v0_as_read": -0.02763812744108951,
+        "vi_lo": 4.307148691940257,
+        "vi_hi": 4.340342390491296,
+        "board_c": 26.970295470666617
+      },
+      {
+        "rail_v": 7.4,
+        "sitting": 7,
+        "chain": 9,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.16,
+        "d_hi": 0.24,
+        "edge_ticks": 27.0,
+        "i_lo": 0.2648450132968857,
+        "v_lo": 1.147622264203178,
+        "von_lo": 7.172639151269862,
+        "i_hi": 0.3882438013627825,
+        "v_hi": 1.700095856069772,
+        "von_hi": 7.0837327336240525,
+        "r_as_read": 4.477139528887147,
+        "v0_as_read": -0.03812581385695113,
+        "vi_lo": 4.333184340219075,
+        "vi_hi": 4.378938826845994,
+        "board_c": 27.14139572581712
+      },
+      {
+        "rail_v": 7.4,
+        "sitting": 7,
+        "chain": 10,
+        "stop": "low",
+        "dir": -1,
+        "d_lo": 0.16,
+        "d_hi": 0.24,
+        "edge_ticks": 27.0,
+        "i_lo": 0.2601747609479355,
+        "v_lo": 1.1471897658192305,
+        "von_lo": 7.169936036370189,
+        "i_hi": 0.3847979934780225,
+        "v_hi": 1.6990623941099106,
+        "von_hi": 7.079426642124629,
+        "r_as_read": 4.428328627709484,
+        "v0_as_read": -0.004949576293983737,
+        "vi_lo": 4.409304582963752,
+        "vi_hi": 4.415465836380333,
+        "board_c": 27.327736630077936
+      },
+      {
+        "rail_v": 7.4,
+        "sitting": 7,
+        "chain": 11,
+        "stop": "high",
+        "dir": 1,
+        "d_lo": 0.16,
+        "d_hi": 0.24,
+        "edge_ticks": 27.0,
+        "i_lo": 0.26170680266255797,
+        "v_lo": 1.1475818649309257,
+        "von_lo": 7.172386655818286,
+        "i_hi": 0.3867727672326111,
+        "v_hi": 1.7005558330094832,
+        "von_hi": 7.085649304206181,
+        "r_as_read": 4.421458467773784,
+        "v0_as_read": -0.009543893775443735,
+        "vi_lo": 4.384990582039268,
+        "vi_hi": 4.396782754838431,
+        "board_c": 27.42474833686278
+      }
+    ],
+    "fits": {
+      "A as read": {
+        "r": 4.123682892390991,
+        "r_se": 0.041852165785816325,
+        "v0": 0.08609164052109457,
+        "v0_se": 0.01694050284715793,
+        "s_e": 0.0,
+        "edge_ticks_5v": 0.0,
+        "rho": 0.0,
+        "g_ms": 0.0,
+        "off_ma": 0.0,
+        "chi2": 407.3149734268541,
+        "dof": 5,
+        "chi2_dof": 81.46299468537083,
+        "rms_mv": 17.14155472836969,
+        "free": "",
+        "lock_resid_mv": -13.12334653548497,
+        "lock_pull_sigma": -6.2249431815079825,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "B edge + brake": {
+        "r": 4.328120507272754,
+        "r_se": 0.04634919350579457,
+        "v0": -0.08881102659222603,
+        "v0_se": 0.018760764940257486,
+        "s_e": 1.0,
+        "edge_ticks_5v": 25.054054054054053,
+        "rho": 0.30083616429222926,
+        "g_ms": 0.0,
+        "off_ma": 0.0,
+        "chi2": 499.54988684494384,
+        "dof": 5,
+        "chi2_dof": 99.90997736898876,
+        "rms_mv": 33.933476870677474,
+        "free": "",
+        "lock_resid_mv": 5.0486716049369385,
+        "lock_pull_sigma": 2.394792654285705,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "B, lags lo": {
+        "r": 4.2258589891285485,
+        "r_se": 0.025889524630971165,
+        "v0": -0.004384280769562719,
+        "v0_se": 0.010479303937746692,
+        "s_e": "lo",
+        "edge_ticks_5v": -1.8918918918918923,
+        "rho": 0.30083616429222926,
+        "g_ms": 0.0,
+        "off_ma": 0.0,
+        "chi2": 155.86286468454404,
+        "dof": 5,
+        "chi2_dof": 31.172572936908807,
+        "rms_mv": 19.795993234662998,
+        "free": "",
+        "lock_resid_mv": -0.9800058731865846,
+        "lock_pull_sigma": -0.4648571049796762,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "B, lags hi": {
+        "r": 4.415625878933994,
+        "r_se": 0.07409297266659416,
+        "v0": -0.16134343062208897,
+        "v0_se": 0.02999061555945117,
+        "s_e": "hi",
+        "edge_ticks_5v": 48.108108108108105,
+        "rho": 0.30083616429222926,
+        "g_ms": 0.0,
+        "off_ma": 0.0,
+        "chi2": 1276.5814821530455,
+        "dof": 5,
+        "chi2_dof": 255.3162964306091,
+        "rms_mv": 52.48300401146901,
+        "free": "",
+        "lock_resid_mv": 10.495702441550403,
+        "lock_pull_sigma": 4.978543481420871,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "C = B + g free": {
+        "r": 4.176568074897476,
+        "r_se": 0.006126622141211238,
+        "v0": 0.03130416067977669,
+        "v0_se": 0.002413808776708957,
+        "s_e": 1.0,
+        "edge_ticks_5v": 25.054054054054053,
+        "rho": 0.30083616429222926,
+        "g_ms": 5.003881106207173,
+        "off_ma": 0.0,
+        "chi2": 7.474669834838984,
+        "dof": 4,
+        "chi2_dof": 1.868667458709746,
+        "rms_mv": 2.6670078692600456,
+        "free": "g",
+        "lock_resid_mv": 1.120082837990033,
+        "lock_pull_sigma": 0.5313013724218097,
+        "g_se": 0.318978367163888,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "C, g type spin": {
+        "r": 4.2260576611535186,
+        "r_se": 0.015557037711007176,
+        "v0": -0.00770454094936259,
+        "v0_se": 0.006184125278296854,
+        "s_e": 1.0,
+        "edge_ticks_5v": 25.054054054054053,
+        "rho": 0.30083616429222926,
+        "g_ms": 3.3489216285122403,
+        "off_ma": 0.0,
+        "chi2": 58.91130188715056,
+        "dof": 5,
+        "chi2_dof": 11.782260377430111,
+        "rms_mv": 11.66998373735034,
+        "free": "",
+        "lock_resid_mv": 2.1879438062959444,
+        "lock_pull_sigma": 1.0378317635442402,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "C, g type locked": {
+        "r": 4.251896284798113,
+        "r_se": 0.022996021095506056,
+        "v0": -0.028152690662481807,
+        "v0_se": 0.009183510723388381,
+        "s_e": 1.0,
+        "edge_ticks_5v": 25.054054054054053,
+        "rho": 0.30083616429222926,
+        "g_ms": 2.4931640747711086,
+        "off_ma": 0.0,
+        "chi2": 127.23366203708107,
+        "dof": 5,
+        "chi2_dof": 25.446732407416214,
+        "rms_mv": 17.214964095454153,
+        "free": "",
+        "lock_resid_mv": 2.827095773447752,
+        "lock_pull_sigma": 1.341007837506081,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "C, g sag 3.22": {
+        "r": 4.22994860172127,
+        "r_se": 0.0166500081285349,
+        "v0": -0.01078013271390559,
+        "v0_se": 0.00662320782516178,
+        "s_e": 1.0,
+        "edge_ticks_5v": 25.054054054054053,
+        "rho": 0.30083616429222926,
+        "g_ms": 3.219699347678711,
+        "off_ma": 0.0,
+        "chi2": 67.36161528774048,
+        "dof": 5,
+        "chi2_dof": 13.472323057548095,
+        "rms_mv": 12.497698466408654,
+        "free": "",
+        "lock_resid_mv": 2.2805735525657234,
+        "lock_pull_sigma": 1.0817698631659893,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "D brake + edge free": {
+        "r": 4.190835291196378,
+        "r_se": 0.015302002840223723,
+        "v0": 0.02496398198461058,
+        "v0_se": 0.00619379231193525,
+        "s_e": -0.44364797529881006,
+        "edge_ticks_5v": -11.115180354108025,
+        "rho": 0.30083616429222926,
+        "g_ms": 0.0,
+        "off_ma": 0.0,
+        "chi2": 43.55931535493091,
+        "dof": 4,
+        "chi2_dof": 10.889828838732727,
+        "rms_mv": 7.733215011743554,
+        "free": "s_e",
+        "lock_resid_mv": -3.4775987566777466,
+        "lock_pull_sigma": -1.6495681653964482,
+        "g_se": null,
+        "s_e_se": 0.2230970405721385,
+        "rho_se": null,
+        "off_se": null
+      },
+      "E brake + edge free + g": {
+        "r": 4.176217184480174,
+        "r_se": 0.0051286433498349895,
+        "v0": 0.03279529479655831,
+        "v0_se": 0.002032562010578964,
+        "s_e": 0.6471326498573063,
+        "edge_ticks_5v": 16.213296389668187,
+        "rho": 0.30083616429222926,
+        "g_ms": 3.908733417536535,
+        "off_ma": 0.0,
+        "chi2": 3.870743158016552,
+        "dof": 3,
+        "chi2_dof": 1.2902477193388506,
+        "rms_mv": 2.228629785098811,
+        "free": "s_e g",
+        "lock_resid_mv": -0.10204362648646992,
+        "lock_pull_sigma": -0.048403490313671284,
+        "g_se": 0.706385394025319,
+        "s_e_se": 0.21112880320022467,
+        "rho_se": null,
+        "off_se": null
+      },
+      "F all three free": {
+        "r": 4.187740598802382,
+        "r_se": 0.005602343077001761,
+        "v0": 0.023921573153354317,
+        "v0_se": 0.002245571471648166,
+        "s_e": -0.22064433468396202,
+        "edge_ticks_5v": -5.5280350878927775,
+        "rho": 0.3876121652344299,
+        "g_ms": 1.810353663236392,
+        "off_ma": 0.0,
+        "chi2": 2.9926511418096036,
+        "dof": 2,
+        "chi2_dof": 1.4963255709048018,
+        "rms_mv": 2.139084025051998,
+        "free": "s_e rho g",
+        "lock_resid_mv": -0.06266592800008297,
+        "lock_pull_sigma": -0.02972502784729451,
+        "g_se": 2.766195736523974,
+        "s_e_se": 1.1502893232621227,
+        "rho_se": 0.11580205865191302,
+        "off_se": null
+      },
+      "A + g": {
+        "r": 4.135256242913913,
+        "r_se": 0.046759917268180906,
+        "v0": 0.07690360615182605,
+        "v0_se": 0.01896881115753383,
+        "s_e": 0.0,
+        "edge_ticks_5v": 0.0,
+        "rho": 0.0,
+        "g_ms": -0.4075220109136969,
+        "off_ma": 0.0,
+        "chi2": 404.48198416044465,
+        "dof": 4,
+        "chi2_dof": 101.12049604011116,
+        "rms_mv": 17.780988150750606,
+        "free": "g",
+        "lock_resid_mv": -12.807939345405028,
+        "lock_pull_sigma": -6.075332574794383,
+        "g_se": 2.427905468361133,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "brake only": {
+        "r": 4.233024460019295,
+        "r_se": 0.01930052140392177,
+        "v0": -0.010000256568261544,
+        "v0_se": 0.007812272833574028,
+        "s_e": 0.0,
+        "edge_ticks_5v": 0.0,
+        "rho": 0.30083616429222926,
+        "g_ms": 0.0,
+        "off_ma": 0.0,
+        "chi2": 86.62287322658806,
+        "dof": 5,
+        "chi2_dof": 17.32457464531761,
+        "rms_mv": 14.682473703165845,
+        "free": "",
+        "lock_resid_mv": -0.857387564265899,
+        "lock_pull_sigma": -0.4066941963054328,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "brake only + g": {
+        "r": 4.1755907449279475,
+        "r_se": 0.009152050945819126,
+        "v0": 0.03551810078134824,
+        "v0_se": 0.0036666551400337958,
+        "s_e": 0.0,
+        "edge_ticks_5v": 0.0,
+        "rho": 0.30083616429222926,
+        "g_ms": 1.8979766688770996,
+        "off_ma": 0.0,
+        "chi2": 15.991992234645988,
+        "dof": 4,
+        "chi2_dof": 3.997998058661497,
+        "rms_mv": 3.9337722178895893,
+        "free": "g",
+        "lock_resid_mv": -2.3445941669959502,
+        "lock_pull_sigma": -1.1121374745215076,
+        "g_se": 0.4573832625606649,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "edge only": {
+        "r": 4.217294133223732,
+        "r_se": 0.0406663840372748,
+        "v0": 0.0086653294390254,
+        "v0_se": 0.01646053392057771,
+        "s_e": 1.0,
+        "edge_ticks_5v": 25.054054054054053,
+        "rho": 0.0,
+        "g_ms": 0.0,
+        "off_ma": 0.0,
+        "chi2": 384.5613351237475,
+        "dof": 5,
+        "chi2_dof": 76.9122670247495,
+        "rms_mv": 26.182450815822207,
+        "free": "",
+        "lock_resid_mv": -7.46342998584737,
+        "lock_pull_sigma": -3.540211902157616,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": null
+      },
+      "B + const offset": {
+        "r": 4.222259126035642,
+        "r_se": 0.04723098590818167,
+        "v0": -0.0022664765545999934,
+        "v0_se": 0.01873768145305217,
+        "s_e": 1.0,
+        "edge_ticks_5v": 25.054054054054053,
+        "rho": 0.30083616429222926,
+        "g_ms": 0.0,
+        "off_ma": 12.352905028083665,
+        "chi2": 434.97960055412926,
+        "dof": 4,
+        "chi2_dof": 108.74490013853232,
+        "rms_mv": 32.604910168427594,
+        "free": "off",
+        "lock_resid_mv": -0.3380005536310904,
+        "lock_pull_sigma": -0.1603275685803587,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": 16.399305360192407
+      },
+      "A + const offset": {
+        "r": 4.373224850371644,
+        "r_se": 0.012115669839386847,
+        "v0": -0.11834127990901998,
+        "v0_se": 0.005145987395812223,
+        "s_e": 0.0,
+        "edge_ticks_5v": 0.0,
+        "rho": 0.0,
+        "g_ms": 0.0,
+        "off_ma": -29.661782909896566,
+        "chi2": 24.291623519715788,
+        "dof": 4,
+        "chi2_dof": 6.072905879928947,
+        "rms_mv": 7.8926998781635085,
+        "free": "off",
+        "lock_resid_mv": -1.4288481509083795e-07,
+        "lock_pull_sigma": -6.777614635380587e-08,
+        "g_se": null,
+        "s_e_se": null,
+        "rho_se": null,
+        "off_se": 3.522666163164013
+      }
+    },
+    "residuals_by_construction": {
+      "A + const offset": {
+        "3.7 V high": {
+          "resid_mv": -1.461957304599748,
+          "pull": -0.34518669605239266,
+          "vi_corrected_ohm": 4.080402480016599
+        },
+        "3.7 V low": {
+          "resid_mv": 2.026340303951324,
+          "pull": 0.7930046791276082,
+          "vi_corrected_ohm": 3.9603225484258644
+        },
+        "5 V high": {
+          "resid_mv": 1.3674056779935384,
+          "pull": 0.935907684873277,
+          "vi_corrected_ohm": 4.089989910790145
+        },
+        "5 V low": {
+          "resid_mv": 0.8508863126848176,
+          "pull": 0.7001246898449902,
+          "vi_corrected_ohm": 3.9668211499655732
+        },
+        "7.4 V high": {
+          "resid_mv": -10.200834440986739,
+          "pull": -2.2349993732545617,
+          "vi_corrected_ohm": 4.065670248332621
+        },
+        "7.4 V low": {
+          "resid_mv": -17.97689562415328,
+          "pull": -4.145152985003358,
+          "vi_corrected_ohm": 3.9087350629541935
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -1.4288481509083795e-07,
+          "pull": -6.777614635380587e-08,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "A + g": {
+        "3.7 V high": {
+          "resid_mv": 20.38483239463984,
+          "pull": 4.813117949305619,
+          "vi_corrected_ohm": 4.391157827846808
+        },
+        "3.7 V low": {
+          "resid_mv": -7.5186404184366395,
+          "pull": -2.9424065744889005,
+          "vi_corrected_ohm": 4.409499475558972
+        },
+        "5 V high": {
+          "resid_mv": 22.00029490962807,
+          "pull": 15.057890578319398,
+          "vi_corrected_ohm": 4.392447195272369
+        },
+        "5 V low": {
+          "resid_mv": -9.058622597526877,
+          "pull": -7.453598961422673,
+          "vi_corrected_ohm": 4.395282503599659
+        },
+        "7.4 V high": {
+          "resid_mv": 7.604081719355893,
+          "pull": 1.6660517308908438,
+          "vi_corrected_ohm": 4.351676265471892
+        },
+        "7.4 V low": {
+          "resid_mv": -30.872907917385728,
+          "pull": -7.118744475411219,
+          "vi_corrected_ohm": 4.3081272887846405
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -12.807939345405028,
+          "pull": -6.075332574794383,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "A as read": {
+        "3.7 V high": {
+          "resid_mv": 18.516709785264986,
+          "pull": 4.372030463835292,
+          "vi_corrected_ohm": 4.399351770175767
+        },
+        "3.7 V low": {
+          "resid_mv": -9.794605556608715,
+          "pull": -3.833101489149753,
+          "vi_corrected_ohm": 4.42640194456777
+        },
+        "5 V high": {
+          "resid_mv": 22.30920127207603,
+          "pull": 15.269318571616541,
+          "vi_corrected_ohm": 4.406469709268629
+        },
+        "5 V low": {
+          "resid_mv": -9.124229885915325,
+          "pull": -7.507581828169699,
+          "vi_corrected_ohm": 4.4203549876283965
+        },
+        "7.4 V high": {
+          "resid_mv": 11.977824181041985,
+          "pull": 2.62433722382741,
+          "vi_corrected_ohm": 4.376252330964783
+        },
+        "7.4 V low": {
+          "resid_mv": -26.858609819705226,
+          "pull": -6.193118600388797,
+          "vi_corrected_ohm": 4.348205558860829
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -13.12334653548497,
+          "pull": -6.2249431815079825,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "B + const offset": {
+        "3.7 V high": {
+          "resid_mv": 30.12518930058361,
+          "pull": 7.112939981149664,
+          "vi_corrected_ohm": 4.298144002292807
+        },
+        "3.7 V low": {
+          "resid_mv": 21.258962028566142,
+          "pull": 8.319657033507866,
+          "vi_corrected_ohm": 4.301498091510163
+        },
+        "5 V high": {
+          "resid_mv": 3.464799387590256,
+          "pull": 2.3714486677780697,
+          "vi_corrected_ohm": 4.225489300870602
+        },
+        "5 V low": {
+          "resid_mv": -1.332966811602665,
+          "pull": -1.0967892674196418,
+          "vi_corrected_ohm": 4.207691379464644
+        },
+        "7.4 V high": {
+          "resid_mv": -52.65898879903563,
+          "pull": -11.5375666219203,
+          "vi_corrected_ohm": 4.0761552057471855
+        },
+        "7.4 V low": {
+          "resid_mv": -57.40405640442425,
+          "pull": -13.236356305946337,
+          "vi_corrected_ohm": 3.984967233844842
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -0.3380005536310904,
+          "pull": -0.1603275685803587,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "B edge + brake": {
+        "3.7 V high": {
+          "resid_mv": 22.40882271177891,
+          "pull": 5.291007781120198,
+          "vi_corrected_ohm": 4.153134275556547
+        },
+        "3.7 V low": {
+          "resid_mv": 26.40096130956615,
+          "pull": 10.331969319826461,
+          "vi_corrected_ohm": 4.080499930438389
+        },
+        "5 V high": {
+          "resid_mv": -5.144886434182538,
+          "pull": -3.5213681126563694,
+          "vi_corrected_ohm": 4.083016381400143
+        },
+        "5 V low": {
+          "resid_mv": 2.7270613324437143,
+          "pull": 2.243875522619496,
+          "vi_corrected_ohm": 3.996308508802186
+        },
+        "7.4 V high": {
+          "resid_mv": -62.24233728714168,
+          "pull": -13.637275031904572,
+          "vi_corrected_ohm": 3.9390956112404267
+        },
+        "7.4 V low": {
+          "resid_mv": -54.10818347034141,
+          "pull": -12.476386519363746,
+          "vi_corrected_ohm": 3.7863855706496667
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": 5.0486716049369385,
+          "pull": 2.394792654285705,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "B, lags hi": {
+        "3.7 V high": {
+          "resid_mv": 29.458252244070504,
+          "pull": 6.955467667636586,
+          "vi_corrected_ohm": 4.068075812295547
+        },
+        "3.7 V low": {
+          "resid_mv": 44.22550581036566,
+          "pull": 17.30757315344188,
+          "vi_corrected_ohm": 3.9509442932286127
+        },
+        "5 V high": {
+          "resid_mv": -12.334782010190448,
+          "pull": -8.44242309386435,
+          "vi_corrected_ohm": 3.9625490568463073
+        },
+        "5 V low": {
+          "resid_mv": 5.907766600059761,
+          "pull": 4.86101750243518,
+          "vi_corrected_ohm": 3.8164966664598
+        },
+        "7.4 V high": {
+          "resid_mv": -98.6557674674886,
+          "pull": -21.61544525924646,
+          "vi_corrected_ohm": 3.7460203937753693
+        },
+        "7.4 V low": {
+          "resid_mv": -80.1711120244486,
+          "pull": -18.48603514572802,
+          "vi_corrected_ohm": 3.5001655611999545
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": 10.495702441550403,
+          "pull": 4.978543481420871,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "B, lags lo": {
+        "3.7 V high": {
+          "resid_mv": 17.8674600299884,
+          "pull": 4.218734346888767,
+          "vi_corrected_ohm": 4.261390501525094
+        },
+        "3.7 V low": {
+          "resid_mv": 9.306587627578855,
+          "pull": 3.6421165393542023,
+          "vi_corrected_ohm": 4.2453889232508315
+        },
+        "5 V high": {
+          "resid_mv": 3.60286972802637,
+          "pull": 2.465949586376595,
+          "vi_corrected_ohm": 4.223820511036924
+        },
+        "5 V low": {
+          "resid_mv": -0.6445045480036882,
+          "pull": -0.5303100309029324,
+          "vi_corrected_ohm": 4.206475457003076
+        },
+        "7.4 V high": {
+          "resid_mv": -31.99362699909014,
+          "pull": -7.009792846337956,
+          "vi_corrected_ohm": 4.132170828705484
+        },
+        "7.4 V low": {
+          "resid_mv": -36.04666557917402,
+          "pull": -8.311721141895918,
+          "vi_corrected_ohm": 4.0726055800993795
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -0.9800058731865846,
+          "pull": -0.4648571049796762,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "C = B + g free": {
+        "3.7 V high": {
+          "resid_mv": -2.5229877837469328,
+          "pull": -0.5957094742179123,
+          "vi_corrected_ohm": 4.254192134629813
+        },
+        "3.7 V low": {
+          "resid_mv": -3.5091568521903316,
+          "pull": -1.3733023017670227,
+          "vi_corrected_ohm": 4.2922955499228115
+        },
+        "5 V high": {
+          "resid_mv": -1.467243968241938,
+          "pull": -1.0042410438697047,
+          "vi_corrected_ohm": 4.257579637776333
+        },
+        "5 V low": {
+          "resid_mv": 2.037333557820764,
+          "pull": 1.6763550006808141,
+          "vi_corrected_ohm": 4.314763016087326
+        },
+        "7.4 V high": {
+          "resid_mv": -4.807978262175716,
+          "pull": -1.0534264098442543,
+          "vi_corrected_ohm": 4.249891260666379
+        },
+        "7.4 V low": {
+          "resid_mv": -0.6603743112625349,
+          "pull": -0.15227059247490982,
+          "vi_corrected_ohm": 4.30770264680291
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": 1.120082837990033,
+          "pull": 0.5313013724218097,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "C, g sag 3.22": {
+        "3.7 V high": {
+          "resid_mv": 6.1706864071586764,
+          "pull": 1.456977468877363,
+          "vi_corrected_ohm": 4.217619810441065
+        },
+        "3.7 V low": {
+          "resid_mv": 6.984682071112358,
+          "pull": 2.7334429235849944,
+          "vi_corrected_ohm": 4.214419324196448
+        },
+        "5 V high": {
+          "resid_mv": -2.754535852117046,
+          "pull": -1.885315611705019,
+          "vi_corrected_ohm": 4.193726927840645
+        },
+        "5 V low": {
+          "resid_mv": 2.3339185593189704,
+          "pull": 1.920390518811805,
+          "vi_corrected_ohm": 4.195856029207358
+        },
+        "7.4 V high": {
+          "resid_mv": -24.85077643500211,
+          "pull": -5.444796705449358,
+          "vi_corrected_ohm": 4.133898615508579
+        },
+        "7.4 V low": {
+          "resid_mv": -19.253242988588994,
+          "pull": -4.4394560280984905,
+          "vi_corrected_ohm": 4.107076085423924
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": 2.2805735525657234,
+          "pull": 1.0817698631659893,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "C, g type locked": {
+        "3.7 V high": {
+          "resid_mv": 9.772428190568005,
+          "pull": 2.30739446965927,
+          "vi_corrected_ohm": 4.2029004103549426
+        },
+        "3.7 V low": {
+          "resid_mv": 11.312088361697725,
+          "pull": 4.426965689839402,
+          "vi_corrected_ohm": 4.1834743017583325
+        },
+        "5 V high": {
+          "resid_mv": -3.286340647834951,
+          "pull": -2.2493042971221953,
+          "vi_corrected_ohm": 4.1682471049426635
+        },
+        "5 V low": {
+          "resid_mv": 2.439202828477871,
+          "pull": 2.0070203249228546,
+          "vi_corrected_ohm": 4.149199238834568
+        },
+        "7.4 V high": {
+          "resid_mv": -33.149573871471546,
+          "pull": -7.2630604148132765,
+          "vi_corrected_ohm": 4.088367581140809
+        },
+        "7.4 V low": {
+          "resid_mv": -26.970071600707747,
+          "pull": -6.218819708293969,
+          "vi_corrected_ohm": 4.030344129459129
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": 2.827095773447752,
+          "pull": 1.341007837506081,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "C, g type spin": {
+        "3.7 V high": {
+          "resid_mv": 5.533837253511642,
+          "pull": 1.3066092915444636,
+          "vi_corrected_ohm": 4.220248235739964
+        },
+        "3.7 V low": {
+          "resid_mv": 6.218295263824114,
+          "pull": 2.4335188076721104,
+          "vi_corrected_ohm": 4.21996898026571
+        },
+        "5 V high": {
+          "resid_mv": -2.6604104841427834,
+          "pull": -1.8208924074969597,
+          "vi_corrected_ohm": 4.198289993369765
+        },
+        "5 V low": {
+          "resid_mv": 2.3142303718131085,
+          "pull": 1.9041907210648437,
+          "vi_corrected_ohm": 4.204258745460437
+        },
+        "7.4 V high": {
+          "resid_mv": -23.383111870235005,
+          "pull": -5.123231896082145,
+          "vi_corrected_ohm": 4.142097522380374
+        },
+        "7.4 V low": {
+          "resid_mv": -17.889623452725488,
+          "pull": -4.125029571625157,
+          "vi_corrected_ohm": 4.1210123866645345
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": 2.1879438062959444,
+          "pull": 1.0378317635442402,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "D brake + edge free": {
+        "3.7 V high": {
+          "resid_mv": 11.562607091995636,
+          "pull": 2.730078455287486,
+          "vi_corrected_ohm": 4.28709188821339
+        },
+        "3.7 V low": {
+          "resid_mv": -1.3478312910046863,
+          "pull": -0.5274713819574682,
+          "vi_corrected_ohm": 4.284535639543598
+        },
+        "5 V high": {
+          "resid_mv": 6.155126103245978,
+          "pull": 4.212816952643398,
+          "vi_corrected_ohm": 4.2720161508157775
+        },
+        "5 V low": {
+          "resid_mv": -2.2431243062335238,
+          "pull": -1.8456833607185212,
+          "vi_corrected_ohm": 4.278413194589612
+        },
+        "7.4 V high": {
+          "resid_mv": -5.824695968948301,
+          "pull": -1.276188915260795,
+          "vi_corrected_ohm": 4.240126869756138
+        },
+        "7.4 V low": {
+          "resid_mv": -13.934482721970953,
+          "pull": -3.2130443351882216,
+          "vi_corrected_ohm": 4.232642582752319
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -3.4775987566777466,
+          "pull": -1.6495681653964482,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "E brake + edge free + g": {
+        "3.7 V high": {
+          "resid_mv": 0.2891962882975996,
+          "pull": 0.06828291835471488,
+          "vi_corrected_ohm": 4.264991870489918
+        },
+        "3.7 V low": {
+          "resid_mv": -3.737698114158805,
+          "pull": -1.4627415187442128,
+          "vi_corrected_ohm": 4.295907761540363
+        },
+        "5 V high": {
+          "resid_mv": 0.488959007631129,
+          "pull": 0.33466329721657584,
+          "vi_corrected_ohm": 4.265788973167699
+        },
+        "5 V low": {
+          "resid_mv": 0.9734530536751329,
+          "pull": 0.8009748272157413,
+          "vi_corrected_ohm": 4.313913203776541
+        },
+        "7.4 V high": {
+          "resid_mv": -3.6045141143346004,
+          "pull": -0.7897478223992995,
+          "vi_corrected_ohm": 4.2557009775052395
+        },
+        "7.4 V low": {
+          "resid_mv": -2.554190025518599,
+          "pull": -0.5889508750509254,
+          "vi_corrected_ohm": 4.302076288891103
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -0.10204362648646992,
+          "pull": -0.048403490313671284,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "F all three free": {
+        "3.7 V high": {
+          "resid_mv": 2.9980812992183026,
+          "pull": 0.7078850900211228,
+          "vi_corrected_ohm": 4.2592735160389665
+        },
+        "3.7 V low": {
+          "resid_mv": -3.192595742128157,
+          "pull": -1.2494166735634964,
+          "vi_corrected_ohm": 4.271410448913017
+        },
+        "5 V high": {
+          "resid_mv": 0.08977520807929018,
+          "pull": 0.06144577904327104,
+          "vi_corrected_ohm": 4.25128045480504
+        },
+        "5 V low": {
+          "resid_mv": 0.7012673559212423,
+          "pull": 0.5770154987140348,
+          "vi_corrected_ohm": 4.285117344361283
+        },
+        "7.4 V high": {
+          "resid_mv": -3.5054708321125005,
+          "pull": -0.7680474727884833,
+          "vi_corrected_ohm": 4.241673584773965
+        },
+        "7.4 V low": {
+          "resid_mv": -0.2377308319532201,
+          "pull": -0.05481650938520351,
+          "vi_corrected_ohm": 4.2813841457814075
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -0.06266592800008297,
+          "pull": -0.02972502784729451,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "brake only": {
+        "3.7 V high": {
+          "resid_mv": 14.895761490923976,
+          "pull": 3.5170785617738862,
+          "vi_corrected_ohm": 4.24592532638673
+        },
+        "3.7 V low": {
+          "resid_mv": 7.179660081455097,
+          "pull": 2.8097472216475063,
+          "vi_corrected_ohm": 4.221833352849054
+        },
+        "5 V high": {
+          "resid_mv": 2.682515211353209,
+          "pull": 1.836021775760679,
+          "vi_corrected_ohm": 4.213934564121602
+        },
+        "5 V low": {
+          "resid_mv": -0.715734781095323,
+          "pull": -0.5889195585300854,
+          "vi_corrected_ohm": 4.191719502766302
+        },
+        "7.4 V high": {
+          "resid_mv": -23.162421488059024,
+          "pull": -5.074878708046391,
+          "vi_corrected_ohm": 4.1476168461026885
+        },
+        "7.4 V low": {
+          "resid_mv": -26.280277058423394,
+          "pull": -6.059765332846224,
+          "vi_corrected_ohm": 4.095503180855356
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -0.857387564265899,
+          "pull": -0.4066941963054328,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "brake only + g": {
+        "3.7 V high": {
+          "resid_mv": 5.448329030100174,
+          "pull": 1.2864197134823359,
+          "vi_corrected_ohm": 4.284493862387559
+        },
+        "3.7 V low": {
+          "resid_mv": -4.154433733767338,
+          "pull": -1.6258302633466337,
+          "vi_corrected_ohm": 4.3022923867673954
+        },
+        "5 V high": {
+          "resid_mv": 4.076155362692679,
+          "pull": 2.7898853939814674,
+          "vi_corrected_ohm": 4.280439762564637
+        },
+        "5 V low": {
+          "resid_mv": -0.9773281291429736,
+          "pull": -0.8041633095894763,
+          "vi_corrected_ohm": 4.312362374123095
+        },
+        "7.4 V high": {
+          "resid_mv": -1.4001354841615132,
+          "pull": -0.30676921066368695,
+          "vi_corrected_ohm": 4.265832186211702
+        },
+        "7.4 V low": {
+          "resid_mv": -6.029147881122299,
+          "pull": -1.39021446522071,
+          "vi_corrected_ohm": 4.292430905517464
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -2.3445941669959502,
+          "pull": -1.1121374745215076,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      },
+      "edge only": {
+        "3.7 V high": {
+          "resid_mv": 26.35033913352469,
+          "pull": 6.2216498913774245,
+          "vi_corrected_ohm": 4.309569080988506
+        },
+        "3.7 V low": {
+          "resid_mv": 9.174690727423496,
+          "pull": 3.5904989217301195,
+          "vi_corrected_ohm": 4.288076883800027
+        },
+        "5 V high": {
+          "resid_mv": 14.87035668944392,
+          "pull": 10.177872833524297,
+          "vi_corrected_ohm": 4.278692012181166
+        },
+        "5 V low": {
+          "resid_mv": -5.865925617272172,
+          "pull": -4.826589982964879,
+          "vi_corrected_ohm": 4.228084479298277
+        },
+        "7.4 V high": {
+          "resid_mv": -26.595897670543156,
+          "pull": -5.827152177469957,
+          "vi_corrected_ohm": 4.1711155029508085
+        },
+        "7.4 V low": {
+          "resid_mv": -54.78639102177385,
+          "pull": -12.632769140426241,
+          "vi_corrected_ohm": 4.042472355503427
+        },
+        "lock 3.7 V 100 %": {
+          "resid_mv": -7.46342998584737,
+          "pull": -3.540211902157616,
+          "vi_corrected_ohm": 4.218861876732393
+        }
+      }
+    },
+    "locked_anchor": {
+      "r_ohm": 4.2188705084081874,
+      "i_a": 0.7666429148253577,
+      "v_v": 3.234360566423701,
+      "v_se_v": 0.0021081873605641264
+    }
   }
 }
