@@ -127,3 +127,164 @@ def test_walk_stops_before_a_window_passes_the_stop():
     free = ripple.walk(e, 20, seed, 5, 1.0, len(e), synth.PER_REV)
     assert free[:len(windows)] == windows
     assert free[len(windows)][1] > 1000
+
+
+# the tracked count through a duty step: the line jumps a third at STEP_ROW
+STEP_ROW = 4000
+F_BASE, F_STEP = 1500.0, 2000.0
+
+
+def stepped(rows=8000):
+    f = np.where(np.arange(rows) < STEP_ROW, F_BASE, F_STEP)
+    phase = 2 * np.pi * np.cumsum(f) / FS
+    return np.sin(phase), phase
+
+
+def test_tracked_crossings_follow_a_step_in_the_line():
+    x, phase = stepped()
+    tc = ripple.tracked_crossings(x, 200, len(x) - 100, F_BASE)
+    assert np.all(np.diff(tc) > 0) and tc[0] > 199 and tc[-1] < len(x) - 100
+    t_mid, span, rev_s = ripple.cycle_speeds(tc, 6)
+    assert span == pytest.approx(np.diff(tc) / FS)
+    before = t_mid < (STEP_ROW - 50) / FS
+    after = t_mid > (STEP_ROW + 50) / FS
+    assert rev_s[before] == pytest.approx(F_BASE / 6, rel=1e-3)
+    assert rev_s[after] == pytest.approx(F_STEP / 6, rel=1e-3)
+    cycles = (phase[int(tc[-1])] - phase[int(tc[0])]) / (2 * np.pi)
+    assert abs(len(tc) - 1 - cycles) < 1
+    held = tc[tc < STEP_ROW - 50]
+    assert ripple.speed_of(held, 6) == pytest.approx(F_BASE / 6, rel=1e-4)
+    assert np.isnan(ripple.speed_of(held[:2], 6))
+
+
+def test_ripple_line_takes_the_mean_out_first():
+    x, _ = stepped()
+    near = FS / (ripple.ZERO_PAD * 2000) / 2
+    assert abs(ripple.ripple_line(x[:2000] + 40.0) - F_BASE) <= near
+
+
+# the order count on a synthetic run-up from rest: the speed rises as
+# 1 - exp(-t / TAU), the current falls with it over its drag, and a
+# six-per-revolution ripple rides on the current
+PER_REV = 6
+W_TOP = 2 * np.pi * 480.0      # rad/s
+TAU = 0.012                    # s
+I_DRAG, I_STALL, I_RIPPLE = 0.1, 0.9, 0.05
+R_OHM, L_H, KE = 4.2, 0.8e-3, 1.6e-3
+
+
+def run_up(rows=1100):
+    t = np.arange(rows) / FS
+    w = W_TOP * (1 - np.exp(-t / TAU))
+    theta = W_TOP * (t - TAU * (1 - np.exp(-t / TAU)))
+    current = (I_DRAG + I_STALL * np.exp(-t / TAU)
+               + I_RIPPLE * np.cos(PER_REV * theta))
+    return t, w, theta, current
+
+
+def test_count_speed_reads_a_run_up_from_a_rough_seed():
+    t, w, theta, current = run_up()
+    count = ripple.count_speed(current, 1.1 * w, I_DRAG, PER_REV)
+    assert count["added"] == count["removed"] == 0
+    tc = count["tc"]
+    # the median's 31 intervals sit whole inside the crossings
+    inside = (t > tc[16]) & (t < tc[-16])
+    assert count["speed"][inside] == pytest.approx(w[inside], rel=2e-3)
+    early = t < tc[ripple.INTEGRAL_UNTIL]
+    assert np.all(np.diff(count["speed"][early]) > 0)
+    up = (3 * np.pi / 2 + 2 * np.pi * np.arange(400)) / PER_REV
+    truth = np.interp(up, theta, t)
+    nearest = truth[np.abs(truth[None, :] - tc[:, None]).argmin(axis=1)]
+    assert np.abs(tc - nearest).max() < 0.5 / FS
+    late = (truth > tc[0] + 0.002) & (truth < tc[-1] - 0.002)
+    assert np.all(np.abs(tc[:, None] - truth[late][None, :]).min(axis=0)
+                  < 0.5 / FS)
+
+
+def test_rough_speed_is_the_emf_the_volts_leave_over_ke():
+    t, w, _, current = run_up()
+    volts = (R_OHM * current + L_H * np.gradient(current) * FS + KE * w)
+    rough, scale = ripple.rough_speed(current, volts, 2 * w, R_OHM, L_H, KE,
+                                      (0.015, 0.045))
+    assert scale == pytest.approx(2.0, rel=2e-3)
+    inner = (t > 0.005) & (t < 0.05)
+    assert rough[inner] == pytest.approx(scale * w[inner], rel=5e-3)
+    emf_only, same = ripple.rough_speed(current, volts, 2 * w, R_OHM, L_H,
+                                        KE, (0.015, 0.045), seed="emf")
+    assert same == scale
+    assert emf_only[inner] == pytest.approx(w[inner], rel=5e-3)
+
+
+def test_angle_crossings_sit_on_the_ripple_s_angle():
+    per = 2 * np.pi / PER_REV
+    theta = np.linspace(0, 40 * per, 4000) ** 1.2 / (40 * per) ** 0.2
+    tc = ripple.angle_crossings(np.sin(PER_REV * theta), theta, PER_REV)
+    assert np.round(tc / per).tolist() == list(range(2, 39))
+    inner = tc[2:-2] / per
+    assert inner == pytest.approx(np.round(inner), abs=1e-3)
+
+
+def test_local_speed_is_a_cycle_over_the_median_interval():
+    tc = np.arange(50) * 1e-3
+    tc[20] += 3e-4
+    w = ripple.local_speed(tc, np.array([0.0, 0.01, 0.03]), PER_REV)
+    assert np.isnan(w[0])
+    assert w[1:] == pytest.approx(2 * np.pi / PER_REV / 1e-3)
+
+
+def test_repair_restores_a_missed_and_an_extra_crossing():
+    truth = np.arange(100) * 1e-3
+    tc = np.insert(np.delete(truth, 50), 69, 70.5e-3)
+    fixed, added, removed = ripple.repair(tc)
+    assert (added, removed) == (1, 1)
+    assert fixed == pytest.approx(truth, abs=1e-12)
+    assert ripple.repair(truth)[1:] == (0, 0)
+
+
+def test_local_line_slope_reads_a_line_s_slope():
+    slope = ripple.local_line_slope(3.0 * np.arange(50) + 7.0, 4)
+    assert np.isnan(slope[:4]).all() and np.isnan(slope[-4:]).all()
+    assert slope[4:-4] == pytest.approx(3.0)
+
+
+def test_rev_and_fit_tables_on_a_constant_acceleration():
+    w0, alpha = 2 * np.pi * 200.0, 2 * np.pi * 5000.0
+    per = 2 * np.pi / PER_REV
+    angle = np.arange(400) * per
+    tc = (-w0 + np.sqrt(w0 ** 2 + 2 * alpha * angle)) / alpha
+    rows = int(tc[-1] * FS) + 2
+    current = np.full(rows, 0.5)
+    dropped = np.zeros(rows, bool)
+    current[300], dropped[300] = 99.0, True
+    means = {"i": current, "u": np.full(rows, 2.0)}
+    rev = ripple.rev_table(tc, PER_REV, current, means, dropped)
+    assert len(rev) == len(tc) - PER_REV
+    assert rev["w"].to_numpy() == pytest.approx(
+        w0 + alpha * rev["t"].to_numpy(), rel=1e-3)
+    assert (rev["i"] == 0.5).all() and (rev["u"] == 2.0).all()
+    assert np.abs(rev["didt"]).max() == 0
+    fit = ripple.fit_table(tc, PER_REV, means, dropped)
+    assert fit["alpha"].to_numpy() == pytest.approx(alpha, rel=1e-6)
+    assert fit["w"].to_numpy() == pytest.approx(
+        w0 + alpha * fit["t"].to_numpy(), rel=1e-6)
+    assert (fit["n"] >= 2 * PER_REV + 1).all()
+    assert fit["res_deg"].max() < 1e-6
+    assert fit["open_rows"].isin([0, 1]).all() and fit["open_rows"].any()
+    step = np.diff(fit["t"].to_numpy())
+    assert step == pytest.approx(ripple.FIT_STEP_S)
+
+
+def test_flag_windows_flags_a_window_a_crossing_off():
+    t = np.arange(60) * 0.002
+    w = 300.0 + 1000.0 * t
+    w[30] *= 7 / 6
+    ok = ripple.flag_windows(t, w)
+    assert np.flatnonzero(~ok).tolist() == [30]
+
+
+def test_sharp_drops_are_the_first_falls_past_the_rise():
+    current = np.ones(200)
+    for row in (20, 40, 41, 60, 100, 150):
+        current[row:] -= 0.2
+    drops = ripple.sharp_drops(current, 60 / FS)
+    assert drops.tolist() == [40, 60, 100]

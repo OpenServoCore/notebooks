@@ -1,6 +1,7 @@
 """The sweep plumbing the notebooks share: a sweep's rest zeros, its driven
-rows and segment edges on the synthetic sweep, and a capture's sweep table
-asked for a folder by number."""
+rows and segment edges on the synthetic sweep, a chain's segments end to
+end and its flip rows, and a capture's sweep table asked for a folder by
+number."""
 import numpy as np
 import pandas as pd
 import pytest
@@ -67,6 +68,24 @@ def test_rest_zeros_are_the_baseline_medians(sweep):
     assert zero_e == (rest["vmotor_a"] - rest["vmotor_b"]).median()
     assert abs(zero_i - 1205) <= 1
     assert abs(zero_e) <= 1
+
+
+def test_direction_frame_chains_segments_end_to_end(sweep):
+    frame, starts = tel.direction_frame(sweep, (3, 4))
+    assert starts == {3: 0, 4: RUNG_ROWS}
+    assert len(frame) == RUNG_ROWS + COAST_ROWS
+    assert frame.index.tolist() == list(range(len(frame)))
+    assert frame["seg"].iloc[RUNG_ROWS - 1] == 3
+    assert frame["seg"].iloc[RUNG_ROWS] == 4
+    assert frame["tick"].equals(pd.concat(
+        [sweep[sweep["seg"] == s]["tick"] for s in (3, 4)],
+        ignore_index=True))
+
+
+def test_flip_row_is_the_first_row_showing_the_held_duty():
+    duty = [-240, -240, 300, 330, 360, 360, -360, 360, 360, 360]
+    row, held = tel.flip_row(pd.DataFrame({"duty_counts": duty}))
+    assert (row, held) == (4, 360)
 
 
 def test_cycles_load_names_each_sweep_folder(tmp_path):

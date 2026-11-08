@@ -8,10 +8,20 @@ band-pass around it run forward and back, so it shifts no crossing, and its
 upward zero crossings interpolated to a fraction of a row. A window of whole
 cycles between two crossings reads the mean speed over its rows.
 
+A line that moves faster than a window holds is counted two more ways. The
+tracked count re-centers its band every few cycles on the line the last
+chunk read, which follows a duty step. The order count, for a run-up from
+rest whose line sweeps up from zero, resamples the current onto a rough
+angle, where the ripple sits at one fixed frequency whatever the speed,
+and counts its crossings there, each pass on the angle the last one
+counted.
+
 Every function takes the row rate `fs`, a sweep's 20 kHz by default, and
-works in rows from the start of the array it is given.
+works in rows from the start of the array it is given, except the order
+count's, which work in seconds.
 """
 import numpy as np
+import pandas as pd
 from scipy.signal import butter, sosfiltfilt
 
 ROWS_HZ = 20_000        # a sweep's rows per second, the control tick
@@ -32,6 +42,17 @@ SPAN_CYCLES = 3
 SPAN_MARGIN = 1.3
 PASSES = 6              # counts at most, the band centered on the last
 CONVERGED = 1e-4        # a count this close to the last ends the passes
+TRACK_CYCLES = 4        # cycles per chunk of the tracked count
+# the order count: the ripple resampled to GRID_SAMPLES per cycle and
+# band-passed at +/- ORDER_BAND of its line
+GRID_SAMPLES = 16
+ORDER_BAND = 0.25
+ORDER_PASSES = 5
+RISE_ROWS = 20          # 1 ms, the current's L/R rise, no crossing read in it
+INTEGRAL_UNTIL = 9      # the crossing before which speed is the integral
+SEED_BOX_ROWS = 41      # about 2 ms, the EMF seed's boxcar
+FIT_HALF_S = 0.005      # s, the +/- half width of an acceleration fit
+FIT_STEP_S = 0.0005     # s, a fit center every 0.5 ms
 
 
 def spectrum(x, fs=ROWS_HZ):
@@ -110,3 +131,231 @@ def walk(x, start, f_seed, target_ms, floor_rev_s, stop, per_rev,
             return out
         out.append((i0, i1, f, n))
         start = int(np.ceil(i1))
+
+
+def ripple_line(x, fs=ROWS_HZ):
+    """The strongest line in BAND_HZ of x, its mean taken out first."""
+    return line_freq(np.asarray(x, float) - np.mean(x), *BAND_HZ, fs=fs)
+
+
+def tracked_crossings(x, start, stop, f_seed, cycles=TRACK_CYCLES,
+                      frac=BAND_FRAC, fs=ROWS_HZ):
+    """Upward crossings from `start` to `stop`, in rows, the band
+    re-centered every `cycles` cycles on the last chunk's line."""
+    x = np.asarray(x, float)
+    out = []
+    f = f_seed
+    last = start - 0.5
+    while last < stop:
+        lo = max(0, int(last - 3 * fs / f))     # 3 cycles of lead-in
+        hi = min(len(x), int(last + (cycles + 4) * fs / f))
+        if hi - lo < 6 * fs / f:
+            break
+        tc = crossings(x[lo:hi], f, frac, fs) + lo
+        tc = tc[(tc > last + 0.3 * fs / f) & (tc <= stop)]
+        if len(tc) == 0:
+            break
+        take = tc[:cycles]
+        out.extend(take.tolist())
+        if len(out) >= 2:
+            recent = out[-(cycles + 1):]
+            f = (len(recent) - 1) / ((recent[-1] - recent[0]) / fs)
+        last = out[-1]
+        if hi >= len(x) and len(tc) <= len(take):
+            break
+    return np.array(out)
+
+
+def cycle_speeds(tc, per_rev, fs=ROWS_HZ):
+    """(mid time s, span s, rev/s) of each cycle between two crossings."""
+    tc = np.asarray(tc, float)
+    span = np.diff(tc) / fs
+    t_mid = (tc[:-1] + tc[1:]) / 2 / fs
+    return t_mid, span, 1 / span / per_rev
+
+
+def speed_of(tc, per_rev, fs=ROWS_HZ):
+    """rev/s over the whole cycles of a run of crossings, nan under three."""
+    if len(tc) < 3:
+        return np.nan
+    return (len(tc) - 1) / ((tc[-1] - tc[0]) / fs) / per_rev
+
+
+def angle_crossings(x, theta, per_rev, frac=ORDER_BAND, ns=GRID_SAMPLES):
+    """Upward ripple crossings in rad of the angle `theta`, x resampled to
+    `ns` samples per ripple cycle, the two ends dropped."""
+    per = 2 * np.pi / per_rev
+    keep = np.r_[True, np.diff(theta) > 0]
+    grid = np.arange(theta[0], theta[-1], per / ns)
+    xs = np.interp(grid, theta[keep], x[keep])
+    sos = butter(FILTER_ORDER, [1 - frac, 1 + frac], btype="band", fs=ns,
+                 output="sos")
+    y = sosfiltfilt(sos, xs - xs.mean())
+    s = np.flatnonzero((y[:-1] < 0) & (y[1:] >= 0))
+    return (grid[s] + (-y[s]) / (y[s + 1] - y[s]) * (per / ns))[1:-1]
+
+
+def local_speed(tc, t, per_rev, n=31):
+    """rad/s at the times t from the crossing times tc, one ripple cycle
+    over the median of the n intervals around."""
+    per = 2 * np.pi / per_rev
+    intervals = np.diff(tc)
+    h = n // 2
+    med = np.array([np.median(intervals[max(0, j - h):j + h + 1])
+                    for j in range(len(intervals))])
+    return np.interp(t, (tc[1:] + tc[:-1]) / 2, per / med, left=np.nan)
+
+
+def repair(tc, short=0.7, long=1.5, merge_tol=0.35, n=15, fixes=500):
+    """(crossings, added, removed): one missed or extra crossing at a time,
+    each interval held against the rolling median of n."""
+    tc = np.asarray(tc, float).copy()
+    added = removed = 0
+    for _ in range(fixes):
+        iv = np.diff(tc)
+        med = pd.Series(iv).rolling(n, center=True, min_periods=3).median()
+        ratio = iv / med.to_numpy()
+        j = int(np.argmin(ratio))
+        if ratio[j] < short:
+            cands = []
+            if j > 0:
+                cands.append((abs((iv[j - 1] + iv[j]) / med[j] - 1), j))
+            if j + 1 < len(iv):
+                cands.append((abs((iv[j] + iv[j + 1]) / med[j] - 1),
+                              j + 1))
+            err, drop = min(cands)
+            if err < merge_tol:
+                tc = np.delete(tc, drop)
+                removed += 1
+                continue
+        j = int(np.argmax(ratio))
+        if ratio[j] > long:
+            m = int(round(ratio[j]))
+            tc = np.insert(tc, j + 1, tc[j] + iv[j] * np.arange(1, m) / m)
+            added += m - 1
+            continue
+        break
+    return tc, added, removed
+
+
+def local_line_slope(y, half):
+    """The slope of y on the row index by a line over +/- half rows."""
+    n = len(y)
+    out = np.full(n, np.nan)
+    x = np.arange(-half, half + 1, dtype=float)
+    sxx = (x ** 2).sum()
+    for j in range(half, n - half):
+        seg = y[j - half:j + half + 1]
+        out[j] = (x * (seg - seg.mean())).sum() / sxx
+    return out
+
+
+def rough_speed(current, volts, w_pot, r_ohm, l_h, ke, scale_s, seed="pot",
+                fs=ROWS_HZ):
+    """(rad/s, scale): the EMF the volts leave through R and L over ke,
+    smoothed and clipped at zero, times the scale that puts its mean over
+    the times `scale_s` on w_pot's for seed "pot", unscaled for "emf"."""
+    t = np.arange(len(current)) / fs
+    emf = volts - r_ohm * current - l_h * np.gradient(current) * fs
+    emf = np.convolve(emf, np.ones(SEED_BOX_ROWS) / SEED_BOX_ROWS,
+                      mode="same")
+    w_emf = np.maximum(emf, 0) / ke
+    win = (t >= scale_s[0]) & (t <= scale_s[1])
+    scale = np.nanmean(w_pot[win]) / w_emf[win].mean()
+    if seed == "pot":
+        return w_emf * scale, scale
+    return w_emf, scale
+
+
+def count_speed(current, rough, i_drag0, per_rev, passes=ORDER_PASSES,
+                rise_rows=RISE_ROWS, integral_until=INTEGRAL_UNTIL,
+                fs=ROWS_HZ):
+    """{"tc", "added", "removed", "speed"}: the order count of a run-up
+    from rest seeded by `rough`, speed in rad/s per row, before the crossing
+    `integral_until` the current's integral over i_drag0."""
+    per = 2 * np.pi / per_rev
+    t = np.arange(len(current)) / fs
+    speed = rough
+    for _ in range(passes):
+        theta = np.cumsum(speed) / fs
+        c = angle_crossings(current[rise_rows:], theta[rise_rows:], per_rev)
+        # the first two crossings sit on the band-pass's edge
+        c = c[c > theta[rise_rows] + 2 * per]
+        tc, added, removed = repair(np.interp(c, theta, t))
+        speed = local_speed(tc, t, per_rev)
+        t_int = tc[integral_until]
+        w_int = np.cumsum(current - i_drag0) / fs
+        w_int *= np.interp(t_int, t, speed) / np.interp(t_int, t, w_int)
+        speed = np.where(t < t_int, w_int, speed)
+    return {"tc": tc, "added": added, "removed": removed, "speed": speed}
+
+
+def rev_table(tc, per_rev, current, means, dropped, fs=ROWS_HZ):
+    """One row per turn window of per_rev crossing times: its center, rad/s,
+    each of `means` over its rows less `dropped`, the current's slope."""
+    rows = []
+    for j in range(len(tc) - per_rev):
+        a = int(np.ceil(tc[j] * fs))
+        b = int(np.floor(tc[j + per_rev] * fs))
+        keep = ~dropped[a:b]
+        row = {"t": (tc[j] + tc[j + per_rev]) / 2,
+               "w": 2 * np.pi / (tc[j + per_rev] - tc[j])}
+        for k, x in means.items():
+            row[k] = x[a:b][keep].mean()
+        row["didt"] = (current[b] - current[a]) / ((b - a) / fs)
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def fit_table(tc, per_rev, means, dropped, half=FIT_HALF_S, step=FIT_STEP_S,
+              fs=ROWS_HZ):
+    """The acceleration fits, a quadratic of the counted angle on time over
+    +/- half every step, two turns at least: rad/s, rad/s^2, the angle
+    residual's sd, the dropped rows and each of `means` over the fit."""
+    angle = np.arange(len(tc)) * (2 * np.pi / per_rev)
+    cum = {k: np.r_[0, np.cumsum(x)] for k, x in means.items()}
+    cum_open = np.r_[0, np.cumsum(dropped)]
+    rows = []
+    for tm in np.arange(tc[0] + half, tc[-1] - half, step):
+        m = (tc >= tm - half) & (tc <= tm + half)
+        if m.sum() < 2 * per_rev + 1:
+            continue
+        p = np.polyfit(tc[m] - tm, angle[m], 2)
+        res = angle[m] - np.polyval(p, tc[m] - tm)
+        a = int(round((tm - half) * fs))
+        b = int(round((tm + half) * fs))
+        row = {"t": tm, "w": p[1], "alpha": 2 * p[0], "n": int(m.sum()),
+               "res_deg": np.degrees(res.std()),
+               "open_rows": int(cum_open[b] - cum_open[a])}
+        for k in cum:
+            row[k] = (cum[k][b] - cum[k][a]) / (b - a)
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def flag_windows(t, w, n=15, tol=0.05):
+    """True where a turn window sits within tol of the quadratic in time
+    through the 2n windows around it, refitted without its outliers."""
+    ok = np.ones(len(w), bool)
+    for j in range(len(w)):
+        near = slice(max(0, j - n), j + n + 1)
+        tt, ww = t[near] - t[j], w[near]
+        keep = np.ones(len(ww), bool)
+        p = None
+        for _ in range(3):
+            if keep.sum() < 5:
+                break
+            p = np.polyfit(tt[keep], ww[keep], 2)
+            keep = np.abs(ww / np.polyval(p, tt) - 1) <= tol
+        ok[j] = p is not None and abs(w[j] / np.polyval(p, 0.0) - 1) <= tol
+    return ok
+
+
+def sharp_drops(current, first_crossing, dip_a=0.12, from_s=0.0015,
+                past_s=0.004, merge_rows=3, n=7, fs=ROWS_HZ):
+    """The first n rows where the current falls over dip_a in one row, from
+    from_s to past_s past the first crossing, a commutation each."""
+    t = np.arange(len(current)) / fs
+    k = np.flatnonzero(np.diff(current) < -dip_a) + 1
+    k = k[(t[k] > from_s) & (t[k] < first_crossing + past_s)]
+    return k[np.r_[True, np.diff(k) > merge_rows]][:n]

@@ -1,9 +1,11 @@
 """The result files and the paths a notebook shows never carry where one
-machine keeps the repo."""
+machine keeps the repo, and the small statistics the notebooks pack
+into them."""
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from oscnb import laps, results
 
@@ -111,3 +113,27 @@ def test_packers_equal_the_notebook_helpers_they_replace():
     assert results.pm(0.37, 0.011, "A") == motor_model_pm(0.37, 0.011, "A")
     assert results.line_q(fit, "intercept", "V", 1e3) == se_q(
         fit, "intercept", "V", 1e3)
+
+
+def test_mean_se_and_wmean_carry_the_standard_error():
+    x = [1.0, 2.0, 3.0, np.nan]
+    assert results.mean_se(x, "A") == results.pm(2.0, 1 / np.sqrt(3), "A")
+    assert results.mean_se(x, "mA", 1e3)["value"] == 2000.0
+    assert results.wmean(x) == (2.0, 1.0, 1 / np.sqrt(3), 3)
+    assert results.wmean([4.0, np.nan])[::3] == (4.0, 1)
+    assert np.isnan(results.wmean([4.0])[1:3]).all()
+    empty = results.wmean([np.nan])
+    assert np.isnan(empty[:3]).all() and empty[3] == 0
+
+
+def test_fit_line_drops_non_finite_points_and_keeps_its_residuals():
+    rng = np.random.default_rng(3)
+    x = np.arange(30.0)
+    y = 2.5 * x - 4.0 + rng.normal(0, 0.3, 30)
+    fit = results.fit_line(np.r_[x, np.nan, 7.0], np.r_[y, 1.0, np.inf])
+    ref = laps.line(x, y)
+    for key in ("slope", "intercept", "slope_se", "intercept_se", "rms"):
+        assert fit[key] == pytest.approx(ref[key], rel=1e-9)
+    assert fit["n"] == 30
+    assert fit["resid"] == pytest.approx(y - (fit["slope"] * x
+                                              + fit["intercept"]))

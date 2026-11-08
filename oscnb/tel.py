@@ -92,6 +92,23 @@ def segment_edges(df):
     return np.flatnonzero(np.diff(df["seg"].to_numpy()) != 0) + 1
 
 
+def direction_frame(df, segs):
+    """(rows, {seg: first row}): the segments `segs` end to end."""
+    parts = [df[df["seg"] == s] for s in segs]
+    out = pd.concat(parts, ignore_index=True)
+    starts = np.cumsum([0] + [len(p) for p in parts[:-1]])
+    return out, dict(zip(segs, starts))
+
+
+def flip_row(seg_rows):
+    """(first row, held duty in ticks) of a chained segment: the stream
+    opens before the new duty shows, so the first row showing the held
+    duty, the median of the segment's second half, is where it starts."""
+    d = seg_rows["duty_counts"].abs().to_numpy()
+    held = np.median(d[len(d) // 2:])
+    return int(np.flatnonzero(d == held)[0]), held
+
+
 def settled(g, skip=SETTLE_ROWS):
     """The rows of one rung after its duty reached the held value and at
     least `skip` rows in. Under the current limit the duty climbs from the
