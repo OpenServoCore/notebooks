@@ -21,6 +21,13 @@ samples need the inductance result's window model to read a mean. The seat
 is the median pos the TEL rows read through each chain, against the first
 chain at that stop. The notebook grades it against `locked`.
 
+`rails`, optional, is the same pass on 3.7 and 7.4 V at the same two
+effective volts, 32 and 49 % and 16 and 24 %: the notebook's three
+candidate terms in a partial-duty read, the bridge's edge lags, the brake
+interval's drop and a crest over-read per volt, scale as 1/D, (1 - D) and
+(1 - D) V_on, so the same two currents on three rails separate them with
+no meter.
+
 A dataset is `chains.csv`, one row per sweep, `chains/K` sweeps and
 `seats.csv`.
 """
@@ -31,6 +38,7 @@ from oscnb.sitting import Plan, log_row, seat_pos
 LOCKED_RAILS = (3.3, 3.7)  # 100 % laps, 0.74 and 0.83 A under the lock hold
 LEVELS_V = (1.2, 1.8)      # the stop chain's effective volts, 0.27 and 0.40 A
 STOP_RAIL = 5.0            # the user's supply
+RAILS = (3.7, 7.4)         # the pass again at the other two rails
 LAP_MS = 300               # each lap or level, the copper cold after
 REPEATS = 3                # laps per rail when locked, chains per stop
 STOPS = ("rev", "fwd")     # the low stop, then the high, alternated
@@ -77,24 +85,34 @@ def locked(s, out):
             s.rest(f"lap {k - 1} done ({rail} V), the copper resting")
 
 
-def stop(s, out):
-    s.check(STOP_RAIL, chain(STOP_RAIL), seat="stop")
-    low, high = duties(STOP_RAIL)
+def chains_at(s, out, rails):
+    for rail in rails:
+        s.check(rail, chain(rail), seat="stop")
     k = 0
-    for _ in range(REPEATS):
-        for side in STOPS:
-            sub = f"chains/{k}"
-            t0 = time.time()
-            s.drive(out / sub, STOP_RAIL, chain(STOP_RAIL), dirs=side,
-                    seat="stop")
-            (pos,) = seat_pos(out / sub).values()
-            log_row(out / "chains.csv", row(k, s, STOP_RAIL, sub, t0,
-                                            duty_low_pct=low,
-                                            duty_high_pct=high, stop=side,
-                                            seat_pos=pos))
-            s.seat(out, side, round(pos))
-            k += 1
-            s.rest(f"chain {k - 1} done ({side} stop), the copper resting")
+    for rail in rails:
+        low, high = duties(rail)
+        for _ in range(REPEATS):
+            for side in STOPS:
+                sub = f"chains/{k}"
+                t0 = time.time()
+                s.drive(out / sub, rail, chain(rail), dirs=side, seat="stop")
+                (pos,) = seat_pos(out / sub).values()
+                log_row(out / "chains.csv", row(k, s, rail, sub, t0,
+                                                duty_low_pct=low,
+                                                duty_high_pct=high,
+                                                stop=side, seat_pos=pos))
+                s.seat(out, side, round(pos))
+                k += 1
+                s.rest(f"chain {k - 1} done ({rail} V, {side} stop), the "
+                       "copper resting")
+
+
+def stop(s, out):
+    chains_at(s, out, (STOP_RAIL,))
+
+
+def rails(s, out):
+    chains_at(s, out, RAILS)
 
 
 PLANS = [
@@ -105,4 +123,7 @@ PLANS = [
          "the user's pass: 1.2, 1.8, 1.2 V effective chains on 5 V into "
          "the end stops",
          run=stop, order=20, seated=True, minutes=4, mb=20),
+    Plan("rails", "resistance", "servo",
+         "the same chains on 3.7 and 7.4 V at the same effective volts",
+         run=rails, order=21, seated=True, optional=True, minutes=8, mb=40),
 ]

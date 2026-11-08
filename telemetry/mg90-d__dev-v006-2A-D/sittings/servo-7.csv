@@ -1,0 +1,47 @@
+t_host,event,detail
+1794099076.470,start,"servo mg90-d, motor mg90-d, board dev-v006-2A-D, state servo"
+1794099076.470,prompt,"The servo's motor and pot leads on the board, the board on the DPS, the adapter on the bus, no instrument. The horn free and the lock off, the lock to hand."
+1794099076.470,plan,runup (open)
+1794099076.470,dataset,runup-open: telemetry/mg90-d__dev-v006-2A-D/run-up/runup-open-7
+1794099076.633,guards,414 to 3460 counts
+1794099084.064,dps,on at 5.25 V
+1794099088.085,rail,"5.0 V: reads 4.986 V, DPS 5.250 V"
+1794099088.384,probe,"telemetry/mg90-d__dev-v006-2A-D/sittings/servo-7-pilot: pos 1877, ntc_raw 2033, vbus_raw 1241"
+1794099145.645,pilot,5.0 V 30 % for 300 ms: 3387 counts/s
+1794099165.985,probe,"telemetry/mg90-d__dev-v006-2A-D/run-up/runup-open-7/cycles/0: pos 1878, ntc_raw 2011, vbus_raw 1240"
+1794099246.702,probe,"telemetry/mg90-d__dev-v006-2A-D/run-up/runup-open-7/cycles/1: pos 1742, ntc_raw 1996, vbus_raw 1240"
+1794099328.636,probe,"telemetry/mg90-d__dev-v006-2A-D/run-up/runup-open-7/cycles/2: pos 1874, ntc_raw 1988, vbus_raw 1239"
+1794099406.699,plan,ref (open)
+1794099406.701,dataset,ref-open: telemetry/mg90-d__dev-v006-2A-D/ladder/ref-open-7
+1794099407.010,probe,"telemetry/mg90-d__dev-v006-2A-D/ladder/ref-open-7/cycles/0: pos 1837, ntc_raw 1988, vbus_raw 1243"
+1794099486.157,probe,"telemetry/mg90-d__dev-v006-2A-D/ladder/ref-open-7/cycles/1: pos 2082, ntc_raw 1981, vbus_raw 1240"
+1794099567.352,probe,"telemetry/mg90-d__dev-v006-2A-D/ladder/ref-open-7/cycles/2: pos 2001, ntc_raw 1971, vbus_raw 1240"
+1794099646.696,plan,rails
+1794099646.697,dataset,rails: telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7
+1794099650.739,rail,"3.7 V: reads 3.692 V, DPS 3.950 V"
+1794099651.040,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/0: pos 2012, ntc_raw 1970, vbus_raw 919"
+1794099701.112,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/1: pos 1984, ntc_raw 1971, vbus_raw 919"
+1794099751.638,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/2: pos 1855, ntc_raw 1973, vbus_raw 920"
+1794099801.963,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/3: pos 1996, ntc_raw 1973, vbus_raw 920"
+1794099851.999,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/4: pos 1884, ntc_raw 1973, vbus_raw 920"
+1794099902.272,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/5: pos 1993, ntc_raw 1973, vbus_raw 920"
+1794099956.375,rail,"7.4 V: reads 7.425 V, DPS 7.650 V"
+1794099956.675,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/6: pos 1725, ntc_raw 1979, vbus_raw 1838"
+1794100006.803,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/7: pos 2088, ntc_raw 1969, vbus_raw 1835"
+1794100057.504,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/8: pos 1879, ntc_raw 1960, vbus_raw 1839"
+1794100108.222,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/9: pos 2044, ntc_raw 1948, vbus_raw 1838"
+1794100161.063,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/10: pos 1810, ntc_raw 1946, vbus_raw 1831"
+1794100213.676,probe,"telemetry/mg90-d__dev-v006-2A-D/resistance/rails-7/chains/11: pos 2020, ntc_raw 1935, vbus_raw 1834"
+1794100264.711,plan,ref (close)
+1794100264.713,dataset,ref-close: telemetry/mg90-d__dev-v006-2A-D/ladder/ref-close-7
+1794100268.736,rail,"5.0 V: reads 5.003 V, DPS 5.250 V"
+1794100269.035,probe,"telemetry/mg90-d__dev-v006-2A-D/ladder/ref-close-7/cycles/0: pos 1874, ntc_raw 1935, vbus_raw 1241"
+1794100350.798,probe,"telemetry/mg90-d__dev-v006-2A-D/ladder/ref-close-7/cycles/1: pos 1970, ntc_raw 1940, vbus_raw 1241"
+1794100429.292,probe,"telemetry/mg90-d__dev-v006-2A-D/ladder/ref-close-7/cycles/2: pos 2019, ntc_raw 1944, vbus_raw 1240"
+1794100508.178,plan,runup (close)
+1794100508.180,dataset,runup-close: telemetry/mg90-d__dev-v006-2A-D/run-up/runup-close-7
+1794100508.499,probe,"telemetry/mg90-d__dev-v006-2A-D/run-up/runup-close-7/cycles/0: pos 2047, ntc_raw 1947, vbus_raw 1241"
+1794100589.921,probe,"telemetry/mg90-d__dev-v006-2A-D/run-up/runup-close-7/cycles/1: pos 1858, ntc_raw 1944, vbus_raw 1247"
+1794100673.594,probe,"telemetry/mg90-d__dev-v006-2A-D/run-up/runup-close-7/cycles/2: pos 1933, ntc_raw 1943, vbus_raw 1238"
+1794100754.296,dps,off
+1794100754.297,end,

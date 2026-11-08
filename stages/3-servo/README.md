@@ -116,10 +116,15 @@ stop with the stops alternated. Its R and V0 come from the line through
 the two levels, the crest sample corrected to the period mean by the
 inductance result's window model at each duty. The seat is `pos` before
 and after each locked lap, and the median `pos` of the TEL rows through
-each stop chain.
+each stop chain. `rails`, optional, runs the same chains on 3.7 and 7.4 V
+at the same two effective volts, so the terms a partial-duty read may
+carry, the bridge's edge lags, the brake interval's drop and a crest
+over-read per volt, separate by how each scales with the duty and the
+rail.
 
 Run: the `locked` and `stop` plans of `uv run python -m oscnb.sitting
-servo`, then the notebook.
+servo`, `--include resistance/rails` for the other rails, then the
+notebook.
 
 ## inductance
 
