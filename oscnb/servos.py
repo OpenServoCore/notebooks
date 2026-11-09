@@ -45,11 +45,21 @@ class Servo:
     lap_cap_a: float              # the most a lap into an end stop draws
     output_stopper: str
     type_motor: str               # the stage 2 motor that stands as the type
+    # teeth after the motor's pinion, mesh by mesh (driven, then the next
+    # driving), the output gear last; empty until counted
+    gear_teeth: tuple[int, ...] = ()
     notes: str = ""
 
     @property
     def motor_entry(self):
         return motors.MOTORS[self.motor]
+
+    @property
+    def train(self):
+        """The meshes as (driving, driven) teeth, the motor's pinion first,
+        from `gear_teeth`; their product is the counted gear ratio."""
+        teeth = (self.motor_entry.pinion_teeth,) + tuple(self.gear_teeth)
+        return tuple(zip(teeth[0::2], teeth[1::2]))
 
     @property
     def counts_per_motor_rev(self):
@@ -77,6 +87,7 @@ SERVOS = {
         lap_cap_a=0.45,
         output_stopper="plastic",
         type_motor="mg90-b",
+        gear_teeth=(48, 12, 48, 10, 38, 10, 38),
         notes="an MG90 clone of the same brand as mg90-b and mg90-c, run "
               "first in stage 3: a new, unused motor from one new servo in "
               "the new, unused body (case, train, pot) that came with "
