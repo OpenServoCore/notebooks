@@ -278,27 +278,38 @@ the step response with a known load.
 
 Needs: the `servo-load` state, the rig on its side with the shaft
 horizontal and the printed arm hanging from the horn with its mass in the
-load block's cups (22 US quarters in the outer pair, 68.4 mm from the axis,
-about 84 mN m at horizontal in sitting 1; the notebook takes the mass and
-radius of the sitting), 70 degrees of lift either side of the bottom inside
-the guards, the resistance result for the stall checks.
+load block's cups, 70 degrees of lift either side of the bottom inside the
+guards, the resistance result for the stall checks. The mass is 22 US
+quarters, 124.7 g at the mint weight, in the outer cup pair at 68.4 mm
+from the axis in sitting 1 (about 84 mN m at horizontal) and in the inner
+pair at 41.6 mm in sitting 2; the notebook takes the pair of the sitting.
+The printed arm weighs too: the whole arm with the quarters and its three
+screws came to 166 g on a kitchen scale and the coin block with its lid,
+the quarters and the screws to 153 g, so the block and lid are about 28 g
+at the cups' center and the mount with its beam about 13 g near the hub,
+about 17 mN m more at horizontal.
 
 How: the arm is a pendulum, so gravity's torque is m g L sin of the angle
 from the bottom and draws the arm back to the bottom whenever torque is
 off, never onto a stop. The current limit is widened to the servo's rated
 stall for the sitting, since a standing arm is a stall the train holds,
 and every duty is checked against that rating. `bottom` reads the arm hung
-straight down by hand, then lifts it a little each way and drops it, three
-times a side: the two sides' rests straddle the bottom by the angle the
-train's static friction holds, so the block gives the bottom and that
-friction, and refuses to go on without 70 degrees of room either side.
-`ladder` holds a duty 3 s from the bottom, stepped up to the rating on each
-side until the arm passes 75 degrees: the arm rests where the motor's
-torque equals gravity plus the friction resisting its rise, and three of
-the duties approached from above rest with friction taken off instead.
-`lift` drives 20, 30 and 40 % from the bottom for a fixed window and coasts
-3 s, the fall streamed. `steps` steps 5 % up and down from a ladder duty at
-three angles. `push`, optional, is the pot under a side load with no
+straight down by hand, and that reading is the bottom (`OSC_LOAD_BOTTOM`
+gives it instead of the prompt for a sitting run with the arm already
+hung), then lifts it past the train's static band each way at 20 % and
+drops it, three times a side: the swing and where it dies are the friction
+of the back-driven train. The block refuses to go on without 70 degrees of
+room either side. `ladder` holds a duty 3 s from the bottom, the sides
+alternated at each duty, stepped up until a side's rest passes 60 degrees,
+a rung the side's rests predict past 75 degrees left out so no hold runs
+to the end stop: the arm rests where the motor's torque equals gravity plus
+the friction resisting its rise, and three of the duties approached from
+above, up to 20 % higher as far as the side's own rests predict under 65
+degrees and then the duty in one step, rest with friction taken off
+instead. `lift` drives 20, 30 and 40 % from the bottom for a fixed window
+and coasts 3 s, the fall streamed. `steps` steps 10, 15, 20 and 25 % up
+and down from a ladder duty at two angles, the smallest step that moves
+the arm bracketing the hold's deadband each way. `push`, optional, is the pot under a side load with no
 torque: the servo free at zero duty for 36 s of chained coasts while the
 arm's hub is pressed straight toward the shaft from each side and along
 the arm by hand, since the hand-rock clip of the pot table saw the pot
