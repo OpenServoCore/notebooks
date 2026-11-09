@@ -1,0 +1,25 @@
+{
+  "clips": {
+    "reversal.mp4": {
+      "bytes": 485895493,
+      "frames": 10319,
+      "fps": 170.17171363195976,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 60.63875,
+      "sha256": "c1f433405dcfd1a9ab199ac29bdef382bf4ed4638b2524e389a63f0d109ebffd",
+      "stat_roi": [
+        496,
+        1048,
+        24,
+        24
+      ]
+    }
+  },
+  "pipeline": {
+    "commit": "c28c3c3",
+    "oscnb_dirty": true,
+    "fiducial_sha256": "3374bb716276",
+    "opencv": "5.0.0"
+  }
+}

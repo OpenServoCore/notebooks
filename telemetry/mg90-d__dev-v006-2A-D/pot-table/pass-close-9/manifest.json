@@ -1,0 +1,25 @@
+{
+  "clips": {
+    "pass.mp4": {
+      "bytes": 420918076,
+      "frames": 8918,
+      "fps": 169.91656280018736,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 52.48458333333333,
+      "sha256": "5d8d1c7e68bc094c7c32a1207e7f45608d57855d25d3ed543135fa4b8b85a8df",
+      "stat_roi": [
+        496,
+        1048,
+        24,
+        24
+      ]
+    }
+  },
+  "pipeline": {
+    "commit": "c28c3c3",
+    "oscnb_dirty": true,
+    "fiducial_sha256": "3374bb716276",
+    "opencv": "5.0.0"
+  }
+}
