@@ -259,7 +259,11 @@ bracket, is 20 % each way over the whole runway at the open and the close.
 `crawl` kicks at 30 % for 150 ms and holds 3 s at the floor less 1 % up to
 the floor plus 4 %, both directions, from the same three starts as steps,
 two clips per start. `reversal` runs the crawl duty and 20 % each followed by
-its negative, and `steps` steps a crawl by 1 % up and down.
+its negative, and `steps` steps a crawl by 1 % up and down. `lash-hand`,
+optional, is the backlash by hand: the servo free at zero duty for 45 s of
+chained coasts while the horn is rocked through its play by a finger at
+three positions, the tag and the pot both watching the horn and the motor
+taps telling a push through the play from one that back-drives the train.
 
 Run: `uv run python -m oscnb.sitting servo-camera`, then
 `equipment/camera/extract.py` on the dataset, then the notebook.

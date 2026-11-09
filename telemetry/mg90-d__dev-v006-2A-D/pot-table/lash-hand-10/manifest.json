@@ -1,0 +1,25 @@
+{
+  "clips": {
+    "lash-hand.mp4": {
+      "bytes": 746031037,
+      "frames": 27850,
+      "fps": 239.8802751947861,
+      "width": 1920,
+      "height": 1080,
+      "duration_s": 116.09958333333333,
+      "sha256": "ccb9fac2d1daa84b82f18ea3673fb21064f1c48a989a00b1d0914e45499fd102",
+      "stat_roi": [
+        1240,
+        592,
+        24,
+        24
+      ]
+    }
+  },
+  "pipeline": {
+    "commit": "23f9bde",
+    "oscnb_dirty": false,
+    "fiducial_sha256": "3374bb716276",
+    "opencv": "5.0.0"
+  }
+}

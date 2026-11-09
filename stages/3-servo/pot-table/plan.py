@@ -22,6 +22,15 @@ so the camera sitting runs after the ladder notebook.
 
 `reversal` runs `d` then `-d` at the crawl duty, the floor plus 2 %, and at
 20 %. `steps` holds a crawl and steps it by 1 % up and down.
+
+`lash-hand`, optional, is the backlash by hand: the servo free at zero duty
+and the horn rocked through its play by a finger, light pushes each way
+until the train takes up, at mid travel and at a third of the travel to
+each side. The tag and the pot both see the horn, so the free swing between
+the firm ends is the lash they share, and the motor taps see the train turn
+once the play is taken up, which tells a push through the play from a push
+that back-drives the gears. A TEL burst runs 3 s at most, so the window is
+a chain of coasts, a few milliseconds dark between them.
 """
 import time
 
@@ -43,6 +52,8 @@ STEP = 1
 STEP_MS = 1500
 CLIP_REST_MS = 2000        # between the directions of one sweep
 CLIP_REST_S = 3            # between sweeps of one clip
+HAND_MS = 3000             # one coast, the longest TEL burst the servo arms
+HAND_COASTS = 15           # 45 s of rocking: three positions, five rocks each
 
 
 def floor_duty(s):
@@ -118,6 +129,22 @@ def steps(s, out):
                   duty_pct=d, step_pct=step)
 
 
+def lash_hand(s, out):
+    with s.clip(out, "lash-hand"):
+        print(f"Rock the horn by hand for the next {HAND_MS * HAND_COASTS // 1000} s: "
+              "light pushes each way until it firms up, a second still at each "
+              "end, five rocks at mid travel, then the same a third of the "
+              "travel to either side. Fingers off both tags.", flush=True)
+        t0 = time.time()
+        s.drive(out / "chains/0", LEVEL, [f"coast:{HAND_MS}"] * HAND_COASTS,
+                dirs="fwd", seat="lock")
+        log_row(out / "chains.csv", {"k": 0, "schedule": f"coast:{HAND_MS} x {HAND_COASTS}",
+                                     "t_start": f"{t0:.3f}",
+                                     "t_end": f"{time.time():.3f}",
+                                     "folder": "chains/0"})
+    s.center()
+
+
 PLANS = [
     Plan("pass", "pot-table", "servo-camera",
          "20 % each way over the travel at the open and the close",
@@ -131,4 +158,7 @@ PLANS = [
     Plan("steps", "pot-table", "servo-camera",
          "a crawl stepped by 1 % up and down, one clip",
          run=steps, order=30, minutes=2, mb=35),
+    Plan("lash-hand", "pot-table", "servo-camera",
+         "the horn rocked by hand through its play, free servo, one clip",
+         run=lash_hand, order=40, optional=True, minutes=2, mb=50),
 ]
