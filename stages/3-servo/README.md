@@ -294,20 +294,22 @@ from the bottom and draws the arm back to the bottom whenever torque is
 off, never onto a stop. The current limit is widened to the servo's rated
 stall for the sitting, since a standing arm is a stall the train holds,
 and every duty is checked against that rating. `bottom` reads the arm hung
-straight down by hand, then lifts it past the train's static band each way
-at 20 % and drops it, three times a side: the swing and where it dies are
-the friction of the back-driven train, the two sides' rests give the
-working bottom, and the block refuses to go on without 70 degrees of room
-either side. `ladder` holds a duty 3 s from the bottom, the sides
+straight down by hand, and that reading is the bottom (`OSC_LOAD_BOTTOM`
+gives it instead of the prompt for a sitting run with the arm already
+hung), then lifts it past the train's static band each way at 20 % and
+drops it, three times a side: the swing and where it dies are the friction
+of the back-driven train. The block refuses to go on without 70 degrees of
+room either side. `ladder` holds a duty 3 s from the bottom, the sides
 alternated at each duty, stepped up until a side's rest passes 60 degrees,
-a rung the last two rests predict past 80 degrees left out so no hold runs
+a rung the side's rests predict past 75 degrees left out so no hold runs
 to the end stop: the arm rests where the motor's torque equals gravity plus
 the friction resisting its rise, and three of the duties approached from
-above, 16 % higher and then down a stair of 2 % every 300 ms, rest with
-friction taken off instead. `lift` drives 20, 30 and 40 % from the bottom
-for a fixed window and coasts 3 s, the fall streamed. `steps` steps 10, 15
-and 20 % up and down from a ladder duty at two angles, the smallest step
-that moves the arm bracketing the hold's deadband. `push`, optional, is the pot under a side load with no
+above, up to 20 % higher as far as the side's own rests predict under 65
+degrees and then the duty in one step, rest with friction taken off
+instead. `lift` drives 20, 30 and 40 % from the bottom for a fixed window
+and coasts 3 s, the fall streamed. `steps` steps 10, 15, 20 and 25 % up
+and down from a ladder duty at two angles, the smallest step that moves
+the arm bracketing the hold's deadband each way. `push`, optional, is the pot under a side load with no
 torque: the servo free at zero duty for 36 s of chained coasts while the
 arm's hub is pressed straight toward the shaft from each side and along
 the arm by hand, since the hand-rock clip of the pot table saw the pot

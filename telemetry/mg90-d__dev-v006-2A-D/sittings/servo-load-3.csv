@@ -1,0 +1,105 @@
+t_host,event,detail
+1794262104.829,start,"servo mg90-d, motor mg90-d, board dev-v006-2A-D, state servo-load"
+1794262116.560,prompt,"The rig on its side with the shaft horizontal, the arm on the horn with the mass at its hole and the hub tag on top, the board on the DPS, nothing in the arm's swing."
+1794262116.560,plan,bottom
+1794262116.560,dataset,bottom: telemetry/mg90-d__dev-v006-2A-D/load/bottom-3
+1794262138.919,dps,on at 5.25 V
+1794262142.889,rail,"5.0 V: reads 5.001 V, DPS 5.250 V"
+1794262142.891,given,"bottom 2025 counts from OSC_LOAD_BOTTOM, no hang prompt"
+1794262143.055,guards,414 to 3460 counts
+1794262143.452,probe,"telemetry/mg90-d__dev-v006-2A-D/load/bottom-3/drops/0: pos 1833, ntc_raw 1958, vbus_raw 1241"
+1794262179.319,probe,"telemetry/mg90-d__dev-v006-2A-D/load/bottom-3/drops/1: pos 2151, ntc_raw 1946, vbus_raw 1242"
+1794262214.993,probe,"telemetry/mg90-d__dev-v006-2A-D/load/bottom-3/drops/2: pos 2503, ntc_raw 1944, vbus_raw 1239"
+1794262249.740,probe,"telemetry/mg90-d__dev-v006-2A-D/load/bottom-3/drops/3: pos 2149, ntc_raw 1937, vbus_raw 1243"
+1794262284.443,probe,"telemetry/mg90-d__dev-v006-2A-D/load/bottom-3/drops/4: pos 1843, ntc_raw 1935, vbus_raw 1239"
+1794262319.005,probe,"telemetry/mg90-d__dev-v006-2A-D/load/bottom-3/drops/5: pos 1847, ntc_raw 1933, vbus_raw 1240"
+1794262353.759,found,bottom 2025 counts by hand; the drops rest 422.0 counts apart about 2056
+1794262353.759,plan,ladder
+1794262353.760,dataset,ladder: telemetry/mg90-d__dev-v006-2A-D/load/ladder-3
+1794262354.216,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/0: pos 1847, ntc_raw 1937, vbus_raw 1239"
+1794262406.965,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/1: pos 2218, ntc_raw 1939, vbus_raw 1245"
+1794262459.766,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/2: pos 1771, ntc_raw 1934, vbus_raw 1241"
+1794262512.432,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/3: pos 2231, ntc_raw 1932, vbus_raw 1241"
+1794262565.377,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/4: pos 1829, ntc_raw 1933, vbus_raw 1241"
+1794262618.496,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/5: pos 2092, ntc_raw 1933, vbus_raw 1239"
+1794262671.199,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/6: pos 1959, ntc_raw 1928, vbus_raw 1244"
+1794262723.729,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/7: pos 2169, ntc_raw 1929, vbus_raw 1236"
+1794262777.561,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/8: pos 1871, ntc_raw 1930, vbus_raw 1243"
+1794262830.271,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/9: pos 2276, ntc_raw 1925, vbus_raw 1240"
+1794262882.791,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/10: pos 1842, ntc_raw 1931, vbus_raw 1243"
+1794262935.453,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/11: pos 2343, ntc_raw 1927, vbus_raw 1240"
+1794262988.101,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/12: pos 1798, ntc_raw 1929, vbus_raw 1243"
+1794263040.473,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/13: pos 2216, ntc_raw 1925, vbus_raw 1237"
+1794263092.953,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/14: pos 1675, ntc_raw 1925, vbus_raw 1239"
+1794263146.113,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/15: pos 2467, ntc_raw 1927, vbus_raw 1243"
+1794263198.731,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/16: pos 1522, ntc_raw 1927, vbus_raw 1241"
+1794263251.157,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/17: pos 2506, ntc_raw 1925, vbus_raw 1243"
+1794263303.934,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/18: pos 1818, ntc_raw 1928, vbus_raw 1239"
+1794263356.316,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/19: pos 2148, ntc_raw 1926, vbus_raw 1241"
+1794263409.452,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/20: pos 1740, ntc_raw 1921, vbus_raw 1239"
+1794263462.588,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/21: pos 2178, ntc_raw 1927, vbus_raw 1240"
+1794263516.728,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/22: pos 1740, ntc_raw 1925, vbus_raw 1243"
+1794263569.439,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/23: pos 2182, ntc_raw 1926, vbus_raw 1238"
+1794263622.691,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/24: pos 1802, ntc_raw 1921, vbus_raw 1239"
+1794263676.275,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/25: pos 2173, ntc_raw 1924, vbus_raw 1241"
+1794263729.414,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/26: pos 1813, ntc_raw 1921, vbus_raw 1242"
+1794263782.488,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/27: pos 2173, ntc_raw 1926, vbus_raw 1243"
+1794263836.138,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/28: pos 1782, ntc_raw 1919, vbus_raw 1241"
+1794263900.256,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/29: pos 2166, ntc_raw 1924, vbus_raw 1241"
+1794263955.152,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/30: pos 2179, ntc_raw 1925, vbus_raw 1239"
+1794264009.658,skip,from above at +34 %: no overshoot of 10 % or more rests under 65 deg
+1794264009.951,probe,"telemetry/mg90-d__dev-v006-2A-D/load/ladder-3/ladder/31: pos 2168, ntc_raw 1923, vbus_raw 1241"
+1794264064.790,skip,from above at -24 %: no overshoot of 10 % or more rests under 65 deg
+1794264064.791,skip,from above at -28 %: no overshoot of 10 % or more rests under 65 deg
+1794264064.895,plan,lift
+1794264064.896,dataset,lift: telemetry/mg90-d__dev-v006-2A-D/load/lift-3
+1794264065.346,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/0: pos 1814, ntc_raw 1919, vbus_raw 1241"
+1794264118.426,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/1: pos 2133, ntc_raw 1921, vbus_raw 1241"
+1794264171.093,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/2: pos 2148, ntc_raw 1922, vbus_raw 1240"
+1794264223.644,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/3: pos 2075, ntc_raw 1918, vbus_raw 1241"
+1794264276.478,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/4: pos 2060, ntc_raw 1923, vbus_raw 1237"
+1794264328.432,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/5: pos 2006, ntc_raw 1919, vbus_raw 1242"
+1794264381.338,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/6: pos 2002, ntc_raw 1922, vbus_raw 1242"
+1794264433.824,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/7: pos 1843, ntc_raw 1924, vbus_raw 1241"
+1794264486.377,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/8: pos 1858, ntc_raw 1917, vbus_raw 1240"
+1794264538.859,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/9: pos 1992, ntc_raw 1924, vbus_raw 1239"
+1794264590.670,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/10: pos 2009, ntc_raw 1922, vbus_raw 1241"
+1794264642.892,probe,"telemetry/mg90-d__dev-v006-2A-D/load/lift-3/cycles/11: pos 2047, ntc_raw 1922, vbus_raw 1242"
+1794264695.094,plan,steps
+1794264695.095,dataset,steps: telemetry/mg90-d__dev-v006-2A-D/load/steps-3
+1794264695.555,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/0: pos 2023, ntc_raw 1922, vbus_raw 1239"
+1794264748.453,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/1: pos 2163, ntc_raw 1924, vbus_raw 1245"
+1794264749.630,retry,"1: the sweep failed, the arm settling, once more"
+1794264755.937,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/1: pos 1927, ntc_raw 1925, vbus_raw 1241"
+1794264808.542,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/2: pos 2219, ntc_raw 1927, vbus_raw 1243"
+1794264861.733,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/3: pos 2171, ntc_raw 1922, vbus_raw 1238"
+1794264913.876,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/4: pos 2384, ntc_raw 1921, vbus_raw 1241"
+1794264966.818,skip,16 % stepped -20 % is out of range
+1794264967.120,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/5: pos 2169, ntc_raw 1923, vbus_raw 1241"
+1794265020.387,skip,16 % stepped -25 % is out of range
+1794265020.621,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/6: pos 1938, ntc_raw 1922, vbus_raw 1240"
+1794265069.793,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/7: pos 2171, ntc_raw 1923, vbus_raw 1241"
+1794265119.220,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/8: pos 2496, ntc_raw 1923, vbus_raw 1241"
+1794265169.038,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/9: pos 2153, ntc_raw 1917, vbus_raw 1239"
+1794265218.462,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/10: pos 2174, ntc_raw 1915, vbus_raw 1241"
+1794265268.158,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/11: pos 2151, ntc_raw 1913, vbus_raw 1243"
+1794265317.518,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/12: pos 2174, ntc_raw 1909, vbus_raw 1238"
+1794265371.752,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/13: pos 2168, ntc_raw 1913, vbus_raw 1243"
+1794265425.354,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/14: pos 2184, ntc_raw 1912, vbus_raw 1241"
+1794265477.444,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/15: pos 1808, ntc_raw 1912, vbus_raw 1241"
+1794265529.296,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/16: pos 1740, ntc_raw 1913, vbus_raw 1242"
+1794265581.693,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/17: pos 1822, ntc_raw 1912, vbus_raw 1243"
+1794265633.307,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/18: pos 1773, ntc_raw 1908, vbus_raw 1243"
+1794265685.756,skip,16 % stepped -20 % is out of range
+1794265686.050,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/19: pos 1813, ntc_raw 1911, vbus_raw 1240"
+1794265739.360,skip,16 % stepped -25 % is out of range
+1794265739.657,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/20: pos 1824, ntc_raw 1913, vbus_raw 1243"
+1794265793.106,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/21: pos 1807, ntc_raw 1912, vbus_raw 1237"
+1794265846.271,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/22: pos 1831, ntc_raw 1912, vbus_raw 1243"
+1794265899.590,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/23: pos 1855, ntc_raw 1913, vbus_raw 1241"
+1794265952.513,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/24: pos 1832, ntc_raw 1910, vbus_raw 1242"
+1794266006.404,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/25: pos 1853, ntc_raw 1912, vbus_raw 1239"
+1794266059.928,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/26: pos 1819, ntc_raw 1907, vbus_raw 1239"
+1794266115.309,probe,"telemetry/mg90-d__dev-v006-2A-D/load/steps-3/chains/27: pos 1840, ntc_raw 1899, vbus_raw 1241"
+1794266170.817,dps,off
+1794266170.817,end,
