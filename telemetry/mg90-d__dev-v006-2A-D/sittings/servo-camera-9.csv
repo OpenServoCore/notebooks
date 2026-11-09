@@ -1,0 +1,81 @@
+t_host,event,detail
+1794184245.882,start,"servo mg90-d, motor mg90-d, board dev-v006-2A-D, state servo-camera"
+1794184259.266,prompt,"The servo in the printed rig with the tag horn, the reference pad beside it, the board on the DPS, the phone overhead in SLO-MO at 240 fps with the tags and the STAT lamp in view, nothing in the swept circle."
+1794184259.266,plan,pass (open)
+1794184259.266,dataset,pass-open: telemetry/mg90-d__dev-v006-2A-D/pot-table/pass-open-9
+1794184259.428,guards,414 to 3460 counts
+1794184297.929,dps,on at 5.25 V
+1794184301.870,rail,"5.0 V: reads 4.996 V, DPS 5.250 V"
+1794184302.160,probe,"telemetry/mg90-d__dev-v006-2A-D/sittings/servo-camera-9-pilot: pos 1904, ntc_raw 1897, vbus_raw 1241"
+1794184353.066,pilot,5.0 V 30 % for 300 ms: 3288 counts/s
+1794184393.407,prompt,Start the phone recording for pass.
+1794184411.725,clip,pass started
+1794184411.996,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/pass-open-9/chains/0: pos 1774, ntc_raw 1896, vbus_raw 1240"
+1794184446.515,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/pass-open-9 as pass.mp4 (equipment/camera/iphone.md).
+1794184446.515,clip,pass stopped
+1794184446.515,plan,crawl
+1794184446.515,dataset,crawl: telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9
+1794184490.882,prompt,Start the phone recording for crawl-0-0.
+1794184509.197,clip,crawl-0-0 started
+1794184509.472,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/0: pos 2040, ntc_raw 1891, vbus_raw 1241"
+1794184525.786,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/1: pos 1818, ntc_raw 1893, vbus_raw 1241"
+1794184541.360,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/2: pos 1849, ntc_raw 1886, vbus_raw 1241"
+1794184575.251,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9 as crawl-0-0.mp4 (equipment/camera/iphone.md).
+1794184575.251,clip,crawl-0-0 stopped
+1794184595.799,prompt,Start the phone recording for crawl-0-1.
+1794184614.126,clip,crawl-0-1 started
+1794184614.376,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/3: pos 1841, ntc_raw 1889, vbus_raw 1240"
+1794184629.080,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/4: pos 1779, ntc_raw 1890, vbus_raw 1240"
+1794184659.452,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9 as crawl-0-1.mp4 (equipment/camera/iphone.md).
+1794184659.452,clip,crawl-0-1 stopped
+1794184677.985,prompt,Start the phone recording for crawl-1-0.
+1794184696.307,clip,crawl-1-0 started
+1794184696.565,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/5: pos 1983, ntc_raw 1888, vbus_raw 1241"
+1794184711.242,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/6: pos 1746, ntc_raw 1894, vbus_raw 1242"
+1794184725.353,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/7: pos 1877, ntc_raw 1890, vbus_raw 1241"
+1794184754.227,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9 as crawl-1-0.mp4 (equipment/camera/iphone.md).
+1794184754.228,clip,crawl-1-0 stopped
+1794184768.080,prompt,Start the phone recording for crawl-1-1.
+1794184786.389,clip,crawl-1-1 started
+1794184786.640,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/8: pos 1836, ntc_raw 1889, vbus_raw 1239"
+1794184800.113,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/9: pos 1852, ntc_raw 1895, vbus_raw 1239"
+1794184828.544,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9 as crawl-1-1.mp4 (equipment/camera/iphone.md).
+1794184828.544,clip,crawl-1-1 stopped
+1794184906.543,prompt,Start the phone recording for crawl-2-0.
+1794184924.857,clip,crawl-2-0 started
+1794184925.120,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/10: pos 1981, ntc_raw 1889, vbus_raw 1241"
+1794184938.194,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/11: pos 1965, ntc_raw 1890, vbus_raw 1243"
+1794184950.958,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/12: pos 1999, ntc_raw 1887, vbus_raw 1241"
+1794184979.298,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9 as crawl-2-0.mp4 (equipment/camera/iphone.md).
+1794184979.298,clip,crawl-2-0 stopped
+1794184998.627,prompt,Start the phone recording for crawl-2-1.
+1794185016.952,clip,crawl-2-1 started
+1794185017.209,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/13: pos 2077, ntc_raw 1887, vbus_raw 1241"
+1794185029.691,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9/chains/14: pos 1975, ntc_raw 1886, vbus_raw 1240"
+1794185060.678,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/crawl-9 as crawl-2-1.mp4 (equipment/camera/iphone.md).
+1794185060.678,clip,crawl-2-1 stopped
+1794185060.678,plan,reversal
+1794185060.678,dataset,reversal: telemetry/mg90-d__dev-v006-2A-D/pot-table/reversal-9
+1794185087.777,prompt,Start the phone recording for reversal.
+1794185106.117,clip,reversal started
+1794185106.369,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/reversal-9/chains/0: pos 2047, ntc_raw 1884, vbus_raw 1242"
+1794185123.680,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/reversal-9/chains/1: pos 1848, ntc_raw 1889, vbus_raw 1240"
+1794185151.423,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/reversal-9 as reversal.mp4 (equipment/camera/iphone.md).
+1794185151.423,clip,reversal stopped
+1794185151.423,plan,steps
+1794185151.423,dataset,steps: telemetry/mg90-d__dev-v006-2A-D/pot-table/steps-9
+1794185177.063,prompt,Start the phone recording for steps.
+1794185195.401,clip,steps started
+1794185195.682,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/steps-9/chains/0: pos 1849, ntc_raw 1887, vbus_raw 1237"
+1794185209.519,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/steps-9/chains/1: pos 1894, ntc_raw 1890, vbus_raw 1243"
+1794185241.146,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/steps-9 as steps.mp4 (equipment/camera/iphone.md).
+1794185241.146,clip,steps stopped
+1794185241.146,plan,pass (close)
+1794185241.146,dataset,pass-close: telemetry/mg90-d__dev-v006-2A-D/pot-table/pass-close-9
+1794185258.056,prompt,Start the phone recording for pass.
+1794185276.371,clip,pass started
+1794185276.621,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/pass-close-9/chains/0: pos 1763, ntc_raw 1884, vbus_raw 1243"
+1794185461.440,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/pass-close-9 as pass.mp4 (equipment/camera/iphone.md).
+1794185461.440,clip,pass stopped
+1794185463.791,dps,off
+1794185463.791,end,

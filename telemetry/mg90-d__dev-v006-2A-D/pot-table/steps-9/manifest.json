@@ -1,0 +1,25 @@
+{
+  "clips": {
+    "steps.mp4": {
+      "bytes": 495395470,
+      "frames": 10510,
+      "fps": 170.0028306846213,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 61.8225,
+      "sha256": "4294400b9abcf8ab0ea0947cadb1733185d50d35622922b205d245dec894950e",
+      "stat_roi": [
+        496,
+        1048,
+        24,
+        24
+      ]
+    }
+  },
+  "pipeline": {
+    "commit": "c28c3c3",
+    "oscnb_dirty": true,
+    "fiducial_sha256": "3374bb716276",
+    "opencv": "5.0.0"
+  }
+}
