@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-d__dev-v006-2A-D/pot-table",
-  "notes": "stage 3 pot-table of mg90-d on dev-v006-2A-D, sitting servo-camera-9 (ten phone clips at 240 fps from above, pass-open, six crawl clips, reversal, steps, pass-close, 5 V). Angle of record the image reading of the horn tag against the reference tag (stage 0 camera-tag, 0.16 deg); frames to host time by a line through the 12 clapper flash midpoints per clip (t_before + 50 ms); pot rows at segments.csv t_start + tick / 20 kHz. pot_scale_counts_per_deg the mean of the table's line over the fitted range and over -155 to -37 deg, their sd as bounds; the table pos = T(tag) + one offset per moving segment, T a cubic B-spline at table_knot_deg knots chosen by two-fold cross-validation over chains, the rest points (last 100 ms of baselines and coasts, drive starts) at offset 0; the table is written to results/<pair>.table.csv on a 1 deg grid with its local slope. pot_scale_low_end/high_end and guard_span_deg from lines through the 11 drive starts within 150 counts of each guard (414 and 3460), se bounds; table_smooth_* the 10 deg knot table about its line on 2 deg bins over -155 to -37 deg, table_fine_* the 1.5 deg table less the smooth one there; their bounds and those of hysteresis_counts and pot_tag_speed_ratio are the reconciliation's spread between two blind analyses. table_fine_pass_share_*: the slope of each pass group's 1 deg bins on the slow bins, carry codes masked (+/-12 counts of each multiple of 256), mean of four with their range; _poly against a degree-5 table over the slow data (rest points, crawl holds under 35 deg/s, kicks at 0.1 weight past the ends) with the pot read at the frame's time less the chain's lead, the reading whose pass re-timing agrees with the leads in sign; _stamp_plus_lead the same with the pot read at the time plus the lead; _table on the table of record's smooth part with each segment's offset out; table_fine_pass_share the mean of _poly and _table with the range of both. table_fine_chain_corr the mean correlation between crawl chains of one direction and start about the degree-5 table. adc_*: codes weighted by speed over every driven row above 150 counts/s; missing runs never output with output on both sides, the 8-code rule's count beside them; wide codes over 2.5x the 61-code running median, adc_wide_code_deg the horn travel on one code from the tag, mean +/- sd over crossings; adc_carry_step_counts the degree-5 residual within 12 counts of each carry less 12 to 36 counts out, median and range. drift_open_close_counts close less open rest points, 2 sigma bounds; hysteresis_rest_split_counts the rest reading arriving - less arriving +, se bounds; direction_term_per_clip_counts the h of c = c0 + h dir + tau v per clip of 6+ segments, mean +/- se. stamp_lead_ms_range the per-clip tau of the same fit, median and range (positive = the segment stamps lead the motion); stamp_lead_open_ms, _ms_per_min and _rms_ms the line over the sitting of the per-chain lead from the correlation of 10 ms smoothed differences of tag and pot. crawl_*: holds from 200 ms in, tag line speed, mean +/- sd per duty, stalled = ended stopped (pot 20 ms slope under 1 deg/s for 40 ms); crawl_slowest_sustained the slowest hold still moving at its end to the slowest at 7 % or more that never stopped; speed_per_duty_pct the holds that never stopped at 7 to 11 % and every moving hold from 300 ms in as bounds. stick_slip by a restart of 0.3 deg after a 40 ms stop under 0.5 deg/s on the tag. ripple_*: Lomb-Scargle of the detrended tag over holds above 5 deg/s from 300 ms in, pooled against angle (x = v t); ripple_cycles_per_deg and ripple_hz_per_deg_s the pooled maximum, bounds the flat top's two bumps rounded outward to 0.01; amplitude sd x sqrt 2, mean over holds with the duty means as bounds. gear_ratio_commutation the commutation cycles per tag degree over holds of 100+ cycles, mean +/- se. lash_deg: value the commutation count in the horn's dwell, lo the count in the pot's dwell (2 counts of its turn), hi the re-acceleration model on the horn's dwell (extremum to 0.15 deg of departure), four reversals at 9 and 20 %; lash_bound_deg speed x dwell. reversal_dwell_ms the pot's dwell mean +/- sd, the horn's by the 2-count rule (lo) and the 0.15 deg rule (hi). pot_lag_ms no lag resolved, bounds the lead's rms about its line. pot_follows_counts the sd of pot less table within each hold. clock_rms_ms and clock_rate_ppm the midpoint fit's median or mean with the range of both the midpoint and the onset fits; tag_rest_sd_deg the detrended sd over the 21 baselines' second halves, median and range. One sitting, one servo with a free horn, a train in fresh Super Lube.",
+  "notes": "stage 3 pot-table of mg90-d on dev-v006-2A-D, sitting servo-camera-9 (ten phone clips at 240 fps from above, pass-open, six crawl clips, reversal, steps, pass-close, 5 V). Angle of record the image reading of the horn tag against the reference tag (stage 0 camera-tag, 0.16 deg); frames to host time by a line through the 12 clapper flash midpoints per clip (t_before + 50 ms); pot rows at segments.csv t_start + tick / 20 kHz. pot_scale_counts_per_deg the mean of the table's line over the fitted range and over -155 to -37 deg, their sd as bounds; the table pos = T(tag) + one offset per moving segment, T a cubic B-spline at table_knot_deg knots chosen by two-fold cross-validation over chains, the rest points (last 100 ms of baselines and coasts, drive starts) at offset 0; the table is written to results/<pair>.table.csv on a 1 deg grid with its local slope. pot_scale_low_end/high_end and guard_span_deg from lines through the 11 drive starts within 150 counts of each guard (414 and 3460), se bounds; table_smooth_* the 10 deg knot table about its line on 2 deg bins over -155 to -37 deg, table_fine_* the 1.5 deg table less the smooth one there; their bounds and those of hysteresis_counts and pot_tag_speed_ratio are the reconciliation's spread between two blind analyses. table_fine_pass_share_*: the slope of each pass group's 1 deg bins on the slow bins, carry codes masked (+/-12 counts of each multiple of 256), mean of four with their range; _poly against a degree-5 table over the slow data (rest points, crawl holds under 35 deg/s, kicks at 0.1 weight past the ends) with the pot read at the frame's time less the chain's lead, the reading whose pass re-timing agrees with the leads in sign; _stamp_plus_lead the same with the pot read at the time plus the lead; _table on the table of record's smooth part with each segment's offset out; table_fine_pass_share the mean of _poly and _table with the range of both. table_fine_chain_corr the mean correlation between crawl chains of one direction and start about the degree-5 table. adc_*: codes weighted by speed over every driven row above 150 counts/s; missing runs never output with output on both sides, the 8-code rule's count beside them; wide codes over 2.5x the 61-code running median, adc_wide_code_deg the horn travel on one code from the tag, mean +/- sd over crossings; adc_carry_step_counts the degree-5 residual within 12 counts of each carry less 12 to 36 counts out, median and range. drift_open_close_counts close less open rest points, 2 sigma bounds; hysteresis_rest_split_counts the rest reading arriving - less arriving +, se bounds; direction_term_per_clip_counts the h of c = c0 + h dir + tau v per clip of 6+ segments, mean +/- se. stamp_lead_ms_range the per-clip tau of the same fit, median and range (positive = the segment stamps lead the motion); stamp_lead_open_ms, _ms_per_min and _rms_ms the line over the sitting of the per-chain lead from the correlation of 10 ms smoothed differences of tag and pot. crawl_*: holds from 200 ms in, tag line speed, mean +/- sd per duty, stalled = ended stopped (pot 20 ms slope under 1 deg/s for 40 ms); crawl_slowest_sustained the slowest hold still moving at its end to the slowest at 7 % or more that never stopped; speed_per_duty_pct the holds that never stopped at 7 to 11 % and every moving hold from 300 ms in as bounds. stick_slip by a restart of 0.3 deg after a 40 ms stop under 0.5 deg/s on the tag. ripple_*: Lomb-Scargle of the detrended tag over holds above 5 deg/s from 300 ms in, pooled against angle (x = v t); ripple_cycles_per_deg and ripple_hz_per_deg_s the pooled maximum, bounds the flat top's two bumps rounded outward to 0.01; amplitude sd x sqrt 2, mean over holds with the duty means as bounds. gear_ratio_commutation the commutation cycles per tag degree over holds of 100+ cycles, mean +/- se. lash_deg: a lower bound on the play, value the commutation count in the horn's dwell, lo the count in the pot's dwell (2 counts of its turn), hi the re-acceleration model on the horn's dwell (extremum to 0.15 deg of departure), four reversals at 9 and 20 %; lash_bound_deg speed x dwell. reversal_dwell_ms the pot's dwell mean +/- sd, the horn's by the 2-count rule (lo) and the 0.15 deg rule (hi). pot_lag_ms no lag resolved, bounds the lead's rms about its line. pot_follows_counts the sd of pot less table within each hold. clock_rms_ms and clock_rate_ppm the midpoint fit's median or mean with the range of both the midpoint and the onset fits; tag_rest_sd_deg the detrended sd over the 21 baselines' second halves, median and range. One sitting, one servo with a free horn, a train in fresh Super Lube. lash_hand_*: sitting servo-camera-10, block lash-hand-10, the servo free at zero duty (15 chained 3 s coasts streamed) while a finger rocked the horn at three spots, then camera-only rocks after the stream. Held ends: the 0.4 s window per stretch on one side of the tag's 5-95 % midpoint (stretch over 0.45 s) minimizing the pot's 95 % range / 2 counts + the tag's / 0.1 deg (the tag's alone after the stream); a rock is two consecutive ends on opposite sides. Motor travel per rock the tap difference vA - vB less its zero (tag under 0.5 deg/s) integrated over the rock, on the scale lash_hand_emf_counts_per_deg_s fitted on the two back-drives (rows over 15 deg/s); a rock turned the motor at 8 counts off zero and is then read less the motor's turn. lash_hand_deg the mean +/- sd of the spot means over every spot but the stream's high one, which lash_hand_firm_deg carries (mean +/- sd of its rocks); both carry the train's wind-up under an unmeasured finger torque, an upper bound on the play. lash_play_deg the bracket on the pure play, lo lash_deg's value, hi the lowest light spot mean, its value the middle of the bracket, not a measurement. pot_force_excess_deg the pot through the table less the tag at the held ends, up ends less down ends with each spot's mean out, mean over the three spots and their range; pot_force_relax_deg the change of the same over each hold (0.15 s in to 0.02 s before it ends, by a line), mean |change| and the range of the side means. pot_hand_ratio the pot's swing through the table over the tag's per rock, mean of the spot means and their range; pot_hand_counts_per_deg pos over tag per rock; pot_motion_counts_per_deg sitting 9's slope of pos on the tag over crossings of the same codes at 20 deg/s or more, both directions.",
   "pot_scale_counts_per_deg": {
     "value": 18.913054076268125,
     "lo": 18.826379812155253,
@@ -496,5 +496,135 @@
     "lo": 0.0,
     "hi": 1.447486650550085,
     "unit": "counts"
+  },
+  "lash_hand_deg": {
+    "value": 1.2364748286380707,
+    "lo": 1.1542219623859518,
+    "hi": 1.3187276948901896,
+    "unit": "deg"
+  },
+  "lash_hand_by_spot_deg": {
+    "mid": {
+      "value": 1.2999733401870661,
+      "lo": 1.2111264411214095,
+      "hi": 1.3888202392527227,
+      "unit": "deg"
+    },
+    "low": {
+      "value": 1.124742981348104,
+      "lo": 1.0895565227966084,
+      "hi": 1.1599294398995996,
+      "unit": "deg"
+    },
+    "high": {
+      "value": 1.654670675721312,
+      "lo": 1.5351209680160893,
+      "hi": 1.7742203834265349,
+      "unit": "deg"
+    },
+    "after, -53 deg": {
+      "value": 1.2967668196857574,
+      "lo": 1.1966974658548717,
+      "hi": 1.396836173516643,
+      "unit": "deg"
+    },
+    "after, -90 deg": {
+      "value": 1.224416173331355,
+      "lo": 1.13093857603285,
+      "hi": 1.31789377062986,
+      "unit": "deg"
+    }
+  },
+  "lash_hand_firm_deg": {
+    "value": 1.654670675721312,
+    "lo": 1.5351209680160893,
+    "hi": 1.7742203834265349,
+    "unit": "deg"
+  },
+  "lash_play_deg": {
+    "value": 0.7571429798936125,
+    "lo": 0.38954297843912083,
+    "hi": 1.124742981348104,
+    "unit": "deg"
+  },
+  "lash_hand_rocks": {
+    "mid": 16,
+    "low": 13,
+    "high": 9,
+    "after, -53 deg": 14,
+    "after, -90 deg": 7
+  },
+  "lash_hand_motor_turned": {
+    "mid": 11,
+    "low": 0,
+    "high": 0
+  },
+  "lash_hand_emf_counts_per_deg_s": {
+    "value": 1.5795505010265753,
+    "lo": 1.5784528005651717,
+    "hi": 1.580648201487979,
+    "unit": "counts/(deg/s)"
+  },
+  "lash_hand_clock_rms_ms": {
+    "value": 0.7133340045367127,
+    "lo": null,
+    "hi": null,
+    "unit": "ms"
+  },
+  "pot_force_excess_deg": {
+    "value": 1.0177482961218454,
+    "lo": 0.9820063060780968,
+    "hi": 1.0725889419545127,
+    "unit": "deg"
+  },
+  "pot_force_relax_deg": {
+    "value": 0.30835380542497975,
+    "lo": 0.24215867733350174,
+    "hi": 0.3615900675541449,
+    "unit": "deg"
+  },
+  "pot_hand_ratio": {
+    "value": 1.7592011900048796,
+    "lo": 1.6640521077005612,
+    "hi": 1.8992388536443228,
+    "unit": "ratio"
+  },
+  "pot_hand_counts_per_deg": {
+    "mid": {
+      "value": 25.91245290674801,
+      "lo": 22.854150707403694,
+      "hi": 28.970755106092323,
+      "unit": "counts/deg"
+    },
+    "low": {
+      "value": 33.46977651355774,
+      "lo": 31.235417765125295,
+      "hi": 35.70413526199019,
+      "unit": "counts/deg"
+    },
+    "high": {
+      "value": 36.64351941964555,
+      "lo": 34.09767499591916,
+      "hi": 39.18936384337194,
+      "unit": "counts/deg"
+    }
+  },
+  "pot_motion_counts_per_deg": {
+    "low": {
+      "value": 17.42679314066653,
+      "lo": 16.66645318506111,
+      "hi": 18.18713309627195,
+      "unit": "counts/deg"
+    },
+    "high": {
+      "value": 21.01673420992373,
+      "lo": 19.975280384310597,
+      "hi": 22.058188035536862,
+      "unit": "counts/deg"
+    }
+  },
+  "lash_hand_mid_down_on_2047": {
+    "ends": 9,
+    "on_2047": 7
   }
 }
