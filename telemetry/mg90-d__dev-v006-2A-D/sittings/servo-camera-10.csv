@@ -1,0 +1,16 @@
+t_host,event,detail
+1794247606.868,start,"servo mg90-d, motor mg90-d, board dev-v006-2A-D, state servo-camera"
+1794247607.820,prompt,"The servo in the printed rig with the tag horn, the reference pad beside it, the board on the DPS, the phone overhead in SLO-MO at 240 fps with the tags and the STAT lamp in view, nothing in the swept circle."
+1794247607.820,plan,lash-hand
+1794247610.416,dataset,lash-hand: telemetry/mg90-d__dev-v006-2A-D/pot-table/lash-hand-10
+1794247619.686,prompt,Start the phone recording for lash-hand.
+1794247638.020,clip,lash-hand started
+1794247657.178,dps,on at 5.25 V
+1794247661.134,rail,"5.0 V: reads 4.998 V, DPS 5.250 V"
+1794247661.362,probe,"telemetry/mg90-d__dev-v006-2A-D/pot-table/lash-hand-10/chains/0: pos 2035, ntc_raw 2062, vbus_raw 1240"
+1794247738.438,prompt,Stop the recording. Copy the clip into telemetry/mg90-d__dev-v006-2A-D/pot-table/lash-hand-10 as lash-hand.mp4 (equipment/camera/iphone.md).
+1794247738.438,clip,lash-hand stopped
+1794247738.594,guards,414 to 3460 counts
+1794247738.815,probe,"center: pos 2007, ntc_raw 2047, vbus_raw 1237"
+1794247741.123,dps,off
+1794247741.123,end,
