@@ -391,21 +391,33 @@ def angles(df, scale=PrintScale(), ref_scale=None, static_ref=True, unwrap=True)
     return out
 
 
+def lamp_level(img, channel):
+    """One frame as the lamp's channel: (blue - red) for a blue lamp such as
+    DATA, (red - green) for a red lamp such as STAT, or the grey level."""
+    p = img.astype(np.float32)
+    if channel == "blue":
+        return p[..., 0] - p[..., 2]
+    if channel == "red":
+        return p[..., 2] - p[..., 1]
+    return p.mean(axis=-1)
+
+
 def lamp_trace(frames, roi, channel="blue"):
     """Lamp level per frame over the ROI (x, y, w, h, pixels): the mean of
     (blue - red) for a blue lamp such as the DATA lamp, which lights while
-    the bus line is low, or of the grey level (`channel="grey"`) for a lamp
-    of any colour such as STAT."""
+    the bus line is low, of (red - green) (`channel="red"`) for the red STAT
+    lamp seen from a distance among other lights, or of the grey level
+    (`channel="grey"`) for a lamp of any colour filling the frame."""
     x, y, w, h = roi
     rows = []
     for i, t, img in frames:
-        p = img[y:y + h, x:x + w].astype(np.float32)
-        level = p[..., 0] - p[..., 2] if channel == "blue" else p.mean(axis=-1)
+        level = lamp_level(img[y:y + h, x:x + w], channel)
         rows.append({"frame": i, "t": t, "level": float(np.mean(level))})
     return pd.DataFrame(rows)
 
 
-def lamp_roi(frames, box=24, scale=8, min_len_s=0.05, k=6.0, min_rise=8):
+def lamp_roi(frames, box=24, scale=8, min_len_s=0.05, k=6.0, min_rise=8, channel="grey",
+             max_len_s=None, expect=None):
     """Where the lamp is: the box (x, y, w, h, pixels) around the spot that
     flashes the most often, found on a `scale`-times downscaled copy so a
     whole clip costs little. A flash is the spot standing clear of its
@@ -415,10 +427,23 @@ def lamp_roi(frames, box=24, scale=8, min_len_s=0.05, k=6.0, min_rise=8):
     exposure settling over the first second lifts whole areas once; neither
     is counted as a flash more than once. A spot has to rise `min_rise` grey
     levels to count at all, which keeps a steady lamp's flicker at the top
-    of the range out. With no flash anywhere the largest swing wins."""
+    of the range out. With no flash anywhere the largest swing wins.
+    `channel` is `lamp_trace`'s: "red" finds a red lamp such as STAT seen
+    from the tag camera's distance, where in grey a bus lamp's one-frame
+    blink can outswing it. `max_len_s` leaves out a spot's longer stretches,
+    so an activity lamp lit for whole seconds does not outnumber the
+    clapper's flashes. `expect` is the clapper's flash count when known:
+    the spots that flashed that many times (or the nearest count) are the
+    candidates, and the largest swing among them wins, which puts a wire
+    shaken through the first second or a bus lamp's blinking behind the
+    one lamp that flashed to the log."""
     stack, times = [], []
+    # a small lamp seen from a distance is a few pixels, which the downscale's
+    # average would bury: the cell takes its brightest pixel instead
+    kernel = np.ones((scale, scale), np.uint8)
     for _, t, img in frames:
-        stack.append(cv2.resize(gray(img), None, fx=1 / scale, fy=1 / scale, interpolation=cv2.INTER_AREA))
+        level = cv2.dilate(lamp_level(img, channel), kernel)
+        stack.append(cv2.resize(level, None, fx=1 / scale, fy=1 / scale, interpolation=cv2.INTER_AREA))
         times.append(t)
     if not stack:
         raise ValueError("no frames")
@@ -435,7 +460,20 @@ def lamp_roi(frames, box=24, scale=8, min_len_s=0.05, k=6.0, min_rise=8):
     starts = held.copy()
     starts[1:] &= ~held[:-1]
     flashes = starts.sum(axis=0)
-    score = np.where(flashes == flashes.max(), swing, -1.0) if flashes.max() else swing
+    if max_len_s is not None:
+        # a run held past max_len_s starts both counts, so it drops out
+        m = max(n, int(np.ceil(max_len_s / np.median(np.diff(t))))) if len(t) > 1 else n
+        long = np.ones_like(lit[: len(lit) - m + 1])
+        for s_ in range(m):
+            long &= lit[s_:s_ + len(long)]
+        long_starts = long.copy()
+        long_starts[1:] &= ~long[:-1]
+        flashes = flashes - long_starts.sum(axis=0)
+    if expect is not None and flashes.max():
+        miss = np.abs(flashes - expect)
+        score = np.where(miss == miss.min(), swing, -1.0)
+    else:
+        score = np.where(flashes == flashes.max(), swing, -1.0) if flashes.max() else swing
     cy, cx = np.unravel_index(int(np.argmax(score)), score.shape)
     x, y = int((cx + 0.5) * scale - box / 2), int((cy + 0.5) * scale - box / 2)
     return max(x, 0), max(y, 0), box, box

@@ -15,6 +15,9 @@ was filmed:
   <clip>.level.csv     for a clip named lamp*.mp4, the lamp's grey level per
                        frame instead (`fiducial.lamp_trace`), from the box
                        `fiducial.lamp_roi` finds, recorded in the manifest
+  <clip>.stat.csv      for a tag clip, the STAT lamp's (red - green) level per
+                       frame, the clapper's flashes at the clip's start for
+                       the clock fit, from the box `lamp_roi` finds in red
   <clip>.preview.mp4   a real-time copy, longest side 960 px, for viewing only
   manifest.json        each original's size, sha256, frame count and rate,
                        and the pipeline version that made the tables
@@ -194,6 +197,7 @@ def extract(folder, log=print, force=False, previews=True):
         entry["sha256"] = sha256(clip)
         table = clip.with_name(clip.stem + ".corners.csv")
         level = clip.with_name(clip.stem + ".level.csv")
+        stat = clip.with_name(clip.stem + ".stat.csv")
         if clip.name.startswith("lamp") and (force or not level.exists()):
             log(f"tracing the lamp in {clip.name}")
             roi = fd.lamp_roi(fd.video_frames(clip, step=4))
@@ -206,6 +210,16 @@ def extract(folder, log=print, force=False, previews=True):
             df = fd.track(fd.video_frames(clip), cam)
             df.to_csv(table, index=False, float_format="%.4f")
             log(f"  {len(df)} frames, horn seen in {int(df.hx0.notna().sum())}, ref in {int(df.rx0.notna().sum())}")
+        if not clip.name.startswith(("board", "lamp")) and (force or not stat.exists()):
+            # the STAT lamp in a tag clip, the clapper's flashes for the clock fit
+            log(f"tracing STAT in {clip.name}")
+            clapper = clip.with_name(clip.stem + "-clapper.csv")
+            expect = sum(1 for _ in open(clapper)) - 1 if clapper.exists() else None
+            roi = fd.lamp_roi(fd.video_frames(clip, step=4), channel="red", max_len_s=0.25, expect=expect)
+            df = fd.lamp_trace(fd.video_frames(clip), roi, channel="red")
+            df.to_csv(stat, index=False, float_format="%.3f")
+            entry["stat_roi"] = list(roi)
+            log(f"  {len(df)} frames, STAT box {roi}, {len(fd.bursts(df.t, df.level))} flashes")
         pv = clip.with_name(clip.stem + PREVIEW)
         if previews and (force or not pv.exists()) and not preview(clip, pv):
             log("  no ffmpeg on the PATH, preview skipped")
