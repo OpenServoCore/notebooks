@@ -9,22 +9,28 @@ arm is a stall the train holds; every duty is checked against that rating
 before it drives.
 
 `bottom` finds where the arm hangs: the arm hung straight down by hand at
-the prompt and read, then a short lift each way and a drop, BOTTOM_DROPS
-times a side, the rest read each time. The sitting refuses to go on unless
-the arm can lift LIFT_MIN_DEG either side of the bottom inside the guards,
-with which way to re-seat the arm on the spline. The two sides' rests
-straddle the bottom by the angle the train's static friction holds against
-gravity, so the block gives the bottom and that friction in one.
+the prompt and read, then a lift each way to BOTTOM_DUTY, past the angle
+the train's static friction holds, and a drop, BOTTOM_DROPS times a side,
+the rest read each time. The sitting refuses to go on unless the arm can
+lift LIFT_MIN_DEG either side of the bottom inside the guards, with which
+way to re-seat the arm on the spline. The swing of each drop and where it
+dies are the friction of the back-driven train; the working bottom is the
+midpoint of the two sides' rests, the notebook refines it.
 
 `ladder` is the torque curve: from the bottom, a duty held HOLD_MS between
-two short windows, the duty stepped up LADDER until the arm passes
-LADDER_TOP_DEG or the rating, each side. The arm comes to rest where the
-motor's torque through the train equals gravity plus the friction that
-resists its rise, so the rest angle against duty is the torque curve with
-friction on top. Three of the duties are then approached from above, a
-duty ABOVE_OVER higher first and then the duty, where the arm settles with
-friction taken off instead, and the two rests bracket the friction under
-load.
+two short windows, the duty stepped up LADDER with the sides alternated at
+each duty so time and direction do not confound, until a side's rest
+passes LADDER_TOP_DEG or the rating; a rung whose rest the last two rests
+predict past LADDER_REFUSE_DEG is left out, since a hold past horizontal
+runs to the end stop. The arm comes to rest where the motor's torque
+through the train equals gravity plus the friction that resists its rise,
+so the rest angle against duty is the torque curve with friction on top.
+Three of the duties are then approached from above: ABOVE_OVER higher
+first, then down to the duty in steps of ABOVE_STAIR every ABOVE_STAIR_MS
+so the arm descends through its stick band, then the hold, where it
+settles with friction taken off instead. A step down smaller than the
+band leaves the arm where it was, so the stair, not one step, carries it
+down. The two rests bracket the friction under load.
 
 `lift` drives LIFT from the bottom for LIFT_MS, windows the free servo
 would cross the reach in, and coasts COAST_MS: the drive is the train under
@@ -32,8 +38,9 @@ load at speed, the coast is the arm falling back and back-driving the
 train, both streamed. No pilot sizes these windows: a pilot would seek the
 far guard, which a hanging arm cannot reach.
 
-`steps` steps the duty by STEP up and down from a ladder duty at three
-angles, after STEADY_MS held there.
+`steps` steps the duty by each of STEPS up and down from a ladder duty
+at STEP_AT_DEG, after STEADY_MS held there: the smallest step that moves
+the arm brackets the hold's deadband, the larger ones its response.
 
 `push`, optional, is the pot under a side load with no torque: the servo
 free at zero duty for PUSH_COASTS coasts while the arm's hub is pressed
@@ -56,15 +63,18 @@ REACH_DEG = 80                # the drives' envelope either side of the bottom
 LIFT_MIN_DEG = 70             # the room the arm must have either side of the bottom
 WINDOW_MS = 100
 HOLD_MS = 3000
-BOTTOM_DUTY = 12              # a lift well clear of the bottom, short of horizontal
-BOTTOM_MS = 1500
+BOTTOM_DUTY = 20              # lifts past the static band, short of horizontal
+BOTTOM_MS = 1000
 DROP_MS = 3000                # the fall and its swing, streamed, one burst
 BOTTOM_DROPS = 3
 SETTLE_S = 1.5                # after the stream, before the rest is read
 LADDER = tuple(range(4, 31, 2)) + tuple(range(34, 101, 4))
-LADDER_TOP_DEG = 75           # the ladder stops once a rest passes this
-ABOVE_OVER = 6
-ABOVE_HOLD_MS = 2000
+LADDER_TOP_DEG = 60           # a side stops once a rest passes this
+LADDER_REFUSE_DEG = 80        # a rung predicted past this is left out
+ABOVE_OVER = 16               # over the deadband, which held 6 % off
+ABOVE_STAIR = 2
+ABOVE_STAIR_MS = 300
+ABOVE_HOLD_MS = 1000
 ABOVE_AT_DEG = (20, 40, 60)
 HOT_PCT = 30                  # past this a hold rests HOT_REST_S longer
 HOT_REST_S = 10
@@ -72,10 +82,10 @@ LIFT = (20, 30, 40)
 LIFT_MS = {20: 1000, 30: 700, 40: 500}   # the soft limit cuts a lift that gets there
 COAST_MS = 3000
 LIFT_REPEATS = 2
-STEP = 5
-STEP_MS = 300
+STEPS = (10, 15, 20)          # 5 % moved nothing
+STEP_MS = 500
 STEADY_MS = 2000
-STEP_AT_DEG = (20, 40, 60)
+STEP_AT_DEG = (20, 50)
 PUSH_MS = 3000
 PUSH_COASTS = 12
 HANG = ("Hang the arm straight down by hand, the mass pointing at the "
@@ -172,8 +182,10 @@ def trial(s, out, k, bottom, sign, d, approach):
     ABOVE_OVER higher. Returns the rest pos, the last window's median."""
     dirs, guards = side(s, bottom, sign)
     if approach == "above":
+        stair = [f"then:{x}@{ABOVE_STAIR_MS}"
+                 for x in range(d + ABOVE_OVER - ABOVE_STAIR, d, -ABOVE_STAIR)]
         steps = [f"{d + ABOVE_OVER}@{WINDOW_MS}",
-                 f"hold:{d + ABOVE_OVER}@{ABOVE_HOLD_MS}",
+                 f"hold:{d + ABOVE_OVER}@{ABOVE_HOLD_MS}", *stair,
                  f"then:{d}@{WINDOW_MS}", f"hold:{d}@{HOLD_MS}",
                  f"then:{d}@{WINDOW_MS}"]
     else:
@@ -201,21 +213,41 @@ def nearest(rests, s, bottom, want_deg):
     return min(rests, key=lambda d: abs(abs(deg_from(s, rests[d], bottom)) - want_deg))
 
 
+def predicted_deg(s, rests, bottom, d):
+    """Where the line through a side's last two rests puts the rest at
+    duty `d`, degrees from the bottom; None before two rests exist."""
+    if len(rests) < 2:
+        return None
+    (d0, r0), (d1, r1) = sorted(rests.items())[-2:]
+    a0, a1 = abs(deg_from(s, r0, bottom)), abs(deg_from(s, r1, bottom))
+    return a1 + (a1 - a0) * (d - d1) / (d1 - d0)
+
+
 def ladder(s, out):
     s.rail(LEVEL)
     bottom = bottom_of(s)
     duties = [d for d in LADDER if d <= cap_pct(s)]
     s.check(LEVEL, [str(d) for d in duties], seat="lock")
     rests = {1: {}, -1: {}}
+    open_sides = [1, -1]
     k = 0
     with osc.Limit(limit_counts(s)):
-        for sign in (1, -1):
-            for d in duties:
+        for d in duties:
+            for sign in list(open_sides):
+                ahead = predicted_deg(s, rests[sign], bottom, d)
+                if ahead is not None and ahead >= LADDER_REFUSE_DEG:
+                    s.note("skip", f"{sign * d:+} %: the last rests predict "
+                                   f"{ahead:.0f} deg, past horizontal")
+                    open_sides.remove(sign)
+                    continue
                 rest = trial(s, out, k, bottom, sign, d, "below")
                 rests[sign][d] = rest
                 k += 1
                 if abs(deg_from(s, rest, bottom)) >= LADDER_TOP_DEG:
-                    break
+                    open_sides.remove(sign)
+            if not open_sides:
+                break
+        for sign in (1, -1):
             for want in ABOVE_AT_DEG:
                 d = nearest(rests[sign], s, bottom, want)
                 if d + ABOVE_OVER > cap_pct(s):
@@ -266,7 +298,7 @@ def steps(s, out):
             dirs, guards = side(s, bottom, sign)
             for want in STEP_AT_DEG:
                 d = nearest(rests[sign], s, bottom, want)
-                for step in (STEP, -STEP):
+                for step in [x * sg for x in STEPS for sg in (1, -1)]:
                     if d + step <= 0 or d + step > cap_pct(s):
                         s.note("skip", f"{d} % stepped {step:+} % is out of range")
                         continue
@@ -305,17 +337,17 @@ def push(s, out):
 
 PLANS = [
     Plan("bottom", "load", "servo-load",
-         "a short lift and a drop each way, three times: the bottom and the static friction",
+         "a lift past the static band and a drop each way, three times: the bottom and the swing",
          run=bottom, order=0, minutes=2, mb=10),
     Plan("ladder", "load", "servo-load",
-         "a duty held 3 s from the bottom, stepped up to the rating, each side; three from above",
-         run=ladder, order=10, minutes=22, mb=40),
+         "a duty held 3 s from the bottom, stepped up to 60 deg, sides alternated; three from above by a stair",
+         run=ladder, order=10, minutes=20, mb=40),
     Plan("lift", "load", "servo-load",
          "20 to 40 % from the bottom then a 3 s coast, twice each side",
          run=lift, order=20, minutes=8, mb=60),
     Plan("steps", "load", "servo-load",
-         "5 % up and down from a ladder duty at three angles, each side",
-         run=steps, order=30, minutes=6, mb=10),
+         "10, 15 and 20 % up and down from a ladder duty at two angles, each side",
+         run=steps, order=30, minutes=12, mb=20),
     Plan("push", "load", "servo-load",
          "the pot under a side load by hand with no torque, servo free, 36 s",
          run=push, order=40, optional=True, minutes=2, mb=40),
