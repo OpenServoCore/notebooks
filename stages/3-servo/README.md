@@ -361,14 +361,16 @@ known, inside the rated voltage:
 1. Laps at the stops: seek the low stop and chain 1.2, 1.8 and 1.2 V
    effective, 300 ms each, twice, then the high stop the same, the sides
    alternated so the seat's walk cancels. This gives R0 at T0, V0 and a seat
-   check, in about a minute with the rests.
+   check, about 3 minutes as the runner paces it with its 20 s rests.
 2. Bursts at a held seat, 25 and 40 % both signs, three each. This gives L
-   and the window model, about 30 s.
+   and the window model, about 12 s.
 3. Coast rungs: kick then hold at five duties from the floor plus 1 % to the
    rated cap, both directions, each ending in a natural coast. This gives Ke
    from the tach against the EMF at the cut, the brush table per direction
    and its dropout coefficient, the floor and the breakaway, and the dropout
-   reference, in about 3 minutes and 1500 motor revolutions.
+   reference, about 18 minutes with the runner's rests and about 1800 motor
+   revolutions; with 5 s rests the whole pass fits in about 4 minutes, a
+   bound the identification notebook sets and a timed run has to confirm.
 
 The current zero is identified by none of it, a live tracker learns it.
 The whole pass repeats at the open and the close of the `servo` sitting for

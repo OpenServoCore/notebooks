@@ -1,0 +1,2859 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D",
+  "notes": "stage 3 identification of mg90-d on dev-v006-2A-D, no capture of its own: the README's one-pass identification cut from the committed stage 3 datasets and reduced the way a user's tool would, on 5 V, with no meter, camera, lock or second rail. Step 1: resistance/stop-1 chains 0-3 (24, 36, 24 % x 300 ms into the stops), each step's mean from 2 ms into the held duty, the two 24 % steps' mean against the 36 % step as a two-point line per chain, mean and se over the chains; constructions A as read, B with stage 1's edge lags at 5 V and the brake loop, C adds g (1 - D) V_on off the current with the type's spinning g or the resistance result's meter_g_ms. Step 2: inductance/stop-6 g1-g4 bursts 1-3, oscnb.bursts.period_table with stage 1's lags and no edge fold, the inductance notebook's period fit over the window scale k, mean and se over bursts. Step 3: ladder/low-1 (5 V 8 %), ladder/capture-1 (5 V 15, 30, 60 %), run-up/runup-open-1 (100 %); Ke by bemf-coast's 10 ms window on the coast with the ladder's gate (decel <= 0.35, >= 4 cycles); X = V - Ke w - R i under C with the pass's own R and Ke, rung means interpolated to the knots. Floor from the 5 V holds, turning when the pot slope over the last 400 ms and the coast's early EMF both read over 1 rev/s; value the logistic midpoint clipped to the bracket, bounds never and always turned. Pot speeds nominal (the registry's counts/deg) or through the pot-table's counts-to-degrees map over the window's span, never its local_scale column. Cost from the runner's timestamps; revs by the pot through the map, coasts by the EMF over the ladder's Ke. Repeatability over the ref and run-up brackets of sittings 1, 6 and 7. Grades: gap_sigma the pass less the long-form over the two se in quadrature (half the bracket where the long-form carries a range); under 2 sigma reproduces. The *_long, *_used and *_quoted keys are the named results' own entries, quoted. k_d is not identified by the pass; the dropout reference is the last 20 ms of the 100 % run-ups.",
+  "pass_steps": {
+    "0 rest": {
+      "datasets": "every sweep's torque-off baseline and the manifest probe before it"
+    },
+    "1 chains": {
+      "datasets": "telemetry/mg90-d__dev-v006-2A-D/resistance/stop-1",
+      "used": "chains 0-3"
+    },
+    "2 bursts": {
+      "datasets": "telemetry/mg90-d__dev-v006-2A-D/inductance/stop-6",
+      "used": "g1-g4, bursts 1-3"
+    },
+    "3 rungs": {
+      "datasets": "ladder/capture-1, ladder/low-1, run-up/runup-open-1",
+      "used": "5 V, three cycles a rung, both ways"
+    }
+  },
+  "pass_rungs_5v": [
+    8,
+    15,
+    30,
+    60,
+    100
+  ],
+  "pass_chains": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "pass_bursts": {
+    "groups": [
+      "g1-fwd-25",
+      "g2-fwd-40",
+      "g3-rev-40",
+      "g4-rev-25"
+    ],
+    "bursts": [
+      1,
+      2,
+      3
+    ]
+  },
+  "r0_ohm": {
+    "A": {
+      "value": 4.3838781755806995,
+      "lo": 4.377887766991169,
+      "hi": 4.38986858417023,
+      "unit": "ohm, se, 4 chains"
+    },
+    "B": {
+      "value": 4.271141887463784,
+      "lo": 4.265000030645543,
+      "hi": 4.277283744282026,
+      "unit": "ohm, se, 4 chains"
+    },
+    "C_type_g": {
+      "value": 4.192880313108973,
+      "lo": 4.186954475738382,
+      "hi": 4.198806150479564,
+      "unit": "ohm, se, 4 chains"
+    },
+    "C_meter_g": {
+      "value": 4.161007154942822,
+      "lo": 4.15516806889842,
+      "hi": 4.166846240987224,
+      "unit": "ohm, se, 4 chains"
+    }
+  },
+  "v0_v": {
+    "A": {
+      "value": 0.010703930295129616,
+      "lo": 0.008645902267685773,
+      "hi": 0.012761958322573458,
+      "unit": "V, se, 4 chains"
+    },
+    "B": {
+      "value": -0.07003202818808352,
+      "lo": -0.07215577854637041,
+      "hi": -0.06790827782979662,
+      "unit": "V, se, 4 chains"
+    },
+    "C_type_g": {
+      "value": 0.004065343498125429,
+      "lo": 0.002084174226163529,
+      "hi": 0.0060465127700873285,
+      "unit": "V, se, 4 chains"
+    },
+    "C_meter_g": {
+      "value": 0.034221972444637816,
+      "lo": 0.03229784124938986,
+      "hi": 0.036146103639885775,
+      "unit": "V, se, 4 chains"
+    }
+  },
+  "r0_by_stop_ohm": {
+    "low": {
+      "value": 4.154574954214887,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "high": {
+      "value": 4.167439355670757,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    }
+  },
+  "r0_by_chain_ohm": {
+    "0": {
+      "value": 4.144267887833124,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "1": {
+      "value": 4.171387459670983,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "2": {
+      "value": 4.16488202059665,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "3": {
+      "value": 4.163491251670529,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "4": {
+      "value": 4.1341792725503925,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    "5": {
+      "value": 4.1508315456667,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    }
+  },
+  "r0_dr_per_ms_g_mohm": {
+    "value": -23.20715768108059,
+    "lo": null,
+    "hi": null,
+    "unit": "mohm per mS"
+  },
+  "r0_brake_form_alt_ohm": {
+    "value": 4.194868102797311,
+    "lo": 4.182804754935317,
+    "hi": 4.2069314506593045,
+    "unit": "ohm"
+  },
+  "v0_brake_form_alt_v": {
+    "value": 0.030700657388908047,
+    "lo": 0.02719784993677029,
+    "hi": 0.034203464841045805,
+    "unit": "V"
+  },
+  "vi_at_lock_current_ohm": {
+    "value": 4.205645893243082,
+    "lo": 4.19980680719868,
+    "hi": 4.2114849792874836,
+    "unit": "ohm"
+  },
+  "t0_c": {
+    "value": 26.018256860601685,
+    "lo": 25.94816472696226,
+    "hi": 26.05884641163891,
+    "unit": "C, the board NTC"
+  },
+  "chain_warming_step3_over_step1_pct": {
+    "value": 0.5054118886204181,
+    "lo": 0.3547909800012614,
+    "hi": 0.6560327972395747,
+    "unit": "%"
+  },
+  "chain_order_trend_mohm_per_chain": {
+    "value": -2.2913440320004868,
+    "lo": -5.901504632744465,
+    "hi": 1.3188165687434916,
+    "unit": "mohm per chain"
+  },
+  "stop_quiet_gate": {
+    "i_sd_counts": {
+      "value": 1.2775819793654102,
+      "lo": 1.036468028202017,
+      "hi": 1.5186959305288035,
+      "unit": "counts"
+    },
+    "pos_range_counts": {
+      "value": 11.5,
+      "lo": 3.0,
+      "hi": 20.0,
+      "unit": "counts"
+    },
+    "steps_passing": {
+      "value": 9.0,
+      "lo": null,
+      "hi": null,
+      "unit": "of 18"
+    }
+  },
+  "r0_c_gap_pct": {
+    "value": -0.37257671072525866,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r0_c_gap_sigma": {
+    "value": -1.8385968243627793,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "vi_lock_gap_pct": {
+    "value": -0.3134634054007823,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "vi_lock_gap_sigma": {
+    "value": -1.8237567141408157,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "l_mh": {
+    "value": 0.8432098275787515,
+    "lo": 0.8329947301783042,
+    "hi": 0.8534249249791989,
+    "unit": "mH, se, 12 bursts"
+  },
+  "l_mh_sd": {
+    "value": 0.03538613540367903,
+    "lo": null,
+    "hi": null,
+    "unit": "mH"
+  },
+  "l_mh_by_duty": {
+    "25 %": {
+      "value": 0.812300160521309,
+      "lo": 0.8041097244706124,
+      "hi": 0.8204905965720057,
+      "unit": "mH, se"
+    },
+    "40 %": {
+      "value": 0.8741194946361941,
+      "lo": 0.8709753101916329,
+      "hi": 0.8772636790807553,
+      "unit": "mH, se"
+    }
+  },
+  "tau_us": {
+    "value": 199.01564205982038,
+    "lo": 197.4945510360511,
+    "hi": 200.53673308358967,
+    "unit": "us, se"
+  },
+  "r_burst_ohm": {
+    "value": 4.23559670238265,
+    "lo": 4.211275561292926,
+    "hi": 4.259917843472374,
+    "unit": "ohm, se"
+  },
+  "l_ripple_mh": {
+    "value": 0.621735550695041,
+    "lo": 0.6131251546813064,
+    "hi": 0.6303459467087758,
+    "unit": "mH, se"
+  },
+  "l_first_jump_pct_by_group": {
+    "g1-fwd-25": {
+      "value": 10.208034274299415,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g2-fwd-40": {
+      "value": 2.911774757870167,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g3-rev-40": {
+      "value": -0.1124140043402555,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g4-rev-25": {
+      "value": 1.287832513124143,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g5-rev-25-rested": {
+      "value": -0.1783436378107628,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "l_fold_sensitivity_pct": {
+    "l": {
+      "value": -0.40707883632766784,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "r": {
+      "value": -0.44901956433032186,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "tau": {
+      "value": 0.04032526514159418,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "l_by_seat_pass_design_mh": {
+    "stop": {
+      "value": 0.8432098275787515,
+      "lo": 0.8329947301783042,
+      "hi": 0.8534249249791989,
+      "unit": "mH, se"
+    },
+    "lock": {
+      "value": 0.8398514827295376,
+      "lo": 0.8280103252260476,
+      "hi": 0.8516926402330276,
+      "unit": "mH, se"
+    },
+    "wound": {
+      "value": 0.8369431327181415,
+      "lo": 0.8264737709050785,
+      "hi": 0.8474124945312045,
+      "unit": "mH, se"
+    }
+  },
+  "l_gap_pct": {
+    "value": 2.8607766951289415,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "l_gap_sigma": {
+    "value": 0.49480182982914966,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "l_by_duty_gap_pct": {
+    "25 % vs stop": {
+      "value": -0.0821803501632079,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "25 % vs lock": {
+      "value": 2.1505728092800824,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "40 % vs stop": {
+      "value": -0.584308215219298,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "40 % vs lock": {
+      "value": 0.5335526650012135,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "tau_gap_pct": {
+    "value": 0.2573850550387835,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "tau_gap_sigma": {
+    "value": 0.05398947324578415,
+    "lo": null,
+    "hi": null,
+    "unit": "sigma"
+  },
+  "ke_mv_per_rev_s": {
+    "value": 7.263074687479058,
+    "lo": 7.257063134413416,
+    "hi": 7.2690862405447,
+    "unit": "mV per rev/s, se"
+  },
+  "ke_sd_mv_per_rev_s": {
+    "value": 0.02550485962906824,
+    "lo": null,
+    "hi": null,
+    "unit": "mV per rev/s"
+  },
+  "ke_coasts_n": {
+    "value": 18.0,
+    "lo": null,
+    "hi": null,
+    "unit": "coasts"
+  },
+  "ke_v_s_per_rad": {
+    "value": 0.001155954238557915,
+    "lo": 0.001154997470171859,
+    "hi": 0.001156911006943971,
+    "unit": "V s/rad, se"
+  },
+  "ke_by_rung": {
+    "30 %": {
+      "value": 7.236319469206303,
+      "lo": 7.219404342954543,
+      "hi": 7.253234595458063,
+      "unit": "mV per rev/s, sd, 115 rev/s"
+    },
+    "60 %": {
+      "value": 7.286138906743761,
+      "lo": 7.275111313961938,
+      "hi": 7.297166499525584,
+      "unit": "mV per rev/s, sd, 287 rev/s"
+    },
+    "100 %": {
+      "value": 7.266765686487112,
+      "lo": 7.249728803710282,
+      "hi": 7.283802569263942,
+      "unit": "mV per rev/s, sd, 465 rev/s"
+    }
+  },
+  "ke_by_direction": {
+    "-1": {
+      "value": 7.262596250214912,
+      "lo": null,
+      "hi": null,
+      "unit": "mV per rev/s"
+    },
+    "+1": {
+      "value": 7.263553124743205,
+      "lo": null,
+      "hi": null,
+      "unit": "mV per rev/s"
+    }
+  },
+  "ke_alternatives": {
+    "alt_five": {
+      "value": 7.272587466203898,
+      "lo": null,
+      "hi": null,
+      "unit": "mV per rev/s"
+    },
+    "capture_only": {
+      "value": 7.261229187975032,
+      "lo": null,
+      "hi": null,
+      "unit": "mV per rev/s"
+    },
+    "runup_only": {
+      "value": 7.266765686487112,
+      "lo": null,
+      "hi": null,
+      "unit": "mV per rev/s"
+    }
+  },
+  "ke_fewer_coasts_rms_pct": {
+    "2": {
+      "value": 0.22798375792679645,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "4": {
+      "value": 0.1498150623296648,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "6": {
+      "value": 0.11605694878139107,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "12": {
+      "value": 0.05935999585346789,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "ke_speed_trend_pct_per_100_rev_s": {
+    "value": 0.11948918187188712,
+    "lo": 0.06792153947269597,
+    "hi": 0.17105682427107824,
+    "unit": "% per 100 rev/s"
+  },
+  "ke_gate_pass_by_rung": {
+    "15 %": "0/6",
+    "30 %": "6/6",
+    "60 %": "6/6",
+    "100 %": "6/6"
+  },
+  "ke_gap_pct": {
+    "pooled": {
+      "value": -0.27133255276401425,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "5 V block": {
+      "value": 0.052176780990209615,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "ke_gap_sigma": {
+    "pooled": {
+      "value": -2.654452197968475,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "5 V block": {
+      "value": 0.4324498010085021,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    }
+  },
+  "ke_systematic_carried_pct": {
+    "value": 0.5,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "brush_table_mv": {
+    "+1": {
+      "150 rev/s": {
+        "value": 38.68678692931318,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 56.18083261226691,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": 73.67487829522065,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 91.24786291210854,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 163.4681704963747,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 235.68847808064092,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "-1": {
+      "150 rev/s": {
+        "value": 29.065765679362137,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 42.26768459269425,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": 55.46960350602637,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 68.67152241935848,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 125.85299714096736,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 196.5968009080759,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "450 rev/s": {
+        "value": 267.3406046751844,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    }
+  },
+  "brush_table_rung_sd_mv": {
+    "+1": {
+      "150 rev/s": {
+        "value": 2.3497924142834994,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 2.7457739051174688,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": 3.1417553959514386,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 3.5685572667877037,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 25.33148791493744,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 47.094418563087174,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "-1": {
+      "150 rev/s": {
+        "value": 2.800297065969168,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 3.162853362184357,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": 3.5254096583995462,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 3.8879659546147356,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 11.93710940813554,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 22.356627512977205,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "450 rev/s": {
+        "value": 32.77614561781887,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    }
+  },
+  "brush_table_settled_to_rev_s": {
+    "value": 140.13629610727625,
+    "lo": 136.32383607589364,
+    "hi": 140.13629610727625,
+    "unit": "rev/s"
+  },
+  "brush_table_gap_mv_vs_ladder_b": {
+    "+1": {
+      "150 rev/s": {
+        "value": -4.870625986323638,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 1.6111153667515907,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": 5.140861374111353,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 3.6758344221724855,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 55.13130001623884,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 94.13516626881662,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "-1": {
+      "150 rev/s": {
+        "value": -7.38012530802542,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 0.9964269116818798,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": -0.6396676812327797,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 13.426912108741995,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 42.35203580485829,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 87.77487440877385,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "450 rev/s": {
+        "value": 87.63574978806321,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    }
+  },
+  "brush_table_gap_sigma": {
+    "V_b +1 at 150 rev/s (pass C, g 4.75)": {
+      "value": -1.4656837951377182,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "V_b +1 at 200 rev/s (pass C, g 4.75)": {
+      "value": 0.41490328063088033,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "V_b +1 at 300 rev/s (pass C, g 4.75)": {
+      "value": 0.7283636641137102,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "V_b -1 at 150 rev/s (pass C, g 4.75)": {
+      "value": -1.863565374806092,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "V_b -1 at 200 rev/s (pass C, g 4.75)": {
+      "value": 0.22276727547066016,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "V_b -1 at 300 rev/s (pass C, g 4.75)": {
+      "value": 2.441960838473451,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    }
+  },
+  "brush_direction_term_mv_by_rung": {
+    "30 %": {
+      "value": 7.440388900370575,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "60 %": {
+      "value": 19.36054256508008,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "100 %": {
+      "value": 20.775896368555152,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    }
+  },
+  "brush_table_settled_equiv_alt_mv": {
+    "+1": {
+      "150 rev/s": {
+        "value": 42.53113927102416,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 82.68169621694202,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": 122.83225316285987,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 163.1381087277531,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 310.9530648667042,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 458.7680210056554,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    },
+    "-1": {
+      "150 rev/s": {
+        "value": 34.0217837385736,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "200 rev/s": {
+        "value": 68.82869310852065,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "250 rev/s": {
+        "value": 103.6356024784677,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "300 rev/s": {
+        "value": 138.44251184841477,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "350 rev/s": {
+        "value": 216.12393102573964,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "400 rev/s": {
+        "value": 307.02690733308737,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "450 rev/s": {
+        "value": 397.9298836404351,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      }
+    }
+  },
+  "brush_g_shift_at_60pct_mv": {
+    "value": 11.576114925893648,
+    "lo": null,
+    "hi": null,
+    "unit": "mV, ladder g over meter"
+  },
+  "k_d_identifiable": false,
+  "k_d_fit_candidate": {
+    "value": 1.9354228121225538,
+    "lo": 1.626688307603777,
+    "hi": 2.2441573166413304,
+    "unit": "mV per dropout/s, se, dof 19, the run-ups' lever"
+  },
+  "dropout_reference_last20_per_s": {
+    "runup-close-1": {
+      "+1": {
+        "value": 116.66666666666667,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 16.666666666666668,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-close-6": {
+      "+1": {
+        "value": 250.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-close-7": {
+      "+1": {
+        "value": 200.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 16.666666666666668,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-open-1": {
+      "+1": {
+        "value": 33.333333333333336,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 16.666666666666668,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-open-6": {
+      "+1": {
+        "value": 166.66666666666669,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-open-7": {
+      "+1": {
+        "value": 166.66666666666669,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 33.333333333333336,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    }
+  },
+  "dropout_reference_window_per_s": {
+    "runup-close-1": {
+      "+1": {
+        "value": 103.09278350515466,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 12.886597938144332,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-close-6": {
+      "+1": {
+        "value": 193.29896907216497,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-close-7": {
+      "+1": {
+        "value": 167.31016731016732,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 12.911555842479018,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-open-1": {
+      "+1": {
+        "value": 25.78981302385558,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 12.886597938144332,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-open-6": {
+      "+1": {
+        "value": 154.73887814313346,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    },
+    "runup-open-7": {
+      "+1": {
+        "value": 154.53960077269798,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      },
+      "-1": {
+        "value": 25.823111684958036,
+        "lo": null,
+        "hi": null,
+        "unit": "rows per s"
+      }
+    }
+  },
+  "dropout_rows_reference_rung": {
+    "value": 0.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rows in 36 spins"
+  },
+  "floor_v_effective": {
+    "value": 0.3500449218750026,
+    "lo": 0.29984580612468914,
+    "hi": 0.39882485614141777,
+    "unit": "V effective, never to always turned"
+  },
+  "floor_logistic_mid_v": {
+    "value": 0.3500449218750026,
+    "lo": 0.3500449218750026,
+    "hi": 0.3500449218750026,
+    "unit": "V, bootstrap 68 %"
+  },
+  "floor_levels": {
+    "12 %": {
+      "turned": {
+        "value": 6.0,
+        "lo": null,
+        "hi": null,
+        "unit": "of 6"
+      },
+      "v_eff": {
+        "value": 0.5987220602245439,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "window_valid": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "share"
+      }
+    },
+    "10 %": {
+      "turned": {
+        "value": 6.0,
+        "lo": null,
+        "hi": null,
+        "unit": "of 6"
+      },
+      "v_eff": {
+        "value": 0.4981270901664245,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "window_valid": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "share"
+      }
+    },
+    "8 %": {
+      "turned": {
+        "value": 6.0,
+        "lo": null,
+        "hi": null,
+        "unit": "of 6"
+      },
+      "v_eff": {
+        "value": 0.39882485614141777,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "window_valid": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "share"
+      }
+    },
+    "6 %": {
+      "turned": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "of 6"
+      },
+      "v_eff": {
+        "value": 0.29984580612468914,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "window_valid": {
+        "value": 1.0,
+        "lo": null,
+        "hi": null,
+        "unit": "share"
+      }
+    },
+    "5 %": {
+      "turned": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "of 6"
+      },
+      "v_eff": {
+        "value": 0.24940019509183534,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "window_valid": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "share"
+      }
+    },
+    "4 %": {
+      "turned": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "of 6"
+      },
+      "v_eff": {
+        "value": 0.19957402007484795,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "window_valid": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "share"
+      }
+    }
+  },
+  "floor_speed_rev_s": {
+    "ripple": {
+      "value": 20.355837770901626,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "pot_nominal": {
+      "value": 19.964194635020608,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "pot_table": {
+      "value": 20.627419678321537,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "crawl_10pct_rev_s": {
+    "ripple": {
+      "value": 31.65884851215711,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "pot_nominal": {
+      "value": 30.241988799430118,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "pot_table": {
+      "value": 32.12798228368016,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "crawl_10pct_ma": {
+    "value": 63.760839204512074,
+    "lo": 61.7226768715251,
+    "hi": 65.79900153749905,
+    "unit": "mA"
+  },
+  "crawl_speed_line_rev_s_per_v": {
+    "nominal": {
+      "value": 104.86284452069837,
+      "lo": 99.2502778233539,
+      "hi": 110.47541121804285,
+      "unit": "rev/s per V"
+    },
+    "table": {
+      "value": 112.36299516504512,
+      "lo": 105.37332629245172,
+      "hi": 119.35266403763852,
+      "unit": "rev/s per V"
+    }
+  },
+  "breakaway_v_eff_bounds": {
+    "value": null,
+    "lo": 0.29984580612468914,
+    "hi": 1.4615892164977573,
+    "unit": "V effective, a bound"
+  },
+  "kick_break_ms": {
+    "value": 9.336111111111112,
+    "lo": 7.728426847080871,
+    "hi": 10.943795375141352,
+    "unit": "ms"
+  },
+  "kick_i_peak_a": {
+    "value": 0.31663406473591554,
+    "lo": 0.2995948341659444,
+    "hi": 0.3336732953058867,
+    "unit": "A"
+  },
+  "cost_by_step": {
+    "0 rest": {
+      "drive_s": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "wall_s_as_run": {
+        "value": 2.0,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "motor revs"
+      },
+      "joules": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "J"
+      }
+    },
+    "1 chains x4": {
+      "drive_s": {
+        "value": 3.5999999999999996,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "wall_s_as_run": {
+        "value": 172.01799988746643,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "motor revs"
+      },
+      "joules": {
+        "value": 1.4901563952317896,
+        "lo": null,
+        "hi": null,
+        "unit": "J"
+      }
+    },
+    "2 bursts x12": {
+      "drive_s": {
+        "value": 0.3054,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "wall_s_as_run": {
+        "value": 11.782000064849854,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "revs": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "motor revs"
+      },
+      "joules": {
+        "value": 0.084019495971358,
+        "lo": null,
+        "hi": null,
+        "unit": "J"
+      }
+    },
+    "3 rungs x5x6": {
+      "drive_s": {
+        "value": 20.118000000000002,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "wall_s_as_run": {
+        "value": 1098.0399997234344,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "revs": {
+        "value": 1824.477679006974,
+        "lo": null,
+        "hi": null,
+        "unit": "motor revs"
+      },
+      "joules": {
+        "value": 1.010409770012978,
+        "lo": null,
+        "hi": null,
+        "unit": "J"
+      }
+    },
+    "brackets": {
+      "drive_s": {
+        "value": 7.788,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "wall_s_as_run": {
+        "value": 1559.9079999923706,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "revs": {
+        "value": 1685.730652102224,
+        "lo": null,
+        "hi": null,
+        "unit": "motor revs"
+      },
+      "joules": {
+        "value": 0.5215601259155037,
+        "lo": null,
+        "hi": null,
+        "unit": "J"
+      }
+    }
+  },
+  "revs_by_rung": {
+    "8.0 %": {
+      "value": 42.797313504138316,
+      "lo": null,
+      "hi": null,
+      "unit": "motor revs a spin + coast"
+    },
+    "15.0 %": {
+      "value": 63.00487723534815,
+      "lo": null,
+      "hi": null,
+      "unit": "motor revs a spin + coast"
+    },
+    "30.0 %": {
+      "value": 84.53067692251297,
+      "lo": null,
+      "hi": null,
+      "unit": "motor revs a spin + coast"
+    },
+    "60.0 %": {
+      "value": 59.140216870700186,
+      "lo": null,
+      "hi": null,
+      "unit": "motor revs a spin + coast"
+    },
+    "100.0 %": {
+      "value": 54.60652863512939,
+      "lo": null,
+      "hi": null,
+      "unit": "motor revs a spin + coast"
+    }
+  },
+  "pass_total_drive_s": {
+    "value": 24.023400000000002,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "pass_total_wall_min": {
+    "value": 21.39733332792918,
+    "lo": null,
+    "hi": null,
+    "unit": "min, as run"
+  },
+  "pass_total_revs": {
+    "value": 1824.477679006974,
+    "lo": null,
+    "hi": null,
+    "unit": "motor revs"
+  },
+  "pass_quick_wall_min": {
+    "value": 3.8465166656176253,
+    "lo": null,
+    "hi": null,
+    "unit": "min, 5 s rests"
+  },
+  "heating": {
+    "chain_trend_mohm": {
+      "value": -2.2913440320004868,
+      "lo": -5.901504632744465,
+      "hi": 1.3188165687434916,
+      "unit": "mohm per chain"
+    },
+    "step3_over_step1_pct": {
+      "value": 0.5054118886204181,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "ntc_open_c": {
+      "value": 26.007215039849296,
+      "lo": null,
+      "hi": null,
+      "unit": "C"
+    },
+    "ntc_close_c": {
+      "value": 25.10994436614908,
+      "lo": null,
+      "hi": null,
+      "unit": "C"
+    },
+    "joules_bound_pct": {
+      "value": 5.00945600930649,
+      "lo": null,
+      "hi": null,
+      "unit": "% of R, no cooling"
+    }
+  },
+  "open_close_sitting1": {
+    "ref": {
+      "+1": {
+        "speed_pct": {
+          "value": 1.188656209840988,
+          "lo": 0.6260083162016133,
+          "hi": 1.7513041034803627,
+          "unit": "%"
+        },
+        "i_ma": {
+          "value": -6.0688709233218106,
+          "lo": -7.208677294469433,
+          "hi": -4.9290645521741885,
+          "unit": "mA"
+        },
+        "ke_pct": {
+          "value": 0.5496039262866903,
+          "lo": 0.10149440917298369,
+          "hi": 0.9977134434003969,
+          "unit": "%"
+        }
+      },
+      "-1": {
+        "speed_pct": {
+          "value": 1.1032610463887593,
+          "lo": 0.7140276857252441,
+          "hi": 1.4924944070522745,
+          "unit": "%"
+        },
+        "i_ma": {
+          "value": -4.709048540147052,
+          "lo": -5.865834909839107,
+          "hi": -3.5522621704549966,
+          "unit": "mA"
+        },
+        "ke_pct": {
+          "value": 0.2626635834229951,
+          "lo": -0.28848320369446045,
+          "hi": 0.8138103705404507,
+          "unit": "%"
+        }
+      }
+    },
+    "runup": {
+      "+1": {
+        "speed_pct": {
+          "value": 0.8212991453229845,
+          "lo": -0.6206039394079756,
+          "hi": 2.2632022300539445,
+          "unit": "%"
+        },
+        "i_ma": {
+          "value": -19.880202826189418,
+          "lo": -22.551302635971748,
+          "hi": -17.209103016407088,
+          "unit": "mA"
+        },
+        "ke_pct": {
+          "value": 0.11361203139916842,
+          "lo": -0.09194860829481216,
+          "hi": 0.319172671093149,
+          "unit": "%"
+        }
+      },
+      "-1": {
+        "speed_pct": {
+          "value": 0.4286506916234112,
+          "lo": -0.4959947176944819,
+          "hi": 1.3532961009413043,
+          "unit": "%"
+        },
+        "i_ma": {
+          "value": -3.9063031618977675,
+          "lo": -6.035320634383641,
+          "hi": -1.7772856894118938,
+          "unit": "mA"
+        },
+        "ke_pct": {
+          "value": 0.2856771689936366,
+          "lo": 0.09653604189316556,
+          "hi": 0.47481829609410764,
+          "unit": "%"
+        }
+      }
+    }
+  },
+  "stop_pairs_r_ohm": [
+    {
+      "value": 4.157827673752053,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    {
+      "value": 4.164186636133589,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    },
+    {
+      "value": 4.142505409108546,
+      "lo": null,
+      "hi": null,
+      "unit": "ohm"
+    }
+  ],
+  "stop_pairs_spread_pct": {
+    "value": 0.5233843986629516,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "across_sittings": {
+    "ref 1": {
+      "speed": {
+        "value": 139.36802717171113,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "i_ma": {
+        "value": 100.44576257091573,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "ke": {
+        "value": 7.24270422842588,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "dropouts_plus": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows"
+      }
+    },
+    "ref 6": {
+      "speed": {
+        "value": 141.70406666856968,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "i_ma": {
+        "value": 97.3138746513297,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "ke": {
+        "value": 7.250518000747715,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "dropouts_plus": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows"
+      }
+    },
+    "ref 7": {
+      "speed": {
+        "value": 143.05425142075106,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "i_ma": {
+        "value": 95.38496942748824,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "ke": {
+        "value": 7.251090587627329,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "dropouts_plus": {
+        "value": 0.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows"
+      }
+    },
+    "runup 1": {
+      "speed": {
+        "value": 449.3996860083423,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "i_ma": {
+        "value": 288.2963953393868,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "ke": {
+        "value": 7.2740221152361215,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "dropouts_plus": {
+        "value": 10.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows"
+      }
+    },
+    "runup 6": {
+      "speed": {
+        "value": 453.5962753397964,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "i_ma": {
+        "value": 280.2239738875292,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "ke": {
+        "value": 7.268480094426413,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "dropouts_plus": {
+        "value": 27.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows"
+      }
+    },
+    "runup 7": {
+      "speed": {
+        "value": 454.7435773723824,
+        "lo": null,
+        "hi": null,
+        "unit": "rev/s"
+      },
+      "i_ma": {
+        "value": 276.9768416767618,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "ke": {
+        "value": 7.257516302029804,
+        "lo": null,
+        "hi": null,
+        "unit": "mV per rev/s"
+      },
+      "dropouts_plus": {
+        "value": 25.0,
+        "lo": null,
+        "hi": null,
+        "unit": "rows"
+      }
+    }
+  },
+  "ke_sitting_spread_pct": {
+    "value": 0.1635026384833225,
+    "lo": null,
+    "hi": null,
+    "unit": "% sd, six blocks"
+  },
+  "l_seat_spread_pct": {
+    "value": 0.7487599354878194,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "vi_as_read_by_rail": {
+    "3.7 V": {
+      "low": {
+        "value": 4.426536488129512,
+        "lo": 4.4017026210635,
+        "hi": 4.451370355195524,
+        "unit": "ohm"
+      },
+      "high": {
+        "value": 4.399482702186813,
+        "lo": 4.3721440153184785,
+        "hi": 4.426821389055147,
+        "unit": "ohm"
+      }
+    },
+    "5.0 V": {
+      "low": {
+        "value": 4.420404297460479,
+        "lo": 4.408929590793805,
+        "hi": 4.431879004127153,
+        "unit": "ohm"
+      },
+      "high": {
+        "value": 4.406488004226763,
+        "lo": 4.397151882717132,
+        "hi": 4.415824125736394,
+        "unit": "ohm"
+      }
+    },
+    "7.4 V": {
+      "low": {
+        "value": 4.348524481495033,
+        "lo": 4.308257785534029,
+        "hi": 4.388791177456036,
+        "unit": "ohm"
+      },
+      "high": {
+        "value": 4.376400251105804,
+        "lo": 4.347607649197711,
+        "hi": 4.405192853013897,
+        "unit": "ohm"
+      }
+    }
+  },
+  "tach_over_pot_nominal": {
+    "value": 1.0508728658429023,
+    "lo": 1.0183575971563836,
+    "hi": 1.083388134529421,
+    "unit": "ratio"
+  },
+  "tach_over_pot_table": {
+    "value": 0.971973826013791,
+    "lo": 0.9703083700093269,
+    "hi": 0.9736392820182551,
+    "unit": "ratio, se, 45 spins"
+  },
+  "ripple_over_pot_holds": {
+    "nominal": {
+      "value": 1.0313424794588864,
+      "lo": 0.9919955998836981,
+      "hi": 1.0706893590340747,
+      "unit": "ratio"
+    },
+    "table": {
+      "value": 0.9849386261409422,
+      "lo": 0.9527360152511319,
+      "hi": 1.0171412370307524,
+      "unit": "ratio"
+    }
+  },
+  "emf_over_pot_holds_table": {
+    "value": 1.0214717627517613,
+    "lo": 0.8570921605344405,
+    "hi": 1.185851364969082,
+    "unit": "ratio"
+  },
+  "table_over_nominal_at_holds": {
+    "value": 1.0480872330300164,
+    "lo": 0.9971393331584257,
+    "hi": 1.099035132901607,
+    "unit": "ratio"
+  },
+  "tach_over_pot_table_position_trend_per_1000": {
+    "value": 0.03351077672192807,
+    "lo": 0.024937786192319074,
+    "hi": 0.04208376725153707,
+    "unit": "per 1000 counts"
+  },
+  "pot_span_slope_counts_per_deg": {
+    "1500 counts": {
+      "value": 19.23042912520859,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/deg"
+    },
+    "1850 counts": {
+      "value": 18.21864927483491,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/deg"
+    },
+    "2050 counts": {
+      "value": 17.506138922119373,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/deg"
+    },
+    "2400 counts": {
+      "value": 17.84209574835172,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/deg"
+    }
+  },
+  "crosscheck": {
+    "tach / pot, settled spins, nominal": {
+      "value": 1.0508728658429023,
+      "lo": 1.0183575971563836,
+      "hi": 1.083388134529421,
+      "unit": "ratio, sd, this pass"
+    },
+    "tach / pot, settled spins, table": {
+      "value": 0.971973826013791,
+      "lo": 0.9608016074952404,
+      "hi": 0.9831460445323417,
+      "unit": "ratio, sd, this pass"
+    },
+    "ripple / pot, turning holds, nominal": {
+      "value": 1.0313424794588864,
+      "lo": 0.9919955998836981,
+      "hi": 1.0706893590340747,
+      "unit": "ratio, sd, this pass"
+    },
+    "ripple / pot, turning holds, table": {
+      "value": 0.9849386261409422,
+      "lo": 0.9527360152511319,
+      "hi": 1.0171412370307524,
+      "unit": "ratio, sd, this pass"
+    },
+    "EMF / pot, turning holds, table": {
+      "value": 1.0214717627517613,
+      "lo": 0.8570921605344405,
+      "hi": 1.185851364969082,
+      "unit": "ratio, sd, this pass"
+    },
+    "ladder ripple_over_pot (nominal)": {
+      "value": 1.0067109749049867,
+      "lo": 0.9154563200149382,
+      "hi": 1.0979656297950353,
+      "unit": "ratio, sd, ladder"
+    },
+    "steps pot_over_tach (nominal), as tach / pot": {
+      "value": 1.0314352559129558,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio, sd, steps"
+    },
+    "steps counts per motor turn / the table's mid travel": {
+      "value": 1.0149895100926427,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio, sd, steps + pot-table"
+    },
+    "run-up pot_over_count 15-45 ms (nominal)": {
+      "value": 1.0587633719842335,
+      "lo": 1.019958660408636,
+      "hi": 1.0975680835598312,
+      "unit": "ratio, sd, run-up"
+    },
+    "camera tag / pot speed (table)": {
+      "value": 1.0014599777520967,
+      "lo": 0.9914599777520967,
+      "hi": 1.0114599777520967,
+      "unit": "ratio, sd, pot-table"
+    },
+    "gear ratio by commutation / teeth": {
+      "value": 0.9950619813789672,
+      "lo": 0.9909728559956402,
+      "hi": 0.9991511067622941,
+      "unit": "ratio, sd, pot-table"
+    },
+    "table mid travel / nominal": {
+      "value": 0.9552047513266729,
+      "lo": 0.9508272632401642,
+      "hi": 0.9595822394131817,
+      "unit": "ratio, sd, pot-table"
+    }
+  },
+  "ladder_pot_keys_corrected": {
+    "floor_speed_at_lowest_turning_level_rev_s": {
+      "ladder": {
+        "value": 19.557535160601308,
+        "lo": null,
+        "hi": null,
+        "unit": "nominal, three rails"
+      },
+      "nominal": {
+        "value": 19.964194635020608,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "table": {
+        "value": 20.627419678321537,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "ripple": {
+        "value": 20.355837770901626,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      }
+    },
+    "crawl_speed_rev_s": {
+      "ladder": {
+        "value": 31.843149098579797,
+        "lo": null,
+        "hi": null,
+        "unit": "nominal, three rails"
+      },
+      "nominal": {
+        "value": 30.241988799430118,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "table": {
+        "value": 32.12798228368016,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "ripple": {
+        "value": 31.65884851215711,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      }
+    },
+    "crawl_speed_on_v_eff_rev_s_per_v": {
+      "ladder": {
+        "value": 99.6247850117862,
+        "lo": null,
+        "hi": null,
+        "unit": "nominal, three rails"
+      },
+      "nominal": {
+        "value": 104.86284452069837,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "table": {
+        "value": 112.36299516504512,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "ripple": {
+        "value": null,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      }
+    },
+    "kick_end_speed_rev_s +1": {
+      "ladder": {
+        "value": 130.10307691248224,
+        "lo": null,
+        "hi": null,
+        "unit": "nominal, three rails"
+      },
+      "nominal": {
+        "value": 131.10511589335513,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "table": {
+        "value": 128.95705770395324,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      },
+      "ripple": {
+        "value": null,
+        "lo": null,
+        "hi": null,
+        "unit": "5 V"
+      }
+    }
+  },
+  "gates": [
+    {
+      "step": "0 rest",
+      "gate": "the rest zero flat by tick phase",
+      "this servo": "zero sd 0.57 counts over 102 sweeps",
+      "rule on any servo": "the baseline's own sd; a tick-phase spread over 1.5x the row sd fails"
+    },
+    {
+      "step": "1 chains",
+      "gate": "window_valid and levels over the tap floor",
+      "this servo": "288 and 432 ticks against 64 and 93, window_valid 1.00",
+      "rule on any servo": "window_valid = 1 on every held row, levels at 2x the tap floor"
+    },
+    {
+      "step": "1 chains",
+      "gate": "a locked rotor is quiet",
+      "this servo": "current sd 1.04 to 1.52 counts",
+      "rule on any servo": "the hold's crest sd against the rest baseline's"
+    },
+    {
+      "step": "1 chains",
+      "gate": "the seat holds",
+      "this servo": "pot range in a step 4 (low) and 10 to 20 (high) counts",
+      "rule on any servo": "the seat's change chain to chain, the rotor by the current's sd; a pot on its rail reads nothing"
+    },
+    {
+      "step": "1 chains",
+      "gate": "the lever resolves V0",
+      "this servo": "V0 se 1.9 mV, 0.1 % of V/I is 3 mV",
+      "rule on any servo": "refuse a V0 whose se exceeds the contact scale; widen the levels within the lap cap"
+    },
+    {
+      "step": "1 chains",
+      "gate": "warming within a chain",
+      "this servo": "step 3 over step 1 +0.5 %",
+      "rule on any servo": "the 24 % steps bracket the 36 %; the rest returns the chain"
+    },
+    {
+      "step": "2 bursts",
+      "gate": "the first burst after a change is out",
+      "this servo": "g1 +10.2 %, g2 +2.9 %, g3 -0.1 %, g4 +1.3 %, g5 -0.2 %",
+      "rule on any servo": "the first over the others' median beyond their sd: drop it"
+    },
+    {
+      "step": "2 bursts",
+      "gate": "the fit's residual and the periods",
+      "this servo": "12 to 28 mV, L sd 4.2 %",
+      "rule on any servo": "L's se over >= 3 bursts a group"
+    },
+    {
+      "step": "3 coasts",
+      "gate": "the Ke gate, decel <= 0.35, >= 4 cycles",
+      "this servo": "15 % 0/6, 30 % 6/6, 60 % 6/6, 100 % 6/6",
+      "rule on any servo": "a rung whose coasts all fail is no Ke rung, and the tool says so"
+    },
+    {
+      "step": "3 coasts",
+      "gate": "a settled spin for the brush table",
+      "this servo": "30 % -1.6 to +0.6, 60 % +13.7 to +17.3, 100 % +2.2 to +10.3",
+      "rule on any servo": "above the settled speed the table is flagged as a run-up"
+    },
+    {
+      "step": "3 coasts",
+      "gate": "the dropout rate",
+      "this servo": "+1 at 100 % 33 to 117 /s",
+      "rule on any servo": "a spin over the quiet rungs' Poisson noise is marked; k_d is not read from one rail"
+    },
+    {
+      "step": "3 holds",
+      "gate": "the floor's bracket",
+      "this servo": "0.300 to 0.399 V",
+      "rule on any servo": "report the bracket, never the logistic's midpoint alone"
+    },
+    {
+      "step": "3 holds",
+      "gate": "the window floors at the low levels",
+      "this servo": "12 % 1, 10 % 1, 8 % 1, 6 % 1, 5 % 0, 4 % 0",
+      "rule on any servo": "a level under the floor gives turning or stopped only"
+    },
+    {
+      "step": "3 holds",
+      "gate": "the breakaway",
+      "this servo": "0.300 to 1.46 V",
+      "rule on any servo": "a bound until a sweep of pulses from rest"
+    }
+  ],
+  "constants": {
+    "R0 (C, carried g)": {
+      "value": 4.161007154942822,
+      "lo": 4.149328982854018,
+      "hi": 4.172685327031625,
+      "unit": "ohm",
+      "note": "2 se"
+    },
+    "R0 (B, board terms)": {
+      "value": 4.271141887463784,
+      "lo": 4.258858173827301,
+      "hi": 4.283425601100268,
+      "unit": "ohm",
+      "note": "2 se, no g"
+    },
+    "V0 (C)": {
+      "value": 0.034221972444637816,
+      "lo": 0.030373710054141898,
+      "hi": 0.038070234835133734,
+      "unit": "V",
+      "note": "2 se"
+    },
+    "T0": {
+      "value": 26.018256860601685,
+      "lo": 25.94816472696226,
+      "hi": 26.05884641163891,
+      "unit": "C",
+      "note": "the board NTC"
+    },
+    "L": {
+      "value": 0.0008432098275787516,
+      "lo": 0.000822779632777857,
+      "hi": 0.0008636400223796461,
+      "unit": "H",
+      "note": "2 se"
+    },
+    "tau": {
+      "value": 0.00019901564205982038,
+      "lo": 0.0001959734600122818,
+      "hi": 0.00020205782410735894,
+      "unit": "s",
+      "note": "2 se"
+    },
+    "Ke": {
+      "value": 0.001155954238557915,
+      "lo": 0.0011501744673651255,
+      "hi": 0.0011617340097507046,
+      "unit": "V s/rad",
+      "note": "+/- 0.5 % carried"
+    },
+    "floor": {
+      "value": 0.3500449218750026,
+      "lo": 0.29984580612468914,
+      "hi": 0.39882485614141777,
+      "unit": "V effective",
+      "note": "the bracket"
+    },
+    "slowest sustained speed": {
+      "value": 20.355837770901626,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s at the motor",
+      "note": "ripple tach"
+    },
+    "breakaway": {
+      "value": null,
+      "lo": 0.29984580612468914,
+      "hi": 1.4615892164977573,
+      "unit": "V effective",
+      "note": "a bound"
+    },
+    "dropout reference +1, last 20 ms": {
+      "value": 33.333333333333336,
+      "lo": null,
+      "hi": 116.66666666666667,
+      "unit": "rows per s",
+      "note": "open, close"
+    },
+    "J (quoted)": {
+      "value": 6.433118992563836e-09,
+      "lo": 5.860118662057509e-09,
+      "hi": 7.0746079785920765e-09,
+      "unit": "kg m2",
+      "note": ""
+    },
+    "Tc (quoted)": {
+      "value": 5.505490814661855e-05,
+      "lo": 4.277790406871405e-05,
+      "hi": 6.530512100593791e-05,
+      "unit": "N m",
+      "note": "friction firmware pair"
+    },
+    "b (quoted)": {
+      "value": 4.7363664846031925e-08,
+      "lo": 3.6958114097771096e-08,
+      "hi": 6.324216635356193e-08,
+      "unit": "N m s/rad",
+      "note": "friction firmware pair"
+    },
+    "Kt through the gears (quoted)": {
+      "value": 0.22285674414929793,
+      "lo": 0.21792486336168992,
+      "hi": 0.227703465380494,
+      "unit": "N m/A at the output",
+      "note": "load, pooled"
+    },
+    "g (quoted)": {
+      "value": 0.004745722592764938,
+      "lo": 0.004519802646749591,
+      "hi": 0.0049716425387802835,
+      "unit": "S on (1 - D) V_on",
+      "note": "the meter's"
+    }
+  },
+  "grades": {
+    "R A as read": {
+      "pass": {
+        "value": 4.3838781755806995,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "long": {
+        "value": 4.176568074897476,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "gap_pct": {
+        "value": 4.963647113265646,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 24.19423037431403,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "misses"
+    },
+    "R B board terms": {
+      "pass": {
+        "value": 4.271141887463784,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "long": {
+        "value": 4.176568074897476,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "gap_pct": {
+        "value": 2.264390544349726,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 10.901715338895524,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "misses"
+    },
+    "R C g meter": {
+      "pass": {
+        "value": 4.161007154942822,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "long": {
+        "value": 4.176568074897476,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "gap_pct": {
+        "value": -0.37257671072525866,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": -1.8385968243627793,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "V0 C g meter": {
+      "pass": {
+        "value": 0.034221972444637816,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "long": {
+        "value": 0.03130416067977669,
+        "lo": null,
+        "hi": null,
+        "unit": "V"
+      },
+      "gap_pct": {
+        "value": 9.320843304852144,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 0.9452337525950992,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "V/I at 0.767 A C g meter": {
+      "pass": {
+        "value": 4.205645893243082,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "long": {
+        "value": 4.2188705084081874,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "gap_pct": {
+        "value": -0.3134634054007823,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": -1.8237567141408157,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "L (pass, stop seat)": {
+      "pass": {
+        "value": 0.8432098275787515,
+        "lo": null,
+        "hi": null,
+        "unit": "mH"
+      },
+      "long": {
+        "value": 0.8197583711407872,
+        "lo": null,
+        "hi": null,
+        "unit": "mH"
+      },
+      "gap_pct": {
+        "value": 2.8607766951289415,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 0.49480182982914966,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "tau (pass, stop seat)": {
+      "pass": {
+        "value": 199.01564205982038,
+        "lo": null,
+        "hi": null,
+        "unit": "us"
+      },
+      "long": {
+        "value": 198.50472057551252,
+        "lo": null,
+        "hi": null,
+        "unit": "us"
+      },
+      "gap_pct": {
+        "value": 0.2573850550387835,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 0.05398947324578415,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "burst R (pass, stop seat)": {
+      "pass": {
+        "value": 4.23559670238265,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "long": {
+        "value": 4.217170021927037,
+        "lo": null,
+        "hi": null,
+        "unit": "ohm"
+      },
+      "gap_pct": {
+        "value": 0.4369442151917813,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 0.20563964254441564,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "Ke (pass, 5 V coasts)": {
+      "pass": {
+        "value": 7.263074687479058,
+        "lo": null,
+        "hi": null,
+        "unit": "mV/(rev/s)"
+      },
+      "long": {
+        "value": 7.282835390658132,
+        "lo": null,
+        "hi": null,
+        "unit": "mV/(rev/s)"
+      },
+      "gap_pct": {
+        "value": -0.27133255276401425,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": -2.654452197968475,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "2-3 sigma"
+    },
+    "Ke (pass) vs the ladder's 5 V block": {
+      "pass": {
+        "value": 7.263074687479058,
+        "lo": null,
+        "hi": null,
+        "unit": "mV/(rev/s)"
+      },
+      "long": {
+        "value": 7.2592870251864765,
+        "lo": null,
+        "hi": null,
+        "unit": "mV/(rev/s)"
+      },
+      "gap_pct": {
+        "value": 0.052176780990209615,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 0.4324498010085021,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "floor (pass, 5 V)": {
+      "pass": {
+        "value": 0.3500449218750026,
+        "lo": null,
+        "hi": null,
+        "unit": "V eff"
+      },
+      "long": {
+        "value": 0.340261060237885,
+        "lo": null,
+        "hi": null,
+        "unit": "V eff"
+      },
+      "gap_pct": {
+        "value": 2.8753985631730705,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 0.1397919036124816,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "V_b +1 at 150 rev/s (pass C, g 4.75)": {
+      "pass": {
+        "value": 38.68678692931318,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "long": {
+        "value": 43.55741291563682,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "gap_pct": {
+        "value": -11.182082819650462,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": -1.4656837951377182,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "V_b +1 at 300 rev/s (pass C, g 4.75)": {
+      "pass": {
+        "value": 91.24786291210854,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "long": {
+        "value": 87.57202848993606,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "gap_pct": {
+        "value": 4.1974983171651825,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 0.7283636641137102,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "V_b -1 at 150 rev/s (pass C, g 4.75)": {
+      "pass": {
+        "value": 29.065765679362137,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "long": {
+        "value": 36.44589098738756,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "gap_pct": {
+        "value": -20.24954009377733,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": -1.863565374806092,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "reproduces"
+    },
+    "V_b -1 at 300 rev/s (pass C, g 4.75)": {
+      "pass": {
+        "value": 68.67152241935848,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "long": {
+        "value": 55.24461031061649,
+        "lo": null,
+        "hi": null,
+        "unit": "mV"
+      },
+      "gap_pct": {
+        "value": 24.30447428852931,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "gap_sigma": {
+        "value": 2.441960838473451,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      },
+      "verdict": "2-3 sigma"
+    }
+  },
+  "j_used": {
+    "value": 6.433118992563836e-09,
+    "lo": 5.860118662057509e-09,
+    "hi": 7.0746079785920765e-09,
+    "unit": "kg m^2"
+  },
+  "friction_pair_used": {
+    "coulomb": {
+      "value": 55.05490814661856,
+      "lo": 42.77790406871405,
+      "hi": 65.3051210059379,
+      "unit": "uN m"
+    },
+    "viscous": {
+      "value": 0.047363664846031925,
+      "lo": 0.0369581140977711,
+      "hi": 0.06324216635356193,
+      "unit": "uN m s/rad"
+    }
+  },
+  "kt_gear_used": {
+    "+1": {
+      "value": 215.82068017859143,
+      "lo": 210.7040867545059,
+      "hi": 220.01249590068036,
+      "unit": "mN m/A"
+    },
+    "-1": {
+      "value": 234.2713457477064,
+      "lo": 228.07626152285206,
+      "hi": 242.67618149485088,
+      "unit": "mN m/A"
+    },
+    "pooled": {
+      "value": 222.85674414929792,
+      "lo": 217.92486336168992,
+      "hi": 227.70346538049398,
+      "unit": "mN m/A"
+    }
+  },
+  "g_used": {
+    "value": 4.745722592764937,
+    "lo": 4.519802646749591,
+    "hi": 4.971642538780284,
+    "unit": "mS"
+  },
+  "r_c_long": {
+    "value": 4.176568074897476,
+    "lo": 4.170441452756265,
+    "hi": 4.182694697038688,
+    "unit": "ohm"
+  },
+  "v0_c_long": {
+    "value": 0.03130416067977669,
+    "lo": 0.028890351903067733,
+    "hi": 0.03371796945648565,
+    "unit": "V"
+  },
+  "r_term_long": {
+    "value": 4.2188705084081874,
+    "lo": 4.206494831397831,
+    "hi": 4.23004332394171,
+    "unit": "ohm"
+  },
+  "ke_long": {
+    "value": 7.282835390658132,
+    "lo": 7.23720411148211,
+    "hi": 7.328466669834154,
+    "unit": "mV per rev/s, coast route, rest tap zero, gated coasts, mean +/- sd"
+  },
+  "ke_5v_block_long": {
+    "value": 7.2592870251864765,
+    "lo": 7.221068105530358,
+    "hi": 7.297505944842595,
+    "unit": "mV per rev/s"
+  },
+  "l_long": {
+    "value": 0.8197583711407872,
+    "lo": 0.781413050847874,
+    "hi": 0.8739765387856037,
+    "unit": "mH"
+  },
+  "tau_long": {
+    "value": 198.50472057551252,
+    "lo": 186.00294972164835,
+    "hi": 204.68356495429617,
+    "unit": "us"
+  },
+  "floor_long": {
+    "value": 0.340261060237885,
+    "lo": 0.29984580612468914,
+    "hi": 0.39882485614141777,
+    "unit": "V effective (rail x duty) below which a kicked rotor stops turning within the 1.2 s hold; value the logistic 50 % point over 102 holds on three rails, bounds the highest level that never turned and the lowest that always turned, pooled over the rails"
+  },
+  "floor_friction_quoted": {
+    "value": 0.340261060237885,
+    "lo": 0.29984580612468914,
+    "hi": 0.39882485614141777,
+    "unit": "V effective (rail x duty) below which a kicked rotor stops turning within the 1.2 s hold; value the logistic 50 % point over 102 holds on three rails, bounds the highest level that never turned and the lowest that always turned, pooled over the rails"
+  }
+}
