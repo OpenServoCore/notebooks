@@ -37,8 +37,13 @@ class Bench:
         self.regs = {"pos_min_soft_counts": model.soft[0],
                      "pos_max_soft_counts": model.soft[1],
                      "raw_min": model.stops[0], "raw_max": model.stops[1],
-                     "ntc_raw": 2139, "vbus_raw": 1240, "pos": mid}
+                     "ntc_raw": 2139, "vbus_raw": 1240, "pos": mid,
+                     "current_limit_counts": 554}
         self.positions = []           # pos readings to hand out first
+
+    def set_(self, field, value):
+        self.regs[field] = value
+        self.log.append(("set", field, value))
 
     def get(self, field):
         if field == "pos" and self.positions:
@@ -51,7 +56,7 @@ class Bench:
         self.log.append(("sweep", tuple(duty), kw.get("dirs"), seat))
         out.mkdir(parents=True, exist_ok=True)
         pilot = out.name.endswith("pilot")
-        if pilot or seat == "stop" or out.parent.name == "holds":
+        if pilot or seat == "stop" or out.parent.name == "ladder":
             steps = duty if pilot else [cut(st) for st in duty]
             guards = (kw["guard_lo"], kw["guard_hi"]) if "guard_lo" in kw \
                 else None
@@ -108,6 +113,7 @@ def bench(monkeypatch, tmp_path):
         b.log.append(("bursts", tuple(pct), kw.get("dirs"))),
         out.mkdir(parents=True, exist_ok=True))[1])
     monkeypatch.setattr(sitting.osc, "get", b.get)
+    monkeypatch.setattr(sitting.osc, "set_", b.set_)
     monkeypatch.setattr(sitting.osc, "clapper", lambda path, flashes: (
         b.log.append(("clapper", flashes)), path)[1])
     monkeypatch.setattr(sitting.capture, "prompt",
@@ -147,7 +153,8 @@ def test_servo_states_discover_their_plans():
             ("steps", "capture"), ("sag", "capture")} <= by_state["servo"]
     assert {("pot-table", "pass"), ("pot-table", "crawl")} <= \
         by_state["servo-camera"]
-    assert {("load", "holds"), ("load", "lift")} <= by_state["servo-load"]
+    assert {("load", "bottom"), ("load", "ladder"), ("load", "lift")} <= \
+        by_state["servo-load"]
     assert all(p.lock for p in found if p.name == "locked")
     assert all(p.bracket for p in found
                if (p.experiment, p.name) in {("run-up", "runup"),
@@ -190,11 +197,16 @@ def test_camera_and_load_states_run(bench, tmp_path):
     assert len(clips) == len(starts) == 10
     sitting.run("servo-load", 3, plans=sitting.discover(STAGES))
     rows = manifest(tmp_path, "servo-load", 3)
-    assert datasets(rows) == ["load/holds-3", "load/lift-3", "load/steps-3",
-                              "load/crawl-3"]
-    holds = pd.read_csv(tmp_path / "telemetry" / GROUP / "load" / "holds-3"
-                        / "holds.csv")
-    assert len(holds["angle_counts"].unique()) == 7
+    assert datasets(rows) == ["load/bottom-3", "load/ladder-3", "load/lift-3",
+                              "load/steps-3"]
+    load = tmp_path / "telemetry" / GROUP / "load"
+    drops = pd.read_csv(load / "bottom-3" / "bottom.csv")
+    assert sorted(drops["side"].unique()) == [-1, 1] and len(drops) == 6
+    ladder = pd.read_csv(load / "ladder-3" / "ladder.csv")
+    assert sorted(ladder["side"].unique()) == [-1, 1]
+    assert set(ladder["approach"]) == {"below", "above"}
+    limits = [e for e in bench.log if e[0] == "set" and e[1] == "current_limit_counts"]
+    assert limits and limits[-1][2] == 554, "the saved limit comes back"
     assert not [r for r in rows if r["event"] == "skip"
                 and "load/steps" in r["detail"]]
 

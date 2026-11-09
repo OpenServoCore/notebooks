@@ -270,26 +270,42 @@ Run: `uv run python -m oscnb.sitting servo-camera`, then
 
 ## load
 
-Targets: the holding current against gravity's torque over the angle, so Kt
-through the gears and the train's efficiency both ways, the friction line
-under load, the step response with a known load, and crawls lifting and
-lowering.
+Targets: the motor's torque through the train against duty, so Kt through
+the gears and the train's efficiency both ways, the static friction the
+train holds against gravity and the friction band under load, the lift
+under a known load at speed and the fall that back-drives the train, and
+the step response with a known load.
 
-Needs: the `servo-load` state, 120 g at 55 mm on the arm, about 66 mN m at
-horizontal and 0.3 A at the motor, under the hold with margin; the
-resistance, ladder and run-up results.
+Needs: the `servo-load` state, the rig on its side with the shaft
+horizontal and the printed arm hanging from the horn with its mass in the
+load block's cups (22 US quarters in the outer pair, 68.4 mm from the axis,
+about 84 mN m at horizontal in sitting 1; the notebook takes the mass and
+radius of the sitting), 70 degrees of lift either side of the bottom inside
+the guards, the resistance result for the stall checks.
 
-How: the guards sit 20 degrees inside the stops so the mass never meets
-one, and the arm points straight up at mid travel. `holds` stands the arm at
-seven angles, a short window, a hold of 3 s and a second window, the duty
-stepped up by 2 % until the arm stops falling, which is the holding duty,
-and on until it lifts, which is the lifting duty. `lift` runs 30, 40 and 50
-% cycles over the guards both ways. `steps` steps 5 % up and down from the
-holding duty at three of the angles, and `crawl` crawls both ways at the
-floor plus 2 %. The holds are cut like free rungs, since an arm past its
-lifting duty climbs through the whole hold.
+How: the arm is a pendulum, so gravity's torque is m g L sin of the angle
+from the bottom and draws the arm back to the bottom whenever torque is
+off, never onto a stop. The current limit is widened to the servo's rated
+stall for the sitting, since a standing arm is a stall the train holds,
+and every duty is checked against that rating. `bottom` reads the arm hung
+straight down by hand, then lifts it a little each way and drops it, three
+times a side: the two sides' rests straddle the bottom by the angle the
+train's static friction holds, so the block gives the bottom and that
+friction, and refuses to go on without 70 degrees of room either side.
+`ladder` holds a duty 3 s from the bottom, stepped up to the rating on each
+side until the arm passes 75 degrees: the arm rests where the motor's
+torque equals gravity plus the friction resisting its rise, and three of
+the duties approached from above rest with friction taken off instead.
+`lift` drives 20, 30 and 40 % from the bottom for a fixed window and coasts
+3 s, the fall streamed. `steps` steps 5 % up and down from a ladder duty at
+three angles. `push`, optional, is the pot under a side load with no
+torque: the servo free at zero duty for 36 s of chained coasts while the
+arm's hub is pressed straight toward the shaft from each side and along
+the arm by hand, since the hand-rock clip of the pot table saw the pot
+read half a degree past the horn in the push direction.
 
-Run: `uv run python -m oscnb.sitting servo-load`, then the notebook.
+Run: `uv run python -m oscnb.sitting servo-load`, `--include load/push`
+with hands at the hub, then the notebook.
 
 ## friction
 
