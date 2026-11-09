@@ -1,0 +1,987 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/load",
+  "notes": "stage 3 load of mg90-d on dev-v006-2A-D, sitting servo-load-1 (the rig on its side, the printed arm on the horn, 22 US quarters in the outer cup pair, 5 V; blocks bottom-1, ladder-1, lift-1, steps-1; push not run). Torques absolute: gravity's torque at horizontal is the coins at the mint spec (5.670 g each, not weighed alone, +/-1 %) at the outer pair's CAD radius plus the arm weighed by hand on a kitchen scale (whole arm 166 g, block with lid, quarters and screws 153 g): block + lid + screws at the cups' center, the load mount at its STL centroid; gravity_torque_scale is that over the coins alone, bounds the coins' 1 % and 1 g moved between block and mount. Angles through the pot-table table, linear past its ends at the end rows' slope, from bottom_counts, the 12 % rests' degree midpoint (bounds the plan's count midpoint and the hand reading). Currents over each sweep's torque-off zero, the stage 1 in-drive offset out; construction C (resistance result) for i_w and v_c. kt_gear: gravity's torque on i_w over the from-below rungs that moved, settled and stayed inside the soft limits; bounds span the three bottoms and the fit's se about each. friction_band_lower and hold_deadband_* are lower bounds: the from-above step of 6 % and the +/-5 % steps moved nothing. Stall lines over every settled rung of 6 % or more with a valid window, the three stop rungs included; the cubic v_c = V0 + R0 i + c i^3. Lift speeds the pot's slope over +/-12.5 ms, means over +/-2 deg windows past 30 ms; the loss share R_C (i_w - i_free) / Ke, both currents under construction C (the free 5 V ladder rung's own sweeps, the held duty's last window), over the free rung's speed less the loaded speed at 20 and 30 deg. Falls from 2 rows after the bridge opens; release friction gravity less J alpha from a quadratic over 80 ms, gravity the coins and the arm, J the coins, the block and lid and the mount as point masses and the reflected rotor and train (the beam's own spread left out); friction at the speed peak gravity at the peak of a 40 ms Savitzky-Golay speed; Coulomb and viscous by least squares over |w| > 20 deg/s with the same gravity and J. Steps: jump 1 to 3 ms after the flip, settled the last 50 ms, per % of the duty change; k6 and k7's step edges have no rows before the flip and are left out. One sitting, one servo.",
+  "coins_mass_g": {
+    "value": 124.74,
+    "lo": 123.4926,
+    "hi": 125.9874,
+    "unit": "g"
+  },
+  "coins_radius_mm": {
+    "value": 68.43,
+    "lo": null,
+    "hi": null,
+    "unit": "mm"
+  },
+  "coin_block_g": {
+    "value": 28.260000000000005,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "coin_block_radius_mm": {
+    "value": 55.0,
+    "lo": null,
+    "hi": null,
+    "unit": "mm"
+  },
+  "arm_mount_g": {
+    "value": 13.0,
+    "lo": null,
+    "hi": null,
+    "unit": "g"
+  },
+  "arm_mount_radius_mm": {
+    "value": 14.084006407106248,
+    "lo": null,
+    "hi": null,
+    "unit": "mm"
+  },
+  "tau_coins_horizontal_mn_m": {
+    "value": 83.70915448203,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m"
+  },
+  "tau_arm_horizontal_mn_m": {
+    "value": 17.03799607361923,
+    "lo": 16.636747245051478,
+    "hi": 17.43924490218698,
+    "unit": "mN m"
+  },
+  "tau_horizontal_mn_m": {
+    "value": 100.74715055564923,
+    "lo": 99.5088101822612,
+    "hi": 101.98549092903727,
+    "unit": "mN m"
+  },
+  "gravity_torque_scale": {
+    "value": 1.2035380261459552,
+    "lo": 1.1887446575944443,
+    "hi": 1.2183313946974663,
+    "unit": "ratio"
+  },
+  "bottom_counts": {
+    "value": 2021.0,
+    "lo": 2007.0,
+    "hi": 2024.0,
+    "unit": "counts"
+  },
+  "bottom_plan_counts": {
+    "value": 2007.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "bottom_hand_counts": {
+    "value": 2024.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "hold_rest_12pct_deg": {
+    "+1": {
+      "value": 9.520620121357126,
+      "lo": 9.193197819039423,
+      "hi": 9.84804242367483,
+      "unit": "deg"
+    },
+    "-1": {
+      "value": 9.511795551680379,
+      "lo": 8.685729993380344,
+      "hi": 10.337861109980414,
+      "unit": "deg"
+    }
+  },
+  "static_friction_held_lower_mn_m": {
+    "value": 16.64739579936074,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m"
+  },
+  "static_friction_release_mn_m": {
+    "value": 33.39376456759118,
+    "lo": 28.719941089982985,
+    "hi": 38.06758804519937,
+    "unit": "mN m"
+  },
+  "static_hold_band_deg": {
+    "value": 9.516207836518753,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "swing_rest_deg_range": {
+    "value": 4.789597003482669,
+    "lo": 0.1614900145341096,
+    "hi": 7.4413606069517755,
+    "unit": "deg"
+  },
+  "kt_gear_mn_m_per_a": {
+    "+1": {
+      "value": 215.82068017859143,
+      "lo": 210.7040867545059,
+      "hi": 220.01249590068036,
+      "unit": "mN m/A"
+    },
+    "-1": {
+      "value": 234.2713457477064,
+      "lo": 228.07626152285206,
+      "hi": 242.67618149485088,
+      "unit": "mN m/A"
+    },
+    "pooled": {
+      "value": 222.85674414929792,
+      "lo": 217.92486336168992,
+      "hi": 227.70346538049398,
+      "unit": "mN m/A"
+    },
+    "+1 table-only": {
+      "value": 218.95525682120706,
+      "lo": 213.64134493499276,
+      "hi": 224.26916870742136,
+      "unit": "mN m/A"
+    },
+    "-1 table-only": {
+      "value": 232.89947160565345,
+      "lo": 225.97592399286484,
+      "hi": 239.82301921844206,
+      "unit": "mN m/A"
+    }
+  },
+  "kt_gear_over_ke_n": {
+    "+1": {
+      "value": 0.6044307710616613,
+      "lo": 0.5901011595250379,
+      "hi": 0.6161704357080428,
+      "unit": "ratio"
+    },
+    "-1": {
+      "value": 0.6561039935133403,
+      "lo": 0.6387539437788937,
+      "hi": 0.6796427079085008,
+      "unit": "ratio"
+    },
+    "pooled": {
+      "value": 0.6241360818202694,
+      "lo": 0.6103237793811734,
+      "hi": 0.6377098850742884,
+      "unit": "ratio"
+    }
+  },
+  "train_efficiency_stall": {
+    "value": 0.6241360818202694,
+    "lo": 0.6044307710616613,
+    "hi": 0.6561039935133403,
+    "unit": "ratio"
+  },
+  "torque_line_intercept_mn_m": {
+    "+1": {
+      "value": -8.123949349260872,
+      "lo": -9.50574822501682,
+      "hi": -5.7063926581732565,
+      "unit": "mN m"
+    },
+    "-1": {
+      "value": -9.403974861197685,
+      "lo": -12.841543729235596,
+      "hi": -7.3747185674078874,
+      "unit": "mN m"
+    }
+  },
+  "torque_line_rms_mn_m": {
+    "+1": {
+      "value": 2.030839525289363,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    "-1": {
+      "value": 1.776001843700352,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    }
+  },
+  "torque_line_flat_band_pct": {
+    "+1": {
+      "value": 25.647058823529413,
+      "lo": 6.0,
+      "hi": 50.0,
+      "unit": "%"
+    },
+    "-1": {
+      "value": 27.53846153846154,
+      "lo": 14.0,
+      "hi": 46.0,
+      "unit": "%"
+    }
+  },
+  "torque_curve_rungs_used": {
+    "value": 34.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rungs"
+  },
+  "kt_gear_bottom_spread_pct": {
+    "1": {
+      "value": 0.2927853194548562,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "-1": {
+      "value": 1.4002873532883746,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "pooled": {
+      "value": 0.16198352643252603,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "friction_band_lower_mn_m": {
+    "value": 13.831238723817414,
+    "lo": 13.831238723817414,
+    "hi": 16.629537323517553,
+    "unit": "mN m"
+  },
+  "hold_deadband_duty_pct": {
+    "value": 5.0,
+    "lo": null,
+    "hi": null,
+    "unit": "% (lower bound)"
+  },
+  "hold_deadband_ma": {
+    "value": 49.629368723655325,
+    "lo": 47.09195381287723,
+    "hi": 53.105098523314794,
+    "unit": "mA (lower bound)"
+  },
+  "above_rungs_moved": false,
+  "side_current_ratio_matched_duty": {
+    "value": 0.9928979431936972,
+    "lo": 0.9841190237842555,
+    "hi": 1.001676862603139,
+    "unit": "ratio"
+  },
+  "side_torque_per_amp_ratio": {
+    "value": 1.0672881471221578,
+    "lo": 1.0138518296188528,
+    "hi": 1.0803165700131108,
+    "unit": "ratio"
+  },
+  "side_kt_gear_split_sigma": {
+    "table-only": {
+      "value": 1.5976919457508738,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "all": {
+      "value": 2.6368887451816883,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    }
+  },
+  "stall_line_as_read_ma_per_v": {
+    "value": 208.81279794297313,
+    "lo": 207.6148724846579,
+    "hi": 210.01072340128837,
+    "unit": "mA/V"
+  },
+  "stall_line_as_read_intercept_ma": {
+    "value": 15.294770880681485,
+    "lo": 13.62772266585667,
+    "hi": 16.9618190955063,
+    "unit": "mA"
+  },
+  "stall_ma_per_pct_5v_hot": {
+    "value": 10.003267197216264,
+    "lo": null,
+    "hi": null,
+    "unit": "mA per %"
+  },
+  "stall_cold_line_over_hot_pct": {
+    "value": 8.59365095844684,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "r_app_as_read_hot_ohm": {
+    "value": 4.788978500604644,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "r_c_hot_ohm": {
+    "value": 4.538134961532321,
+    "lo": 4.506035046393652,
+    "hi": 4.570234876670989,
+    "unit": "ohm"
+  },
+  "v0_c_hot_mv": {
+    "value": -81.86734777012917,
+    "lo": -91.1985883834765,
+    "hi": -72.53610715678184,
+    "unit": "mV"
+  },
+  "r0_cubic_ohm": {
+    "value": 4.109779297387827,
+    "lo": 4.06913818102049,
+    "hi": 4.150420413755164,
+    "unit": "ohm"
+  },
+  "v0_cubic_mv": {
+    "value": -21.2234679338427,
+    "lo": -28.189948940035293,
+    "hi": -14.256986927650104,
+    "unit": "mV"
+  },
+  "warming_ohm_per_a2": {
+    "value": 1.6422464841865367,
+    "lo": 1.4981646410849272,
+    "hi": 1.7863283272881463,
+    "unit": "ohm/A^2"
+  },
+  "stall_line_resid_band_mv": {
+    "value": 0.0,
+    "lo": -37.92285037298737,
+    "hi": 37.92285037298737,
+    "unit": "mV"
+  },
+  "stall_rungs_used": {
+    "value": 41.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rungs"
+  },
+  "hold_warming_pct_at_0p5a_3s": {
+    "value": 9.989870290786342,
+    "lo": 4.821037253469686,
+    "hi": 9.989870290786342,
+    "unit": "% (low)"
+  },
+  "ntc_c_open": {
+    "value": 26.258312893998323,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "ntc_c_close": {
+    "value": 27.081744735627524,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "ntc_rise_c": {
+    "value": 0.8234318416292012,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "lift_speed_at_10deg_rev_s": {
+    "+20 % rep 0": {
+      "value": 51.94602205937991,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+20 % rep 1": {
+      "value": 53.779699086591016,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % rep 0": {
+      "value": 96.84098043359577,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % rep 1": {
+      "value": 101.80311116599168,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % rep 0": {
+      "value": 142.31007810373885,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % rep 1": {
+      "value": 136.39547673582032,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-20 % rep 0": {
+      "value": 64.56005446370604,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-20 % rep 1": {
+      "value": 61.31174792025957,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % rep 0": {
+      "value": 122.4138713266293,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % rep 1": {
+      "value": 124.63037896549807,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % rep 0": {
+      "value": 169.76118969072533,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % rep 1": {
+      "value": 105.84134457948227,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "lift_speed_free_rev_s": {
+    "-20 %": {
+      "value": 82.09764019266296,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 %": {
+      "value": 140.13629610727622,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 %": {
+      "value": 136.32383607589367,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 %": {
+      "value": 198.1614805252614,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 %": {
+      "value": 192.66487165384376,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "lift_speed_loss_rev_s": {
+    "+20 % at 10 deg k0": {
+      "value": null,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+20 % at 20 deg k0": {
+      "value": null,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+20 % at 10 deg k1": {
+      "value": null,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+20 % at 20 deg k1": {
+      "value": null,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % at 10 deg k2": {
+      "value": 39.48285564229789,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % at 20 deg k2": {
+      "value": 53.531557485748365,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % at 30 deg k2": {
+      "value": 93.95828478429732,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % at 10 deg k3": {
+      "value": 34.520724909901986,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % at 20 deg k3": {
+      "value": 56.12494051003496,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+30 % at 30 deg k3": {
+      "value": 92.1326482935761,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % at 10 deg k4": {
+      "value": 50.354793550104915,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % at 20 deg k4": {
+      "value": 55.79154232542578,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % at 30 deg k4": {
+      "value": 82.04439976780765,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % at 10 deg k5": {
+      "value": 56.26939491802344,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % at 20 deg k5": {
+      "value": 55.45376268524166,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "+40 % at 30 deg k5": {
+      "value": 81.10264393507907,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-20 % at 10 deg k6": {
+      "value": 17.537585728956927,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-20 % at 20 deg k6": {
+      "value": 78.01887767200192,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-20 % at 10 deg k7": {
+      "value": 20.785892272403395,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-20 % at 20 deg k7": {
+      "value": 59.57288751953267,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % at 10 deg k8": {
+      "value": 17.722424780646918,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % at 20 deg k8": {
+      "value": 37.27418126445818,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % at 30 deg k8": {
+      "value": 77.59737113039132,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % at 10 deg k9": {
+      "value": 15.505917141778156,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % at 20 deg k9": {
+      "value": 37.64995844058933,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-30 % at 30 deg k9": {
+      "value": 76.36280397649466,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % at 10 deg k10": {
+      "value": 28.400290834536065,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % at 20 deg k10": {
+      "value": 33.19249179918464,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % at 30 deg k10": {
+      "value": 59.54022844936338,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % at 10 deg k11": {
+      "value": 92.32013594577913,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % at 20 deg k11": {
+      "value": 52.25779191153714,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "-40 % at 30 deg k11": {
+      "value": 64.57698535958008,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "lift_loss_share_r_di_ke": {
+    "+1": {
+      "value": 0.8508297311711703,
+      "lo": 0.7867210553690303,
+      "hi": 0.8922532880388383,
+      "unit": "ratio"
+    },
+    "-1": {
+      "value": 1.1061475984832083,
+      "lo": 0.9289785369466295,
+      "hi": 1.211143490921058,
+      "unit": "ratio"
+    }
+  },
+  "lift_current_at_30deg_over_static": {
+    "value": 0.8556397724563202,
+    "lo": 0.827440529537967,
+    "hi": 0.8861100866281476,
+    "unit": "ratio"
+  },
+  "fall_emf_over_pot_speed": {
+    "value": 0.9661100963102657,
+    "lo": 0.8447427013925511,
+    "hi": 1.0874774912279803,
+    "unit": "ratio"
+  },
+  "fall_friction_at_peak_mn_m": {
+    "+20 % rep 0": {
+      "value": 27.61882354591325,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 84 deg/s"
+    },
+    "+20 % rep 1": {
+      "value": 27.49570926683081,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 74 deg/s"
+    },
+    "+30 % rep 0": {
+      "value": 28.019404015695848,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 161 deg/s"
+    },
+    "+30 % rep 1": {
+      "value": 28.404408372770643,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 165 deg/s"
+    },
+    "+40 % rep 0": {
+      "value": 38.84831383772943,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 232 deg/s"
+    },
+    "+40 % rep 1": {
+      "value": 38.98412354548382,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 241 deg/s"
+    },
+    "-20 % rep 0": {
+      "value": 20.80647664179244,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 95 deg/s"
+    },
+    "-20 % rep 1": {
+      "value": 32.308362276261576,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 108 deg/s"
+    },
+    "-30 % rep 0": {
+      "value": 20.348381534694894,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 205 deg/s"
+    },
+    "-30 % rep 1": {
+      "value": 20.597184879733767,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 208 deg/s"
+    },
+    "-40 % rep 0": {
+      "value": 48.05865261564032,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 295 deg/s"
+    },
+    "-40 % rep 1": {
+      "value": 49.21307961768538,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m at 293 deg/s"
+    }
+  },
+  "fall_coulomb_mn_m": {
+    "value": 13.755978399179542,
+    "lo": 6.74808274177945,
+    "hi": 20.763874056579635,
+    "unit": "mN m"
+  },
+  "fall_viscous_mn_m_s_per_rad": {
+    "value": 6.51103919791552,
+    "lo": 2.4003798576624185,
+    "hi": 10.621698538168621,
+    "unit": "mN m s/rad"
+  },
+  "fall_recoil_deg": {
+    "value": 1.2447335936475454,
+    "lo": 0.6508016433315154,
+    "hi": 1.8386655439635755,
+    "unit": "deg"
+  },
+  "fall_end_theta_deg": {
+    "value": 4.795047191552925,
+    "lo": 0.17587339182861256,
+    "hi": 7.466524506222653,
+    "unit": "deg"
+  },
+  "fall_time_s": {
+    "value": 0.5504249999999999,
+    "lo": 0.4154,
+    "hi": 0.9363,
+    "unit": "s"
+  },
+  "lift_repeat_range": {
+    "w10": {
+      "value": 4.105218637921187,
+      "lo": 1.8336770272111096,
+      "hi": 63.91984511124306,
+      "unit": "rev/s"
+    },
+    "top": {
+      "value": 0.4045082527824455,
+      "lo": 0.14854538558790864,
+      "hi": 1.8261538147511232,
+      "unit": "deg"
+    },
+    "end": {
+      "value": 0.41050382860434864,
+      "lo": 0.11645044948053668,
+      "hi": 0.9247985747340168,
+      "unit": "deg"
+    }
+  },
+  "steps_k_i_jump_ma_per_pct": {
+    "value": 9.925873744731062,
+    "lo": 9.546085871096846,
+    "hi": 10.305661618365278,
+    "unit": "mA/%"
+  },
+  "steps_k_i_settled_ma_per_pct": {
+    "value": 9.809328868204073,
+    "lo": 9.226374438891767,
+    "hi": 10.392283297516379,
+    "unit": "mA/%"
+  },
+  "steps_edges_measured": {
+    "value": 10.0,
+    "lo": null,
+    "hi": null,
+    "unit": "edges"
+  },
+  "steps_motion_deg_max": {
+    "value": 0.333765992953829,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "steps_moved": false,
+  "steps_current_drift_300ms_pct": {
+    "value": 0.22349505029777078,
+    "lo": 0.004605450066989564,
+    "hi": 0.5644469820613874,
+    "unit": "%"
+  },
+  "steps_back_current_ma": {
+    "value": -2.245108740699115,
+    "lo": -5.992880633025095,
+    "hi": 0.9753188563303183,
+    "unit": "mA"
+  },
+  "pot_torque_coupling_deg_per_50ma": {
+    "value": -0.10640803239857775,
+    "lo": -0.188070212920837,
+    "hi": -0.024745851876318503,
+    "unit": "deg"
+  },
+  "pot_rest_sd_counts": {
+    "+1": {
+      "value": 1.2837274644754681,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "-1": {
+      "value": 0.740726200062002,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "stop_rungs": {
+    "k19": {
+      "pos": {
+        "value": 3753.0,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_a": {
+        "value": 0.5257280075333366,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "duty_pct": {
+        "value": 54.0,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    },
+    "k41": {
+      "pos": {
+        "value": 196.0,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_a": {
+        "value": 0.49636712145636497,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "duty_pct": {
+        "value": 50.0,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    },
+    "k44": {
+      "pos": {
+        "value": 247.0,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_a": {
+        "value": 0.4201246539762106,
+        "lo": null,
+        "hi": null,
+        "unit": "A"
+      },
+      "duty_pct": {
+        "value": 42.0,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      }
+    }
+  },
+  "stop_cap_exceeded": true,
+  "ke_used": {
+    "value": 0.0011590992521478365,
+    "lo": null,
+    "hi": null,
+    "unit": "V s/rad"
+  },
+  "r_used": {
+    "value": 4.2188705084081874,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm"
+  },
+  "g_used": {
+    "value": 4.745722592764937,
+    "lo": null,
+    "hi": null,
+    "unit": "mS"
+  },
+  "j_used": {
+    "value": 6.433118992563836e-09,
+    "lo": null,
+    "hi": null,
+    "unit": "kg m^2"
+  },
+  "kt_type_mg90b": {
+    "value": 0.0011683788605218186,
+    "lo": null,
+    "hi": null,
+    "unit": "V s/rad"
+  }
+}
