@@ -59,8 +59,8 @@ one that captures open loop.
 
 ### 4. Estimators
 
-Folder `stages/4-estimators/`. Targets the real-time estimators the firmware runs. Speed, position,
-current zero and winding temperature.
+Folder `stages/4-estimators/`. Targets the real-time estimators the firmware runs. Current zero, speed,
+position, velocity and winding temperature.
 
 No new captures. Each estimator is designed offline over the stage 3 data
 and graded against the stage 0 instruments.
