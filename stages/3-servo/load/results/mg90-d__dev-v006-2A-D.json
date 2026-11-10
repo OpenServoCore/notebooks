@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-d__dev-v006-2A-D/load",
-  "notes": "stage 3 load of mg90-d on dev-v006-2A-D, sitting servo-load-1 (the rig on its side, the printed arm on the horn, 22 US quarters in the outer cup pair, 5 V; blocks bottom-1, ladder-1, lift-1, steps-1; push not run). Torques absolute: gravity's torque at horizontal is the coins at the mint spec (5.670 g each, not weighed alone, +/-1 %) at the outer pair's CAD radius plus the arm weighed by hand on a kitchen scale (whole arm 166 g, block with lid, quarters and screws 153 g): block + lid + screws at the cups' center, the load mount at its STL centroid; gravity_torque_scale is that over the coins alone, bounds the coins' 1 % and 1 g moved between block and mount. Angles through the pot-table table, linear past its ends at the end rows' slope, from bottom_counts, the 12 % rests' degree midpoint (bounds the plan's count midpoint and the hand reading). Currents over each sweep's torque-off zero, the stage 1 in-drive offset out; construction C (resistance result) for i_w and v_c. kt_gear: gravity's torque on i_w over the from-below rungs that moved, settled and stayed inside the soft limits; bounds span the three bottoms and the fit's se about each. friction_band_lower and hold_deadband_* are lower bounds: the from-above step of 6 % and the +/-5 % steps moved nothing. Stall lines over every settled rung of 6 % or more with a valid window, the three stop rungs included; the cubic v_c = V0 + R0 i + c i^3. Lift speeds the pot's slope over +/-12.5 ms, means over +/-2 deg windows past 30 ms; the loss share R_C (i_w - i_free) / Ke, both currents under construction C (the free 5 V ladder rung's own sweeps, the held duty's last window), over the free rung's speed less the loaded speed at 20 and 30 deg. Falls from 2 rows after the bridge opens; release friction gravity less J alpha from a quadratic over 80 ms, gravity the coins and the arm, J the coins, the block and lid and the mount as point masses and the reflected rotor and train (the beam's own spread left out); friction at the speed peak gravity at the peak of a 40 ms Savitzky-Golay speed; Coulomb and viscous by least squares over |w| > 20 deg/s with the same gravity and J. Steps: jump 1 to 3 ms after the flip, settled the last 50 ms, per % of the duty change; k6 and k7's step edges have no rows before the flip and are left out. One sitting, one servo.",
+  "notes": "stage 3 load of mg90-d on dev-v006-2A-D, sitting servo-load-1 (the rig on its side, the printed arm on the horn, 22 US quarters in the outer cup pair, 5 V; blocks bottom-1, ladder-1, lift-1, steps-1; push not run). Torques absolute: gravity's torque at horizontal is the coins at the mint spec (5.670 g each, not weighed alone, +/-1 %) at the outer pair's CAD radius plus the arm weighed by hand on a kitchen scale (whole arm 166 g, block with lid, quarters and screws 153 g): block + lid + screws at the cups' center, the load mount at its STL centroid; gravity_torque_scale is that over the coins alone, bounds the coins' 1 % and 1 g moved between block and mount. Angles through the pot-table table, linear past its ends at the end rows' slope, from bottom_counts, the 12 % rests' degree midpoint (bounds the plan's count midpoint and the hand reading). Currents over each sweep's torque-off zero, the stage 1 in-drive offset out; construction C (resistance result) for i_w and v_c. kt_gear: gravity's torque on i_w over the from-below rungs that moved, settled and stayed inside the soft limits; bounds span the three bottoms and the fit's se about each. friction_band_lower and hold_deadband_* are lower bounds: the from-above step of 6 % and the +/-5 % steps moved nothing. Stall lines over every settled rung of 6 % or more with a valid window, the three stop rungs included; the cubic v_c = V0 + R0 i + c i^3. Lift speeds the pot's slope over +/-12.5 ms, means over +/-2 deg windows past 30 ms; the loss share R_C (i_w - i_free) / Ke, both currents under construction C (the free 5 V ladder rung's own sweeps, the held duty's last window), over the free rung's speed less the loaded speed at 20 and 30 deg. Falls from 2 rows after the bridge opens; release friction gravity less J alpha from a quadratic over 80 ms, gravity the coins and the arm, J the coins, the block and lid and the mount as point masses and the reflected rotor and train (the beam's own spread left out); friction at the speed peak gravity at the peak of a 40 ms Savitzky-Golay speed; Coulomb and viscous by least squares over |w| > 20 deg/s with the same gravity and J. Steps: jump 1 to 3 ms after the flip, settled the last 50 ms, per % of the duty change; k6 and k7's step edges have no rows before the flip and are left out. One sitting, one servo. Section 11, sittings servo-load-2 and servo-load-3: the same rig and arm, the 22 quarters in the inner cup pair (blocks bottom-2/3, ladder-2/3, lift-2/3, steps-2/3). Keys with _inner, _by_sitting, _all_sittings, _6_34 or a sitting name come from section 11, which reads all three sittings from their hand hangs (2024, 2025, 2025); every earlier key stays sitting 1's at the bottom 2021. Kt_gear of record over three sittings is kt_gear_all_sittings_mn_m_per_a (both sides, the full range; bounds the one-slope fits over the full and the matched range below the up window, matched_range_edge_deg). The side split as a ratio is not established (side_split_*); the rests dip at rest_dip_angle_deg on both sides, cause open. Static friction from held and released events, gravity less Kt_gear x i (static_friction_*), supersedes static_friction_held_lower_mn_m; hold_deadband_up/down supersede hold_deadband_*; friction_band_inner_mn_m supersedes friction_band_lower_mn_m. Bootstraps seeded, rows sorted by sitting and k.",
   "coins_mass_g": {
     "value": 124.74,
     "lo": 123.4926,
@@ -983,5 +983,843 @@
     "lo": null,
     "hi": null,
     "unit": "V s/rad"
+  },
+  "sittings": "1 outer cup pair, 2 and 3 inner cup pair",
+  "coins_radius_inner_mm": {
+    "value": 41.57,
+    "lo": null,
+    "hi": null,
+    "unit": "mm"
+  },
+  "tau_coins_horizontal_inner_mn_m": {
+    "value": 50.851812827969994,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m"
+  },
+  "tau_horizontal_inner_mn_m": {
+    "value": 67.88980890158922,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m"
+  },
+  "gravity_torque_scale_inner": {
+    "value": 1.335051891488278,
+    "lo": null,
+    "hi": null,
+    "unit": "ratio"
+  },
+  "bottom_counts_by_sitting": {
+    "1": {
+      "value": 2024.0,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "2": {
+      "value": 2025.0,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "3": {
+      "value": 2025.0,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "arm_term_from_data_mn_m": {
+    "value": 18.23678278431962,
+    "lo": 15.558679904096643,
+    "hi": 20.914885664542595,
+    "unit": "mN m"
+  },
+  "arm_term_agrees_with_scale": true,
+  "arm_term_matched_mn_m": {
+    "+1": {
+      "value": 16.87152259300188,
+      "lo": 12.800974106750237,
+      "hi": 20.942071079253523,
+      "unit": "mN m"
+    },
+    "-1": {
+      "value": 14.16798723062555,
+      "lo": 8.157387419922252,
+      "hi": 20.17858704132885,
+      "unit": "mN m"
+    },
+    "both": {
+      "value": 15.620164026453411,
+      "lo": 12.124590316173219,
+      "hi": 19.115737736733603,
+      "unit": "mN m"
+    }
+  },
+  "kt_gear_pooled_mn_m_per_a": {
+    "s1": {
+      "value": 222.81416437109195,
+      "lo": 217.92486336168992,
+      "hi": 227.70346538049398,
+      "unit": "mN m/A"
+    },
+    "s2+3": {
+      "value": 221.79982096503213,
+      "lo": 215.28263460103426,
+      "hi": 228.31700732903,
+      "unit": "mN m/A"
+    },
+    "s1+2+3": {
+      "value": 225.66254879845866,
+      "lo": 221.765554185905,
+      "hi": 229.55954341101233,
+      "unit": "mN m/A"
+    }
+  },
+  "kt_gear_full_range_by_side_inner_mn_m_per_a": {
+    "+1": {
+      "value": 198.19091261167284,
+      "lo": 192.82029777462273,
+      "hi": 203.56152744872296,
+      "unit": "mN m/A"
+    },
+    "-1": {
+      "value": 258.86015144506695,
+      "lo": 253.2912207735424,
+      "hi": 264.4290821165915,
+      "unit": "mN m/A"
+    }
+  },
+  "kt_gear_over_ke_n_inner": {
+    "+1": {
+      "value": 0.5550565683889024,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "-1": {
+      "value": 0.7249677871722358,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "kt_gear_matched_by_side_mn_m_per_a": {
+    "s1": {
+      "+1": {
+        "value": 225.26600276759766,
+        "lo": 218.94300445844382,
+        "hi": 231.5890010767515,
+        "unit": "mN m/A"
+      },
+      "-1": {
+        "value": 235.37449322804596,
+        "lo": 226.53071681573365,
+        "hi": 244.21826964035827,
+        "unit": "mN m/A"
+      }
+    },
+    "s2+3": {
+      "+1": {
+        "value": 222.6781894394202,
+        "lo": 215.43836411487516,
+        "hi": 229.91801476396526,
+        "unit": "mN m/A"
+      },
+      "-1": {
+        "value": 266.7405151529369,
+        "lo": 255.42845549564248,
+        "hi": 278.0525748102313,
+        "unit": "mN m/A"
+      }
+    }
+  },
+  "kt_gear_matched_one_slope_mn_m_per_a": {
+    "s1": {
+      "value": 228.05219745963072,
+      "lo": 222.99194756632144,
+      "hi": 233.11244735294,
+      "unit": "mN m/A"
+    },
+    "s2+3": {
+      "value": 241.96014185488366,
+      "lo": 234.2815148158391,
+      "hi": 249.63876889392822,
+      "unit": "mN m/A"
+    },
+    "all": {
+      "value": 240.22514205491748,
+      "lo": 235.448108525616,
+      "hi": 245.00217558421897,
+      "unit": "mN m/A"
+    }
+  },
+  "kt_gear_all_sittings_mn_m_per_a": {
+    "value": 225.66254879845866,
+    "lo": 221.30333130386094,
+    "hi": 241.96014185488366,
+    "unit": "mN m/A"
+  },
+  "train_efficiency_all_sittings": {
+    "value": 0.6319940621868276,
+    "lo": 0.6197855695191886,
+    "hi": 0.6776373560982017,
+    "unit": "of Ke N"
+  },
+  "matched_range_edge_deg": {
+    "value": 41.46563949167878,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "torque_line_intercept_inner_mn_m": {
+    "+1": {
+      "value": 6.520284273200558,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    "-1": {
+      "value": 16.05871927673576,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    }
+  },
+  "torque_line_rms_inner_mn_m": {
+    "+1": {
+      "value": 1.9045225101655463,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    "-1": {
+      "value": 1.6688411837839723,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    }
+  },
+  "side_kt_gear_ratio_full_range_inner": {
+    "ratio": {
+      "value": 1.3061151393569035,
+      "lo": null,
+      "hi": null,
+      "unit": "down over up"
+    },
+    "sigma": {
+      "value": 7.841748579552071,
+      "lo": null,
+      "hi": null,
+      "unit": "sigma"
+    },
+    "reading": "the bend above 41.5 deg"
+  },
+  "side_kt_gear_ratio_matched": {
+    "s1": {
+      "ratio": {
+        "value": 1.0448735731812893,
+        "lo": null,
+        "hi": null,
+        "unit": "down over up"
+      },
+      "sigma": {
+        "value": 0.929803120031683,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      }
+    },
+    "s2+3": {
+      "ratio": {
+        "value": 1.1978744565170083,
+        "lo": null,
+        "hi": null,
+        "unit": "down over up"
+      },
+      "sigma": {
+        "value": 3.2807709931401576,
+        "lo": null,
+        "hi": null,
+        "unit": "sigma"
+      }
+    }
+  },
+  "side_split_established": false,
+  "side_split_bound_pct": {
+    "lo": 4.487357318128926,
+    "hi": 19.78744565170083,
+    "unit": "% down over up below the edge"
+  },
+  "side_current_ratio_inner": {
+    "value": 0.9914961973286474,
+    "lo": 0.9828185736308046,
+    "hi": 1.00017382102649,
+    "unit": "ratio"
+  },
+  "rest_dip_angle_deg": {
+    "lo": 41.5,
+    "hi": 49.5,
+    "unit": "deg"
+  },
+  "rest_dip_depth_mn_m": {
+    "+1": {
+      "s1": {
+        "value": -6.3,
+        "lo": null,
+        "hi": null,
+        "unit": "mN m"
+      },
+      "s2+3": {
+        "value": -6.3,
+        "lo": null,
+        "hi": null,
+        "unit": "mN m"
+      }
+    },
+    "-1": {
+      "s1": {
+        "value": -3.3,
+        "lo": null,
+        "hi": null,
+        "unit": "mN m"
+      },
+      "s2+3": {
+        "value": -3.6,
+        "lo": null,
+        "hi": null,
+        "unit": "mN m"
+      }
+    }
+  },
+  "rest_dip_follows": "position or angle, not torque",
+  "rest_dip_cause": "open: rides with the arm, or two places in the train",
+  "up_window_counts": {
+    "value": 2790.0,
+    "lo": 2790.0,
+    "hi": 2859.0,
+    "unit": "counts"
+  },
+  "sticky_pairs": {
+    "sticky": 7,
+    "of": 70,
+    "in_up_window": 4
+  },
+  "up_window_lift_loss_bump_mn_m": {
+    "value": 4.566460688826807,
+    "lo": 3.2324109774983567,
+    "hi": 5.900510400155258,
+    "unit": "mN m"
+  },
+  "up_window_lift_speed_dip_pct": {
+    "value": -12.111682080249228,
+    "lo": -15.792500165381664,
+    "hi": -8.430863995116791,
+    "unit": "%"
+  },
+  "up_window_emf_travel_per_count": {
+    "lifts": {
+      "value": 1.069911856608408,
+      "lo": 1.056974023042949,
+      "hi": 1.0828496901738671,
+      "unit": "of the flanks"
+    },
+    "needed": {
+      "value": 5.297833630336146,
+      "lo": 4.152551050000467,
+      "hi": 7.930161360411481,
+      "unit": "x, a flat pot"
+    }
+  },
+  "pot_flat_place_ruled_out": true,
+  "loss_bump_sd_by_position_mn_m": {
+    "value": 3.6247069280448656,
+    "lo": 2.9856664704274145,
+    "hi": 4.717583398768913,
+    "unit": "mN m, the lifts"
+  },
+  "side_loss_offset_lift_mn_m": {
+    "value": 2.1040659277587253,
+    "lo": 1.1792832695054507,
+    "hi": 3.6882237736085486,
+    "unit": "mN m, up less down"
+  },
+  "side_torque_offset_matched_current_s1_mn_m": {
+    "value": 3.1431112906094225,
+    "lo": 2.241769730967512,
+    "hi": 4.044452850251333,
+    "unit": "mN m, down less up"
+  },
+  "coins_slide_in_cups": {
+    "value": true,
+    "how": "by hand"
+  },
+  "coin_clearance_design_mm": {
+    "value": 1.0,
+    "lo": null,
+    "hi": null,
+    "unit": "mm on the diameter"
+  },
+  "coin_shift_design_bound_mn_m": {
+    "value": 0.6116407604999999,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m"
+  },
+  "rest_repeat_2v3_deg": {
+    "value": 0.7486673370223969,
+    "lo": -0.48710987726687205,
+    "hi": 1.9844445513116657,
+    "unit": "deg, 3 less 2"
+  },
+  "rest_repeat_2v3_ma": {
+    "value": -0.7023276440224914,
+    "lo": -1.7473950626305954,
+    "hi": 0.3427397745856128,
+    "unit": "mA, 3 less 2"
+  },
+  "drop_top_deg": {
+    "value": 33.03196628210705,
+    "lo": 27.72454927588994,
+    "hi": 33.97307919936087,
+    "unit": "deg"
+  },
+  "drop_fell": {
+    "fell": 11,
+    "of": 12
+  },
+  "drop_rest_deg": {
+    "value": 8.953501491735087,
+    "lo": 7.806012300246584,
+    "hi": 9.606025148149651,
+    "unit": "deg"
+  },
+  "drop_stuck_held_mn_m": {
+    "value": 31.58378948790979,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m"
+  },
+  "static_friction_release_inner_mn_m": {
+    "value": 32.68724818100764,
+    "lo": 31.005839072549144,
+    "hi": 34.368657289466135,
+    "unit": "mN m, quadratic start, lash in it"
+  },
+  "static_friction_held_mn_m": {
+    "value": 35.429610019537876,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m, the motor near zero"
+  },
+  "static_friction_released_mn_m": {
+    "value": 26.71462091583657,
+    "lo": null,
+    "hi": null,
+    "unit": "mN m, the motor near zero"
+  },
+  "static_friction_mn_m": {
+    "value": 30.5,
+    "lo": 25.0,
+    "hi": 36.0,
+    "unit": "mN m"
+  },
+  "static_friction_un_m_motor": {
+    "value": 99.00884035327654,
+    "lo": 81.15478717481683,
+    "hi": 116.86289353173623,
+    "unit": "uN m"
+  },
+  "static_friction_grows_with_load": "not established",
+  "friction_band_inner_mn_m": [
+    {
+      "sitting": 2,
+      "side": -1,
+      "theta_deg": 23.30687857764491,
+      "band": {
+        "value": 23.145016671904383,
+        "lo": 23.145016671904383,
+        "hi": 51.06805625677348,
+        "unit": "mN m"
+      }
+    },
+    {
+      "sitting": 2,
+      "side": 1,
+      "theta_deg": 21.90353589020629,
+      "band": {
+        "value": 35.074661848962464,
+        "lo": 35.074661848962464,
+        "hi": null,
+        "unit": "mN m"
+      }
+    },
+    {
+      "sitting": 2,
+      "side": 1,
+      "theta_deg": 52.65845053354582,
+      "band": {
+        "value": 70.51671466378419,
+        "lo": 70.51671466378419,
+        "hi": null,
+        "unit": "mN m"
+      }
+    },
+    {
+      "sitting": 3,
+      "side": -1,
+      "theta_deg": 23.370360098733176,
+      "band": {
+        "value": 26.939838784019873,
+        "lo": 26.939838784019873,
+        "hi": 62.92827227314117,
+        "unit": "mN m"
+      }
+    },
+    {
+      "sitting": 3,
+      "side": -1,
+      "theta_deg": 45.521962716605834,
+      "band": {
+        "value": 53.23287694841361,
+        "lo": 53.23287694841361,
+        "hi": 75.80339053116487,
+        "unit": "mN m"
+      }
+    },
+    {
+      "sitting": 3,
+      "side": 1,
+      "theta_deg": 21.17855138492303,
+      "band": {
+        "value": 35.05894645593617,
+        "lo": 35.05894645593617,
+        "hi": null,
+        "unit": "mN m"
+      }
+    },
+    {
+      "sitting": 3,
+      "side": 1,
+      "theta_deg": 53.69971668823987,
+      "band": {
+        "value": 70.66304243440683,
+        "lo": 70.66304243440683,
+        "hi": null,
+        "unit": "mN m"
+      }
+    }
+  ],
+  "friction_band_un_m_motor": {
+    "value": 75.1331560866395,
+    "lo": 75.1331560866395,
+    "hi": 246.0723210274484,
+    "unit": "uN m"
+  },
+  "hold_deadband_up_duty_pct": {
+    "value": 10.0,
+    "lo": 5.0,
+    "hi": 10.0,
+    "unit": "%"
+  },
+  "hold_deadband_down_duty_pct": {
+    "value": 20.0,
+    "lo": 20.0,
+    "hi": 25.0,
+    "unit": "%"
+  },
+  "hold_is_a_ratchet": true,
+  "steps_moved_inner": true,
+  "step_delay_ms": {
+    "value": 25.475,
+    "lo": 0.15,
+    "hi": 41.15,
+    "unit": "ms"
+  },
+  "step_rise_10_90_ms": {
+    "value": 338.225,
+    "lo": 329.325,
+    "hi": 343.35,
+    "unit": "ms, quartiles"
+  },
+  "step_overshoot_pct": {
+    "value": 3.4502109885885868,
+    "lo": 1.3118456284992641,
+    "hi": 4.4642217702715925,
+    "unit": "%"
+  },
+  "step_settled_in_500ms": {
+    "settled": 4,
+    "of": 22
+  },
+  "step_lands_short_of_rest_deg": {
+    "value": 1.1402958340931306,
+    "lo": 0.12654447043702421,
+    "hi": 2.154047197749237,
+    "unit": "deg"
+  },
+  "step_back_returns_deg": {
+    "value": 1.3026205576163778,
+    "lo": 0.5909693476952697,
+    "hi": 2.331338997247808,
+    "unit": "deg"
+  },
+  "steps_k_i_jump_inner_ma_per_pct": {
+    "value": 10.027586157952172,
+    "lo": 8.663315435810716,
+    "hi": 11.391856880093627,
+    "unit": "mA per %"
+  },
+  "steps_k_i_settled_moving_ma_per_pct": {
+    "value": 8.056837400159742,
+    "lo": 5.486501188469093,
+    "hi": 10.62717361185039,
+    "unit": "mA per %"
+  },
+  "stair_moved_counts": {
+    "value": 1.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts per 2 % step, max"
+  },
+  "above_rungs_at_stop_s2": 4,
+  "above_rungs_moved_inner": "sitting 2: none by the stair, 4 onto the stops; sitting 3: none fell after the one-step drop",
+  "above_held_mn_m": [
+    {
+      "value": 28.99117612309447,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    {
+      "value": 24.69960975808553,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    {
+      "value": 31.258120465474484,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    {
+      "value": 11.810560209997156,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    {
+      "value": 14.452769559357797,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    }
+  ],
+  "lift_loss_share_inner": {
+    "+1": {
+      "value": 0.7216696299310362,
+      "lo": 0.6095708145575394,
+      "hi": 0.8497296610355297,
+      "unit": "ratio"
+    },
+    "-1": {
+      "value": 1.1243529679196866,
+      "lo": 0.6904472813608742,
+      "hi": 1.216992698391048,
+      "unit": "ratio"
+    }
+  },
+  "fall_emf_over_pot_speed_inner": {
+    "value": 0.9370552551513243,
+    "lo": 0.8112144029367684,
+    "hi": 1.06289610736588,
+    "unit": "ratio"
+  },
+  "fall_emf_travel_over_pot_by_side": {
+    "+1": {
+      "value": 1.0736236430493078,
+      "lo": 1.043756459862917,
+      "hi": 1.1034908262356986,
+      "unit": "ratio"
+    },
+    "-1": {
+      "value": 1.0301415456389356,
+      "lo": 1.0002179324493874,
+      "hi": 1.0600651588284837,
+      "unit": "ratio"
+    }
+  },
+  "fall_friction_at_peak_inner_mn_m": {
+    "value": 26.722689480139397,
+    "lo": 21.91577351084376,
+    "hi": 31.529605449435035,
+    "unit": "mN m"
+  },
+  "lift_repeat_2v3": {
+    "theta_top": {
+      "value": -0.19421419014986174,
+      "lo": -2.350617241278179,
+      "hi": 1.9621888609784555,
+      "unit": "deg"
+    },
+    "w_20": {
+      "value": -1.4492345512548255,
+      "lo": -4.162856289562519,
+      "hi": 1.264387187052869,
+      "unit": "rev/s"
+    },
+    "end_theta": {
+      "value": -0.25183771287675544,
+      "lo": -0.8980776546899474,
+      "hi": 0.39440222893643656,
+      "unit": "deg"
+    }
+  },
+  "stall_ma_per_pct_5v_hot_6_34": {
+    "value": 10.417448050756917,
+    "lo": null,
+    "hi": null,
+    "unit": "mA per %, sittings 2 and 3"
+  },
+  "stall_cold_line_over_hot_6_34_pct": {
+    "s2": {
+      "value": 5.539420448354393,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "s3": {
+      "value": 5.865942746268615,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "s1 <= 34 %": {
+      "value": 5.310977945886264,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "r_c_hot_inner_ohm": {
+    "s2": {
+      "value": 4.334787536065993,
+      "lo": 4.311311633740593,
+      "hi": 4.3582634383913925,
+      "unit": "ohm"
+    },
+    "s3": {
+      "value": 4.320401434120355,
+      "lo": 4.246993519621549,
+      "hi": 4.393809348619161,
+      "unit": "ohm"
+    }
+  },
+  "v0_c_hot_inner_mv": {
+    "s2": {
+      "value": -43.52413316683499,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    },
+    "s3": {
+      "value": -46.17920977234119,
+      "lo": null,
+      "hi": null,
+      "unit": "mV"
+    }
+  },
+  "run_in_current_ratio": {
+    "s2/s1": {
+      "value": 0.9990122559019009,
+      "lo": 0.9883354030771866,
+      "hi": 1.009689108726615,
+      "unit": "ratio"
+    },
+    "s3/s1": {
+      "value": 0.9959151457168259,
+      "lo": 0.9849209058101586,
+      "hi": 1.0069093856234932,
+      "unit": "ratio"
+    },
+    "s3/s2": {
+      "value": 0.9969296944762939,
+      "lo": 0.988538713503807,
+      "hi": 1.005320675448781,
+      "unit": "ratio"
+    }
+  },
+  "ntc_c_by_sitting": {
+    "1": {
+      "value": 27.081744735627524,
+      "lo": 26.258312893998323,
+      "hi": 27.081744735627524,
+      "unit": "C"
+    },
+    "2": {
+      "value": 27.66387983393213,
+      "lo": 26.769511986907844,
+      "hi": 27.66387983393213,
+      "unit": "C"
+    },
+    "3": {
+      "value": 28.316894664221422,
+      "lo": 26.99245030074303,
+      "hi": 28.316894664221422,
+      "unit": "C"
+    }
+  },
+  "stop_presses_steps": [
+    {
+      "sitting": 2,
+      "k": 9,
+      "theta_deg": 82.3582676476936,
+      "current_a": 0.515953781729064
+    },
+    {
+      "sitting": 3,
+      "k": 8,
+      "theta_deg": 82.17284209605258,
+      "current_a": 0.46658608391808276
+    },
+    {
+      "sitting": 3,
+      "k": 10,
+      "theta_deg": 82.4695229786782,
+      "current_a": 0.5113978884986358
+    },
+    {
+      "sitting": 3,
+      "k": 12,
+      "theta_deg": 82.5436931993346,
+      "current_a": 0.5597726465164065
+    },
+    {
+      "sitting": 3,
+      "k": 22,
+      "theta_deg": 83.33799520759219,
+      "current_a": 0.322387790097836
+    },
+    {
+      "sitting": 3,
+      "k": 24,
+      "theta_deg": 92.43216775755029,
+      "current_a": 0.3662718523516359
+    },
+    {
+      "sitting": 3,
+      "k": 26,
+      "theta_deg": 96.06185943319149,
+      "current_a": 0.5255501439541315
+    }
+  ],
+  "stop_cap_exceeded_steps": true,
+  "seek_failed_sweep": "steps-2/chains/15",
+  "seek_rest_span_deg": {
+    "value": -1.8415910945527045,
+    "lo": -15.691877421886176,
+    "hi": 15.951123029617577,
+    "unit": "deg"
   }
 }
