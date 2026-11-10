@@ -50,7 +50,9 @@ far guard, which a hanging arm cannot reach.
 `steps` steps the duty by each of STEPS up and down from a ladder duty
 at STEP_AT_DEG, after STEADY_MS held there: the smallest step that moves
 the arm brackets the hold's deadband each way, the larger ones its
-response.
+response. A step whose target the side's rests predict past
+LADDER_REFUSE_DEG is left out, as on the ladder: over the top gravity
+holds the arm on the end stop and the step back does not return it.
 
 `push`, optional, is the pot under a side load with no torque: the servo
 free at zero duty for PUSH_COASTS coasts while the arm's hub is pressed
@@ -352,6 +354,11 @@ def steps(s, out):
                 for step in [x * sg for x in STEPS for sg in (1, -1)]:
                     if d + step <= 0 or d + step > cap_pct(s):
                         s.note("skip", f"{d} % stepped {step:+} % is out of range")
+                        continue
+                    ahead = deg_at(s, rests[sign], bottom, d + step)
+                    if ahead is None or ahead >= LADDER_REFUSE_DEG:
+                        s.note("skip", f"{sign * d:+} % stepped {step:+} %: the "
+                               f"rests predict past {LADDER_REFUSE_DEG} deg")
                         continue
                     s.check(LEVEL, [str(d), str(d + step)], seat="lock")
                     chain = [f"{d}@{WINDOW_MS}", f"hold:{d}@{STEADY_MS}",

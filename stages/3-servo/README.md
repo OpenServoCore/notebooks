@@ -309,7 +309,8 @@ degrees and then the duty in one step, rest with friction taken off
 instead. `lift` drives 20, 30 and 40 % from the bottom for a fixed window
 and coasts 3 s, the fall streamed. `steps` steps 10, 15, 20 and 25 % up
 and down from a ladder duty at two angles, the smallest step that moves
-the arm bracketing the hold's deadband each way. `push`, optional, is the pot under a side load with no
+the arm bracketing the hold's deadband each way; a step the side's rests
+predict past 75 degrees is left out. `push`, optional, is the pot under a side load with no
 torque: the servo free at zero duty for 36 s of chained coasts while the
 arm's hub is pressed straight toward the shaft from each side and along
 the arm by hand, since the hand-rock clip of the pot table saw the pot
