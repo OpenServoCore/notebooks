@@ -1,0 +1,940 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D",
+  "notes": "stage 4 current-zero of mg90-d on dev-v006-2A-D, no capture of its own: every stage 3 sweep of the pair in time order (521 sweeps, four days) through oscnb.sweeps.row_store and oscnb.zero. One servo, one board. Truth: the crest column's mean over the last 100 ms of a coast of 100 ms past its settle ticks; a drive run takes the tail nearest its first row; 244 sweeps carry one. Error: the float tracker's awake zero (64-bit state, the estimator of record; the integer Q16 port reads 0.0625 lower) less the truth, the run mean unless named. Classes: cold after 200 stale periods of rest, rail moved past half a count of stage 1's step line, else warm. Brackets: 95 % from resampling sweeps (2000 draws, seed 1); paired differences over the same runs. truth_floor: median range of a sweep's tails over sweeps with two or more. Feed: duty gate 30 %, settled coast, torque off; the trough share fits OLS at 30 % or narrower, +/- se. Unit 1's gate-width rows are float, its current-gate and share rows the integer port. Start rule: seed awake = asleep + step(rail) at boot and when the rail moves past seed_rail_threshold_v (sqrt(line held-out rms^2 - held zero sd^2) / slope, bounds the flat band) for 32 rail rows, the rail read off the driven terminal; step line held out by capture set. Hold: |difference| of two 100 ms truth readings on one rail (within 0.1 count of step), 1 s inside one coast, 10 and 60 s tail pairs; bounds of p90 by resampling the earlier sweep. Noise: settled stretches, Welch 2048 rows; low end 16384 rows on coasts of 0.8 s and more. Constant: per sweep the narrow drives' trough less its coast truth; the coast fed from the crest column; held out by day (bounds of drive_feed_offset: the four folds). Design: start rule + constant held out by day, all 975 runs, age gap model. results/<pair>.step.csv: the step by rail band with the line and curve held out by capture set; results/<pair>.alpha.csv: the zero against alpha 2^-9 to 2^-15.",
+  "truth_share_of_sweeps": {
+    "value": 0.46833013435700577,
+    "lo": null,
+    "hi": null,
+    "unit": "share"
+  },
+  "truth_floor_counts": {
+    "value": 0.39599999999995816,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "warm_error_counts_rms": {
+    "value": 0.730435164552222,
+    "lo": 0.6838746538606932,
+    "hi": 0.7779439936068784,
+    "unit": "counts"
+  },
+  "warm_error_mean_counts": {
+    "value": 0.5839708039019001,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "warm_error_sd_counts": {
+    "value": 0.43900476448889,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "rail_moved_error_counts_rms": {
+    "value": 2.237195518174182,
+    "lo": 1.259648037029092,
+    "hi": 3.0174834313798904,
+    "unit": "counts"
+  },
+  "cold_error_counts_rms": {
+    "value": 1.6747482714216029,
+    "lo": 0.7958999926749826,
+    "hi": 2.1761041852513334,
+    "unit": "counts"
+  },
+  "all_error_counts_rms": {
+    "value": 0.8829833854609808,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "worst_error_counts": {
+    "value": 7.204296127319367,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "trough_current_share": {
+    "value": 0.0014975642992313474,
+    "lo": 0.0008829213960623998,
+    "hi": 0.002112207202400295,
+    "unit": "share"
+  },
+  "trough_current_share_stall": {
+    "value": 0.0005032968728463972,
+    "lo": 6.570687403482575e-05,
+    "hi": 0.0009408868716579687,
+    "unit": "share"
+  },
+  "feed_gate_pct": {
+    "value": 30.0,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "feed_gate_clean_to_pct": {
+    "value": 80.0,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "feed_share_drive_rows": {
+    "value": 0.8529177191152514,
+    "lo": null,
+    "hi": null,
+    "unit": "share"
+  },
+  "feed_share_awake_rows": {
+    "value": 0.9114600115563714,
+    "lo": null,
+    "hi": null,
+    "unit": "share"
+  },
+  "stall_hold_error_counts_rms": {
+    "value": 1.5360326571865626,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "coast_only_moved_cold_counts_rms": {
+    "value": 3.0643240524227107,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "column_offset_coast_counts": {
+    "value": 0.34015525956284365,
+    "lo": 0.2827638454754318,
+    "hi": 0.3975466736502555,
+    "unit": "counts"
+  },
+  "column_offset_asleep_counts": {
+    "value": 0.2310021969829152,
+    "lo": 0.11961392414199368,
+    "hi": 0.3423904698238367,
+    "unit": "counts"
+  },
+  "trough_drive_over_coast_counts": {
+    "value": 0.3185219343297738,
+    "lo": 0.2793576259237094,
+    "hi": 0.35768624273583827,
+    "unit": "counts"
+  },
+  "warm_error_constant_out_counts_rms": {
+    "value": 0.4169009035264758,
+    "lo": 0.37155050436506526,
+    "hi": 0.4653726002245209,
+    "unit": "counts"
+  },
+  "awake_step_slope_counts_per_v": {
+    "value": 1.667252540263349,
+    "lo": 1.630411465764026,
+    "hi": 1.7040936147626717,
+    "unit": "counts/V"
+  },
+  "awake_step_intercept_counts": {
+    "value": -2.7166927948790947,
+    "lo": -2.915672054527447,
+    "hi": -2.5177135352307425,
+    "unit": "counts"
+  },
+  "awake_step_residual_counts": {
+    "value": 0.7008456630949171,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "float_minus_integer_counts": {
+    "value": 0.06253784313051959,
+    "lo": 0.039971605999373876,
+    "hi": 0.08628654267575031,
+    "unit": "counts"
+  },
+  "float_minus_integer_max_counts": {
+    "value": 0.10409841468367631,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "rounded_zero_extra_counts_rms": {
+    "value": 0.299008194164118,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "float32_state_rms_counts": {
+    "value": 0.22084465881988571,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "start_error_counts": {
+    "boot": {
+      "value": 6.362692037758814,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "rail_move_median": {
+      "value": 3.368524335847269,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "worst": {
+      "value": 6.909528121224719,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "settle_to_1_count_fed_s": {
+    "value": 0.539675,
+    "lo": 0.2544,
+    "hi": 0.8603,
+    "unit": "s"
+  },
+  "settle_to_half_count_fed_s": {
+    "value": 0.780975,
+    "lo": 0.38905,
+    "hi": 1.76755,
+    "unit": "s"
+  },
+  "tau_s": {
+    "value": 0.4096,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "awake_step_by_rail_counts": {
+    "3v6": {
+      "value": 2.424179487179473,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "4v9": {
+      "value": 5.77005114942529,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "6v0_6v8": {
+      "value": 9.246824999999944,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "7v0_7v6": {
+      "value": 9.116382575757571,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "over_7v8": {
+      "value": 9.32926666666658,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "step_line_heldout_rms_counts": {
+    "value": 0.7332587368227629,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "step_curve_heldout_rms_counts": {
+    "value": 0.43735357020848503,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "step_heldout_by": "capture set",
+  "seed_rail_threshold_v": {
+    "value": 0.31897784540751317,
+    "lo": 0.2,
+    "hi": 1.0,
+    "unit": "V"
+  },
+  "held_zero_sd_counts": {
+    "value": 0.5048162582382048,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "seed_debounce_ticks": {
+    "value": 32.0,
+    "lo": null,
+    "hi": null,
+    "unit": "ticks"
+  },
+  "start_rule_events_rms_counts": {
+    "value": 0.6404044797744052,
+    "lo": 0.5110552161963903,
+    "hi": 0.7543750815608598,
+    "unit": "counts"
+  },
+  "stage1_events_rms_counts": {
+    "value": 2.0695610194494765,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "start_rule_start_error_rms_counts": {
+    "value": 0.6629147871427384,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "start_rule_warm_cost_counts": {
+    "value": -0.0038834554033515545,
+    "lo": -0.028109132136325234,
+    "hi": 0.019167398801008106,
+    "unit": "counts"
+  },
+  "start_rule_settle_to_half_count_fed_s": {
+    "value": 0.062525,
+    "lo": null,
+    "hi": 0.30265,
+    "unit": "s"
+  },
+  "seed_on_stale_line_warm_cost_counts": {
+    "value": 0.05657327260280043,
+    "lo": 0.012469649627937807,
+    "hi": 0.09854148220826675,
+    "unit": "counts"
+  },
+  "fast_alpha_stale_warm_cost_counts": {
+    "value": 0.07239916660833312,
+    "lo": 0.05017053128398376,
+    "hi": 0.09319914359708145,
+    "unit": "counts"
+  },
+  "hold_p90_counts": {
+    "1s": {
+      "value": 0.5889999999999418,
+      "lo": 0.5509999999999309,
+      "hi": 0.6160012499999852,
+      "unit": "counts"
+    },
+    "10s": {
+      "value": 0.8115000000000236,
+      "lo": 0.73700000000008,
+      "hi": 0.9647000000000164,
+      "unit": "counts"
+    },
+    "60s": {
+      "value": 0.9464000000000399,
+      "lo": 0.8774825000000128,
+      "hi": 0.9919112499999871,
+      "unit": "counts"
+    }
+  },
+  "hold_median_counts": {
+    "1s": {
+      "value": 0.23649999999997817,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "10s": {
+      "value": 0.37800000000004275,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "60s": {
+      "value": 0.37799999999992906,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "hold_worst_counts": {
+    "1s": {
+      "value": 1.4494999999999436,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "10s": {
+      "value": 1.8710000000000946,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "60s": {
+      "value": 1.8730000000000473,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "hold_pairs": {
+    "1s": {
+      "value": 16905.0,
+      "lo": null,
+      "hi": null,
+      "unit": "pairs"
+    },
+    "10s": {
+      "value": 186.0,
+      "lo": null,
+      "hi": null,
+      "unit": "pairs"
+    },
+    "60s": {
+      "value": 759.0,
+      "lo": null,
+      "hi": null,
+      "unit": "pairs"
+    }
+  },
+  "step_hold_2h_p90_counts": {
+    "value": 0.8603999999999816,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "truth_floor_p90_counts": {
+    "value": 0.44000000000005457,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "zero_per_rail_volt_counts": {
+    "value": 1.8766035538214594,
+    "lo": null,
+    "hi": null,
+    "unit": "counts/V"
+  },
+  "truth_per_unit_duty_counts": {
+    "value": -0.32607715745700994,
+    "lo": -0.4239576782022596,
+    "hi": -0.2281966367117603,
+    "unit": "counts"
+  },
+  "longest_unfed_awake_s": {
+    "value": 2.4,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "asleep_shift_3v3_laps_counts": {
+    "value": 14.474500000000035,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "trough_sd_per_tick_counts": {
+    "asleep": {
+      "value": 1.0606634029539985,
+      "lo": 1.0172986904493613,
+      "hi": 1.1137576401391496,
+      "unit": "counts"
+    },
+    "coast": {
+      "value": 1.1088796632747082,
+      "lo": 1.0381310217210875,
+      "hi": 1.4632854850038326,
+      "unit": "counts"
+    },
+    "narrow_drive": {
+      "value": 1.1613300160277018,
+      "lo": 1.0443533711756943,
+      "hi": 1.43635129828269,
+      "unit": "counts"
+    }
+  },
+  "trough_fold16_pp_counts": {
+    "value": 0.9986353280758721,
+    "lo": 0.9673264304178553,
+    "hi": 1.0421230769230772,
+    "unit": "counts"
+  },
+  "low_end_over_white": {
+    "1hz": {
+      "value": 162.05384951294687,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "10hz": {
+      "value": 27.55898746061343,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "100hz": {
+      "value": 4.2485074118071475,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "crest_less_trough_low_end_over_white": {
+    "value": 1.0953620402543967,
+    "lo": null,
+    "hi": null,
+    "unit": "ratio"
+  },
+  "alpha_flat_band_shift": [
+    12,
+    14
+  ],
+  "alpha_scan": {
+    "shift_9": {
+      "tau_s": {
+        "value": 0.0256,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "zero_noise_white_counts": {
+        "value": 0.028206337170633224,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "zero_move_2s_coast_counts": {
+        "value": 0.2368085691965798,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "warm_rms_counts": {
+        "value": 0.8400527318768276,
+        "lo": 0.7881963864305431,
+        "hi": 0.8924551970654611,
+        "unit": "counts"
+      },
+      "warm_rms_full_counts": {
+        "value": 0.4771226015254309,
+        "lo": 0.44231340204806846,
+        "hi": 0.5134435941166304,
+        "unit": "counts"
+      },
+      "close_boot_s": {
+        "value": 0.0651161278651641,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    },
+    "shift_10": {
+      "tau_s": {
+        "value": 0.0512,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "zero_noise_white_counts": {
+        "value": 0.019940019953412384,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "zero_move_2s_coast_counts": {
+        "value": 0.20346516921473434,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "warm_rms_counts": {
+        "value": 0.8163472026260276,
+        "lo": 0.765304056192578,
+        "hi": 0.8676007282373691,
+        "unit": "counts"
+      },
+      "warm_rms_full_counts": {
+        "value": 0.45658386139062174,
+        "lo": 0.4225302584660626,
+        "hi": 0.4921318234411415,
+        "unit": "counts"
+      },
+      "close_boot_s": {
+        "value": 0.1302322557303282,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    },
+    "shift_11": {
+      "tau_s": {
+        "value": 0.1024,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "zero_noise_white_counts": {
+        "value": 0.014098001642998,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "zero_move_2s_coast_counts": {
+        "value": 0.16961739478284743,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "warm_rms_counts": {
+        "value": 0.7846382839452296,
+        "lo": 0.7346828902375289,
+        "hi": 0.836306368672925,
+        "unit": "counts"
+      },
+      "warm_rms_full_counts": {
+        "value": 0.4360176629821422,
+        "lo": 0.4023695974540892,
+        "hi": 0.47181436198250615,
+        "unit": "counts"
+      },
+      "close_boot_s": {
+        "value": 0.2604645114606564,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    },
+    "shift_12": {
+      "tau_s": {
+        "value": 0.2048,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "zero_noise_white_counts": {
+        "value": 0.00996818402327492,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "zero_move_2s_coast_counts": {
+        "value": 0.1273115448095133,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "warm_rms_counts": {
+        "value": 0.7501000094727837,
+        "lo": 0.7028181309284419,
+        "hi": 0.7993877722071715,
+        "unit": "counts"
+      },
+      "warm_rms_full_counts": {
+        "value": 0.4187246068411803,
+        "lo": 0.38142713559882385,
+        "hi": 0.4548037511290455,
+        "unit": "counts"
+      },
+      "close_boot_s": {
+        "value": 0.5209290229213128,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    },
+    "shift_13": {
+      "tau_s": {
+        "value": 0.4096,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "zero_noise_white_counts": {
+        "value": 0.007048355397259081,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "zero_move_2s_coast_counts": {
+        "value": 0.09027653609034549,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "warm_rms_counts": {
+        "value": 0.730435164552222,
+        "lo": 0.6838746538606932,
+        "hi": 0.7779439936068784,
+        "unit": "counts"
+      },
+      "warm_rms_full_counts": {
+        "value": 0.41128688954372744,
+        "lo": 0.37334322344510873,
+        "hi": 0.4474460171674783,
+        "unit": "counts"
+      },
+      "close_boot_s": {
+        "value": 1.0418580458426256,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    },
+    "shift_14": {
+      "tau_s": {
+        "value": 0.8192,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "zero_noise_white_counts": {
+        "value": 0.004983863845825951,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "zero_move_2s_coast_counts": {
+        "value": 0.062494149612056314,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "warm_rms_counts": {
+        "value": 0.7511511911313301,
+        "lo": 0.6934667199451797,
+        "hi": 0.812122668643954,
+        "unit": "counts"
+      },
+      "warm_rms_full_counts": {
+        "value": 0.41746642808125106,
+        "lo": 0.3755168775105101,
+        "hi": 0.4563474820755066,
+        "unit": "counts"
+      },
+      "close_boot_s": {
+        "value": 2.0837160916852513,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    },
+    "shift_15": {
+      "tau_s": {
+        "value": 1.6384,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      },
+      "zero_noise_white_counts": {
+        "value": 0.0035240970344493808,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "zero_move_2s_coast_counts": {
+        "value": 0.04238372241741707,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "warm_rms_counts": {
+        "value": 0.8319730551689198,
+        "lo": 0.7402147063520012,
+        "hi": 0.9313570420257443,
+        "unit": "counts"
+      },
+      "warm_rms_full_counts": {
+        "value": 0.4423497146253441,
+        "lo": 0.39525101550937053,
+        "hi": 0.48643168642084317,
+        "unit": "counts"
+      },
+      "close_boot_s": {
+        "value": 4.167432183370503,
+        "lo": null,
+        "hi": null,
+        "unit": "s"
+      }
+    }
+  },
+  "drive_feed_offset_counts": {
+    "value": 0.6670064773405264,
+    "lo": 0.656974235781106,
+    "hi": 0.6981185780512438,
+    "unit": "counts"
+  },
+  "drive_feed_offset_se_counts": {
+    "value": 0.04183543621443948,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "constant_out_heldout_warm_rms_counts": {
+    "value": 0.41492705607714364,
+    "lo": 0.37040032067421663,
+    "hi": 0.4631113663658259,
+    "unit": "counts"
+  },
+  "constant_out_fold_rms_counts": {
+    "11-06": {
+      "value": 0.44036326329102754,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "11-07": {
+      "value": 0.3925389248781197,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "11-08": {
+      "value": 0.3157619022035971,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "11-09": {
+      "value": 0.34744241450345537,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "offset_rail_slope_counts_per_v": {
+    "value": 0.09318249541453413,
+    "lo": 0.060191550054206976,
+    "hi": 0.12617344077486128,
+    "unit": "counts/V"
+  },
+  "constant_self_measured_warm_rms_counts": {
+    "value": 0.432033790839338,
+    "lo": 0.38755113528244806,
+    "hi": 0.48133096795306757,
+    "unit": "counts"
+  },
+  "design_all_runs_rms_counts": {
+    "value": 0.40816204785196597,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "design_all_runs_worst_counts": {
+    "value": 1.9670026188011889,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "design_events_rms_counts": {
+    "value": 0.36075896458733014,
+    "lo": 0.24094497596689404,
+    "hi": 0.4750147651015856,
+    "unit": "counts"
+  },
+  "design_warm_rms_counts": {
+    "value": 0.41128688954372744,
+    "lo": 0.37334322344510873,
+    "hi": 0.4474460171674783,
+    "unit": "counts"
+  },
+  "stage1_all_runs_rms_counts": {
+    "value": 0.8829833854609808,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "stage1_all_runs_worst_counts": {
+    "value": 7.204296127319367,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "stage5_table": [
+    {
+      "quantity": "bias, warm, by rail band (counts)",
+      "value": "3.6 V -0.01, 4.9 V -0.01, 6.0-6.8 V +0.01, 7.0-7.6 V +0.20, >7.8 V +0.78",
+      "note": "the design; stage 1's tracker +0.54 to +0.76"
+    },
+    {
+      "quantity": "scatter, warm (counts sd)",
+      "value": "0.41",
+      "note": "at the truth's own floor"
+    },
+    {
+      "quantity": "noise per tick of the sample (counts sd)",
+      "value": "1.06 asleep, 1.11 coast, 1.16 narrow drive",
+      "note": "16-tick pattern 1.0 pp, 1/f low end"
+    },
+    {
+      "quantity": "noise of the zero at 2^-13 (counts)",
+      "value": "0.007 white, 0.09 in a 2 s coast",
+      "note": "the zero follows the amplifier's wander"
+    },
+    {
+      "quantity": "time constant (s of feed)",
+      "value": "0.4096",
+      "note": "corner 0.39 Hz"
+    },
+    {
+      "quantity": "valid: fed share of awake rows",
+      "value": "0.91",
+      "note": "longest unfed awake stretch 2.40 s"
+    },
+    {
+      "quantity": "hold, 90 % at 1 / 10 / 60 s (counts)",
+      "value": "0.59 / 0.81 / 0.95",
+      "note": "re-seed past 0.32 V of rail move"
+    },
+    {
+      "quantity": "start-up to 0.5 counts (s of feed)",
+      "value": "0.06 median, 0.30 worst",
+      "note": "stage 1's tracker 0.78 median"
+    },
+    {
+      "quantity": "all runs (counts rms, worst)",
+      "value": "0.41, +1.97",
+      "note": "stage 1's tracker 0.88, +7.20"
+    }
+  ],
+  "gaps": [
+    {
+      "gap": "no rail, reference or temperature channel in the rows",
+      "capture": "a stage 3 schedule re-streamed with vbus, vref_raw and ntc_raw; a torque-off and coast series while the board warms"
+    },
+    {
+      "gap": "the step's shape off 4.9 V rests on one day",
+      "capture": "three sweeps with a coast at 3.7, 5.0 and 7.4 V on another day"
+    },
+    {
+      "gap": "the 6.0-6.8 V band sits above the curve",
+      "capture": "a ladder sweep with coasts at 6.0, 6.4 and 6.8 V"
+    },
+    {
+      "gap": "the step under a rail that sags with the load",
+      "capture": "a narrow drive with a series resistor for half the run, a coast after each half"
+    },
+    {
+      "gap": "a drive between two readings adds 0.40 counts",
+      "capture": "the ladder with a rest in place of every second rung"
+    },
+    {
+      "gap": "fast alphas against a far truth",
+      "capture": "a 0.1 s coast after every narrow rung"
+    },
+    {
+      "gap": "stalls and loaded holds scored on the proxy truth",
+      "capture": "a 0.1 s coast after a stall hold"
+    },
+    {
+      "gap": "nothing between 80 and 100 % duty",
+      "capture": "rungs at 85, 90 and 95 % with a coast after each"
+    },
+    {
+      "gap": "the trough's rise under a drive grows with the rail",
+      "capture": "stage 1's dummy-load trough at two rails, same duty"
+    },
+    {
+      "gap": "the 3.3 V laps moved both zeros",
+      "capture": "the asleep baseline with vref_raw while the supply steps 3.3 to 3.8 V in 50 mV"
+    },
+    {
+      "gap": "the zero during and after a wide drive over 2.4 s",
+      "capture": "holds at 60 % duty for 10 and 60 s, a coast after each"
+    }
+  ]
+}
