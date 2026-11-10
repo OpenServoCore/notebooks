@@ -69,8 +69,8 @@ NTC, and the brush term as the speed-times-current product and as the
 signed speed table, each solved in closed form or by a fixed number of
 steps. The gate is that window means of the per-row estimate reproduce
 stage 3's scores per band. Then the noise per tick, the candidate filters,
-and the valid flag: the tap floor, the dropout rate, and the first rows
-after a reversal.
+and the valid flag: the tap floor, the dropouts, and the first rows after
+a reversal.
 
 Run: no capture of its own.
 
@@ -78,7 +78,7 @@ Run: no capture of its own.
 
 Targets: the horn angle from the pot per row, as a lookup indexed by
 counts, with a held-out grade against the tag, the converter's carry
-codes, the filter, and the lash offset.
+codes, the filter, and the lash.
 
 Needs: stage 3's pot-table result and its clips, and the load ladder's
 holds.
@@ -141,13 +141,13 @@ Run: no capture of its own.
 
 | Deliverable | From | Gap |
 |---|---|---|
-| current loop's feedback | `current-zero`: the zero's error and its start-up time | none |
-| velocity loop's feedback | `velocity`: noise against delay, the rest verdict, the crawl | the brush term's form under load |
-| position loop's feedback | `position`: noise against delay, the held-out residual, the lash offset | the grade at speed is bounded by the stamp lead |
+| current loop's feedback | `current-zero`: the zero's error and its start-up time | no rail, reference or temperature channel in the rows |
+| velocity loop's feedback | `velocity`: noise against delay, the rest verdict, the crawl | the brush term's form under load; the blend and the rest verdict's form are open |
+| position loop's feedback | `position`: noise against delay, the held-out residual, the lash as a bound | the grade at speed is bounded by the stamp lead |
 | thermal derate and cutoff | `winding-temperature` | no thermal capture |
-| valid flags for the faults | `speed`, `velocity` | none |
+| valid flags for the faults | `speed`, `velocity` | the tap floor's rung is open; stage 3's dropout rate flag was not run |
 
-The gaps are stage 3's and are carried, not closed here. The brush term's
-form under load needs holds at one speed and two currents. The position
-grade at speed needs the segment stamps fixed in the capture tool. Chirps
-and a closed-loop hold are stage 5's bench.
+The `compensation` notebook lists every gap with the capture that would
+close it. The brush term's form under load needs holds at one speed and two
+currents. The position grade at speed needs the segment stamps fixed in the
+capture tool. Chirps and a closed-loop hold are stage 5's bench.
