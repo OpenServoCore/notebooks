@@ -16,13 +16,24 @@ angle, where the ripple sits at one fixed frequency whatever the speed,
 and counts its crossings there, each pass on the angle the last one
 counted.
 
+The phase count reads the ripple's own phase, cycle by cycle, inside one
+stretch of constant duty. Around each center row the current is fitted with
+a constant, a slope and one sinusoid at one cycle per commutation period of
+a seed angle, Hann-tapered over +/- one cycle of it. On angle the line sits
+at order 1 at any speed, and a fit this local has no filter edge to ring on
+the current's step at a duty change: the stretch's first rows cost one
+cycle, not a filter's settling. The sinusoid's phase against the seed,
+unwrapped along the centers and added to the seed, is the phase in cycles.
+Each later pass re-reads the current on the phase the last one counted,
+smoothed, so the seed only has to keep the first pass from slipping a cycle.
+
 Every function takes the row rate `fs`, a sweep's 20 kHz by default, and
 works in rows from the start of the array it is given, except the order
 count's, which work in seconds.
 """
 import numpy as np
 import pandas as pd
-from scipy.signal import butter, sosfiltfilt
+from scipy.signal import butter, savgol_filter, sosfiltfilt
 
 ROWS_HZ = 20_000        # a sweep's rows per second, the control tick
 ZERO_PAD = 8            # the spectrum's zero padding, a line read to 1/8 bin
@@ -53,6 +64,13 @@ INTEGRAL_UNTIL = 9      # the crossing before which speed is the integral
 SEED_BOX_ROWS = 41      # about 2 ms, the EMF seed's boxcar
 FIT_HALF_S = 0.005      # s, the +/- half width of an acceleration fit
 FIT_STEP_S = 0.0005     # s, a fit center every 0.5 ms
+PHASE_HALF_CYCLES = 1.0     # cycles of the seed either side of a center
+PHASE_STEP_ROWS = 4         # rows between centers (0.2 ms)
+PHASE_MIN_ROWS = 8          # rows, the fewest a fit window holds
+PHASE_MAX_ROWS = 6000       # rows, a fit window longer than this is a stall
+PHASE_PASSES = 3
+PHASE_SMOOTH_ROWS = 100     # rows (5 ms), a pass's phase smoothed for the next
+ANGLE_SEED_ROWS = 401       # rows (20 ms), an angle seed's quadratic
 
 
 def spectrum(x, fs=ROWS_HZ):
@@ -359,3 +377,130 @@ def sharp_drops(current, first_crossing, dip_a=0.12, from_s=0.0015,
     k = np.flatnonzero(np.diff(current) < -dip_a) + 1
     k = k[(t[k] > from_s) & (t[k] < first_crossing + past_s)]
     return k[np.r_[True, np.diff(k) > merge_rows]][:n]
+
+
+def _centered_mean(x, n):
+    x = np.asarray(x, float)
+    k = np.ones(n)
+    return np.convolve(x, k, "same") / np.convolve(np.ones_like(x), k, "same")
+
+
+def phase_pass(x, seed, lo, hi, half=PHASE_HALF_CYCLES, step=PHASE_STEP_ROWS,
+               max_rows=PHASE_MAX_ROWS):
+    """(centers, delta, amp, res): per center row in [lo, hi) whose window
+    of +/- half cycles of `seed` lies inside [lo, hi), the ripple's phase
+    less the seed (cycles, unwrapped along the centers), the sinusoid's
+    amplitude and the fit's residual rms (x's unit)."""
+    sm = np.maximum.accumulate(np.asarray(seed[lo:hi], float))
+    xs = np.asarray(x[lo:hi], float)
+    n = len(sm)
+    cs, ph, amp, res = [], [], [], []
+    for c in range(0, n, step):
+        if sm[c] - sm[0] < half or sm[-1] - sm[c] < half:
+            continue
+        a = int(np.searchsorted(sm, sm[c] - half, "left"))
+        b = int(np.searchsorted(sm, sm[c] + half, "right"))
+        if b - a > max_rows or b - a < PHASE_MIN_ROWS:
+            continue
+        u = sm[a:b] - sm[c]
+        m = np.column_stack([np.ones(b - a), u, np.cos(2 * np.pi * u),
+                             np.sin(2 * np.pi * u)])
+        # a Hann taper over the two cycles: its response falls to nothing
+        # at orders 0 and 2, and it bears a seed whose rate is off
+        wt = np.sqrt(0.5 * (1 + np.cos(np.pi * u / half)).clip(0, None))
+        p, *_ = np.linalg.lstsq(m * wt[:, None], xs[a:b] * wt, rcond=None)
+        r = (xs[a:b] - m @ p) * wt / np.sqrt(np.mean(wt ** 2))
+        # x ~ A cos(2 pi (u + seed_c + delta)): the phase at the center
+        cs.append(c + lo)
+        ph.append(-np.arctan2(p[3], p[2]) / (2 * np.pi) - sm[c])
+        amp.append(float(np.hypot(p[2], p[3])))
+        res.append(float(r.std()))
+    cs = np.array(cs, int)
+    if len(cs) < 2:
+        return cs, np.array([]), np.array([]), np.array([])
+    delta = np.unwrap(2 * np.pi * np.array(ph)) / (2 * np.pi)
+    return cs, delta, np.array(amp), np.array(res)
+
+
+class PhaseCount:
+    """The ripple's phase over the rows [lo, hi) of x: `phi(rows)` in
+    cycles, NaN outside the centers, with the count's trust numbers.
+
+    `ok` is False when a pass finds under two centers, a seed that moves
+    under two windows over the stretch. `conv` is the most the last pass
+    differs from the one before at a center, a whole-cycle label aside."""
+
+    def __init__(self, x, seed, lo, hi, passes=PHASE_PASSES,
+                 half=PHASE_HALF_CYCLES, step=PHASE_STEP_ROWS,
+                 max_rows=PHASE_MAX_ROWS, smooth_rows=PHASE_SMOOTH_ROWS):
+        self.ok = False
+        self.conv = np.nan
+        self.lo, self.hi = lo, hi
+        seed = np.asarray(seed, float).copy()
+        last = None
+        for _ in range(passes):
+            cs, delta, amp, res = phase_pass(x, seed, lo, hi, half, step,
+                                             max_rows)
+            if len(cs) < 2:
+                return
+            rows = np.arange(lo, hi)
+            sm = np.maximum.accumulate(seed[lo:hi])
+            if last is not None:
+                both = np.intersect1d(cs, last[0])
+                a = np.interp(both, cs, sm[cs - lo] + delta)
+                b = np.interp(both, last[0], last[1])
+                d = a - b
+                self.conv = float(np.max(np.abs(d - np.round(np.median(d)))))
+            last = (cs, sm[cs - lo] + delta)
+            # smoothed so no center's noise is fed back to the next pass
+            n_s = max(1, smooth_rows // step) | 1
+            d_s = _centered_mean(delta, n_s)
+            seed = seed.copy()
+            seed[lo:hi] = sm + np.interp(rows, cs, d_s)
+        self.c = cs
+        self.phi_c = sm[cs - lo] + delta
+        self.amp, self.res = amp, res
+        self.step = np.abs(np.diff(delta))
+        self.ok = True
+
+    def phi(self, rows):
+        rows = np.asarray(rows, float)
+        out = np.interp(rows, self.c, self.phi_c)
+        out[(rows < self.c[0]) | (rows > self.c[-1])] = np.nan
+        return out
+
+    def max_step(self, r0, r1):
+        """The largest step of the phase against the seed between two
+        centers inside [r0, r1], cycles."""
+        m = (self.c[:-1] >= r0) & (self.c[1:] <= r1)
+        return float(self.step[m].max()) if m.any() else np.nan
+
+    def min_snr(self, r0, r1):
+        """The least sinusoid amplitude over the fit's residual rms at a
+        center inside [r0, r1]."""
+        m = (self.c >= r0) & (self.c <= r1)
+        return float((self.amp[m] / self.res[m]).min()) if m.any() else np.nan
+
+    def crossings(self):
+        """Rows where the phase passes a whole number: one per commutation."""
+        k = np.arange(np.ceil(self.phi_c[0]), np.floor(self.phi_c[-1]) + 1)
+        return np.interp(k, self.phi_c, self.c)
+
+
+def angle_seed(theta, cycle, rows=ANGLE_SEED_ROWS):
+    """An angle as a phase count's seed, cycles: theta over one commutation
+    period in theta's unit, a quadratic over `rows` around each row."""
+    return savgol_filter(theta, rows, 2) / cycle
+
+
+def order_crossing_rows(x, theta_cycles, lo, hi, per_rev, offset=0,
+                        frac=ORDER_BAND, ns=GRID_SAMPLES):
+    """Rows of the order count's upward crossings over [lo, hi):
+    `angle_crossings` on the angle given in cycles, x read `offset` rows
+    on, no repair."""
+    th = np.maximum.accumulate(np.asarray(theta_cycles[lo:hi], float))
+    th_rad = th * (2 * np.pi / per_rev)
+    xs = np.asarray(x[lo + offset:hi + offset], float)
+    c = angle_crossings(xs, th_rad, per_rev, frac, ns)
+    keep = np.r_[True, np.diff(th_rad) > 0]
+    return np.interp(c, th_rad[keep], np.arange(lo, hi)[keep]) + offset
