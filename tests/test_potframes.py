@@ -1,6 +1,6 @@
 """Stage 3's frame pipeline on synthetic inputs: the schedule step of a
-segment, the pot's centered mean and speed, the stamp lead and the rule that
-picks the moving frames."""
+segment, the pot's centered mean and speed, the stamp lead, the rule that
+picks the moving frames, the tag as a truth and the series of a chain."""
 import numpy as np
 import pandas as pd
 
@@ -98,3 +98,89 @@ def test_moving_frames_keeps_only_the_steady_drives():
     assert list(moving["sid"]) == ["crawl-0-0/1/2", "crawl-0-0/1/5",
                                    "pass-open/0/1"]
     assert (lo, hi) == (-100.0, -60.0)
+
+
+def quad_tags(t):
+    y = 3.0 - 40.0 * t + 25.0 * t ** 2
+    return pd.DataFrame({"host": t, "image_deg": y, "both": True})
+
+
+def test_smooth_tag_returns_a_quadratics_own_values_and_nan_by_a_hole():
+    t = np.arange(0.0, 0.5, 1 / 240)
+    tf, ys, y, lev = pf.smooth_tag(quad_tags(t))
+    assert np.isnan(ys[[0, -1]]).all()
+    np.testing.assert_allclose(ys[1:-1], y[1:-1], atol=1e-9)
+    assert np.isfinite(lev[1:-1]).all()
+    # a 50 ms hole: every frame whose quadratic would span it reads NaN
+    th = np.r_[t[t < 0.2], t[t > 0.25]]
+    tf, ys, y, _ = pf.smooth_tag(quad_tags(th))
+    i = int(np.flatnonzero(np.diff(tf) > pf.MAX_FRAME_GAP_S)[0])
+    near = np.arange(i - pf.HALF_FRAMES + 1, i + pf.HALF_FRAMES + 1)
+    assert np.isnan(ys[near]).all()
+    rest = np.setdiff1d(np.arange(1, len(tf) - 1), near)
+    np.testing.assert_allclose(ys[rest], y[rest], atol=1e-9)
+
+
+def test_tag_at_is_a_line_between_frames_and_nan_across_a_hole():
+    tf = np.array([0.0, 0.004, 0.008, 0.060, 0.064])
+    yf = np.array([1.0, 2.0, 3.0, 10.0, 11.0])
+    tr = np.array([-0.001, 0.002, 0.006, 0.03, 0.062, 0.07, np.nan])
+    got = pf.tag_at(tf, yf, tr)
+    np.testing.assert_allclose(got[1:3], [1.5, 2.5])
+    assert got[4] == 10.5
+    assert np.isnan(got[[0, 3, 5, 6]]).all()
+    # a frame without a truth is not a frame
+    got = pf.tag_at(tf, np.r_[yf[:2], np.nan, yf[3:]], np.array([0.006]))
+    assert np.isnan(got).all()
+
+
+def two_segments(hole_s=0.005):
+    """Chain rows of segments 1 (400 rows, pot 1000) and 2 (300 rows, pot
+    1100, duty 360 after 2 rows at 0) with hole_s of lost rows between."""
+    h1 = 10.0 + np.arange(400) / FS
+    h2 = h1[-1] + hole_s + (1 + np.arange(300)) / FS
+    duty = np.r_[np.full(400, 200), 0, 0, np.full(298, 360)]
+    rows = {"seg": np.repeat([1, 2], [400, 300]),
+            "pos": np.repeat([1000, 1100], [400, 300]),
+            "host": np.r_[h1, h2], "host_cam": np.r_[h1, h2] + 0.002,
+            "duty_counts": duty}
+    emf = {k: np.ones(700) for k in pf.EMF_KEYS}
+    first = np.zeros(700, bool)
+    first[[0, 400]] = True
+    emf.update(valid=np.ones(700, bool), first=first)
+    return rows, emf
+
+
+def test_group_fills_the_lost_rows_on_a_line_with_no_valid_emf():
+    rows, emf = two_segments(0.005)
+    t = np.arange(9.9, 10.1, 1 / 240)
+    tag = (t, 5.0 + t)
+    g = pf.group(rows, [1, 2], emf=emf, tag=tag)
+    fill = g["fill"]
+    assert fill.sum() == 100 and len(g["pos"]) == 800
+    assert g["starts"] == [0, 500]
+    assert not fill[:400].any() and fill[400:500].all()
+    assert not fill[500:].any()
+    seam = g["pos"][399:501]
+    np.testing.assert_allclose(np.diff(seam), 100.0 / 101)
+    np.testing.assert_allclose(np.diff(g["host"]), 1 / FS, rtol=1e-6)
+    assert (g["src"][fill] == -1).all()
+    assert list(g["src"][~fill]) == list(range(700))
+    assert np.isnan(g["w_tab"][fill]).all() and not g["valid"][fill].any()
+    assert not g["first"][fill].any() and g["first"][500]
+    assert (g["duty"][fill] == 360).all() and (g["drive"][fill] == 1).all()
+    assert (g["seg"][fill] == 2).all() and g["torque_on"].all()
+    np.testing.assert_allclose(g["tag"], 5.0 + g["cam"])
+
+
+def test_group_without_emf_or_tag_carries_the_rows_only():
+    rows, _ = two_segments(0.0)
+    g = pf.group(rows, [1, 2])
+    assert not g["fill"].any() and len(g["pos"]) == 700
+    assert not set(pf.EMF_KEYS) & set(g) and np.isnan(g["tag"]).all()
+
+
+def test_groups_of_is_the_baseline_then_the_lead_groups():
+    assert pf.groups_of("pass", range(5)) == [[0], [1, 2], [3, 4]]
+    assert pf.groups_of("crawl", range(7)) == [[0], [1, 2, 3], [4, 5, 6]]
+    assert pf.groups_of("steps", [2, 0, 1]) == [[0], [1], [2]]

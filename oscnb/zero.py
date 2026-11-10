@@ -9,13 +9,13 @@ settled coast or a drive no wider than the gate feeds the awake zero. A
 zero unfed for STALE_TICKS ticks is stale and takes the other zero's
 moves, so it follows the board while it is not fed.
 
-The float tracker (`Rule`, `replay`, `score`, `track`) is the estimator
-of record: one numba core carries every variant (alpha, the drive-feed
-constant, the start rules) as parameters, with the defaults stage 1's
-tracker in float. The integer port of stage 1's tracker (Q16 state, an
-arithmetic shift for alpha: `run_tracker`, `Tracker`, `kinds_from_bridge`,
-`IntRule`, `replay_int`, `score_int`) is kept as the reference the float
-form is compared with.
+The float tracker (`Rule`, `replay`, `zero_rows`, `score`, `track`) is
+the estimator of record: one numba core carries every variant (alpha, the
+drive-feed constant, the start rules) as parameters, with the defaults
+stage 1's tracker in float. The integer port of stage 1's tracker (Q16
+state, an arithmetic shift for alpha: `run_tracker`, `Tracker`,
+`kinds_from_bridge`, `IntRule`, `replay_int`, `score_int`) is kept as the
+reference the float form is compared with.
 
 Replays run over a pair's RowStore (oscnb.sweeps) in time order, the
 state carried from sweep to sweep; `with_truth` adds the truth they are
@@ -634,6 +634,14 @@ def replay(rule, store, asleep=False):
           rule.fast_on in ("seed", "both"), rule.fast_mean, rule.f32,
           int(rule.debounce), rule.no_seed, out, kind, out_s, n_seed)
     return (out, kind, n_seed, out_s) if asleep else (out, kind, n_seed)
+
+
+def zero_rows(rule, store):
+    """The awake zero each row may use (float64 counts per global row): the
+    float tracker's state after the row before, as a controller reads it
+    before the row's own update; row 0 takes its own. State: replay's."""
+    z, _, _ = replay(rule, store)
+    return np.r_[z[0], z[:-1]].astype(np.float64)
 
 
 def score(rule, store, keep=False):

@@ -15,6 +15,16 @@ pos = T(theta) + c_s, T a cubic B-spline in the tag angle.
 
 `load` runs the whole pipeline over one pair's folder; every step is a
 function of its inputs, so a notebook can run them one at a time.
+
+The same sitting as series a causal estimator runs over, the tag the
+truth: `chain_table` matches each chain to its sweep in a row store (its
+global rows) with the chain's manifest NTC; `segment_table` names every
+segment and the rows scored as steady; `smooth_tag` and `tag_at` give the
+tag at any time (a quadratic through the frames around each frame, which
+looks ahead, then a line between frames); `groups_of` and `all_groups`
+name the series (the baseline, then each lead group); `group` lays one
+series on a uniform row grid, the rows the stream lost between two of its
+segments filled on a line and marked.
 """
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +36,7 @@ from scipy.ndimage import uniform_filter1d
 
 from . import boards, results, tel
 from . import fiducial as fd
+from .manifest import manifest_probes
 
 SITTING = "servo-camera-9"  # the sitting's event log under sittings/
 EXPERIMENT = "pot-table"    # the sitting's data folder under the pair
@@ -47,6 +58,14 @@ SMOOTH_PTS = 10                                  # grid points, 10 ms
 SKIP_S = 0.15           # s, the kick's spin-up out of a hold
 END_S = 0.02            # s, the end of a segment out
 MOVING_CPS = 50         # counts/s, a frame that moves
+# the sitting as series, the tag the truth
+REV_SKIP_S = 0.40       # s, a reversal's turn-around and play, not steady
+HALF_FRAMES = 3         # frames either side of a frame, the tag's quadratic
+MIN_FIT_FRAMES = 5      # frames the quadratic needs at least
+MAX_FRAME_GAP_S = 0.030  # s, no truth across a longer hole in the frames
+TAG_SPEED_ROWS = 2000   # rows with a truth, a segment's steady tag speed
+FILL_MEAN_ROWS = 16     # rows, the pot pattern's period: a hole's ends
+FILL_DUTY_ROW = 4       # rows into the next segment, a filled row's duty
 
 
 def clip_events(manifest):
@@ -393,3 +412,246 @@ def load(pair_dir, manifest=None):
     starts = static[static["kind"] == "start"].copy()
     return PotFrames(clips, chains, sweeps, clocks, tags, frames, static,
                      lead, moving, rest, starts, lo, hi, guards, rail_v)
+
+
+def kind_of(clip):
+    """A clip's kind: pass, crawl, reversal or steps."""
+    return clip.split("-")[0]
+
+
+def chain_table(pf, store, pair_dir, manifest=None):
+    """One row per chain of a PotFrames `pf`, in its order, matched to its
+    sweep in `store` (the pair's oscnb.sweeps RowStore): clip, k, block,
+    sweep (the store's), folder, i0 and i1 (its global rows), rows, ntc_c
+    (C, the chain's manifest probe through the store's board: read before
+    the chain, so causal; NaN without one), gap_s, rail_store_v (the
+    store's rail, V) and tick_hz. The probes are the manifest's, the
+    sitting's own log unless `manifest` names another. Raises where a
+    chain has no sweep or its rows are not the sweep's."""
+    pair_dir = Path(pair_dir)
+    if manifest is None:
+        manifest = pair_dir / "sittings" / f"{SITTING}.csv"
+    probes = manifest_probes(manifest)
+    sw = store.sweeps
+    folders = sw["folder"].to_numpy()
+    out = []
+    for (clip, k), (rows, meta, _) in pf.sweeps.items():
+        block = pf.clips[clip][0]
+        folder = f"{EXPERIMENT}/{block}/chains/{k}"
+        hit = np.flatnonzero(folders == folder)
+        if len(hit) != 1:
+            raise ValueError(f"{folder}: {len(hit)} sweeps in the store")
+        s = int(hit[0])
+        i0, i1 = int(sw.loc[s, "i0"]), int(sw.loc[s, "i1"])
+        if i1 - i0 != len(rows) or ("raw" in store.arrays and not
+                                    np.array_equal(store.arrays["raw"][i0:i1],
+                                                   rows["current_raw"])):
+            raise ValueError(f"{folder}: the chain's rows are not the "
+                             "store's")
+        pr = probes.get(f"telemetry/{pair_dir.name}/{folder}")
+        ntc = (float(store.board.ntc_c_beta(pr["ntc_raw"]))
+               if pr is not None else np.nan)
+        out.append(dict(clip=clip, k=k, block=block, sweep=s, folder=folder,
+                        i0=i0, i1=i1, rows=len(rows), ntc_c=ntc,
+                        gap_s=float(sw.loc[s, "gap_s"]),
+                        rail_store_v=float(sw.loc[s, "rail"]),
+                        tick_hz=float(meta["tick_hz"])))
+    return pd.DataFrame(out)
+
+
+def smooth_tag(tags):
+    """(host s, smoothed, raw, the center's leverage) of a clip's frames
+    with both tags (`clip_angles`): each frame's value on the quadratic
+    in time through the HALF_FRAMES frames either side, NaN where fewer
+    than MIN_FIT_FRAMES exist or they span over two MAX_FRAME_GAP_S. Looks
+    ahead: a truth."""
+    f = tags[tags["both"]]
+    t, y = f["host"].to_numpy(), f[ANGLE].to_numpy()
+    n = len(t)
+    ys = np.full(n, np.nan)
+    lev = np.full(n, np.nan)
+    for i in range(n):
+        a, b = max(0, i - HALF_FRAMES), min(n, i + HALF_FRAMES + 1)
+        tt = t[a:b] - t[i]
+        if b - a < MIN_FIT_FRAMES or tt.max() - tt.min() > 2 * MAX_FRAME_GAP_S:
+            continue
+        X = np.vander(tt, 3)
+        beta, *_ = np.linalg.lstsq(X, y[a:b], rcond=None)
+        ys[i] = beta[2]
+        lev[i] = np.linalg.pinv(X)[2, i - a]
+    return t, ys, y, lev
+
+
+def tag_at(t_frames, y_frames, t_rows):
+    """The tag at the rows' times, a line between the frames; NaN across a
+    hole in the frames over MAX_FRAME_GAP_S, outside them and at a NaN
+    time."""
+    ok = np.isfinite(y_frames)
+    tf, yf = t_frames[ok], y_frames[ok]
+    out = np.interp(t_rows, tf, yf, left=np.nan, right=np.nan)
+    j = np.clip(np.searchsorted(tf, t_rows), 1, len(tf) - 1)
+    out[(tf[j] - tf[j - 1]) > MAX_FRAME_GAP_S] = np.nan
+    out[~np.isfinite(t_rows)] = np.nan
+    return out
+
+
+def label_of(kind, seg, duty_ticks):
+    """What a segment of a `kind` clip's chain is, from its number and its
+    median on-ticks: baseline, coast, pass, kick, reversal, step-base,
+    step-top, crawl or hold."""
+    if seg == 0:
+        return "baseline"
+    if duty_ticks == 0:
+        return "coast"
+    if kind == "pass":
+        return "pass"
+    if seg in (1, 4):
+        return "kick"
+    if kind == "reversal" and seg in (3, 6):
+        return "reversal"
+    if kind == "steps":
+        return "step-base" if seg in (2, 5) else "step-top"
+    return "crawl" if kind == "crawl" else "hold"
+
+
+def segment_table(pf, chains):
+    """One row per segment of every chain of `chains` (chain_table): clip,
+    k, seg, kind, label, drive (the median duty's sign), duty_ticks, a, b
+    (its rows in the chain), rows, steady0 and steady1 (the rows scored as
+    steady: SKIP_S after the start, REV_SKIP_S on a reversal, to END_S
+    before the end; none on a baseline, a coast or a kick), tag_deg_s (the
+    tag's speed over the steady rows with a truth, NaN under
+    TAG_SPEED_ROWS of them), pos0, pos1, ntc_c and lead_ok (the first row
+    has a camera time)."""
+    recs, tags = [], {}
+    for r in chains.itertuples():
+        rows, meta, _ = pf.rows(r.clip, r.k)
+        fs = meta["tick_hz"]
+        kind = kind_of(r.clip)
+        if r.clip not in tags:
+            tags[r.clip] = smooth_tag(pf.tags[r.clip])[:2]
+        cam = rows["host_cam"].to_numpy()
+        tag_rows = tag_at(*tags[r.clip], cam)
+        seg = rows["seg"].to_numpy()
+        duty_counts = rows["duty_counts"].to_numpy()
+        pos = rows["pos"].to_numpy()
+        cut = np.flatnonzero(np.diff(seg) != 0) + 1
+        for a, b in zip(np.r_[0, cut], np.r_[cut, len(seg)]):
+            s = int(seg[a])
+            duty = int(np.median(duty_counts[a:b]))
+            lab = label_of(kind, s, duty)
+            s0 = a + int((REV_SKIP_S if lab == "reversal" else SKIP_S) * fs)
+            s1 = b - int(END_S * fs)
+            if lab in ("baseline", "coast", "kick"):
+                s0, s1 = a, a
+            tg = tag_rows[s0:s1]
+            ok = np.isfinite(tg)
+            v_tag = np.nan
+            if ok.sum() > TAG_SPEED_ROWS:
+                i0, i1 = np.flatnonzero(ok)[[0, -1]]
+                v_tag = (tg[i1] - tg[i0]) / ((i1 - i0) / fs)
+            recs.append(dict(clip=r.clip, k=r.k, seg=s, kind=kind, label=lab,
+                             drive=int(np.sign(duty)), duty_ticks=abs(duty),
+                             a=a, b=b, rows=b - a, steady0=s0, steady1=s1,
+                             tag_deg_s=v_tag, pos0=float(pos[a]),
+                             pos1=float(pos[b - 1]), ntc_c=r.ntc_c,
+                             lead_ok=bool(np.isfinite(cam[a]))))
+    return pd.DataFrame(recs)
+
+
+def groups_of(kind, segs):
+    """The series of a chain with segments `segs` a causal estimator runs
+    over: the baseline alone, then each lead group of GROUPS[kind] (a seek
+    with no rows parts them); a chain with other segments, each alone."""
+    groups = [[0]] + [list(g) for g in GROUPS[kind]]
+    segs = sorted(int(s) for s in segs)
+    if segs == sorted(s for g in groups for s in g):
+        return groups
+    return [[s] for s in segs]
+
+
+def all_groups(segments):
+    """(clip, k, segs) of every series of a segment_table, in its order."""
+    return [(clip, k, g)
+            for (clip, k), s in segments.groupby(["clip", "k"], sort=False)
+            for g in groups_of(kind_of(clip), s["seg"])]
+
+
+EMF_KEYS = ("w_tab", "w_prod", "i_w")
+
+
+def group(rows, segs, emf=None, tag=None, fs=FS):
+    """The segments `segs` of one chain as one series on a uniform row grid.
+
+    rows: the chain's rows (PotFrames.rows, or a dict of its columns seg,
+    pos, host, host_cam, duty_counts); emf: oscnb.speed.emf_run over the
+    chain's rows (None: no back-EMF columns); tag: (host s, deg) of the
+    frames (smooth_tag's first two) or None. The rows a hole lost between
+    two segments (its host time at fs rows a second) are filled on a line:
+    the pot between the means of the FILL_MEAN_ROWS rows either side, the
+    times between the rows either side.
+
+    Arrays per row: pos (counts, float), fill (a filled row), seg, duty
+    (signed ticks; a filled row takes the next segment's at FILL_DUTY_ROW),
+    cam (camera time s, NaN without a lead), host (s), with emf w_tab,
+    w_prod (rev/s in the drive's direction, NaN off the drive and on a
+    filled row), i_w (A), valid and first (False on a filled row); src
+    (the row's index in the chain, -1 on a filled row), drive (the duty's
+    sign), tag (deg, NaN without a truth), torque_on. Also starts (each
+    segment's first row in the series) and segs."""
+    c = {k: np.asarray(rows[k])
+         for k in ("seg", "pos", "host", "host_cam", "duty_counts")}
+    names = (("pos", "fill", "seg", "duty", "cam", "host")
+             + (EMF_KEYS + ("valid",) if emf is not None else ())
+             + ("src",) + (("first",) if emf is not None else ()))
+    cols = {name: [] for name in names}
+    starts = []
+    n_tot = pa = 0
+    for j, s in enumerate(segs):
+        m = np.flatnonzero(c["seg"] == s)
+        a, b = m[0], m[-1] + 1
+        pos = c["pos"][a:b].astype(float)
+        gap = (int(round((c["host"][a] - c["host"][pa - 1]) * fs)) - 1
+               if j else 0)
+        if gap > 0:
+            w = np.arange(1, gap + 1) / (gap + 1)
+            p0 = cols["pos"][-1][-FILL_MEAN_ROWS:].mean()
+            p1 = pos[:FILL_MEAN_ROWS].mean()
+            cols["pos"].append(p0 + w * (p1 - p0))
+            for name, src in (("cam", "host_cam"), ("host", "host")):
+                x0, x1 = c[src][pa - 1], c[src][a]
+                cols[name].append(x0 + w * (x1 - x0))
+            cols["fill"].append(np.ones(gap, bool))
+            cols["seg"].append(np.full(gap, s))
+            cols["duty"].append(
+                np.full(gap, float(c["duty_counts"][a + FILL_DUTY_ROW])))
+            if emf is not None:
+                for name in EMF_KEYS:
+                    cols[name].append(np.full(gap, np.nan))
+                cols["valid"].append(np.zeros(gap, bool))
+                cols["first"].append(np.zeros(gap, bool))
+            cols["src"].append(np.full(gap, -1))
+            n_tot += gap
+        starts.append(n_tot)
+        cols["pos"].append(pos)
+        cols["cam"].append(c["host_cam"][a:b])
+        cols["host"].append(c["host"][a:b])
+        cols["fill"].append(np.zeros(b - a, bool))
+        cols["seg"].append(np.full(b - a, s))
+        cols["duty"].append(c["duty_counts"][a:b].astype(float))
+        if emf is not None:
+            for name in EMF_KEYS + ("valid", "first"):
+                cols[name].append(emf[name][a:b])
+        cols["src"].append(np.arange(a, b))
+        n_tot += b - a
+        pa = b
+    g = {name: np.concatenate(v) for name, v in cols.items()}
+    g["drive"] = np.sign(g["duty"])
+    n = len(g["pos"])
+    g["tag"] = (tag_at(*tag, g["cam"])
+                if tag is not None and np.isfinite(g["cam"]).any()
+                else np.full(n, np.nan))
+    g["starts"] = starts
+    g["segs"] = list(segs)
+    g["torque_on"] = np.full(n, segs[0] != 0)
+    return g

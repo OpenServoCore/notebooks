@@ -14,6 +14,11 @@ cut again wherever time passes that no row covers. It builds in memory;
 Bridge states: ASLEEP where dir == 0 (torque off), COAST where the driver
 is on with no window (dir != 0, duty_counts == 0), else DRIVE (slow decay,
 |duty_counts| timer ticks either side of the crest).
+
+The store keeps |duty_counts| as `duty`; `duty_sign` is the drive's
+direction, which differs from `dirn` through a reversal segment (`dir`
+stays put while the duty's sign flips), and `tick` the tick counter as the
+rows carry it (it restarts in every segment).
 """
 import json
 from dataclasses import dataclass
@@ -156,6 +161,9 @@ COLUMNS = {
     "va": ("i2", lambda c: c.rows["vmotor_a"].to_numpy()),
     "vb": ("i2", lambda c: c.rows["vmotor_b"].to_numpy()),
     "valid": ("i1", lambda c: c.rows["window_valid"].to_numpy()),
+    "duty_sign": ("i1",
+                  lambda c: np.sign(c.rows["duty_counts"].to_numpy())),
+    "tick": ("i4", lambda c: c.rows["tick"].to_numpy()),
 }
 ZERO_COLUMNS = ("bridge", "duty", "dirn", "raw", "trough", "hi", "pos",
                 "pre_gap", "rail", "tsw", "ph")

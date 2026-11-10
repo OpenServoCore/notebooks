@@ -1,6 +1,6 @@
 """A pair's sweeps on a hand-made tree: the index's time order and gaps,
-the bridge state of a row, the run table and the row store, and the
-truth a coast's tail gives."""
+the bridge state of a row, the run table and the row store, the duty's
+sign and tick columns, and the truth a coast's tail gives."""
 import json
 
 import numpy as np
@@ -164,3 +164,23 @@ def test_truth_is_the_nearest_long_coasts_tail(tmp_path):
     assert drive[drive["sweep"] < 2]["truth"].isna().all()
     assert list(sw["n_tails"]) == [0, 0, 1]
     assert sw["truth"][2] == 1240.0 and np.isnan(sw["truth"][0])
+
+
+def test_duty_sign_is_the_drives_through_a_reversal_and_tick_as_read(
+        tmp_path):
+    pair = tmp_path / PAIR
+    # dir stays +1 through the reversal: the duty's sign flips
+    write_sweep(pair / "reversal/set-1", 10.0, [
+        seg(0, 100), seg(1, 200, cmd=9830, duty=360, valid=1),
+        seg(1, 300, cmd=-9830, duty=-360, valid=1, after_s=0.005)])
+    st = sweeps.row_store(pair, columns=("dirn", "duty", "duty_sign",
+                                         "tick"))
+    a = st.arrays
+    assert a["duty_sign"].dtype == np.int8 and a["tick"].dtype == np.int32
+    assert (a["dirn"][100:] == 1).all() and (a["duty"][100:] == 360).all()
+    np.testing.assert_array_equal(
+        a["duty_sign"], np.repeat(np.array([0, 1, -1], np.int8),
+                                  [100, 200, 300]))
+    np.testing.assert_array_equal(
+        a["tick"], np.r_[np.arange(100), np.arange(200), np.arange(300)])
+    assert not {"duty_sign", "tick"} & set(sweeps.ZERO_COLUMNS)
