@@ -3,6 +3,7 @@ their plans and run them in order, the caps refuse before anything moves,
 the seat check stops the seated work, the windows stay on the runway, and
 the synthetic servo's datasets load through the library."""
 import csv
+import dataclasses
 import sys
 from pathlib import Path
 
@@ -209,6 +210,24 @@ def test_camera_and_load_states_run(bench, tmp_path):
     assert limits and limits[-1][2] == 554, "the saved limit comes back"
     assert not [r for r in rows if r["event"] == "skip"
                 and "load/steps" in r["detail"]]
+
+
+def test_a_step_the_rests_predict_past_the_refusal_is_left_out(
+        bench, tmp_path, monkeypatch):
+    plans = sitting.discover(STAGES)
+    steps = next(p for p in plans if (p.experiment, p.name) == ("load", "steps"))
+
+    def run(s, out):
+        monkeypatch.setitem(steps.run.__globals__, "deg_at", lambda *a: 90.0)
+        return steps.run(s, out)
+
+    plans = [dataclasses.replace(p, run=run) if p is steps else p for p in plans]
+    sitting.run("servo-load", 4, plans=plans)
+    rows = manifest(tmp_path, "servo-load", 4)
+    assert [r for r in rows if r["event"] == "skip"
+            and "predict past" in r["detail"]]
+    chains = tmp_path / "telemetry" / GROUP / "load" / "steps-4" / "chains.csv"
+    assert not chains.exists(), "no step ran"
 
 
 def test_a_free_rung_over_the_rating_refuses(bench):
