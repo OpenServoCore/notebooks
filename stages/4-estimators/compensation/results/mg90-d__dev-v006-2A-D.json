@@ -1,0 +1,2199 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D",
+  "notes": "Stage 4 closing table, one servo on one board: mg90-d on dev-v006-2A-D. No capture of its own and no estimator run: every value is read from the pair's result files of 3-servo/compensation (s3) and 4-estimators current-zero (cz), position (pos), speed (spd), velocity (vel) and winding-temperature (wt), cited in the text as <file:key>, a key path joined by '/', a csv cell as <file:.table.csv[column=value].column>. 'derived' marks arithmetic on two cited keys, used to compare only. Brackets as the files give them. The state kept, the confidence words, the dispositions, the candidate causes, the speed and velocity notebooks' gaps and the captures are this notebook's text. No key names an option of record for the four open choices. Tables in .closing.csv, .stage3.csv, .pairs.csv and .gaps.csv.",
+  "closing_table": [
+    {
+      "estimator": "current zero (awake zero): stage 1's two-zero tracker with the start rule and the drive-feed constant",
+      "bias": "warm by rail band: 3.6 V -0.01, 4.9 V -0.01, 6.0-6.8 V +0.01, 7.0-7.6 V +0.20, >7.8 V +0.78 <cz:stage5_table/0/value> (the design; stage 1's tracker +0.54 to +0.76); stage 1's tracker alone warm mean 0.584 counts <cz:warm_error_mean_counts>; as speed: design 0.0486 [0.032, 0.0652] rev/s, +/- se <spd:tracked_zero_cost_per_sweep/design/warm/mean> over 134 sweeps <spd:tracked_zero_cost_per_sweep/design/warm/sweeps>, stage 1's tracker 0.302 [0.283, 0.321] rev/s, +/- se <spd:tracked_zero_cost_per_sweep/tracked/warm/mean>",
+      "noise_at_delay": "warm scatter 0.411 [0.373, 0.447] counts <cz:design_warm_rms_counts> rms at the truth's floor 0.396 counts <cz:truth_floor_counts>; the zero's own noise 0.00705 counts <cz:alpha_scan/shift_13/zero_noise_white_counts> white, 0.0903 counts <cz:alpha_scan/shift_13/zero_move_2s_coast_counts> over a 2 s coast; the sample per tick 1.061 [1.017, 1.114] counts <cz:trough_sd_per_tick_counts/asleep> asleep, 1.109 [1.038, 1.463] counts <cz:trough_sd_per_tick_counts/coast> coast, 1.161 [1.044, 1.436] counts <cz:trough_sd_per_tick_counts/narrow_drive> narrow drive",
+      "delay": "time constant 0.41 s <cz:tau_s> of feed; flat band of the shift [12, 14] <cz:alpha_flat_band_shift>",
+      "valid_flag": "fed or seeded since boot or a rail move, and inside the hold bound",
+      "valid_share": "fed on 0.911 share <cz:feed_share_awake_rows> of awake rows and 0.853 share <cz:feed_share_drive_rows> of drive rows; longest unfed awake stretch 2.400 s <cz:longest_unfed_awake_s>; hold p90 0.589 [0.551, 0.616] counts <cz:hold_p90_counts/1s> at 1 s, 0.812 [0.737, 0.965] counts <cz:hold_p90_counts/10s> at 10 s, 0.946 [0.877, 0.992] counts <cz:hold_p90_counts/60s> at 60 s",
+      "start_up": "to half a count in 0.0625 [-, 0.303] s <cz:start_rule_settle_to_half_count_fed_s> of feed (median, hi the worst) against 0.781 [0.389, 1.768] s <cz:settle_to_half_count_fed_s> for stage 1's tracker alone; start events 0.361 [0.241, 0.475] counts <cz:design_events_rms_counts> rms against 2.070 counts <cz:stage1_events_rms_counts>; boot error without the rule 6.363 counts <cz:start_error_counts/boot>",
+      "state": "two zeros as 64-bit floats in counts, their fresh counters, the rail the awake zero was learned at, the last rail sample, the running mean of the drive-feed offset",
+      "constants": "alpha 2^-13 <cz:alpha_scan/shift_13> (tau 0.41 s <cz:tau_s>), feed gate 30 % <cz:feed_gate_pct> (clean to 80 % <cz:feed_gate_clean_to_pct>), step line 1.667 [1.630, 1.704] counts/V <cz:awake_step_slope_counts_per_v> and -2.717 [-2.916, -2.518] counts <cz:awake_step_intercept_counts> or the curve of .step.csv, seed threshold 0.319 [0.2, 1] V <cz:seed_rail_threshold_v>, debounce 32 ticks <cz:seed_debounce_ticks>, drive-feed offset 0.667 [0.657, 0.698] counts <cz:drive_feed_offset_counts>",
+      "term_corrected": "the current channel's zero while the bridge is awake and its step with the rail (stage 3 row 8)",
+      "how": "learn the awake zero from trough rows of drives at or under the gate (the drive-feed offset taken off), settled coasts in the crest column and settled torque off; seed awake = asleep + step(rail) at boot and on a rail move past the threshold; subtract with its fraction",
+      "bound_left": "all runs 0.408 counts <cz:design_all_runs_rms_counts> rms, worst 1.967 counts <cz:design_all_runs_worst_counts> (stage 1's tracker alone 0.883 counts <cz:stage1_all_runs_rms_counts>, worst 7.204 counts <cz:stage1_all_runs_worst_counts>); stall holds on the proxy truth 1.536 counts <cz:stall_hold_error_counts_rms>; a count is 0.471 [0.471, 0.517] rev/s per count of zero <spd:rev_s_per_count>",
+      "confidence": "high on this servo; moderate for the step curve: the step's shape off 4.9 V rests on one day <cz:gaps/1/gap>",
+      "sources": [
+        "cz:alpha_flat_band_shift",
+        "cz:alpha_scan/shift_13",
+        "cz:alpha_scan/shift_13/zero_move_2s_coast_counts",
+        "cz:alpha_scan/shift_13/zero_noise_white_counts",
+        "cz:awake_step_intercept_counts",
+        "cz:awake_step_slope_counts_per_v",
+        "cz:design_all_runs_rms_counts",
+        "cz:design_all_runs_worst_counts",
+        "cz:design_events_rms_counts",
+        "cz:design_warm_rms_counts",
+        "cz:drive_feed_offset_counts",
+        "cz:feed_gate_clean_to_pct",
+        "cz:feed_gate_pct",
+        "cz:feed_share_awake_rows",
+        "cz:feed_share_drive_rows",
+        "cz:gaps/1/gap",
+        "cz:hold_p90_counts/10s",
+        "cz:hold_p90_counts/1s",
+        "cz:hold_p90_counts/60s",
+        "cz:longest_unfed_awake_s",
+        "cz:seed_debounce_ticks",
+        "cz:seed_rail_threshold_v",
+        "cz:settle_to_half_count_fed_s",
+        "cz:stage1_all_runs_rms_counts",
+        "cz:stage1_all_runs_worst_counts",
+        "cz:stage1_events_rms_counts",
+        "cz:stage5_table/0/value",
+        "cz:stall_hold_error_counts_rms",
+        "cz:start_error_counts/boot",
+        "cz:start_rule_settle_to_half_count_fed_s",
+        "cz:tau_s",
+        "cz:trough_sd_per_tick_counts/asleep",
+        "cz:trough_sd_per_tick_counts/coast",
+        "cz:trough_sd_per_tick_counts/narrow_drive",
+        "cz:truth_floor_counts",
+        "cz:warm_error_mean_counts",
+        "spd:rev_s_per_count",
+        "spd:tracked_zero_cost_per_sweep/design/warm/mean",
+        "spd:tracked_zero_cost_per_sweep/design/warm/sweeps",
+        "spd:tracked_zero_cost_per_sweep/tracked/warm/mean"
+      ]
+    },
+    {
+      "estimator": "position: lookup indexed by counts, then a boxcar of 16 rows",
+      "bias": "table term held out 0.165 [0.16, 0.17] deg <pos:table_term_heldout_deg_rms> (3.399 [3.377, 3.424] counts <pos:table_term_heldout_counts_rms>); nothing out, stamp lead applied 0.41 [0.376, 0.446] deg <pos:heldout_lead_applied_deg_rms>, no lead 0.568 deg <pos:heldout_no_lead_deg_rms>; end lines 0.329 [0.329, 0.372] deg <pos:end_residual_low_deg_rms> low, 0.395 [0.395, 0.435] deg <pos:end_residual_high_deg_rms> high; by direction 0.274 [0.249, 0.3] deg <pos:direction_offset_crawl_plus_deg> and -0.227 [-0.257, -0.196] deg <pos:direction_offset_crawl_minus_deg> on steady crawl holds, not carried",
+      "noise_at_delay": "per row 1.031 [1.027, 1.160] counts <pos:pot_noise_row_counts>; boxcar 16 0.139 [0.139, 0.161] counts <pos:filter_boxcar16_noise_counts> (0.00733 deg <pos:filter_boxcar16_noise_deg>) at 7.500 ticks <pos:filter_boxcar16_delay_ticks>; the other filters in the position file's .filters.csv",
+      "delay": "lookup none; boxcar 16 7.500 ticks <pos:filter_boxcar16_delay_ticks>, 0.0381 deg <pos:filter_boxcar16_lag_pass_deg> behind at the passes' speed",
+      "valid_flag": "no flag",
+      "valid_share": "valid range lookup 384 to 3488 counts, fitted 576 to 3200, the crawl's coverage 790 to 2952 <pos:stage5_table/9/value> (past the start points no data); share of rows: not measured",
+      "start_up": "the lookup none; the boxcar reads the mean of the rows it has until it holds 16, 0.80 ms <pos:stage5_table/10/value>",
+      "state": "the lookup none; the boxcar its last 16 rows",
+      "constants": "98 entries <pos:lookup_entries_guard_to_guard> at pitch 32 counts <pos:lookup_pitch_counts> from 384 counts <pos:lookup_knot_first_counts> to 3488 counts <pos:lookup_knot_last_counts> (the position file's .lookup.csv)",
+      "term_corrected": "the pot's scale, smooth bend and fine texture (stage 3 rows 0 and 1); the board's tick pattern, period 16 ticks <pos:tick_pattern_period_ticks>",
+      "how": "linear interpolation between knots uniform in counts; the boxcar of 16 nulls the pattern (3.014 [2.986, 3.025] counts <pos:tick_pattern_pp_counts> pp, 0.678 [0.52, 0.678] share <pos:tick_pattern_variance_share> of the variance)",
+      "bound_left": "direction 0.5 deg <pos:direction_bound_moving_deg> in motion, 0.3 deg <pos:direction_bound_rest_deg> at rest; carries blind over [0.772, 0.139, 0.467, 0.0298, 0.279] <pos:carry_blind_span_deg> deg at codes [1023, 1279, 2047, 2303, 2559] <pos:carry_codes>; high end hole 7.966 deg <pos:high_end_hole_deg>; the stamp lead's share of the error 0.479 share <pos:share_stamp_lead>",
+      "confidence": "high for the lookup's pitch and the direction bound, moderate for the bound's size; one sitting",
+      "sources": [
+        "pos:carry_blind_span_deg",
+        "pos:carry_codes",
+        "pos:direction_bound_moving_deg",
+        "pos:direction_bound_rest_deg",
+        "pos:direction_offset_crawl_minus_deg",
+        "pos:direction_offset_crawl_plus_deg",
+        "pos:end_residual_high_deg_rms",
+        "pos:end_residual_low_deg_rms",
+        "pos:filter_boxcar16_delay_ticks",
+        "pos:filter_boxcar16_lag_pass_deg",
+        "pos:filter_boxcar16_noise_counts",
+        "pos:filter_boxcar16_noise_deg",
+        "pos:heldout_lead_applied_deg_rms",
+        "pos:heldout_no_lead_deg_rms",
+        "pos:high_end_hole_deg",
+        "pos:lookup_entries_guard_to_guard",
+        "pos:lookup_knot_first_counts",
+        "pos:lookup_knot_last_counts",
+        "pos:lookup_pitch_counts",
+        "pos:pot_noise_row_counts",
+        "pos:share_stamp_lead",
+        "pos:stage5_table/10/value",
+        "pos:stage5_table/9/value",
+        "pos:table_term_heldout_counts_rms",
+        "pos:table_term_heldout_deg_rms",
+        "pos:tick_pattern_period_ticks",
+        "pos:tick_pattern_pp_counts",
+        "pos:tick_pattern_variance_share"
+      ]
+    },
+    {
+      "estimator": "back-EMF speed per row (stage 3's four-term form, tracked zero, k_d = 0), brush term as the signed table or as the product",
+      "bias": "ladder (third repeat) 30-100 (94 rev/s, 73 mA): table -0.31, product 0.12 rev/s <spd:stage5_bias_by_band_form/0>; ladder (third repeat) 250-350 (303.3 rev/s, 127 mA): table 0.15, product -0.17 rev/s <spd:stage5_bias_by_band_form/3>; holds (free, low) 0-30 (23.40 rev/s, 39 mA): table -0.88, product 0.89 rev/s <spd:stage5_bias_by_band_form/6>; run-up 160-250 (218.9 rev/s, 655 mA): table 30, product -1.340 rev/s <spd:stage5_bias_by_band_form/11>; run-up 350-450 (408.7 rev/s, 349 mA): table 12.45, product 2.310 rev/s <spd:stage5_bias_by_band_form/13>; lifts 0-30 (11.50 rev/s, 195 mA): table 3.460, product 4.320 rev/s <spd:stage5_bias_by_band_form/15>; lifts 100-160 (111.5 rev/s, 218 mA): table 7.420, product 3.580 rev/s <spd:stage5_bias_by_band_form/17>; load holds 0-30 (0 rev/s, 198 mA): table 2.810, product 4.750 rev/s <spd:stage5_bias_by_band_form/18>; flat band over the ladder's rungs: table 0.252 [-1.414, 1.918] rev/s, range over rungs <spd:brush_flat_band_rev_s/table>, product -0.044 [-1.904, 1.816] rev/s, range over rungs <spd:brush_flat_band_rev_s/product>",
+      "noise_at_delay": "per row (delay 0), table form: rest 0.586 <spd:.noise.csv[kind=rest,band=rest].table_sd>, crawl holds 3.841 <spd:.noise.csv[kind=hold,band=0-30].table_sd> and 4.861 <spd:.noise.csv[kind=hold,band=30-100].table_sd>, ladder 9.471 <spd:.noise.csv[kind=ladder,band=100-160].table_sd> to 10.83 <spd:.noise.csv[kind=ladder,band=250-350].table_sd> rev/s; flat band 10.07 [9.146, 11.14] rev/s per row, 100 to 350 rev/s, range of 116 windows <spd:row_noise_flat_band>; boxcar 32: 3.690 <spd:.filters.csv[kind=hold,band=0-30,filter=box 32].sd_table> at a crawl, 0.928 <spd:.filters.csv[kind=ladder,band=250-350,filter=box 32].sd_table> at 250-350 rev/s",
+      "delay": "none per row but L / R under acceleration; filters add (run-ups, rows): box 16 7.988 <spd:.filters.csv[kind=ladder,band=30-100,filter=box 16].runup_delay_added>, box 32 16.45 <spd:.filters.csv[kind=ladder,band=30-100,filter=box 32].runup_delay_added>, pole 32 32.82 <spd:.filters.csv[kind=ladder,band=30-100,filter=pole 32].runup_delay_added>, lock 1 6.381 <spd:.filters.csv[kind=ladder,band=30-100,filter=lock 1].runup_delay_added>; measured less nominal 0 [-3.318, 1.043] rows, measured added less nominal, range <spd:filter_delay_flat_band_rows/box>",
+      "valid_flag": "on-time at least 84 [72, 96] ticks; bounds: the failing rung below, the first rung with 10 runs or more <spd:valid_rule/tap_floor_ticks>, 16 rows, 4 L / R rounded up <spd:valid_rule/start_rows> since torque on or a flip, not a dropout row (0.25 of the one-pole mean <spd:valid_rule/dropout_frac> over 32 rows, the one-pole <spd:valid_rule/dropout_reference_rows>)",
+      "valid_share": "valid on 85.21 <spd:valid_coverage_by_set/all/valid_pct> % of 10508431 <spd:valid_coverage_by_set/all/driven_rows> driven rows of 518 <spd:valid_coverage_by_set/all/sweeps> sweeps; under the floor 14.62 <spd:valid_coverage_by_set/all/under_floor_pct> %, start-up 0.144 <spd:valid_coverage_by_set/all/start_up_pct> %, dropout 0.0249 <spd:valid_coverage_by_set/all/dropout_pct> %",
+      "start_up": "16 rows, 4 L / R rounded up <spd:valid_rule/start_rows>; the error settles by row 14 rows <spd:startup_profile/settled_rows/none>, decay 3.439 rows, median, rows 2-12 <spd:startup_profile/decay_rows>; row 0 reads 142.9 <spd:startup_profile/median/row 0> rev/s at the median",
+      "state": "the tracked zero's state, the previous row's speed and direction (the table's newton steps), the filter's state, the valid rule's two row counters, its one-pole mean and flag count",
+      "constants": "counts_per_a 1135.0 counts/A <spd:constants_used/counts_per_a>, r_ohm 4.177 ohm <spd:constants_used/r_ohm>, t0_c 26.26 C <spd:constants_used/t0_c>, v0_v 0.0332 V <spd:constants_used/v0_v>, g_s 0.00475 S <spd:constants_used/g_s>, brake_b0_v 0.00875 V <spd:constants_used/brake_b0_v>, brake_b1_ohm 0.24 ohm <spd:constants_used/brake_b1_ohm>, l_h 0.00082 H <spd:constants_used/l_h>, ke_v_per_rev_s 0.00728 V per rev/s <spd:constants_used/ke_v_per_rev_s>; the table <spd:brush_forms/table_signed_mv> or the product c0 -40.43 [-43.26, -37.60] mV, +/- se <spd:brush_forms/product_ladder_alone/c0_mv>, c_dir 12.39 [9.149, 15.63] mV, +/- se <spd:brush_forms/product_ladder_alone/c_dir_mv>, b 2.058 [2.010, 2.107] mV per (rev/s x A), +/- se <spd:brush_forms/product_ladder_alone/b_mv_per_rev_s_a>",
+      "term_corrected": "the reading term, R(T) i, V0, the brush drop with its direction term and the low-speed offset (stage 3 rows 5, 6, 7, 10), on the tracked zero (row 8)",
+      "how": "construction C per row; the product in closed form, the table by 2 <spd:solve_recommendation/steps> newton steps from the row before (worst solve error 0.0125 share of the row noise <spd:solve_recommendation/worst_rms_over_noise>)",
+      "bound_left": "stopped rotor under current: table -4.663 [-5.633, -3.694] rev/s, +/- se <spd:rest_bias_by_current/table/a> + 43.03 [38.90, 47.16] rev/s per A, +/- se <spd:rest_bias_by_current/table/b_per_a>, mean 4.426 [3.747, 5.105] rev/s, +/- se <spd:rest_bias_by_current/mean/table>; duty step direct path 0.751 of the volts' step / Ke <spd:duty_step_response/share_rows_0_3>, 0.299 of the volts' step / Ke <spd:duty_step_response/share_rows_4_9>, 0.114 of the volts' step / Ke <spd:duty_step_response/share_rows_10_39>; under the floor not valid; top rungs not resolved (ladder (third repeat) 450-600 (456.9 rev/s, 272 mA): table 5.960, product -1.710 rev/s <spd:stage5_bias_by_band_form/5>)",
+      "confidence": "high on the free shaft below the 450-600 rev/s band; moderate on the lifts (pot truth); moderate for the floor at 84 ticks, high at 96 <spd:valid_rule/tap_floor_ticks>",
+      "sources": [
+        "spd:.filters.csv[kind=hold,band=0-30,filter=box 32].sd_table",
+        "spd:.filters.csv[kind=ladder,band=250-350,filter=box 32].sd_table",
+        "spd:.filters.csv[kind=ladder,band=30-100,filter=box 16].runup_delay_added",
+        "spd:.filters.csv[kind=ladder,band=30-100,filter=box 32].runup_delay_added",
+        "spd:.filters.csv[kind=ladder,band=30-100,filter=lock 1].runup_delay_added",
+        "spd:.filters.csv[kind=ladder,band=30-100,filter=pole 32].runup_delay_added",
+        "spd:.noise.csv[kind=hold,band=0-30].table_sd",
+        "spd:.noise.csv[kind=hold,band=30-100].table_sd",
+        "spd:.noise.csv[kind=ladder,band=100-160].table_sd",
+        "spd:.noise.csv[kind=ladder,band=250-350].table_sd",
+        "spd:.noise.csv[kind=rest,band=rest].table_sd",
+        "spd:brush_flat_band_rev_s/product",
+        "spd:brush_flat_band_rev_s/table",
+        "spd:brush_forms/product_ladder_alone/b_mv_per_rev_s_a",
+        "spd:brush_forms/product_ladder_alone/c0_mv",
+        "spd:brush_forms/product_ladder_alone/c_dir_mv",
+        "spd:brush_forms/table_signed_mv",
+        "spd:constants_used/brake_b0_v",
+        "spd:constants_used/brake_b1_ohm",
+        "spd:constants_used/counts_per_a",
+        "spd:constants_used/g_s",
+        "spd:constants_used/ke_v_per_rev_s",
+        "spd:constants_used/l_h",
+        "spd:constants_used/r_ohm",
+        "spd:constants_used/t0_c",
+        "spd:constants_used/v0_v",
+        "spd:duty_step_response/share_rows_0_3",
+        "spd:duty_step_response/share_rows_10_39",
+        "spd:duty_step_response/share_rows_4_9",
+        "spd:filter_delay_flat_band_rows/box",
+        "spd:rest_bias_by_current/mean/table",
+        "spd:rest_bias_by_current/table/a",
+        "spd:rest_bias_by_current/table/b_per_a",
+        "spd:row_noise_flat_band",
+        "spd:solve_recommendation/steps",
+        "spd:solve_recommendation/worst_rms_over_noise",
+        "spd:stage5_bias_by_band_form/0",
+        "spd:stage5_bias_by_band_form/11",
+        "spd:stage5_bias_by_band_form/13",
+        "spd:stage5_bias_by_band_form/15",
+        "spd:stage5_bias_by_band_form/17",
+        "spd:stage5_bias_by_band_form/18",
+        "spd:stage5_bias_by_band_form/3",
+        "spd:stage5_bias_by_band_form/5",
+        "spd:stage5_bias_by_band_form/6",
+        "spd:startup_profile/decay_rows",
+        "spd:startup_profile/median/row 0",
+        "spd:startup_profile/settled_rows/none",
+        "spd:valid_coverage_by_set/all/driven_rows",
+        "spd:valid_coverage_by_set/all/dropout_pct",
+        "spd:valid_coverage_by_set/all/start_up_pct",
+        "spd:valid_coverage_by_set/all/sweeps",
+        "spd:valid_coverage_by_set/all/under_floor_pct",
+        "spd:valid_coverage_by_set/all/valid_pct",
+        "spd:valid_rule/dropout_frac",
+        "spd:valid_rule/dropout_reference_rows",
+        "spd:valid_rule/start_rows",
+        "spd:valid_rule/tap_floor_ticks"
+      ]
+    },
+    {
+      "estimator": "velocity as the pot's slope (two-point over a multiple of 16 rows, or two boxcars of 16)",
+      "bias": "pot's two-point, 200 rows in 'crawl over the floor': noise 7.434 rev/s, bias 0 rev/s, delay 5 ms <vel:stage5_by_regime/2>; pot's two-point, 2000 rows in 'crawl under the floor': noise 1.470 rev/s, bias 0 rev/s, delay 50 ms <vel:stage5_by_regime/3>; pot5 at a crawl 0.000138 [-0.0445, 0.0447] rev/s, +/- se <vel:blend_bias_crawl_rev_s/pot5>, pot25 -0.0309 [-0.0714, 0.00966] rev/s, +/- se <vel:blend_bias_crawl_rev_s/pot25>",
+      "noise_at_delay": "own noise at a crawl: 5 ms 7.434 <vel:stage5_by_regime/2/noise_rev_s> rev/s, 50 ms under the floor 1.470 <vel:stage5_by_regime/3/noise_rev_s> rev/s; own sd pot5 6.988 rev/s <vel:blend_own_sd_rev_s/crawl/pot5>, pot25 2.594 rev/s <vel:blend_own_sd_rev_s/crawl/pot25>; at rest: two-point 6.112 [0, 9.705] deg/s rms at 100 rows of delay, bounds the windows' sd <vel:pot_slope_rest_noise_5ms_deg_s/two_point>, two boxcars 1.437 [2.4e-10, 2.301] deg/s rms at 100 rows of delay, bounds the windows' sd <vel:pot_slope_rest_noise_5ms_deg_s/box16>; angle error per window 0.12 [0.103, 0.129] deg, median, bounds the windows 25.6 to 400 ms <vel:pot_slope_angle_error_per_window_deg/crawl 15-35>",
+      "delay": "half the window; measured on kick ends pot5 105.2 [104.4, 105.9] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick end, hold over the floor/pot5>, pot25 498.8 [495.0, 502.5] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick end, hold over the floor/pot25>; residual against nominal 1.734 [0.799, 1.734] rows, kick ends <vel:pot_slope_delay_resid_rows/up_to_128>",
+      "valid_flag": "no flag; the carry band's rows are skipped",
+      "valid_share": "carry band +/-12 counts, the longest missing run <vel:carry_mask_half_counts> skipped under 50 ms, about twice the longest dwell at a crawl <vel:carry_mask_until_window_ms>; a window holds a band row on 0.0363 of moving rows <vel:carry_rows_touched_share_crawl/6.4 ms> to 0.332 of moving rows <vel:carry_rows_touched_share_crawl/200 ms>; the band itself 0.0695 of moving rows, +/-12 counts <vel:carry_band_rows_share_crawl>",
+      "start_up": "not measured",
+      "state": "the last n + 16 rows, or two running sums and the rows between, and the row marks of the carry band",
+      "constants": "the position lookup, the carries' codes [1023, 1279, 2047, 2303, 2559] <pos:carry_codes> and missing runs [12, 3, 11, 3, 7] <pos:carry_missing_codes>, the window as a multiple of 16 rows, the board's pattern <vel:pot_slope_two_point_multiple_of_rows> (off a multiple 1.803 [1.214, 2.392] x the 1 / n line, bounds over the four lengths <vel:pot_slope_off_multiple_penalty>)",
+      "term_corrected": "the pot's texture and the converter's carries in a velocity (stage 3 rows 1 and 2); the only source under the tap floor",
+      "how": "difference of the lookup's angle over the window, the carry band's rows left out under 50 ms, about twice the longest dwell at a crawl <vel:carry_mask_until_window_ms> of window, never held",
+      "bound_left": "near a carry, no mask: 10.78 deg/s rms <vel:carry_near_rms_deg_s/none/near/25.6 ms> against far 5.852 deg/s rms <vel:carry_near_rms_deg_s/none/far/25.6 ms>; skip12 6.690 deg/s rms <vel:carry_near_rms_deg_s/skip12/near/25.6 ms>; hold12 31.41 deg/s rms <vel:carry_near_rms_deg_s/hold12/near/25.6 ms>; over a kick the commutation count runs 1.024 [1.018, 1.030] ratio, +/- 2 se, n 38 <vel:count_kick_start_145ms/ratio_count_pot> of the pot's angle",
+      "confidence": "moderate, one sitting, over the carries' crossings at a crawl",
+      "sources": [
+        "pos:carry_codes",
+        "pos:carry_missing_codes",
+        "vel:blend_bias_crawl_rev_s/pot25",
+        "vel:blend_bias_crawl_rev_s/pot5",
+        "vel:blend_delay_rows/kick end, hold over the floor/pot25",
+        "vel:blend_delay_rows/kick end, hold over the floor/pot5",
+        "vel:blend_own_sd_rev_s/crawl/pot25",
+        "vel:blend_own_sd_rev_s/crawl/pot5",
+        "vel:carry_band_rows_share_crawl",
+        "vel:carry_mask_half_counts",
+        "vel:carry_mask_until_window_ms",
+        "vel:carry_near_rms_deg_s/hold12/near/25.6 ms",
+        "vel:carry_near_rms_deg_s/none/far/25.6 ms",
+        "vel:carry_near_rms_deg_s/none/near/25.6 ms",
+        "vel:carry_near_rms_deg_s/skip12/near/25.6 ms",
+        "vel:carry_rows_touched_share_crawl/200 ms",
+        "vel:carry_rows_touched_share_crawl/6.4 ms",
+        "vel:count_kick_start_145ms/ratio_count_pot",
+        "vel:pot_slope_angle_error_per_window_deg/crawl 15-35",
+        "vel:pot_slope_delay_resid_rows/up_to_128",
+        "vel:pot_slope_off_multiple_penalty",
+        "vel:pot_slope_rest_noise_5ms_deg_s/box16",
+        "vel:pot_slope_rest_noise_5ms_deg_s/two_point",
+        "vel:pot_slope_two_point_multiple_of_rows",
+        "vel:stage5_by_regime/2",
+        "vel:stage5_by_regime/2/noise_rev_s",
+        "vel:stage5_by_regime/3",
+        "vel:stage5_by_regime/3/noise_rev_s"
+      ]
+    },
+    {
+      "estimator": "velocity as the back-EMF speed through a boxcar (over the tap floor)",
+      "bias": "crawl against the tag: table 0.54 [0.437, 0.643] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/table>, product 1.382 [1.198, 1.566] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/product>; against the tach: table 0.661 [0.571, 0.752] rev/s, +/- se over segments <vel:emf_bias_crawl_tach_rev_s/table>, product 1.504 [1.345, 1.662] rev/s, +/- se over segments <vel:emf_bias_crawl_tach_rev_s/product>; by direction table 0.891 [0.773, 1.009] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/table/+> and 0.109 [0.00347, 0.214] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/table/->, product 0.219 [0.0885, 0.349] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/product/+> and 2.098 [1.984, 2.212] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/product/->; pass: table -0.318 [-0.689, 0.0524] rev/s, +/- se over segments <vel:emf_bias_pass_rev_s/table> (not a finding); under the floor table -2.251 [-2.649, -1.854] rev/s, +/- se over segments <vel:emf_bias_under_floor_rev_s/table>, product -1.275 [-1.644, -0.906] rev/s, +/- se over segments <vel:emf_bias_under_floor_rev_s/product>",
+      "noise_at_delay": "back-EMF, table form, boxcar 200 rows in 'crawl over the floor': noise 1.718 rev/s, bias 0.54 rev/s, delay 5 ms <vel:stage5_by_regime/0>; per row at a crawl 3.896 rev/s per row, table <vel:emf_noise_row_rev_s/crawl valid>; boxcar 32 3.426 [2.266, 5.916] rev/s about the tile's line, bounds tiles <vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 32>; boxcar 200 1.914 [0.412, 5.021] rev/s about the tile's line, bounds tiles <vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 200>; commutation-locked 0.719 [0.701, 0.738] of the per-row variance, +/- se over segments <vel:emf_commutation_locked_share_crawl>, left by a boxcar of 32 2.882 rev/s <vel:emf_commutation_locked_sd_rev_s/boxcar_32>, of 100 1.057 rev/s <vel:emf_commutation_locked_sd_rev_s/boxcar_100>",
+      "delay": "half the boxcar; direct path from a duty step through a boxcar of 32: 0.0591 [0.0438, 0.0745] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/boxcar_32/r0_3>, 0.108 [0.088, 0.128] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/boxcar_32/r4_9>, 0.117 [0.103, 0.131] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/boxcar_32/r10_39>",
+      "valid_flag": "the speed notebook's rule",
+      "valid_share": "valid on 0.843 of driven rows <vel:emf_valid_share_camera>; 0.262 of crawl hold rows <vel:emf_crawl_rows_under_floor_share> are under the floor",
+      "start_up": "the speed rule's 16 rows, 4 L / R rounded up <spd:valid_rule/start_rows> plus the boxcar",
+      "state": "the speed estimator's state and the boxcar's rows",
+      "constants": "the speed estimator's",
+      "term_corrected": "none of its own; it carries the back-EMF speed's bias into the velocity",
+      "how": "boxcar of the valid rows",
+      "bound_left": "after a hard deceleration back-EMF less pot -22.88 [-32.56, -13.21] rev/s, back-EMF less pot, +/- 2 se; cause open <vel:kick_end_emf_minus_pot_rev_s/002-005/emf_minus_pot>, -12.33 [-16.45, -8.209] rev/s, back-EMF less pot, +/- 2 se; cause open <vel:kick_end_emf_minus_pot_rev_s/010-020/emf_minus_pot>, -2.938 [-6.221, 0.345] rev/s, back-EMF less pot, +/- 2 se; cause open <vel:kick_end_emf_minus_pot_rev_s/020-030/emf_minus_pot>; stopped rotor -4.543 [-5.727, -3.358] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/line_a> + 42.67 [37.39, 47.95] rev/s per A, +/- se <vel:emf_stopped_rotor_rev_s/table/line_b_per_a>; direction split under 45 rev/s table 0.814 [0.746, 0.883] rev/s, +/- se <vel:emf_direction_split_rev_s/table/under_45>, product -1.828 [-1.896, -1.759] rev/s, +/- se <vel:emf_direction_split_rev_s/product/under_45>",
+      "confidence": "high for the crawl bias's sign, moderate for its size; one sitting",
+      "sources": [
+        "spd:valid_rule/start_rows",
+        "vel:emf_bias_by_direction_rev_s/product/+",
+        "vel:emf_bias_by_direction_rev_s/product/-",
+        "vel:emf_bias_by_direction_rev_s/table/+",
+        "vel:emf_bias_by_direction_rev_s/table/-",
+        "vel:emf_bias_crawl_rev_s/product",
+        "vel:emf_bias_crawl_rev_s/table",
+        "vel:emf_bias_crawl_tach_rev_s/product",
+        "vel:emf_bias_crawl_tach_rev_s/table",
+        "vel:emf_bias_pass_rev_s/table",
+        "vel:emf_bias_under_floor_rev_s/product",
+        "vel:emf_bias_under_floor_rev_s/table",
+        "vel:emf_commutation_locked_sd_rev_s/boxcar_100",
+        "vel:emf_commutation_locked_sd_rev_s/boxcar_32",
+        "vel:emf_commutation_locked_share_crawl",
+        "vel:emf_crawl_rows_under_floor_share",
+        "vel:emf_direct_path_share/boxcar_32/r0_3",
+        "vel:emf_direct_path_share/boxcar_32/r10_39",
+        "vel:emf_direct_path_share/boxcar_32/r4_9",
+        "vel:emf_direction_split_rev_s/product/under_45",
+        "vel:emf_direction_split_rev_s/table/under_45",
+        "vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 200",
+        "vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 32",
+        "vel:emf_noise_row_rev_s/crawl valid",
+        "vel:emf_stopped_rotor_rev_s/table/line_a",
+        "vel:emf_stopped_rotor_rev_s/table/line_b_per_a",
+        "vel:emf_valid_share_camera",
+        "vel:kick_end_emf_minus_pot_rev_s/002-005/emf_minus_pot",
+        "vel:kick_end_emf_minus_pot_rev_s/010-020/emf_minus_pot",
+        "vel:kick_end_emf_minus_pot_rev_s/020-030/emf_minus_pot",
+        "vel:stage5_by_regime/0"
+      ]
+    },
+    {
+      "estimator": "velocity blend sw5: the switch (back-EMF where valid, else the pot's 5 ms slope)",
+      "bias": "crawl 0.404 [0.278, 0.53] rev/s, +/- se <vel:blend_bias_crawl_rev_s/sw5>; against the tach 0.574 [0.468, 0.68] rev/s, +/- se <vel:blend_bias_tach_crawl_rev_s/sw5>; stall over the floor 1.226 rev/s <vel:blend_bias_stall_over_floor_rev_s/sw5>",
+      "noise_at_delay": "own sd crawl 3.426 rev/s <vel:blend_own_sd_rev_s/crawl/sw5>, pass 2.193 rev/s <vel:blend_own_sd_rev_s/pass/sw5>, under the floor 4.130 rev/s <vel:blend_own_sd_rev_s/under_floor/sw5> (sw5 in 'crawl, one velocity': noise 3.430 rev/s, bias 0.4 rev/s, delay -84 rows at a kick end <vel:stage5_by_regime/8>)",
+      "delay": "against the pot's centered slope: kick -16.56 [-27.29, -5.825] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick/sw5>, kick end -83.46 [-90.87, -76.05] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick end, hold over the floor/sw5>, reversal 3.164 [-8.182, 14.51] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/reversal/sw5>",
+      "valid_flag": "none of its own; the back-EMF's valid rule sets the shares",
+      "valid_share": "pot 0.381 share of rows <vel:blend_share_of_rows/sw5/pot>, back-EMF 0.619 share of rows <vel:blend_share_of_rows/sw5/back-EMF>, pair 0 share of rows <vel:blend_share_of_rows/sw5/pair>",
+      "start_up": "seam sw5_kick: median 13.47 rev/s <vel:blend_seam_rev_s/sw5_kick/median>, p90 18.00 rev/s <vel:blend_seam_rev_s/sw5_kick/p90>, at 52 rows after the transition <vel:blend_seam_rev_s/sw5_kick/row>, n 38 <vel:blend_seam_rev_s/sw5_kick/n>; seam sw5_coast: median 6.815 rev/s <vel:blend_seam_rev_s/sw5_coast/median>, p90 10.14 rev/s <vel:blend_seam_rev_s/sw5_coast/p90>, at 3 rows after the transition <vel:blend_seam_rev_s/sw5_coast/row>, n 28 <vel:blend_seam_rev_s/sw5_coast/n>",
+      "state": "nothing of its own",
+      "constants": "the two sources' and the valid rule's",
+      "term_corrected": "the back-EMF's invalid rows under the floor",
+      "how": "pick by the valid flag",
+      "bound_left": "direct path 0.117 [0.103, 0.131] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/boxcar_32/r10_39>; not chosen",
+      "confidence": "moderate, one sitting",
+      "sources": [
+        "vel:blend_bias_crawl_rev_s/sw5",
+        "vel:blend_bias_stall_over_floor_rev_s/sw5",
+        "vel:blend_bias_tach_crawl_rev_s/sw5",
+        "vel:blend_delay_rows/kick end, hold over the floor/sw5",
+        "vel:blend_delay_rows/kick/sw5",
+        "vel:blend_delay_rows/reversal/sw5",
+        "vel:blend_own_sd_rev_s/crawl/sw5",
+        "vel:blend_own_sd_rev_s/pass/sw5",
+        "vel:blend_own_sd_rev_s/under_floor/sw5",
+        "vel:blend_seam_rev_s/sw5_coast/median",
+        "vel:blend_seam_rev_s/sw5_coast/n",
+        "vel:blend_seam_rev_s/sw5_coast/p90",
+        "vel:blend_seam_rev_s/sw5_coast/row",
+        "vel:blend_seam_rev_s/sw5_kick/median",
+        "vel:blend_seam_rev_s/sw5_kick/n",
+        "vel:blend_seam_rev_s/sw5_kick/p90",
+        "vel:blend_seam_rev_s/sw5_kick/row",
+        "vel:blend_share_of_rows/sw5/back-EMF",
+        "vel:blend_share_of_rows/sw5/pair",
+        "vel:blend_share_of_rows/sw5/pot",
+        "vel:emf_direct_path_share/boxcar_32/r10_39",
+        "vel:stage5_by_regime/8"
+      ]
+    },
+    {
+      "estimator": "velocity blend cp5: the complementary pair, pot slope of 5 ms",
+      "bias": "crawl 0.0442 [9.35e-05, 0.0883] rev/s, +/- se <vel:blend_bias_crawl_rev_s/cp5>; against the tach 0.215 [0.114, 0.315] rev/s, +/- se <vel:blend_bias_tach_crawl_rev_s/cp5>; stall over the floor 0.0156 rev/s <vel:blend_bias_stall_over_floor_rev_s/cp5>",
+      "noise_at_delay": "own sd crawl 3.517 rev/s <vel:blend_own_sd_rev_s/crawl/cp5>, pass 2.470 rev/s <vel:blend_own_sd_rev_s/pass/cp5>, under the floor 4.130 rev/s <vel:blend_own_sd_rev_s/under_floor/cp5> (cp5 in 'crawl, one velocity': noise 3.520 rev/s, bias 0.04 rev/s, delay -69 rows at a kick end <vel:stage5_by_regime/9>)",
+      "delay": "against the pot's centered slope: kick -14.88 [-24.20, -5.565] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick/cp5>, kick end -68.89 [-75.39, -62.39] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick end, hold over the floor/cp5>, reversal 4.443 [-2.742, 11.63] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/reversal/cp5>",
+      "valid_flag": "none of its own; the back-EMF's valid rule sets the shares",
+      "valid_share": "pot 0.381 share of rows <vel:blend_share_of_rows/cp5/pot>, back-EMF 0.00521 share of rows <vel:blend_share_of_rows/cp5/back-EMF>, pair 0.614 share of rows <vel:blend_share_of_rows/cp5/pair>",
+      "start_up": "seam cp5_handover: median 0.205 rev/s <vel:blend_seam_rev_s/cp5_handover/median>, p90 0.464 rev/s <vel:blend_seam_rev_s/cp5_handover/p90>, at 229 rows after the transition <vel:blend_seam_rev_s/cp5_handover/row>, n 38 <vel:blend_seam_rev_s/cp5_handover/n>; seam cp5_coast: median 5.408 rev/s <vel:blend_seam_rev_s/cp5_coast/median>, p90 10.08 rev/s <vel:blend_seam_rev_s/cp5_coast/p90>, at 3 rows after the transition <vel:blend_seam_rev_s/cp5_coast/row>, n 28 <vel:blend_seam_rev_s/cp5_coast/n>",
+      "state": "one one-pole (corner 1030.5 rows, the pair's one-pole <vel:blend_corner_rows>) and the back-EMF through the pot's kernel",
+      "constants": "the two sources' and the fixed corner",
+      "term_corrected": "the back-EMF's DC bias (reads the pot at DC) and its invalid rows",
+      "how": "pot slope below the corner, back-EMF above it, fixed weights",
+      "bound_left": "direct path 0.153 [0.125, 0.18] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/pair_5/r10_39>, 0.0496 [0.00671, 0.0925] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/pair_5/r40_199>; not chosen",
+      "confidence": "moderate, one sitting",
+      "sources": [
+        "vel:blend_bias_crawl_rev_s/cp5",
+        "vel:blend_bias_stall_over_floor_rev_s/cp5",
+        "vel:blend_bias_tach_crawl_rev_s/cp5",
+        "vel:blend_corner_rows",
+        "vel:blend_delay_rows/kick end, hold over the floor/cp5",
+        "vel:blend_delay_rows/kick/cp5",
+        "vel:blend_delay_rows/reversal/cp5",
+        "vel:blend_own_sd_rev_s/crawl/cp5",
+        "vel:blend_own_sd_rev_s/pass/cp5",
+        "vel:blend_own_sd_rev_s/under_floor/cp5",
+        "vel:blend_seam_rev_s/cp5_coast/median",
+        "vel:blend_seam_rev_s/cp5_coast/n",
+        "vel:blend_seam_rev_s/cp5_coast/p90",
+        "vel:blend_seam_rev_s/cp5_coast/row",
+        "vel:blend_seam_rev_s/cp5_handover/median",
+        "vel:blend_seam_rev_s/cp5_handover/n",
+        "vel:blend_seam_rev_s/cp5_handover/p90",
+        "vel:blend_seam_rev_s/cp5_handover/row",
+        "vel:blend_share_of_rows/cp5/back-EMF",
+        "vel:blend_share_of_rows/cp5/pair",
+        "vel:blend_share_of_rows/cp5/pot",
+        "vel:emf_direct_path_share/pair_5/r10_39",
+        "vel:emf_direct_path_share/pair_5/r40_199",
+        "vel:stage5_by_regime/9"
+      ]
+    },
+    {
+      "estimator": "velocity blend cp25: the complementary pair, pot slope of 25 ms",
+      "bias": "crawl 0.058 [0.00228, 0.114] rev/s, +/- se <vel:blend_bias_crawl_rev_s/cp25>; against the tach 0.244 [0.136, 0.352] rev/s, +/- se <vel:blend_bias_tach_crawl_rev_s/cp25>",
+      "noise_at_delay": "own sd crawl 3.421 rev/s <vel:blend_own_sd_rev_s/crawl/cp25>, pass 2.313 rev/s <vel:blend_own_sd_rev_s/pass/cp25>, under the floor 1.853 rev/s <vel:blend_own_sd_rev_s/under_floor/cp25> (cp25 in 'crawl, one velocity': noise 3.420 rev/s, bias 0.06 rev/s, delay -96 rows at a kick end <vel:stage5_by_regime/10>)",
+      "delay": "against the pot's centered slope: kick -18.84 [-29.54, -8.144] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick/cp25>, kick end -96.07 [-103.1, -89.00] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick end, hold over the floor/cp25>, reversal 3.734 [-6.241, 13.71] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/reversal/cp25>",
+      "valid_flag": "none of its own; the back-EMF's valid rule sets the shares",
+      "valid_share": "not measured",
+      "start_up": "seam cp25_coast: median 2.541 rev/s <vel:blend_seam_rev_s/cp25_coast/median>, p90 5.960 rev/s <vel:blend_seam_rev_s/cp25_coast/p90>, at 3 rows after the transition <vel:blend_seam_rev_s/cp25_coast/row>, n 28 <vel:blend_seam_rev_s/cp25_coast/n>",
+      "state": "one one-pole (corner 1030.5 rows, the pair's one-pole <vel:blend_corner_rows>) and the back-EMF through the pot's kernel",
+      "constants": "the two sources' and the fixed corner",
+      "term_corrected": "the back-EMF's DC bias (reads the pot at DC) and its invalid rows",
+      "how": "pot slope below the corner, back-EMF above it, fixed weights",
+      "bound_left": "direct path 0.154 [0.122, 0.186] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/pair_25/r10_39>, 0.0463 [0.00284, 0.0897] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/pair_25/r40_199>; not chosen",
+      "confidence": "moderate, one sitting",
+      "sources": [
+        "vel:blend_bias_crawl_rev_s/cp25",
+        "vel:blend_bias_tach_crawl_rev_s/cp25",
+        "vel:blend_corner_rows",
+        "vel:blend_delay_rows/kick end, hold over the floor/cp25",
+        "vel:blend_delay_rows/kick/cp25",
+        "vel:blend_delay_rows/reversal/cp25",
+        "vel:blend_own_sd_rev_s/crawl/cp25",
+        "vel:blend_own_sd_rev_s/pass/cp25",
+        "vel:blend_own_sd_rev_s/under_floor/cp25",
+        "vel:blend_seam_rev_s/cp25_coast/median",
+        "vel:blend_seam_rev_s/cp25_coast/n",
+        "vel:blend_seam_rev_s/cp25_coast/p90",
+        "vel:blend_seam_rev_s/cp25_coast/row",
+        "vel:emf_direct_path_share/pair_25/r10_39",
+        "vel:emf_direct_path_share/pair_25/r40_199",
+        "vel:stage5_by_regime/10"
+      ]
+    },
+    {
+      "estimator": "velocity blend swr5: the switch with the rest verdict",
+      "bias": "crawl 0.404 [0.278, 0.53] rev/s, +/- se <vel:blend_bias_crawl_rev_s/swr5>; stall over the floor 0 rev/s <vel:blend_bias_stall_over_floor_rev_s/swr5>",
+      "noise_at_delay": "own sd crawl 3.426 rev/s <vel:blend_own_sd_rev_s/crawl/swr5>, pass 2.193 rev/s <vel:blend_own_sd_rev_s/pass/swr5>",
+      "delay": "kick 3.397 [-6.706, 13.50] rows against the pot's centered slope, +/- se <vel:blend_delay_rows/kick/swr5>",
+      "valid_flag": "the rest verdict, then the blend's sources",
+      "valid_share": "rest 0.327 share of rows <vel:blend_share_of_rows/swr5/rest>, pot 0.0906 share of rows <vel:blend_share_of_rows/swr5/pot>, back-EMF 0.583 share of rows <vel:blend_share_of_rows/swr5/back-EMF>, pair 0 share of rows <vel:blend_share_of_rows/swr5/pair>",
+      "start_up": "seam at a kick: median 44.69 rev/s <vel:blend_seam_rev_s/swr5_kick/median>, p90 61.97 rev/s <vel:blend_seam_rev_s/swr5_kick/p90>, at 148 rows after the transition <vel:blend_seam_rev_s/swr5_kick/row>; with the veto (swv5) 18.02 rev/s <vel:blend_seam_rev_s/swv5_kick/median> at 60 rows after the transition <vel:blend_seam_rev_s/swv5_kick/row>",
+      "state": "the blend's and the verdict's row count",
+      "constants": "the blend's and the verdict's",
+      "term_corrected": "the pot slope's noise and the back-EMF's stopped-rotor reading at rest (reports zero)",
+      "how": "zero while the verdict is set",
+      "bound_left": "the seam at every start; not chosen",
+      "confidence": "moderate, one sitting",
+      "sources": [
+        "vel:blend_bias_crawl_rev_s/swr5",
+        "vel:blend_bias_stall_over_floor_rev_s/swr5",
+        "vel:blend_delay_rows/kick/swr5",
+        "vel:blend_own_sd_rev_s/crawl/swr5",
+        "vel:blend_own_sd_rev_s/pass/swr5",
+        "vel:blend_seam_rev_s/swr5_kick/median",
+        "vel:blend_seam_rev_s/swr5_kick/p90",
+        "vel:blend_seam_rev_s/swr5_kick/row",
+        "vel:blend_seam_rev_s/swv5_kick/median",
+        "vel:blend_seam_rev_s/swv5_kick/row",
+        "vel:blend_share_of_rows/swr5/back-EMF",
+        "vel:blend_share_of_rows/swr5/pair",
+        "vel:blend_share_of_rows/swr5/pot",
+        "vel:blend_share_of_rows/swr5/rest"
+      ]
+    },
+    {
+      "estimator": "velocity blend cpr5: the pair with the rest verdict on pot rows",
+      "bias": "crawl 0.0442 [9.35e-05, 0.0883] rev/s, +/- se <vel:blend_bias_crawl_rev_s/cpr5>; stall over the floor 0.0156 rev/s <vel:blend_bias_stall_over_floor_rev_s/cpr5>",
+      "noise_at_delay": "own sd crawl 3.517 rev/s <vel:blend_own_sd_rev_s/crawl/cpr5>, pass 2.470 rev/s <vel:blend_own_sd_rev_s/pass/cpr5>",
+      "delay": "not measured",
+      "valid_flag": "the rest verdict, then the blend's sources",
+      "valid_share": "rest 0.29 share of rows <vel:blend_share_of_rows/cpr5/rest>, pot 0.0906 share of rows <vel:blend_share_of_rows/cpr5/pot>, back-EMF 0.00521 share of rows <vel:blend_share_of_rows/cpr5/back-EMF>, pair 0.614 share of rows <vel:blend_share_of_rows/cpr5/pair>",
+      "start_up": "seam at a kick: median 14.39 rev/s <vel:blend_seam_rev_s/cpr5_kick/median>, p90 16.88 rev/s <vel:blend_seam_rev_s/cpr5_kick/p90>, at 52 rows after the transition <vel:blend_seam_rev_s/cpr5_kick/row>",
+      "state": "the blend's and the verdict's row count",
+      "constants": "the blend's and the verdict's",
+      "term_corrected": "the pot slope's noise and the back-EMF's stopped-rotor reading at rest (reports zero)",
+      "how": "zero while the verdict is set",
+      "bound_left": "the seam at every start; not chosen",
+      "confidence": "moderate, one sitting",
+      "sources": [
+        "vel:blend_bias_crawl_rev_s/cpr5",
+        "vel:blend_bias_stall_over_floor_rev_s/cpr5",
+        "vel:blend_own_sd_rev_s/crawl/cpr5",
+        "vel:blend_own_sd_rev_s/pass/cpr5",
+        "vel:blend_seam_rev_s/cpr5_kick/median",
+        "vel:blend_seam_rev_s/cpr5_kick/p90",
+        "vel:blend_seam_rev_s/cpr5_kick/row",
+        "vel:blend_share_of_rows/cpr5/back-EMF",
+        "vel:blend_share_of_rows/cpr5/pair",
+        "vel:blend_share_of_rows/cpr5/pot",
+        "vel:blend_share_of_rows/cpr5/rest"
+      ]
+    },
+    {
+      "estimator": "rest verdict, band form (equal alternatives)",
+      "bias": "false rest at 10 to 35 deg/s: 0 share of rows <vel:rest_false_rest_10_35_deg_s/band 2 50> at 50 ms, 0.000641 share of rows <vel:rest_false_rest_10_35_deg_s/band 2 25> at 25 ms (near a carry 0.0087 share of rows <vel:rest_false_rest_10_35_near_carry/band 2 25>) over 480310 rows <vel:rest_false_rest_rows_10_35>; false motion: baselines 0 share of rows <vel:rest_false_motion_share/band 2 T50/rest_base>, coast tails 0.0193 share of rows <vel:rest_false_motion_share/band 2 T50/rest_coast>, stalls 0 share of rows <vel:rest_false_motion_share/band 2 T50/stall72>, load holds 0.0058 share of rows <vel:rest_false_motion_stage3_share/band 2 T50/load holds>",
+      "noise_at_delay": "threshold +/-2 <vel:rest_verdict/band/counts> counts of an anchor = 14.64 sigma16 <vel:rest_verdict/band/sigma16>; sigma16 0.137 [0, 0.165] counts, median [range] over the baselines <vel:rest_sigma16_counts>",
+      "delay": "declares 56.35 ms, median <vel:rest_declare_ms/band 2 T50/coast_down/median> after a coast-down's stop (p90 64.53 ms, p90 <vel:rest_declare_ms/band 2 T50/coast_down/p90>), 55.33 ms, median <vel:rest_declare_ms/band 2 T50/stall_in_hold/median> in a stalled hold; drops 7.725 ms, median <vel:rest_drop_ms/band 2 T50/median> after a start (p90 10.14 ms, p90 <vel:rest_drop_ms/band 2 T50/p90>), with the back-EMF's veto 5.750 ms, median <vel:rest_drop_ms/band 2 T50 + emf/median>",
+      "valid_flag": "the verdict is itself a flag",
+      "valid_share": "set on 0.327 share of rows <vel:blend_share_of_rows/swr5/rest> of the sitting's rows (swr5); slowest motion told from rest at 50 ms 2.018 deg/s <vel:rest_min_speed_deg_s/50 ms/far_from_carry> far from a carry, 14.12 deg/s <vel:rest_min_speed_deg_s/50 ms/on_widest_carry> on the widest",
+      "start_up": "the hold time 50 <vel:rest_verdict/band/hold_ms> ms; rule: T at least the longest carry dwell at the slowest speed to tell from rest: the longest missing run over the scale and that speed <vel:rest_hold_rule> (12 counts <vel:rest_longest_missing_run_counts>)",
+      "state": "the boxcar of 16, the anchor and a row count",
+      "constants": "sigma16 from a rest at identification, the longest missing run",
+      "term_corrected": "the stopped rotor, which the back-EMF reads as a speed under current, and the pot slope's noise at rest (stage 3 rows 12 and 16 read it)",
+      "how": "the pot inside the band (or its slope under the threshold) for the hold time; optional veto by the back-EMF off the stopped rotor's line",
+      "bound_left": "veto: 10.88 rev/s <vel:rest_veto/margin_rev_s> off -4.543 [-5.727, -3.358] rev/s, +/- se <vel:rest_veto/line_a_rev_s> + 42.67 [37.39, 47.95] rev/s per A <vel:rest_veto/line_b_rev_s_per_a>, fires on 1 of 106 <vel:rest_veto/fires_on_stopped> stopped rotors; not told from rest under 2.018 deg/s <vel:rest_min_speed_deg_s/50 ms/far_from_carry>; not chosen",
+      "confidence": "moderate, one sitting",
+      "sources": [
+        "vel:blend_share_of_rows/swr5/rest",
+        "vel:rest_declare_ms/band 2 T50/coast_down/median",
+        "vel:rest_declare_ms/band 2 T50/coast_down/p90",
+        "vel:rest_declare_ms/band 2 T50/stall_in_hold/median",
+        "vel:rest_drop_ms/band 2 T50 + emf/median",
+        "vel:rest_drop_ms/band 2 T50/median",
+        "vel:rest_drop_ms/band 2 T50/p90",
+        "vel:rest_false_motion_share/band 2 T50/rest_base",
+        "vel:rest_false_motion_share/band 2 T50/rest_coast",
+        "vel:rest_false_motion_share/band 2 T50/stall72",
+        "vel:rest_false_motion_stage3_share/band 2 T50/load holds",
+        "vel:rest_false_rest_10_35_deg_s/band 2 25",
+        "vel:rest_false_rest_10_35_deg_s/band 2 50",
+        "vel:rest_false_rest_10_35_near_carry/band 2 25",
+        "vel:rest_false_rest_rows_10_35",
+        "vel:rest_hold_rule",
+        "vel:rest_longest_missing_run_counts",
+        "vel:rest_min_speed_deg_s/50 ms/far_from_carry",
+        "vel:rest_min_speed_deg_s/50 ms/on_widest_carry",
+        "vel:rest_sigma16_counts",
+        "vel:rest_verdict/band/counts",
+        "vel:rest_verdict/band/hold_ms",
+        "vel:rest_verdict/band/sigma16",
+        "vel:rest_veto/fires_on_stopped",
+        "vel:rest_veto/line_a_rev_s",
+        "vel:rest_veto/line_b_rev_s_per_a",
+        "vel:rest_veto/margin_rev_s"
+      ]
+    },
+    {
+      "estimator": "rest verdict, slope form (equal alternatives)",
+      "bias": "false rest at 10 to 35 deg/s: 0 share of rows <vel:rest_false_rest_10_35_deg_s/slope 192 50> at 50 ms, 0.000641 share of rows <vel:rest_false_rest_10_35_deg_s/slope 192 25> at 25 ms (near a carry 0.0087 share of rows <vel:rest_false_rest_10_35_near_carry/slope 192 25>) over 480310 rows <vel:rest_false_rest_rows_10_35>; false motion: baselines 0 share of rows <vel:rest_false_motion_share/slope 192 T50/rest_base>, coast tails 0.00777 share of rows <vel:rest_false_motion_share/slope 192 T50/rest_coast>, stalls 0 share of rows <vel:rest_false_motion_share/slope 192 T50/stall72>, load holds 0.0011 share of rows <vel:rest_false_motion_stage3_share/slope 192 T50/load holds>",
+      "noise_at_delay": "threshold the 192 <vel:rest_verdict/slope/rows>-row two-boxcar slope under 5 <vel:rest_verdict/slope/threshold_x_own_sd> x its rest sd = 5.090 deg/s <vel:rest_verdict/slope/threshold_deg_s>; sigma16 0.137 [0, 0.165] counts, median [range] over the baselines <vel:rest_sigma16_counts>",
+      "delay": "declares 56.10 ms, median <vel:rest_declare_ms/slope 192 T50/coast_down/median> after a coast-down's stop (p90 57.83 ms, p90 <vel:rest_declare_ms/slope 192 T50/coast_down/p90>), 58.73 ms, median <vel:rest_declare_ms/slope 192 T50/stall_in_hold/median> in a stalled hold; drops 6.500 ms, median <vel:rest_drop_ms/slope 192 T50/median> after a start (p90 9.595 ms, p90 <vel:rest_drop_ms/slope 192 T50/p90>), with the back-EMF's veto 5.750 ms, median <vel:rest_drop_ms/slope 192 T50 + emf/median>",
+      "valid_flag": "the verdict is itself a flag",
+      "valid_share": "set on 0.327 share of rows <vel:blend_share_of_rows/swr5/rest> of the sitting's rows (swr5); slowest motion told from rest at 50 ms 2.018 deg/s <vel:rest_min_speed_deg_s/50 ms/far_from_carry> far from a carry, 14.12 deg/s <vel:rest_min_speed_deg_s/50 ms/on_widest_carry> on the widest",
+      "start_up": "the hold time 50 <vel:rest_verdict/slope/hold_ms> ms; rule: T at least the longest carry dwell at the slowest speed to tell from rest: the longest missing run over the scale and that speed <vel:rest_hold_rule> (12 counts <vel:rest_longest_missing_run_counts>)",
+      "state": "the slope's rows and a row count",
+      "constants": "the slope's rest sd, the longest missing run",
+      "term_corrected": "the stopped rotor, which the back-EMF reads as a speed under current, and the pot slope's noise at rest (stage 3 rows 12 and 16 read it)",
+      "how": "the pot inside the band (or its slope under the threshold) for the hold time; optional veto by the back-EMF off the stopped rotor's line",
+      "bound_left": "veto: 10.88 rev/s <vel:rest_veto/margin_rev_s> off -4.543 [-5.727, -3.358] rev/s, +/- se <vel:rest_veto/line_a_rev_s> + 42.67 [37.39, 47.95] rev/s per A <vel:rest_veto/line_b_rev_s_per_a>, fires on 1 of 106 <vel:rest_veto/fires_on_stopped> stopped rotors; not told from rest under 2.018 deg/s <vel:rest_min_speed_deg_s/50 ms/far_from_carry>; not chosen",
+      "confidence": "moderate, one sitting",
+      "sources": [
+        "vel:blend_share_of_rows/swr5/rest",
+        "vel:rest_declare_ms/slope 192 T50/coast_down/median",
+        "vel:rest_declare_ms/slope 192 T50/coast_down/p90",
+        "vel:rest_declare_ms/slope 192 T50/stall_in_hold/median",
+        "vel:rest_drop_ms/slope 192 T50 + emf/median",
+        "vel:rest_drop_ms/slope 192 T50/median",
+        "vel:rest_drop_ms/slope 192 T50/p90",
+        "vel:rest_false_motion_share/slope 192 T50/rest_base",
+        "vel:rest_false_motion_share/slope 192 T50/rest_coast",
+        "vel:rest_false_motion_share/slope 192 T50/stall72",
+        "vel:rest_false_motion_stage3_share/slope 192 T50/load holds",
+        "vel:rest_false_rest_10_35_deg_s/slope 192 25",
+        "vel:rest_false_rest_10_35_deg_s/slope 192 50",
+        "vel:rest_false_rest_10_35_near_carry/slope 192 25",
+        "vel:rest_false_rest_rows_10_35",
+        "vel:rest_hold_rule",
+        "vel:rest_longest_missing_run_counts",
+        "vel:rest_min_speed_deg_s/50 ms/far_from_carry",
+        "vel:rest_min_speed_deg_s/50 ms/on_widest_carry",
+        "vel:rest_sigma16_counts",
+        "vel:rest_verdict/slope/hold_ms",
+        "vel:rest_verdict/slope/rows",
+        "vel:rest_verdict/slope/threshold_deg_s",
+        "vel:rest_verdict/slope/threshold_x_own_sd",
+        "vel:rest_veto/fires_on_stopped",
+        "vel:rest_veto/line_a_rev_s",
+        "vel:rest_veto/line_b_rev_s_per_a",
+        "vel:rest_veto/margin_rev_s"
+      ]
+    },
+    {
+      "estimator": "winding temperature and R(T): the board NTC plus one heat node driven by the copper loss",
+      "bias": "under load, anchored to the reads under 0.25 A: one node 0.481 [-0.916, 1.877] % <wt:load_anchored_mean_pct/[0.25, 0.35)/b_one>, 0.378 [-0.354, 1.110] % <wt:load_anchored_mean_pct/[0.35, 0.45)/b_one>, -0.0565 [-1.243, 1.130] % <wt:load_anchored_mean_pct/[0.45, 0.6)/b_one> of R; the NTC alone 2.001 [1.187, 2.815] % <wt:load_anchored_mean_pct/[0.25, 0.35)/a_ntc>, 2.946 [1.957, 3.935] % <wt:load_anchored_mean_pct/[0.35, 0.45)/a_ntc>, 3.865 [3.077, 4.652] % <wt:load_anchored_mean_pct/[0.45, 0.6)/a_ntc>; as speed for the NTC alone 3.344 rev/s <wt:speed_bias_ntc_alone_rev_s/[0.25, 0.35)>, 6.668 rev/s <wt:speed_bias_ntc_alone_rev_s/[0.35, 0.45)>, 10.72 rev/s <wt:speed_bias_ntc_alone_rev_s/[0.45, 0.6)>",
+      "noise_at_delay": "held out, all kinds: one node 1.055 % <wt:heldout_rms_pct_all/b_one>, NTC alone 1.292 % <wt:heldout_rms_pct_all/a_ntc>, two nodes 1.002 % <wt:heldout_rms_pct_all/c_two>; at one seat 0.08 to 0.16 % of R rms (0.2 to 0.4 C), held out <wt:stage56_table/5/value>; across seats 1.25 % rms (3.2 C), the seat floor <wt:stage56_table/6/value>; floors 0.0678 [0.0341, 0.129] % <wt:floor_same_seat_pct> same seat, 0.604 [0.3, 1.087] % <wt:floor_across_seats_pct> across seats",
+      "delay": "node time constant 2.375 [1.203, 3.227] s (fold_lo 1.400, fold_hi 2.699, stat_factor 1.044) <wt:one_node_tau_s>; gain 23.24 [14.27, 23.85] C/W (fold_lo 14.27, fold_hi 23.24, stat_factor 1.012) <wt:one_node_gain_c_per_w>; heat capacity 0.102 [0.0625, 0.135] J/C (fold_lo 0.0981, fold_hi 0.117) <wt:one_node_c_j_per_c>",
+      "valid_flag": "no flag",
+      "valid_share": "graded to 3.093 [3.092, 3.433] s, the same-seat pairs' span <wt:graded_drive_s_max> of drive from a rest; plateau graded False <wt:plateau_graded>, can node graded False <wt:can_node_graded>, ambient graded False <wt:ambient_graded>; longest drive 36.29 s <wt:longest_drive_s>",
+      "start_up": "state zero after a power cycle <wt:stage56_table/1/note>; start-up error not measured; the NTC itself climbs 2.177 [0.294, 2.177] C <wt:ntc_self_heating_c> after power-up",
+      "state": "one float per node, the rise over the NTC (C) <wt:stage56_table/1/value>",
+      "constants": "G 23.2 C/W (14.3 to 23.9), tau 2.38 s (1.20 to 3.23), C 0.102 J/C (0.063 to 0.135) <wt:stage56_table/2/value>; R0 4.1767 ohm at T0 26.26 C, alpha 0.39 %/C <wt:stage56_table/3/value> (R0 as a cold value open by 1.2 to 2.2 %)",
+      "term_corrected": "R(T) in the R i term of the back-EMF speed and the stall line (stage 3 row 7)",
+      "how": "T_w = T_ntc + x; x += (G P - x)(1 - exp(-dt / tau)); P = i_w^2 R(T_w); R(T) = R0 (1 + alpha (T - T0)) <wt:stage56_table/0/value>",
+      "bound_left": "across seats 1.549 [0.769, 2.786] C <wt:floor_across_seats_c>; second node as a ceiling C2 0.51 J/C, tau2 at least 35 s <wt:stage56_table/9/value>; R after 3 s at 0.5 A 7.121 [5.351, 7.121] % <wt:hold_pct_at_0p5a_3s_one_node>; bridged seats read 0.774 [0.746, 0.803] of R0 <wt:bridged_seat_ratio> (3 holds <wt:bridged_seat_holds>); no graded basis past the graded drive",
+      "confidence": "high to 3.093 [3.092, 3.433] s, the same-seat pairs' span <wt:graded_drive_s_max> of drive at one seat; low past it",
+      "sources": [
+        "wt:ambient_graded",
+        "wt:bridged_seat_holds",
+        "wt:bridged_seat_ratio",
+        "wt:can_node_graded",
+        "wt:floor_across_seats_c",
+        "wt:floor_across_seats_pct",
+        "wt:floor_same_seat_pct",
+        "wt:graded_drive_s_max",
+        "wt:heldout_rms_pct_all/a_ntc",
+        "wt:heldout_rms_pct_all/b_one",
+        "wt:heldout_rms_pct_all/c_two",
+        "wt:hold_pct_at_0p5a_3s_one_node",
+        "wt:load_anchored_mean_pct/[0.25, 0.35)/a_ntc",
+        "wt:load_anchored_mean_pct/[0.25, 0.35)/b_one",
+        "wt:load_anchored_mean_pct/[0.35, 0.45)/a_ntc",
+        "wt:load_anchored_mean_pct/[0.35, 0.45)/b_one",
+        "wt:load_anchored_mean_pct/[0.45, 0.6)/a_ntc",
+        "wt:load_anchored_mean_pct/[0.45, 0.6)/b_one",
+        "wt:longest_drive_s",
+        "wt:ntc_self_heating_c",
+        "wt:one_node_c_j_per_c",
+        "wt:one_node_gain_c_per_w",
+        "wt:one_node_tau_s",
+        "wt:plateau_graded",
+        "wt:speed_bias_ntc_alone_rev_s/[0.25, 0.35)",
+        "wt:speed_bias_ntc_alone_rev_s/[0.35, 0.45)",
+        "wt:speed_bias_ntc_alone_rev_s/[0.45, 0.6)",
+        "wt:stage56_table/0/value",
+        "wt:stage56_table/1/note",
+        "wt:stage56_table/1/value",
+        "wt:stage56_table/2/value",
+        "wt:stage56_table/3/value",
+        "wt:stage56_table/5/value",
+        "wt:stage56_table/6/value",
+        "wt:stage56_table/9/value"
+      ]
+    }
+  ],
+  "stage3_rows": [
+    {
+      "row": 0,
+      "effect": "pot scale and smooth bend",
+      "stage3_size": "18.9 counts/deg, 50 counts pp over the travel <s3:closing_table/0>",
+      "stage3_how": "Compensate in firmware, the table at 1.5 deg knots",
+      "owner": "4",
+      "disposition": "compensated",
+      "disposition_how": "compensated here (position)",
+      "estimator": "position",
+      "residual": "table term held out 0.165 [0.16, 0.17] deg <pos:table_term_heldout_deg_rms>",
+      "agrees": "yes",
+      "agrees_how": "agrees on a table; the form changed from knots in angle to knots uniform in counts (no search)",
+      "stage3_number": "the angle form at 1.5 deg knots, held out in stage 4: 0.174 deg <pos:angle_form_1p5_deg_heldout_deg_rms>",
+      "stage4_number": "lookup indexed by counts, pitch 32 counts <pos:lookup_pitch_counts>, 98 entries <pos:lookup_entries_guard_to_guard>; table term held out 0.165 [0.16, 0.17] deg <pos:table_term_heldout_deg_rms>; a 64-count pitch 0.186 deg <pos:lookup_64_counts_heldout_deg_rms>",
+      "sources": [
+        "pos:angle_form_1p5_deg_heldout_deg_rms",
+        "pos:lookup_64_counts_heldout_deg_rms",
+        "pos:lookup_entries_guard_to_guard",
+        "pos:lookup_pitch_counts",
+        "pos:table_term_heldout_deg_rms",
+        "s3:closing_table/0"
+      ]
+    },
+    {
+      "row": 1,
+      "effect": "pot fine texture",
+      "stage3_size": "6.0 counts rms (0.32 deg). 2.8 to 5.2 % on a 100 ms pot speed at a spot, 0.22 rev/s x (1 s / W) tiling the travel <s3:closing_table/1>",
+      "stage3_how": "Compensate in firmware for position, the table. Design around for velocity, pot windows of 200 ms and longer and the EMF under that",
+      "owner": "4",
+      "disposition": "compensated (position); designed around (velocity)",
+      "disposition_how": "position: compensated here (position), residual stated; velocity: designed around (velocity), the rule changed",
+      "estimator": "position; velocity as the pot's slope",
+      "residual": "position 0.165 [0.16, 0.17] deg <pos:table_term_heldout_deg_rms>; velocity: the crossover's bracket 103.0 [66.15, 115.2] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/crawl_rms>",
+      "agrees": "changed",
+      "agrees_how": "position agrees. velocity: the direction agrees, the window moved (crawl earlier, pass later, brackets wide) and the rule is restated: the pot's slope where the back-EMF is not valid or where 50 ms and more of delay is acceptable <vel:stage5_by_regime/3>, not stage 3's fixed window",
+      "stage3_number": "position in-sample 0.4 deg <s3:position_resid_rms_deg>; the crossover against the signed table 134 <s3:crossover_ms/0-30/w_signed / pot_two> and 146 <s3:crossover_ms/0-30/w_signed / pot_line> ms at 0-30 rev/s, 119 <s3:crossover_ms/30-100/w_signed / pot_two> and 92 <s3:crossover_ms/30-100/w_signed / pot_line> at 30-100, against the product 77 <s3:crossover_ms/0-30/w_product / pot_two> and 100 <s3:crossover_ms/0-30/w_product / pot_line>",
+      "stage4_number": "position held out 0.165 [0.16, 0.17] deg <pos:table_term_heldout_deg_rms> with segment offsets out, 0.41 [0.376, 0.446] deg <pos:heldout_lead_applied_deg_rms> with nothing out but the lead; crossover, causal: crawl rms 103.0 [66.15, 115.2] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/crawl_rms>, line 127.4 [120.0, 137.0] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/crawl_rms_line>, product 50.81 [38.96, 64.82] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/crawl_rms_product>, own noise 141.8 [115.0, 221.8] ms of window, 5-95 % of 200 resamplings, never 13% <vel:crossover_window_ms/crawl_own_noise>, steps 120.2 [85.80, 202.0] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/steps_rms>, pass 200.4 [114.7, 224.8] ms of window, 5-95 % of 200 resamplings, never 20% <vel:crossover_window_ms/pass_rms>; at 5 ms of delay the pot's own noise 7.434 <vel:stage5_by_regime/2/noise_rev_s> against the back-EMF's 1.718 <vel:stage5_by_regime/0/noise_rev_s> rev/s",
+      "sources": [
+        "pos:heldout_lead_applied_deg_rms",
+        "pos:table_term_heldout_deg_rms",
+        "s3:closing_table/1",
+        "s3:crossover_ms/0-30/w_product / pot_line",
+        "s3:crossover_ms/0-30/w_product / pot_two",
+        "s3:crossover_ms/0-30/w_signed / pot_line",
+        "s3:crossover_ms/0-30/w_signed / pot_two",
+        "s3:crossover_ms/30-100/w_signed / pot_line",
+        "s3:crossover_ms/30-100/w_signed / pot_two",
+        "s3:position_resid_rms_deg",
+        "vel:crossover_window_ms/crawl_own_noise",
+        "vel:crossover_window_ms/crawl_rms",
+        "vel:crossover_window_ms/crawl_rms_line",
+        "vel:crossover_window_ms/crawl_rms_product",
+        "vel:crossover_window_ms/pass_rms",
+        "vel:crossover_window_ms/steps_rms",
+        "vel:stage5_by_regime/0/noise_rev_s",
+        "vel:stage5_by_regime/2/noise_rev_s",
+        "vel:stage5_by_regime/3"
+      ]
+    },
+    {
+      "row": 2,
+      "effect": "converter's wide and missing codes",
+      "stage3_size": "0.71 deg at 2047, 0.20 to 0.62 at the other carries <s3:closing_table/2>",
+      "stage3_how": "Design around, mask +/-12 counts of a carry in the velocity. Bound the position at 0.71 deg there",
+      "owner": "4",
+      "disposition": "designed around",
+      "disposition_how": "designed around (position: no mask; velocity: skip, never hold)",
+      "estimator": "position; velocity as the pot's slope",
+      "residual": "position blind over [0.772, 0.139, 0.467, 0.0298, 0.279] <pos:carry_blind_span_deg> deg",
+      "agrees": "incomplete",
+      "agrees_how": "the mask holds only as rows skipped in a slope under 50 ms, about twice the longest dwell at a crawl <vel:carry_mask_until_window_ms> of window, +/-12 counts, the longest missing run <vel:carry_mask_half_counts>; holding the pot through the band makes both the position and the velocity worse. The widest carry by blind span is 1023 <pos:carry_codes>, not the code stage 3's size names (a different construction, the position notebook's open discrepancy)",
+      "stage3_number": "the size and the mask above",
+      "stage4_number": "carries at [1023, 1279, 2047, 2303, 2559] <pos:carry_codes>, blind over [0.772, 0.139, 0.467, 0.0298, 0.279] <pos:carry_blind_span_deg> deg, missing runs [12, 3, 11, 3, 7] <pos:carry_missing_codes>. position: near a carry 0.201 deg <pos:carry_near_rms_deg>, far 0.176 deg <pos:carry_far_rms_deg>, with a hold of the band 0.698 deg <pos:carry_hold_near_rms_deg> and 29.57 [-, 108.3] ms <pos:carry_hold_added_delay_ms> of added delay. velocity, two-point near a carry at 12.8 ms: none 19.50 deg/s rms <vel:carry_near_rms_deg_s/none/near/12.8 ms>, hold12 35.51 deg/s rms <vel:carry_near_rms_deg_s/hold12/near/12.8 ms>, skip12 7.504 deg/s rms <vel:carry_near_rms_deg_s/skip12/near/12.8 ms>, far 8.181 deg/s rms <vel:carry_near_rms_deg_s/none/far/12.8 ms>; at 51.2 ms none 4.942 deg/s rms <vel:carry_near_rms_deg_s/none/near/51.2 ms>, skip12 5.220 deg/s rms <vel:carry_near_rms_deg_s/skip12/near/51.2 ms>; mask rule skip <vel:carry_mask> +/-12 counts, the longest missing run <vel:carry_mask_half_counts> under 50 ms, about twice the longest dwell at a crawl <vel:carry_mask_until_window_ms>",
+      "sources": [
+        "pos:carry_blind_span_deg",
+        "pos:carry_codes",
+        "pos:carry_far_rms_deg",
+        "pos:carry_hold_added_delay_ms",
+        "pos:carry_hold_near_rms_deg",
+        "pos:carry_missing_codes",
+        "pos:carry_near_rms_deg",
+        "s3:closing_table/2",
+        "vel:carry_mask",
+        "vel:carry_mask_half_counts",
+        "vel:carry_mask_until_window_ms",
+        "vel:carry_near_rms_deg_s/hold12/near/12.8 ms",
+        "vel:carry_near_rms_deg_s/none/far/12.8 ms",
+        "vel:carry_near_rms_deg_s/none/near/12.8 ms",
+        "vel:carry_near_rms_deg_s/none/near/51.2 ms",
+        "vel:carry_near_rms_deg_s/skip12/near/12.8 ms",
+        "vel:carry_near_rms_deg_s/skip12/near/51.2 ms"
+      ]
+    },
+    {
+      "row": 3,
+      "effect": "lash",
+      "stage3_size": "play 0.39 to 1.12 deg. The pot leads the horn by +0.17 / -0.18 deg by direction at a crawl <s3:closing_table/3>",
+      "stage3_how": "Compensate in firmware, a direction-signed 0.17 deg offset on the position. Bound the rest on the hold",
+      "owner": "4, 5",
+      "disposition": "bound",
+      "disposition_how": "left as a bound (position), not compensated",
+      "estimator": "position",
+      "residual": "bound 0.5 deg <pos:direction_bound_moving_deg> in motion, 0.3 deg <pos:direction_bound_rest_deg> at rest",
+      "agrees": "no",
+      "agrees_how": "the fixed direction-signed offset stage 3 proposed does not hold across the sitting's clips: it changes sign between clips, and the position carries a bound instead",
+      "stage3_number": "0.166 deg <s3:position_resid_by_dir_crawl_deg/+1> and -0.177 deg <s3:position_resid_by_dir_crawl_deg/-1> by direction at a crawl",
+      "stage4_number": "on steady crawl holds 0.274 [0.249, 0.3] deg <pos:direction_offset_crawl_plus_deg> and -0.227 [-0.257, -0.196] deg <pos:direction_offset_crawl_minus_deg>; clip means from -0.194 deg <pos:direction_offset_clip_min_deg> to 0.528 deg <pos:direction_offset_clip_max_deg>; at rest -0.0526 [-0.0754, -0.0298] deg <pos:rest_direction_split_deg>; position-controlled contrast -0.0551 [-0.103, -0.00676] deg <pos:direction_contrast_in_bin_deg>, speed-free half width 0.192 [0.145, 0.238] deg <pos:speed_free_half_width_deg>, timing slope -5.880 [-6.797, -4.963] ms <pos:timing_slope_ms>; a direction source, if ever: hysteresis 4 [4, 6] counts <pos:direction_source_pot_hysteresis_counts>, late 8.399 [0, 8.399] ms <pos:direction_source_late_ms>",
+      "sources": [
+        "pos:direction_bound_moving_deg",
+        "pos:direction_bound_rest_deg",
+        "pos:direction_contrast_in_bin_deg",
+        "pos:direction_offset_clip_max_deg",
+        "pos:direction_offset_clip_min_deg",
+        "pos:direction_offset_crawl_minus_deg",
+        "pos:direction_offset_crawl_plus_deg",
+        "pos:direction_source_late_ms",
+        "pos:direction_source_pot_hysteresis_counts",
+        "pos:rest_direction_split_deg",
+        "pos:speed_free_half_width_deg",
+        "pos:timing_slope_ms",
+        "s3:closing_table/3",
+        "s3:position_resid_by_dir_crawl_deg/+1",
+        "s3:position_resid_by_dir_crawl_deg/-1"
+      ]
+    },
+    {
+      "row": 4,
+      "effect": "pot force term",
+      "stage3_size": "0.51 deg under a push, relaxing 0.31. At most 0.33 deg per 50 mA stalled <s3:closing_table/4>",
+      "stage3_how": "Bound, the board does not see it. The push block and a tag under torque measure it",
+      "owner": "7",
+      "disposition": "bound",
+      "disposition_how": "left as a bound, stage 7's (no stage 4 result)",
+      "estimator": "none",
+      "residual": "stage 3's numbers, carried",
+      "agrees": "carried",
+      "agrees_how": "carried unchanged",
+      "stage3_number": "0.509 deg each way, quoted <s3:force_term_push_deg>; 0.334 deg, quoted, a bound <s3:force_term_bound_deg_per_50ma>",
+      "stage4_number": "not measured",
+      "sources": [
+        "s3:closing_table/4",
+        "s3:force_term_bound_deg_per_50ma",
+        "s3:force_term_push_deg"
+      ]
+    },
+    {
+      "row": 5,
+      "effect": "brush drop and its direction term",
+      "stage3_size": "X = -35.6 + 14.4 [+1] + 1.96 w i mV on this servo. The speed table reads +26.4 to +29.5 rev/s on the 100 % run-ups at 0.48 to 0.70 A <s3:closing_table/5>",
+      "stage3_how": "Compensate in firmware. A speed-only table holds at the free current only. Under current the product form c0 + c_dir + b w i fits this servo, three constants and a sign, the ladder alone giving b to 2.6 %. The matched-speed two-current experiment decides the form",
+      "owner": "4",
+      "disposition": "compensated",
+      "disposition_how": "compensated here in two forms (speed), the form not chosen",
+      "estimator": "back-EMF speed per row",
+      "residual": "the run-ups and the lifts under both forms, the bias column",
+      "agrees": "yes",
+      "agrees_how": "agrees that the speed-only table fails under current and the product holds on the run-ups; b is 5.234 % over stage 3's (derived from <spd:brush_forms/product_ladder_alone/b_mv_per_rev_s_a> and <s3:v_b_product_form/b_mv_per_rev_s_a>); c_dir with the run-ups in the fit moved from 14.37 [12.80, 15.95] mV, +/- se <s3:v_b_product_form/c_dir_mv> to 36.02 [34.22, 37.82] mV, +/- se <spd:brush_forms/product_ladder_runups/c_dir_mv> with k_d = 0 (the speed notebook's second gap); both forms read high on the lifts; the form stays open",
+      "stage3_number": "product form: c0 -35.57 [-37.24, -33.89] mV, +/- se <s3:v_b_product_form/c0_mv>, c_dir 14.37 [12.80, 15.95] mV, +/- se <s3:v_b_product_form/c_dir_mv>, b 1.956 [1.943, 1.969] mV per (rev/s x A), +/- se <s3:v_b_product_form/b_mv_per_rev_s_a>",
+      "stage4_number": "per row, k_d = 0: ladder alone c0 -40.43 [-43.26, -37.60] mV, +/- se <spd:brush_forms/product_ladder_alone/c0_mv>, c_dir 12.39 [9.149, 15.63] mV, +/- se <spd:brush_forms/product_ladder_alone/c_dir_mv>, b 2.058 [2.010, 2.107] mV per (rev/s x A), +/- se <spd:brush_forms/product_ladder_alone/b_mv_per_rev_s_a>; ladder + run-ups c0 -46.45 [-48.37, -44.54] mV, +/- se <spd:brush_forms/product_ladder_runups/c0_mv>, c_dir 36.02 [34.22, 37.82] mV, +/- se <spd:brush_forms/product_ladder_runups/c_dir_mv>, b 2.052 [2.037, 2.067] mV per (rev/s x A), +/- se <spd:brush_forms/product_ladder_runups/b_mv_per_rev_s_a>. bias: run-up 160-250 (218.9 rev/s, 655 mA): table 30, product -1.340 rev/s <spd:stage5_bias_by_band_form/11>; run-up 250-350 (306.2 rev/s, 512 mA): table 27.10, product -1.920 rev/s <spd:stage5_bias_by_band_form/12>; run-up 350-450 (408.7 rev/s, 349 mA): table 12.45, product 2.310 rev/s <spd:stage5_bias_by_band_form/13>; run-up 450-600 (474.4 rev/s, 249 mA): table 3.330, product 7.690 rev/s <spd:stage5_bias_by_band_form/14>; lifts 0-30 (11.50 rev/s, 195 mA): table 3.460, product 4.320 rev/s <spd:stage5_bias_by_band_form/15>; lifts 30-100 (58.60 rev/s, 205 mA): table 5.220, product 3.730 rev/s <spd:stage5_bias_by_band_form/16>; lifts 100-160 (111.5 rev/s, 218 mA): table 7.420, product 3.580 rev/s <spd:stage5_bias_by_band_form/17>",
+      "sources": [
+        "s3:closing_table/5",
+        "s3:v_b_product_form/b_mv_per_rev_s_a",
+        "s3:v_b_product_form/c0_mv",
+        "s3:v_b_product_form/c_dir_mv",
+        "spd:brush_forms/product_ladder_alone/b_mv_per_rev_s_a",
+        "spd:brush_forms/product_ladder_alone/c0_mv",
+        "spd:brush_forms/product_ladder_alone/c_dir_mv",
+        "spd:brush_forms/product_ladder_runups/b_mv_per_rev_s_a",
+        "spd:brush_forms/product_ladder_runups/c0_mv",
+        "spd:brush_forms/product_ladder_runups/c_dir_mv",
+        "spd:stage5_bias_by_band_form/11",
+        "spd:stage5_bias_by_band_form/12",
+        "spd:stage5_bias_by_band_form/13",
+        "spd:stage5_bias_by_band_form/14",
+        "spd:stage5_bias_by_band_form/15",
+        "spd:stage5_bias_by_band_form/16",
+        "spd:stage5_bias_by_band_form/17"
+      ]
+    },
+    {
+      "row": 6,
+      "effect": "reading term",
+      "stage3_size": "g 4.75 mS of (1 - D) V_on off the current. Without it -15.1 / -12.2 rev/s at 94 / 137 rev/s and a -79 mV rail split <s3:closing_table/6>",
+      "stage3_how": "Compensate in firmware, as construction C with the meter-confirmed g",
+      "owner": "4",
+      "disposition": "compensated",
+      "disposition_how": "compensated here (speed), unchanged",
+      "estimator": "back-EMF speed per row",
+      "residual": "the port's gate 0.15 [-0.15, 0.107] rev/s <spd:port_gate_flat_band_rev_s>",
+      "agrees": "yes",
+      "agrees_how": "agrees",
+      "stage3_number": "the size above",
+      "stage4_number": "g 0.00475 S <spd:constants_used/g_s> and the brake line 0.00875 V <spd:constants_used/brake_b0_v>, 0.24 ohm <spd:constants_used/brake_b1_ohm> through the chain; the per-row port reproduces stage 3's window scores within 0.15 [-0.15, 0.107] rev/s <spd:port_gate_flat_band_rev_s>",
+      "sources": [
+        "s3:closing_table/6",
+        "spd:constants_used/brake_b0_v",
+        "spd:constants_used/brake_b1_ohm",
+        "spd:constants_used/g_s",
+        "spd:port_gate_flat_band_rev_s"
+      ]
+    },
+    {
+      "row": 7,
+      "effect": "R(T)",
+      "stage3_size": "0.39 %/C. No lever here, the NTC at 24.5 to 27.5 C. The warm 3 s stall 7.8 to 8.8 % under cold at 40 to 50 % <s3:closing_table/7>",
+      "stage3_how": "Compensate in firmware, R(T) from the thermal estimate and the stall fault from the warm line",
+      "owner": "4, 6",
+      "disposition": "compensated",
+      "disposition_how": "compensated here to 3.093 [3.092, 3.433] s, the same-seat pairs' span <wt:graded_drive_s_max> of drive from a rest (winding-temperature); a bound past that",
+      "estimator": "winding temperature and R(T)",
+      "residual": "R after 3 s at 0.5 A 7.121 [5.351, 7.121] % <wt:hold_pct_at_0p5a_3s_one_node>; graded to 3.093 [3.092, 3.433] s, the same-seat pairs' span <wt:graded_drive_s_max>",
+      "agrees": "yes",
+      "agrees_how": "agrees on the method (R(T) from a thermal estimate); the stage 3 row said there was no lever, stage 4 found one in the holds' own heating. The speed and velocity estimators read R(T) from the NTC alone. The warm stall line is not re-derived; stage 3's warm line sits above the one node's bracket at 0.5 A (the winding-temperature notebook's open discrepancy)",
+      "stage3_number": "stall lines at 40 % 449.7 mA <s3:stall_line_cold/40 %> cold and 414.4 mA <s3:stall_line_warm_quoted/40 %> warm; at 50 % 564.1 mA <s3:stall_line_cold/50 %> cold and 514.2 mA <s3:stall_line_warm_quoted/50 %> warm (derived: warm under cold by 7.840, 8.843 % of the current, cold over warm less one 8.507, 9.701 %)",
+      "stage4_number": "one node 23.24 [14.27, 23.85] C/W (fold_lo 14.27, fold_hi 23.24, stat_factor 1.012) <wt:one_node_gain_c_per_w>, 2.375 [1.203, 3.227] s (fold_lo 1.400, fold_hi 2.699, stat_factor 1.044) <wt:one_node_tau_s>, 0.102 [0.0625, 0.135] J/C (fold_lo 0.0981, fold_hi 0.117) <wt:one_node_c_j_per_c>; held out 1.055 % <wt:heldout_rms_pct_all/b_one> against 1.292 % <wt:heldout_rms_pct_all/a_ntc> for the NTC alone; the NTC alone under load 3.865 [3.077, 4.652] % <wt:load_anchored_mean_pct/[0.45, 0.6)/a_ntc> of R = 10.72 rev/s <wt:speed_bias_ntc_alone_rev_s/[0.45, 0.6)>; one node -0.0565 [-1.243, 1.130] % <wt:load_anchored_mean_pct/[0.45, 0.6)/b_one>; NTC span 26.60 [24.54, 28.66] C <wt:ntc_span_c>",
+      "sources": [
+        "s3:closing_table/7",
+        "s3:stall_line_cold/40 %",
+        "s3:stall_line_cold/50 %",
+        "s3:stall_line_warm_quoted/40 %",
+        "s3:stall_line_warm_quoted/50 %",
+        "wt:graded_drive_s_max",
+        "wt:heldout_rms_pct_all/a_ntc",
+        "wt:heldout_rms_pct_all/b_one",
+        "wt:hold_pct_at_0p5a_3s_one_node",
+        "wt:load_anchored_mean_pct/[0.45, 0.6)/a_ntc",
+        "wt:load_anchored_mean_pct/[0.45, 0.6)/b_one",
+        "wt:ntc_span_c",
+        "wt:one_node_c_j_per_c",
+        "wt:one_node_gain_c_per_w",
+        "wt:one_node_tau_s",
+        "wt:speed_bias_ntc_alone_rev_s/[0.45, 0.6)"
+      ]
+    },
+    {
+      "row": 8,
+      "effect": "current zero's awake step",
+      "stage3_size": "1.82 counts/V -3.76, +0.05 counts/V above 6 V. 1 count = 0.51 rev/s <s3:closing_table/8>",
+      "stage3_how": "Compensate in firmware, stage 1's two-zero tracker with the trough fed at <= 30 %. A constant costs 0.2 to 1.5 rev/s rms and a -30 mV rail split",
+      "owner": "4",
+      "disposition": "compensated",
+      "disposition_how": "compensated here (current-zero), the tracker extended",
+      "estimator": "current zero",
+      "residual": "the design's worst 1.967 counts <cz:design_all_runs_worst_counts>",
+      "agrees": "incomplete",
+      "agrees_how": "stage 1's tracker with the trough fed at or under the gate carries the trough's offset under a drive as a warm bias and starts several counts off after a boot or a rail move; stage 4 adds the drive-feed constant and the start rule. The step is a curve, not one line",
+      "stage3_number": "line 1.817 counts/V <s3:awake_step_line/per_v>, -3.759 counts <s3:awake_step_line/c0>, rms 0.841 counts <s3:awake_step_line/rms>, above 6 V 0.054 counts/V <s3:awake_step_line/per_v_above_6v>; trough over tail 0.74 [0.318, 1.161] counts, +/- sd <s3:trough_over_tail_counts>; a count 0.505 rev/s per count of zero <s3:count_in_rev_s>",
+      "stage4_number": "line 1.667 [1.630, 1.704] counts/V <cz:awake_step_slope_counts_per_v>, -2.717 [-2.916, -2.518] counts <cz:awake_step_intercept_counts>, held out 0.733 counts <cz:step_line_heldout_rms_counts>, the curve 0.437 counts <cz:step_curve_heldout_rms_counts> (held out by capture set <cz:step_heldout_by>); stage 1's tracker fed at 30 % <cz:feed_gate_pct> alone: warm 0.73 [0.684, 0.778] counts <cz:warm_error_counts_rms> rms, mean 0.584 counts <cz:warm_error_mean_counts>, rail moved 2.237 [1.260, 3.017] counts <cz:rail_moved_error_counts_rms>, cold 1.675 [0.796, 2.176] counts <cz:cold_error_counts_rms>, worst 7.204 counts <cz:worst_error_counts>; drive-feed offset 0.667 [0.657, 0.698] counts <cz:drive_feed_offset_counts>; the design warm 0.411 [0.373, 0.447] counts <cz:design_warm_rms_counts>, events 0.361 [0.241, 0.475] counts <cz:design_events_rms_counts>, worst 1.967 counts <cz:design_all_runs_worst_counts>; a count 0.471 [0.471, 0.517] rev/s per count of zero <spd:rev_s_per_count>",
+      "sources": [
+        "cz:awake_step_intercept_counts",
+        "cz:awake_step_slope_counts_per_v",
+        "cz:cold_error_counts_rms",
+        "cz:design_all_runs_worst_counts",
+        "cz:design_events_rms_counts",
+        "cz:design_warm_rms_counts",
+        "cz:drive_feed_offset_counts",
+        "cz:feed_gate_pct",
+        "cz:rail_moved_error_counts_rms",
+        "cz:step_curve_heldout_rms_counts",
+        "cz:step_heldout_by",
+        "cz:step_line_heldout_rms_counts",
+        "cz:warm_error_counts_rms",
+        "cz:warm_error_mean_counts",
+        "cz:worst_error_counts",
+        "s3:awake_step_line/c0",
+        "s3:awake_step_line/per_v",
+        "s3:awake_step_line/per_v_above_6v",
+        "s3:awake_step_line/rms",
+        "s3:closing_table/8",
+        "s3:count_in_rev_s",
+        "s3:trough_over_tail_counts",
+        "spd:rev_s_per_count"
+      ]
+    },
+    {
+      "row": 9,
+      "effect": "dropout rate",
+      "stage3_size": "0 below 420 rev/s. 26 -> 71 per s at 100 % over two days. The data want k_d about 0, -0.024 rev/s per dropout/s without it <s3:closing_table/9>",
+      "stage3_how": "Flag in firmware, the rate against the reference + max(3 se, 100/s) over >= 50 ms, no live term",
+      "owner": "4, 6",
+      "disposition": "designed around",
+      "disposition_how": "designed around (speed): k_d = 0, a per-row dropout rule in the valid flag; the rate flag itself not built",
+      "estimator": "back-EMF speed per row, its valid rule",
+      "residual": "precision 0.957 <spd:dropout_rule_vs_stage3/reference 32 rows/precision>",
+      "agrees": "yes",
+      "agrees_how": "agrees on k_d = 0; the fault-side rate flag is carried from stage 3 unrun",
+      "stage3_number": "k_d 0 mV per dropout/s <s3:k_d_recommended>; the rate flag 25.77 [16.66, 34.88] per s <s3:dropout_flag_rule/reference>, excess 100 per s, max(3 se, 100) <s3:dropout_flag_rule/excess>, span 50 ms, at least <s3:dropout_flag_rule/span>",
+      "stage4_number": "k_d = 0 kept; the per-row rule against stage 3's marks: hit rate 1 <spd:dropout_rule_vs_stage3/reference 32 rows/hit_rate>, precision 0.957 <spd:dropout_rule_vs_stage3/reference 32 rows/precision>, n 45 <spd:dropout_rule_vs_stage3/reference 32 rows/n>, flags 47 <spd:dropout_rule_vs_stage3/reference 32 rows/flags>; dropout rows 0.0249 <spd:valid_coverage_by_set/all/dropout_pct> % of driven rows; hold-last at 450-600 rev/s moves the bias from 9.455 [8.116, 10.79] rev/s, +/- se <spd:dropout_hold_last_effect/none/450-600/bias> to 8.527 [7.354, 9.701] rev/s, +/- se <spd:dropout_hold_last_effect/hold-last/450-600/bias>; stage 3's rate flag: not measured",
+      "sources": [
+        "s3:closing_table/9",
+        "s3:dropout_flag_rule/excess",
+        "s3:dropout_flag_rule/reference",
+        "s3:dropout_flag_rule/span",
+        "s3:k_d_recommended",
+        "spd:dropout_hold_last_effect/hold-last/450-600/bias",
+        "spd:dropout_hold_last_effect/none/450-600/bias",
+        "spd:dropout_rule_vs_stage3/reference 32 rows/flags",
+        "spd:dropout_rule_vs_stage3/reference 32 rows/hit_rate",
+        "spd:dropout_rule_vs_stage3/reference 32 rows/n",
+        "spd:dropout_rule_vs_stage3/reference 32 rows/precision",
+        "spd:valid_coverage_by_set/all/dropout_pct"
+      ]
+    },
+    {
+      "row": 10,
+      "effect": "low-speed offset of the construction",
+      "stage3_size": "X -28 to -15 mV under 100 rev/s, -2.8 rev/s at 94 rev/s and -2.6 at a crawl, rail-flat <s3:closing_table/10>",
+      "stage3_how": "Compensate in firmware, the signed table (-24 to -14 mV at 50 to 100 rev/s) or a V0 under rotation lowered by as much, the product form's c0 of -35.6 mV the same term. The cause is open (the ammeter experiment)",
+      "owner": "4",
+      "disposition": "compensated",
+      "disposition_how": "compensated here (speed: the signed table or the product's c0), residual stated; cause still open",
+      "estimator": "back-EMF speed per row",
+      "residual": "crawl 0.54 [0.437, 0.643] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/table> (table), 1.382 [1.198, 1.566] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/product> (product)",
+      "agrees": "yes",
+      "agrees_how": "agrees: stage 3's crawl offset is closed to 0.54 [0.437, 0.643] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/table> by the table and 1.382 [1.198, 1.566] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/product> by the product; a direction split the forms do not carry remains, and the table form's crawl bias differs between the speed and velocity notebooks (section 4)",
+      "stage3_number": "at a crawl against the tag, the full construction -2.581 [-2.674, -2.487] rev/s, +/- se <s3:speed_by_band_clips_tag/full/0-30/mean>, with the signed table 0.382 [0.285, 0.48] rev/s, +/- se <s3:speed_by_band_clips_tag/signed/0-30/mean>",
+      "stage4_number": "signed table at its first two knots <spd:brush_forms/table_signed_mv>: +1 -23.95, -13.74 mV, -1 -18.84, -14.57 mV; crawl on the camera sitting: table 0.54 [0.437, 0.643] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/table>, product 1.382 [1.198, 1.566] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/product>; free low holds: holds (free, low) 0-30 (23.40 rev/s, 39 mA): table -0.88, product 0.89 rev/s <spd:stage5_bias_by_band_form/6>; ladder (third repeat) 30-100 (94 rev/s, 73 mA): table -0.31, product 0.12 rev/s <spd:stage5_bias_by_band_form/0>; direction split under 45 rev/s table 0.814 [0.746, 0.883] rev/s, +/- se <vel:emf_direction_split_rev_s/table/under_45>, product -1.828 [-1.896, -1.759] rev/s, +/- se <vel:emf_direction_split_rev_s/product/under_45>; under the floor -2.251 [-2.649, -1.854] rev/s, +/- se over segments <vel:emf_bias_under_floor_rev_s/table>",
+      "sources": [
+        "s3:closing_table/10",
+        "s3:speed_by_band_clips_tag/full/0-30/mean",
+        "s3:speed_by_band_clips_tag/signed/0-30/mean",
+        "spd:brush_forms/table_signed_mv",
+        "spd:stage5_bias_by_band_form/0",
+        "spd:stage5_bias_by_band_form/6",
+        "vel:emf_bias_crawl_rev_s/product",
+        "vel:emf_bias_crawl_rev_s/table",
+        "vel:emf_bias_under_floor_rev_s/table",
+        "vel:emf_direction_split_rev_s/product/under_45",
+        "vel:emf_direction_split_rev_s/table/under_45"
+      ]
+    },
+    {
+      "row": 11,
+      "effect": "train friction pair and stiction",
+      "stage3_size": "Tc 55 uN m (47 mA), b 0.26 mA per rev/s. Stiction >= 50 to 60 uN m driven, a bound, and 81 to 117 uN m back-driven, measured (load 11.7). The floor 0.34 V effective at 20 rev/s <s3:closing_table/11>",
+      "stage3_how": "Compensate in firmware, the feed-forward 47 mA + 0.26 mA per rev/s (friction). Design around, the loop and not a duty carries a crawl under the floor's speed",
+      "owner": "5",
+      "disposition": "carried",
+      "disposition_how": "not stage 4's (owner 5); carried",
+      "estimator": "none",
+      "residual": "stage 3's numbers, carried",
+      "agrees": "carried",
+      "agrees_how": "carried unchanged; stage 4 adds that most of the back-EMF's ripple at a crawl is electrical and not motion",
+      "stage3_number": "ripple 0.366 ratio <s3:crawl_speed_ripple_sd_over_mean> of the mean",
+      "stage4_number": "not measured. Related: mechanical time constant 18.29 [11.94, 26.66] ms, median [10-90 %] of the kept steps <vel:mechanical_tau_ms>; the crawl's motion locked to the horn's angle 2.236 rev/s <vel:crawl_angle_locked_motion_rev_s/sd>; the commutation-locked part of the back-EMF 0.719 [0.701, 0.738] of the per-row variance, +/- se over segments <vel:emf_commutation_locked_share_crawl>, of which motion at most 0.183 [0.155, 0.281] rev/s sd, [range by tile] <vel:emf_commutation_motion_bound_rev_s>",
+      "sources": [
+        "s3:closing_table/11",
+        "s3:crawl_speed_ripple_sd_over_mean",
+        "vel:crawl_angle_locked_motion_rev_s/sd",
+        "vel:emf_commutation_locked_share_crawl",
+        "vel:emf_commutation_motion_bound_rev_s",
+        "vel:mechanical_tau_ms"
+      ]
+    },
+    {
+      "row": 12,
+      "effect": "hold deadband",
+      "stage3_size": "A ratchet, follows a rise of 5 to 10 % of duty and holds through a cut of 20 to 25 % (load 11.4), measured. Pos sd 0.87 counts at rest under torque. The drift over seconds is unmeasured <s3:closing_table/12>",
+      "stage3_how": "Design around, integral action or dither in the position loop. A streamed hold measures the drift",
+      "owner": "5",
+      "disposition": "designed around",
+      "disposition_how": "designed around (velocity: the rest verdict); the drift stays unmeasured",
+      "estimator": "rest verdict",
+      "residual": "the drift over seconds: not measured",
+      "agrees": "yes",
+      "agrees_how": "agrees; the drift over seconds is still not in the data",
+      "stage3_number": "pos sd 0.871 [0.521, 1.524] counts <s3:hold_pos_sd_counts>; hold drift measured False <s3:hold_drift_measured>",
+      "stage4_number": "at rest per row 1.031 [1.027, 1.160] counts <pos:pot_noise_row_counts>, boxcar 16 0.137 [0, 0.165] counts, median [range] over the baselines <vel:rest_sigma16_counts>; the verdict holds stage 3's load holds as motion on 0.0058 share of rows <vel:rest_false_motion_stage3_share/band 2 T50/load holds> (band) and 0.0011 share of rows <vel:rest_false_motion_stage3_share/slope 192 T50/load holds> (slope)",
+      "sources": [
+        "pos:pot_noise_row_counts",
+        "s3:closing_table/12",
+        "s3:hold_drift_measured",
+        "s3:hold_pos_sd_counts",
+        "vel:rest_false_motion_stage3_share/band 2 T50/load holds",
+        "vel:rest_false_motion_stage3_share/slope 192 T50/load holds",
+        "vel:rest_sigma16_counts"
+      ]
+    },
+    {
+      "row": 13,
+      "effect": "Kt through the gears and its side split",
+      "stage3_size": "One for both directions, 225.7 mN m/A (221 to 242) over three sittings. The split as a ratio not established. The rests dip 3 to 6 mN m at 41.5 to 49.5 deg on both sides, cause open (rig or train) <s3:closing_table/13>",
+      "stage3_how": "Compensate in firmware, the one Kt through the gears for the torque limit. The dip sits inside the static friction band, design around",
+      "owner": "6",
+      "disposition": "carried",
+      "disposition_how": "not stage 4's (owner 6); carried",
+      "estimator": "none",
+      "residual": "stage 3's numbers, carried",
+      "agrees": "carried",
+      "agrees_how": "carried unchanged",
+      "stage3_number": "the size above",
+      "stage4_number": "not measured",
+      "sources": [
+        "s3:closing_table/13"
+      ]
+    },
+    {
+      "row": 14,
+      "effect": "sag cap",
+      "stage3_size": "100 x 5 / rail, 59.5 to 83.5 %, 1.42 to 2.79 points per 0.2 V <s3:closing_table/14>",
+      "stage3_how": "Compensate in firmware, the cap from the rail at rest, read to 0.5 %",
+      "owner": "6",
+      "disposition": "carried",
+      "disposition_how": "not stage 4's (owner 6); carried",
+      "estimator": "none",
+      "residual": "stage 3's numbers, carried",
+      "agrees": "carried",
+      "agrees_how": "carried unchanged; stage 4's zero start rule needs the same rail read",
+      "stage3_number": "the size above",
+      "stage4_number": "not measured; the rows carry no rail channel (22853600 rows <spd:nan_row_columns/vbus> all nan), so a rail at rest is not in the stage 4 rows",
+      "sources": [
+        "s3:closing_table/14",
+        "spd:nan_row_columns/vbus"
+      ]
+    },
+    {
+      "row": 15,
+      "effect": "tap floor",
+      "stage3_size": "V_on 0.33 V low at 72 half-ticks with window_valid 1. The flag follows the current's 64-tick floor, the taps need 93 <s3:closing_table/15>",
+      "stage3_how": "Design around, V_on from the rail under 93 half-ticks or the estimate invalid there. The board's window_valid has to cover the taps",
+      "owner": "4, 6",
+      "disposition": "designed around",
+      "disposition_how": "designed around (speed): the estimate invalid under the floor, the pot's slope the source there",
+      "estimator": "back-EMF speed per row, its valid rule",
+      "residual": "rows under the floor 14.62 <spd:valid_coverage_by_set/all/under_floor_pct> %, not valid there",
+      "agrees": "yes",
+      "agrees_how": "agrees that window_valid does not cover the taps; the number moved from 93 ticks <spd:valid_rule/tap_floor_stage3_closing_ticks> to 84 <spd:valid_rule/tap_floor_ticks> on 3 <spd:tap_deficit_by_ticks/84-84/n> runs, with 96 <spd:valid_rule/tap_floor_ticks> the first well-populated rung (an open choice, section 5). 'V_on from the rail' was not tried: the rows carry no rail",
+      "stage3_number": "72 half-ticks, V_on low with window_valid 1 <s3:tap_floor_half_ticks>, 0.333 V <s3:tap_floor_v_low>; the closing table's 93 ticks <spd:valid_rule/tap_floor_stage3_closing_ticks>",
+      "stage4_number": "floor 84 [72, 96] ticks; bounds: the failing rung below, the first rung with 10 runs or more <spd:valid_rule/tap_floor_ticks>; deficit at 72 ticks 482.5 [341.8, 504.8] mV, median [10-90 %] <spd:tap_deficit_by_ticks/72-72/deficit_mv> (n 15 <spd:tap_deficit_by_ticks/72-72/n>, window_valid 1 <spd:tap_deficit_by_ticks/72-72/window_valid_share>), at 84 10.50 [9.413, 29.59] mV, median [10-90 %] <spd:tap_deficit_by_ticks/84-84/deficit_mv> (n 3 <spd:tap_deficit_by_ticks/84-84/n>), at 96 -22.81 [-29.34, -10.51] mV, median [10-90 %] <spd:tap_deficit_by_ticks/96-96/deficit_mv> (n 16 <spd:tap_deficit_by_ticks/96-96/n>); as speed -3.975 <spd:tap_deficit_by_ticks/72-72/as_rev_s> and -0.101 <spd:tap_deficit_by_ticks/84-84/as_rev_s> rev/s; rows under the floor 14.62 <spd:valid_coverage_by_set/all/under_floor_pct> %, under 96 ticks 21.11 <spd:valid_coverage_by_set/all/under_96_ticks_pct> %, window_valid 0 on 9.021 <spd:valid_coverage_by_set/all/window_valid_0_pct> %",
+      "sources": [
+        "s3:closing_table/15",
+        "s3:tap_floor_half_ticks",
+        "s3:tap_floor_v_low",
+        "spd:tap_deficit_by_ticks/72-72/as_rev_s",
+        "spd:tap_deficit_by_ticks/72-72/deficit_mv",
+        "spd:tap_deficit_by_ticks/72-72/n",
+        "spd:tap_deficit_by_ticks/72-72/window_valid_share",
+        "spd:tap_deficit_by_ticks/84-84/as_rev_s",
+        "spd:tap_deficit_by_ticks/84-84/deficit_mv",
+        "spd:tap_deficit_by_ticks/84-84/n",
+        "spd:tap_deficit_by_ticks/96-96/deficit_mv",
+        "spd:tap_deficit_by_ticks/96-96/n",
+        "spd:valid_coverage_by_set/all/under_96_ticks_pct",
+        "spd:valid_coverage_by_set/all/under_floor_pct",
+        "spd:valid_coverage_by_set/all/window_valid_0_pct",
+        "spd:valid_rule/tap_floor_stage3_closing_ticks",
+        "spd:valid_rule/tap_floor_ticks"
+      ]
+    },
+    {
+      "row": 16,
+      "effect": "current ceiling and stall fault",
+      "stage3_size": "lock 0.85 A, stop 0.5, lap 0.45. The cold line (D V_on - 0.033) / 4.177, warm 10.0 mA per % <s3:closing_table/16>",
+      "stage3_how": "Compensate in firmware, the limit as the ceiling and the fault from the warm line or R(T)",
+      "owner": "6",
+      "disposition": "carried",
+      "disposition_how": "not stage 4's (owner 6); carried",
+      "estimator": "none",
+      "residual": "stage 3's numbers, carried",
+      "agrees": "carried",
+      "agrees_how": "carried unchanged; the fault 'from R(T)' has no graded basis past the graded drive",
+      "stage3_number": "the size above",
+      "stage4_number": "not measured. Related: a stalled hold is declared at rest in 55.33 ms, median <vel:rest_declare_ms/band 2 T50/stall_in_hold/median> (band) and 58.73 ms, median <vel:rest_declare_ms/slope 192 T50/stall_in_hold/median> (slope); R(T) is graded to 3.093 [3.092, 3.433] s, the same-seat pairs' span <wt:graded_drive_s_max> only",
+      "sources": [
+        "s3:closing_table/16",
+        "vel:rest_declare_ms/band 2 T50/stall_in_hold/median",
+        "vel:rest_declare_ms/slope 192 T50/stall_in_hold/median",
+        "wt:graded_drive_s_max"
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "quantity": "stopped rotor, table form, line on the current",
+      "a": "speed: -4.663 [-5.633, -3.694] rev/s, +/- se <spd:rest_bias_by_current/table/a> + 43.03 [38.90, 47.16] rev/s per A, +/- se <spd:rest_bias_by_current/table/b_per_a>, resid sd 3.500 <spd:rest_bias_by_current/table/resid_sd>",
+      "b": "velocity: -4.543 [-5.727, -3.358] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/line_a> + 42.67 [37.39, 47.95] rev/s per A, +/- se <vel:emf_stopped_rotor_rev_s/table/line_b_per_a>, resid sd 3.627 rev/s <vel:emf_stopped_rotor_rev_s/table/line_resid_sd>; 67 <vel:emf_stopped_rotor_rev_s/table/n_holds> holds, valid from [69.72, 483.7] <vel:emf_stopped_rotor_rev_s/table/valid_ma> mA",
+      "conditions": "speed: the load holds at rest, window means. velocity: the same holds, the estimate run from the drive's first row, valid rows only",
+      "verdict": "agree within brackets",
+      "sigma": "derived: intercept: difference -0.12, combined se 1.531, 0.08 sigma; derived: slope: difference 0.358, combined se 6.701, 0.05 sigma",
+      "sources": [
+        "spd:rest_bias_by_current/table/a",
+        "spd:rest_bias_by_current/table/b_per_a",
+        "spd:rest_bias_by_current/table/resid_sd",
+        "vel:emf_stopped_rotor_rev_s/table/line_a",
+        "vel:emf_stopped_rotor_rev_s/table/line_b_per_a",
+        "vel:emf_stopped_rotor_rev_s/table/line_resid_sd",
+        "vel:emf_stopped_rotor_rev_s/table/n_holds",
+        "vel:emf_stopped_rotor_rev_s/table/valid_ma"
+      ]
+    },
+    {
+      "quantity": "stopped rotor, product form, line on the current",
+      "a": "speed: -1.885 [-2.816, -0.954] rev/s, +/- se <spd:rest_bias_by_current/product/a> + 38.82 [34.85, 42.78] rev/s per A, +/- se <spd:rest_bias_by_current/product/b_per_a>",
+      "b": "velocity: -2.483 [-3.642, -1.325] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/product/line_a> + 38.67 [33.65, 43.69] rev/s per A, +/- se <vel:emf_stopped_rotor_rev_s/product/line_b_per_a>",
+      "conditions": "as the table form's line",
+      "verdict": "agree within brackets",
+      "sigma": "derived: intercept: difference 0.598, combined se 1.486, 0.40 sigma",
+      "sources": [
+        "spd:rest_bias_by_current/product/a",
+        "spd:rest_bias_by_current/product/b_per_a",
+        "vel:emf_stopped_rotor_rev_s/product/line_a",
+        "vel:emf_stopped_rotor_rev_s/product/line_b_per_a"
+      ]
+    },
+    {
+      "quantity": "stopped rotor, table form, by current band (0, 150] / 94 mA",
+      "a": "speed: 1.089 [0.698, 1.480] rev/s, +/- se <spd:rest_bias_by_current/table/bins/(0, 150]>",
+      "b": "velocity: 1.694 [1.556, 1.831] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/by_band_ma/94>",
+      "conditions": "the same holds by current band (speed's bin, velocity's band center in mA)",
+      "verdict": "under 2 sigma each; velocity reads higher in 4 of 4 bands (same holds, so the se overstates the independence)",
+      "sigma": "derived: band: difference -0.605, combined se 0.414, 1.46 sigma",
+      "sources": [
+        "spd:rest_bias_by_current/table/bins/(0, 150]",
+        "vel:emf_stopped_rotor_rev_s/table/by_band_ma/94"
+      ]
+    },
+    {
+      "quantity": "stopped rotor, table form, by current band (150, 200] / 165 mA",
+      "a": "speed: 1.410 [-0.104, 2.924] rev/s, +/- se <spd:rest_bias_by_current/table/bins/(150, 200]>",
+      "b": "velocity: 1.582 [0.337, 2.827] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/by_band_ma/165>",
+      "conditions": "the same holds by current band (speed's bin, velocity's band center in mA)",
+      "verdict": "under 2 sigma each; velocity reads higher in 4 of 4 bands (same holds, so the se overstates the independence)",
+      "sigma": "derived: band: difference -0.172, combined se 1.960, 0.09 sigma",
+      "sources": [
+        "spd:rest_bias_by_current/table/bins/(150, 200]",
+        "vel:emf_stopped_rotor_rev_s/table/by_band_ma/165"
+      ]
+    },
+    {
+      "quantity": "stopped rotor, table form, by current band (200, 250] / 246 mA",
+      "a": "speed: 4.153 [3.860, 4.446] rev/s, +/- se <spd:rest_bias_by_current/table/bins/(200, 250]>",
+      "b": "velocity: 4.668 [4.411, 4.925] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/by_band_ma/246>",
+      "conditions": "the same holds by current band (speed's bin, velocity's band center in mA)",
+      "verdict": "under 2 sigma each; velocity reads higher in 4 of 4 bands (same holds, so the se overstates the independence)",
+      "sigma": "derived: band: difference -0.515, combined se 0.39, 1.32 sigma",
+      "sources": [
+        "spd:rest_bias_by_current/table/bins/(200, 250]",
+        "vel:emf_stopped_rotor_rev_s/table/by_band_ma/246"
+      ]
+    },
+    {
+      "quantity": "stopped rotor, table form, by current band (250, 1000] / 356 mA",
+      "a": "speed: 9.569 [8.398, 10.74] rev/s, +/- se <spd:rest_bias_by_current/table/bins/(250, 1000]>",
+      "b": "velocity: 11.40 [9.841, 12.97] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/by_band_ma/356>",
+      "conditions": "the same holds by current band (speed's bin, velocity's band center in mA)",
+      "verdict": "under 2 sigma each; velocity reads higher in 4 of 4 bands (same holds, so the se overstates the independence)",
+      "sigma": "derived: band: difference -1.835, combined se 1.953, 0.94 sigma",
+      "sources": [
+        "spd:rest_bias_by_current/table/bins/(250, 1000]",
+        "vel:emf_stopped_rotor_rev_s/table/by_band_ma/356"
+      ]
+    },
+    {
+      "quantity": "stopped rotor's shape in the current",
+      "a": "speed: a line, slope as 0.313 ohm <spd:rest_bias_by_current/table/ohm>; the same slope with no brush term 43.32 [39.17, 47.46] rev/s per A, +/- se <spd:rest_bias_by_current/plain/b_per_a>",
+      "b": "velocity: convex, curvature 172.1 [146.5, 197.7] rev/s per A^2, +/- se <vel:emf_stopped_rotor_rev_s/table/curvature_per_a2>; under 300 mA alone 179.5 [72.25, 286.8] rev/s per A^2, +/- se, 56 holds under 300 mA <vel:emf_stopped_rotor_rev_s/table/curvature_under_300_ma_per_a2>",
+      "conditions": "the same holds",
+      "verdict": "not a contradiction: the velocity notebook adds the curvature, which rests on the top rung",
+      "sigma": "",
+      "sources": [
+        "spd:rest_bias_by_current/plain/b_per_a",
+        "spd:rest_bias_by_current/table/ohm",
+        "vel:emf_stopped_rotor_rev_s/table/curvature_per_a2",
+        "vel:emf_stopped_rotor_rev_s/table/curvature_under_300_ma_per_a2"
+      ]
+    },
+    {
+      "quantity": "the load holds' error under current: a stopped-rotor reading (speed, velocity) or the winding's heating (winding-temperature)",
+      "a": "velocity by band: 4.668 [4.411, 4.925] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/by_band_ma/246>, 11.40 [9.841, 12.97] rev/s, +/- se <vel:emf_stopped_rotor_rev_s/table/by_band_ma/356>; speed: 9.569 [8.398, 10.74] rev/s, +/- se <spd:rest_bias_by_current/table/bins/(250, 1000]>",
+      "b": "winding-temperature, the NTC alone on the load holds, anchored to the reads under 0.25 A: 3.344 rev/s <wt:speed_bias_ntc_alone_rev_s/[0.25, 0.35)>, 6.668 rev/s <wt:speed_bias_ntc_alone_rev_s/[0.35, 0.45)>, 10.72 rev/s <wt:speed_bias_ntc_alone_rev_s/[0.45, 0.6)>; one node leaves 1.845 <wt:speed_rms_rev_s_by_current/[0.35, 0.45)/b_one> rev/s rms at 0.35 to 0.45 A against 7.024 <wt:speed_rms_rev_s_by_current/[0.35, 0.45)/a_ntc> for the NTC alone",
+      "conditions": "the same load holds; speed and velocity with R(T) from the NTC alone, winding-temperature with the NTC alone and with one node",
+      "verdict": "same holds, same size, two readings; not reconciled: the speed estimator was not re-run with the one-node R(T)",
+      "sigma": "",
+      "sources": [
+        "spd:rest_bias_by_current/table/bins/(250, 1000]",
+        "vel:emf_stopped_rotor_rev_s/table/by_band_ma/246",
+        "vel:emf_stopped_rotor_rev_s/table/by_band_ma/356",
+        "wt:speed_bias_ntc_alone_rev_s/[0.25, 0.35)",
+        "wt:speed_bias_ntc_alone_rev_s/[0.35, 0.45)",
+        "wt:speed_bias_ntc_alone_rev_s/[0.45, 0.6)",
+        "wt:speed_rms_rev_s_by_current/[0.35, 0.45)/a_ntc",
+        "wt:speed_rms_rev_s_by_current/[0.35, 0.45)/b_one"
+      ]
+    },
+    {
+      "quantity": "duty step's direct path per row, r0_3",
+      "a": "speed: 0.751 of the volts' step / Ke <spd:duty_step_response/share_rows_0_3>, no bracket, n 39 <spd:duty_step_response/n> steps",
+      "b": "velocity: 0.788 [0.74, 0.835] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/row/r0_3>, 60 kept duty steps of steps/capture-1 <vel:emf_direct_path_steps>",
+      "conditions": "speed: its steps of the larger sizes; velocity: every kept step",
+      "verdict": "inside velocity's bracket",
+      "sigma": "derived: speed less velocity -0.0366, -0.774 of velocity's se",
+      "sources": [
+        "spd:duty_step_response/n",
+        "spd:duty_step_response/share_rows_0_3",
+        "vel:emf_direct_path_share/row/r0_3",
+        "vel:emf_direct_path_steps"
+      ]
+    },
+    {
+      "quantity": "duty step's direct path per row, r4_9",
+      "a": "speed: 0.299 of the volts' step / Ke <spd:duty_step_response/share_rows_4_9>, no bracket, n 39 <spd:duty_step_response/n> steps",
+      "b": "velocity: 0.265 [0.215, 0.314] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/row/r4_9>, 60 kept duty steps of steps/capture-1 <vel:emf_direct_path_steps>",
+      "conditions": "speed: its steps of the larger sizes; velocity: every kept step",
+      "verdict": "inside velocity's bracket",
+      "sigma": "derived: speed less velocity 0.0346, 0.701 of velocity's se",
+      "sources": [
+        "spd:duty_step_response/n",
+        "spd:duty_step_response/share_rows_4_9",
+        "vel:emf_direct_path_share/row/r4_9",
+        "vel:emf_direct_path_steps"
+      ]
+    },
+    {
+      "quantity": "duty step's direct path per row, r10_39",
+      "a": "speed: 0.114 of the volts' step / Ke <spd:duty_step_response/share_rows_10_39>, no bracket, n 39 <spd:duty_step_response/n> steps",
+      "b": "velocity: 0.0712 [0.0567, 0.0856] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/row/r10_39>, 60 kept duty steps of steps/capture-1 <vel:emf_direct_path_steps>",
+      "conditions": "speed: its steps of the larger sizes; velocity: every kept step",
+      "verdict": "DISCREPANCY: outside velocity's bracket",
+      "sigma": "derived: speed less velocity 0.0425, 2.934 of velocity's se",
+      "sources": [
+        "spd:duty_step_response/n",
+        "spd:duty_step_response/share_rows_10_39",
+        "vel:emf_direct_path_share/row/r10_39",
+        "vel:emf_direct_path_steps"
+      ]
+    },
+    {
+      "quantity": "valid share of driven rows, camera sitting (pot-table)",
+      "a": "speed: 84.32 <spd:valid_coverage_by_set/pot-table/valid_pct> % of 1149774 <spd:valid_coverage_by_set/pot-table/driven_rows> driven rows, 21 <spd:valid_coverage_by_set/pot-table/sweeps> sweeps",
+      "b": "velocity: 0.843 of driven rows <vel:emf_valid_share_camera>",
+      "conditions": "the same sitting under the same rule",
+      "verdict": "differ by 0.042 points, no brackets on either: not a finding",
+      "sigma": "derived: 0.042 points",
+      "sources": [
+        "spd:valid_coverage_by_set/pot-table/driven_rows",
+        "spd:valid_coverage_by_set/pot-table/sweeps",
+        "spd:valid_coverage_by_set/pot-table/valid_pct",
+        "vel:emf_valid_share_camera"
+      ]
+    },
+    {
+      "quantity": "valid rule's constants",
+      "a": "speed: floor 84 [72, 96] ticks; bounds: the failing rung below, the first rung with 10 runs or more <spd:valid_rule/tap_floor_ticks>, start 16 rows, 4 L / R rounded up <spd:valid_rule/start_rows>",
+      "b": "velocity: reads the speed rule (oscnb.speed), no key of its own",
+      "conditions": "one rule",
+      "verdict": "same by construction",
+      "sigma": "",
+      "sources": [
+        "spd:valid_rule/start_rows",
+        "spd:valid_rule/tap_floor_ticks"
+      ]
+    },
+    {
+      "quantity": "pot's noise per row at rest",
+      "a": "position: 1.031 [1.027, 1.160] counts <pos:pot_noise_row_counts>",
+      "b": "velocity: 0.962 counts <vel:rest_sigma_row_counts>",
+      "conditions": "the same baselines with the same cut at their start; position: the sd over the rest windows, bounds the three sources; velocity: the median of each baseline's sd",
+      "verdict": "DISCREPANCY: outside position's bracket, on the same baselines",
+      "sigma": "derived: ratio 0.933; stage 3's holds under torque 0.871 [0.521, 1.524] counts <s3:hold_pos_sd_counts>",
+      "sources": [
+        "pos:pot_noise_row_counts",
+        "s3:hold_pos_sd_counts",
+        "vel:rest_sigma_row_counts"
+      ]
+    },
+    {
+      "quantity": "pot's noise at rest through a boxcar of 16",
+      "a": "position: 0.139 [0.139, 0.161] counts <pos:filter_boxcar16_noise_counts>",
+      "b": "velocity: 0.137 [0, 0.165] counts, median [range] over the baselines <vel:rest_sigma16_counts>",
+      "conditions": "the same baselines",
+      "verdict": "agree (velocity's median inside its own range, 0.00204 under position's value, which is its low bound)",
+      "sigma": "derived: 0.00204 counts",
+      "sources": [
+        "pos:filter_boxcar16_noise_counts",
+        "vel:rest_sigma16_counts"
+      ]
+    },
+    {
+      "quantity": "pot's 16-tick pattern",
+      "a": "position: period 16 ticks <pos:tick_pattern_period_ticks>, 3.014 [2.986, 3.025] counts <pos:tick_pattern_pp_counts>",
+      "b": "velocity: slopes over a multiple of 16 rows, the board's pattern <vel:pot_slope_two_point_multiple_of_rows>",
+      "conditions": "the rest windows",
+      "verdict": "same",
+      "sigma": "",
+      "sources": [
+        "pos:tick_pattern_period_ticks",
+        "pos:tick_pattern_pp_counts",
+        "vel:pot_slope_two_point_multiple_of_rows"
+      ]
+    },
+    {
+      "quantity": "the tracked zero's cost in the speed",
+      "a": "speed, warm sweeps: stage 1's tracker 0.302 [0.283, 0.321] rev/s, +/- se <spd:tracked_zero_cost_per_sweep/tracked/warm/mean>, the design 0.0486 [0.032, 0.0652] rev/s, +/- se <spd:tracked_zero_cost_per_sweep/design/warm/mean>, 134 sweeps <spd:tracked_zero_cost_per_sweep/tracked/warm/sweeps> sweeps of every rail; a count 0.471 [0.471, 0.517] rev/s per count of zero <spd:rev_s_per_count>",
+      "b": "velocity, camera crawl at 5 V: the design's zero shifts the crawl's bias by -0.344 [-0.36, -0.25] rev/s, bounds the tiles <vel:emf_bias_crawl_design_zero_shift_rev_s>",
+      "conditions": "speed: every rail's warm sweeps; velocity: the camera crawl",
+      "verdict": "agree within velocity's range over tiles",
+      "sigma": "derived: speed's design less tracked -0.254 rev/s; current-zero's drive-feed offset 0.667 [0.657, 0.698] counts <cz:drive_feed_offset_counts> x the count's worth = 0.314 to 0.345 rev/s",
+      "sources": [
+        "cz:drive_feed_offset_counts",
+        "spd:rev_s_per_count",
+        "spd:tracked_zero_cost_per_sweep/design/warm/mean",
+        "spd:tracked_zero_cost_per_sweep/tracked/warm/mean",
+        "spd:tracked_zero_cost_per_sweep/tracked/warm/sweeps",
+        "vel:emf_bias_crawl_design_zero_shift_rev_s"
+      ]
+    },
+    {
+      "quantity": "the zero's warm error, stage 1's tracker and the design",
+      "a": "current-zero: 0.73 [0.684, 0.778] counts <cz:warm_error_counts_rms>, design 0.411 [0.373, 0.447] counts <cz:design_warm_rms_counts>",
+      "b": "speed (derived there from the zero replay): 0.73 counts <spd:tracked_zero_cold_start_derived/stage 1, warm/rms_counts> over 911 runs <spd:tracked_zero_cold_start_derived/stage 1, warm/runs> runs, design 0.408 counts <spd:tracked_zero_cold_start_derived/design, warm/rms_counts>",
+      "conditions": "the same replay",
+      "verdict": "same replay; the design's warm rms differs in the third digit (0.411 against 0.408), inside current-zero's bracket",
+      "sigma": "",
+      "sources": [
+        "cz:design_warm_rms_counts",
+        "cz:warm_error_counts_rms",
+        "spd:tracked_zero_cold_start_derived/design, warm/rms_counts",
+        "spd:tracked_zero_cold_start_derived/stage 1, warm/rms_counts",
+        "spd:tracked_zero_cold_start_derived/stage 1, warm/runs"
+      ]
+    },
+    {
+      "quantity": "the current sample's noise per tick at rest",
+      "a": "current-zero, trough column: 1.161 [1.044, 1.436] counts <cz:trough_sd_per_tick_counts/narrow_drive>",
+      "b": "speed, crest column on the rest windows: 1.132 <spd:.noise.csv[kind=rest,band=rest].crest_sd_counts> counts; the dropout floor 0.00499 A, 5 sd of the rest noise <spd:valid_rule/dropout_floor_a>",
+      "conditions": "current-zero: the trough under a narrow drive; speed: the crest at rest",
+      "verdict": "agree",
+      "sigma": "derived: dropout floor / 5 x counts per A = 1.132 counts (the floor's unit names its 5 sd)",
+      "sources": [
+        "cz:trough_sd_per_tick_counts/narrow_drive",
+        "spd:.noise.csv[kind=rest,band=rest].crest_sd_counts",
+        "spd:valid_rule/dropout_floor_a"
+      ]
+    },
+    {
+      "quantity": "the current channel's tick pattern",
+      "a": "current-zero, trough folded on 16 ticks: 0.999 [0.967, 1.042] counts <cz:trough_fold16_pp_counts>",
+      "b": "speed, crest at rest under a narrow drive: 1.272 counts <spd:tick_pattern_rest/crest_pp_counts>, period 8 ticks <spd:tick_pattern_rest/period> (share by modulus 8 0.0765 of the variance <spd:tick_pattern_rest/share_by_modulus/8>, 16 0.0895 of the variance <spd:tick_pattern_rest/share_by_modulus/16>)",
+      "conditions": "different columns (trough against crest) and states",
+      "verdict": "not the same quantity: the period is 8 in speed's key against current-zero's fold on 16 ticks",
+      "sigma": "derived: 0.274 counts",
+      "sources": [
+        "cz:trough_fold16_pp_counts",
+        "spd:tick_pattern_rest/crest_pp_counts",
+        "spd:tick_pattern_rest/period",
+        "spd:tick_pattern_rest/share_by_modulus/16",
+        "spd:tick_pattern_rest/share_by_modulus/8"
+      ]
+    },
+    {
+      "quantity": "the crawl's back-EMF bias, table form",
+      "a": "speed, free low holds 0-30 rev/s, tach truth, window means: tracked zero -0.579 +/- 0.443 rev/s (n 18 windows, 11 sweeps, 23.43 rev/s, 38.53 mA) <spd:brush_heldout_scores/157>; coast-tail zero -0.882 +/- 0.473 rev/s (n 18 windows, 11 sweeps, 23.43 rev/s, 39.03 mA) <spd:brush_heldout_scores/29>",
+      "b": "velocity, camera crawl at 5 V, valid rows, tracked zero: against the tach 0.661 [0.571, 0.752] rev/s, +/- se over segments <vel:emf_bias_crawl_tach_rev_s/table>, against the tag 0.54 [0.437, 0.643] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/table>; stage 3's truths differ by -0.122 [-0.187, -0.0568] rev/s, +/- se over segments <vel:tach_minus_tag_rev_s/slow>",
+      "conditions": "speed: the free low holds on every rail; velocity: the camera crawl at 5 V",
+      "verdict": "DISCREPANCY: 2.75 sigma tach to tach",
+      "sigma": "derived: tach to tach, tracked zero: difference -1.240, combined se 0.452, 2.75 sigma",
+      "sources": [
+        "spd:brush_heldout_scores/157",
+        "spd:brush_heldout_scores/29",
+        "vel:emf_bias_crawl_rev_s/table",
+        "vel:emf_bias_crawl_tach_rev_s/table",
+        "vel:tach_minus_tag_rev_s/slow"
+      ]
+    },
+    {
+      "quantity": "the crawl's back-EMF bias, product form",
+      "a": "speed, free low holds 0-30 rev/s, tach truth, window means: tracked zero 1.192 +/- 0.447 rev/s (n 18 windows, 11 sweeps, 23.43 rev/s, 38.53 mA) <spd:brush_heldout_scores/155>; coast-tail zero 0.889 +/- 0.466 rev/s (n 18 windows, 11 sweeps, 23.43 rev/s, 39.03 mA) <spd:brush_heldout_scores/27>",
+      "b": "velocity, camera crawl at 5 V, valid rows, tracked zero: against the tach 1.504 [1.345, 1.662] rev/s, +/- se over segments <vel:emf_bias_crawl_tach_rev_s/product>, against the tag 1.382 [1.198, 1.566] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/product>; stage 3's truths differ by -0.122 [-0.187, -0.0568] rev/s, +/- se over segments <vel:tach_minus_tag_rev_s/slow>",
+      "conditions": "speed: the free low holds on every rail; velocity: the camera crawl at 5 V",
+      "verdict": "agree: 0.66 sigma tach to tach",
+      "sigma": "derived: tach to tach, tracked zero: difference -0.311, combined se 0.475, 0.66 sigma",
+      "sources": [
+        "spd:brush_heldout_scores/155",
+        "spd:brush_heldout_scores/27",
+        "vel:emf_bias_crawl_rev_s/product",
+        "vel:emf_bias_crawl_tach_rev_s/product",
+        "vel:tach_minus_tag_rev_s/slow"
+      ]
+    },
+    {
+      "quantity": "the crawl's bias against the line through the stopped holds and the lifts (velocity's own check)",
+      "a": "velocity, the line read at the crawl's current: table -0.715 [-1.543, 0.112] rev/s, +/- se <vel:emf_crawl_against_holds_and_lifts_line_rev_s/table/line_at_crawl>, product 0.199 [-0.782, 1.180] rev/s, +/- se <vel:emf_crawl_against_holds_and_lifts_line_rev_s/product/line_at_crawl>",
+      "b": "velocity, the crawl measured: table 0.54 [0.437, 0.643] rev/s, +/- se over sweeps <vel:emf_crawl_against_holds_and_lifts_line_rev_s/table/crawl_measured>, product 1.382 [1.198, 1.566] rev/s, +/- se over sweeps <vel:emf_crawl_against_holds_and_lifts_line_rev_s/product/crawl_measured>",
+      "conditions": "one notebook, the line against the crawl",
+      "verdict": "under 2 sigma: table 1.505 <vel:emf_crawl_against_holds_and_lifts_line_rev_s/table/gap_sigma>, product 1.186 <vel:emf_crawl_against_holds_and_lifts_line_rev_s/product/gap_sigma> sigma",
+      "sigma": "",
+      "sources": [
+        "vel:emf_crawl_against_holds_and_lifts_line_rev_s/product/crawl_measured",
+        "vel:emf_crawl_against_holds_and_lifts_line_rev_s/product/gap_sigma",
+        "vel:emf_crawl_against_holds_and_lifts_line_rev_s/product/line_at_crawl",
+        "vel:emf_crawl_against_holds_and_lifts_line_rev_s/table/crawl_measured",
+        "vel:emf_crawl_against_holds_and_lifts_line_rev_s/table/gap_sigma",
+        "vel:emf_crawl_against_holds_and_lifts_line_rev_s/table/line_at_crawl"
+      ]
+    },
+    {
+      "quantity": "free low holds 30-100 rev/s, table form (speed only, context)",
+      "a": "speed: tracked zero -0.156 +/- 0.208 rev/s (n 57 windows, 30 sweeps, 35.56 rev/s, 41.53 mA) <spd:brush_heldout_scores/163>",
+      "b": "velocity: no free-shaft absolute bias key at this band",
+      "conditions": "speed's free low holds",
+      "verdict": "context",
+      "sigma": "",
+      "sources": [
+        "spd:brush_heldout_scores/163"
+      ]
+    },
+    {
+      "quantity": "free low holds 30-100 rev/s, product form (speed only, context)",
+      "a": "speed: tracked zero 1.121 +/- 0.223 rev/s (n 57 windows, 30 sweeps, 35.56 rev/s, 41.53 mA) <spd:brush_heldout_scores/161>",
+      "b": "velocity: no free-shaft absolute bias key at this band",
+      "conditions": "speed's free low holds",
+      "verdict": "context",
+      "sigma": "",
+      "sources": [
+        "spd:brush_heldout_scores/161"
+      ]
+    },
+    {
+      "quantity": "the crawl's bias by direction",
+      "a": "velocity, camera crawl: table 0.891 [0.773, 1.009] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/table/+>, 0.109 [0.00347, 0.214] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/table/->; product 0.219 [0.0885, 0.349] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/product/+>, 2.098 [1.984, 2.212] rev/s, mean of segment means, +/- se <vel:emf_bias_by_direction_rev_s/product/->",
+      "b": "velocity, free shaft against the tach, + less -: table 0.814 [0.746, 0.883] rev/s, +/- se <vel:emf_direction_split_rev_s/table/under_45>, product -1.828 [-1.896, -1.759] rev/s, +/- se <vel:emf_direction_split_rev_s/product/under_45>",
+      "conditions": "one notebook, the camera crawl and the free shaft",
+      "verdict": "same notebook, two sets; consistent in sign and size",
+      "sigma": "derived: camera + less -: table 0.782, product -1.879 rev/s",
+      "sources": [
+        "vel:emf_bias_by_direction_rev_s/product/+",
+        "vel:emf_bias_by_direction_rev_s/product/-",
+        "vel:emf_bias_by_direction_rev_s/table/+",
+        "vel:emf_bias_by_direction_rev_s/table/-",
+        "vel:emf_direction_split_rev_s/product/under_45",
+        "vel:emf_direction_split_rev_s/table/under_45"
+      ]
+    },
+    {
+      "quantity": "back-EMF noise per row at a crawl, table form",
+      "a": "speed: holds 0-30 3.841 <spd:.noise.csv[kind=hold,band=0-30].table_sd> [2.475 <spd:.noise.csv[kind=hold,band=0-30].table_sd_lo>, 5.441 <spd:.noise.csv[kind=hold,band=0-30].table_sd_hi>], holds 30-100 4.861 <spd:.noise.csv[kind=hold,band=30-100].table_sd>",
+      "b": "velocity: crawl valid 3.896 rev/s per row, table <vel:emf_noise_row_rev_s/crawl valid>, steps and reversal 4.020 rev/s per row, table <vel:emf_noise_row_rev_s/steps+reversal slow valid>",
+      "conditions": "speed: the free low holds; velocity: the camera crawl's valid rows",
+      "verdict": "agree (inside speed's window range)",
+      "sigma": "",
+      "sources": [
+        "spd:.noise.csv[kind=hold,band=0-30].table_sd",
+        "spd:.noise.csv[kind=hold,band=0-30].table_sd_hi",
+        "spd:.noise.csv[kind=hold,band=0-30].table_sd_lo",
+        "spd:.noise.csv[kind=hold,band=30-100].table_sd",
+        "vel:emf_noise_row_rev_s/crawl valid",
+        "vel:emf_noise_row_rev_s/steps+reversal slow valid"
+      ]
+    },
+    {
+      "quantity": "back-EMF noise through a boxcar of 32 at a crawl, table form",
+      "a": "speed: holds 0-30 3.690 <spd:.filters.csv[kind=hold,band=0-30,filter=box 32].sd_table>, holds 30-100 4.101 <spd:.filters.csv[kind=hold,band=30-100,filter=box 32].sd_table>",
+      "b": "velocity: 3.426 [2.266, 5.916] rev/s about the tile's line, bounds tiles <vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 32>",
+      "conditions": "speed: the free low holds; velocity: the camera crawl's tiles",
+      "verdict": "agree (inside velocity's range over tiles)",
+      "sigma": "",
+      "sources": [
+        "spd:.filters.csv[kind=hold,band=0-30,filter=box 32].sd_table",
+        "spd:.filters.csv[kind=hold,band=30-100,filter=box 32].sd_table",
+        "vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 32"
+      ]
+    },
+    {
+      "quantity": "back-EMF noise through a boxcar of 100 at a crawl, table form",
+      "a": "speed: holds 0-30 2.611 <spd:.filters.csv[kind=hold,band=0-30,filter=box 100].sd_table>, holds 30-100 2.345 <spd:.filters.csv[kind=hold,band=30-100,filter=box 100].sd_table>",
+      "b": "velocity: 2.218 [0.682, 5.096] rev/s about the tile's line, bounds tiles <vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 100>",
+      "conditions": "speed: the free low holds; velocity: the camera crawl's tiles",
+      "verdict": "agree (inside velocity's range over tiles)",
+      "sigma": "",
+      "sources": [
+        "spd:.filters.csv[kind=hold,band=0-30,filter=box 100].sd_table",
+        "spd:.filters.csv[kind=hold,band=30-100,filter=box 100].sd_table",
+        "vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 100"
+      ]
+    },
+    {
+      "quantity": "share of the per-row variance at the commutation rate, crawl",
+      "a": "speed: holds 0-30 0.756 <spd:.noise.csv[kind=hold,band=0-30].table_comm_share>, holds 30-100 0.77 <spd:.noise.csv[kind=hold,band=30-100].table_comm_share>, no bracket",
+      "b": "velocity, split-half covariance on the commutation phase: 0.719 [0.701, 0.738] of the per-row variance, +/- se over segments <vel:emf_commutation_locked_share_crawl>",
+      "conditions": "speed: the free low holds by band; velocity: the camera crawl",
+      "verdict": "speed's values sit above velocity's bracket: 0-30 rev/s under 2 se, 30-100 rev/s over 2 se; the faster band runs above velocity's crawl; different constructions",
+      "sigma": "derived: 1.961 and 2.722 of velocity's se",
+      "sources": [
+        "spd:.noise.csv[kind=hold,band=0-30].table_comm_share",
+        "spd:.noise.csv[kind=hold,band=30-100].table_comm_share",
+        "vel:emf_commutation_locked_share_crawl"
+      ]
+    },
+    {
+      "quantity": "product over table noise",
+      "a": "speed: 0.996 ratio <spd:product_over_table_noise_by_band/box 16/hold 22> at a crawl, 1.205 ratio <spd:product_over_table_noise_by_band/box 16/303> at 303 rev/s",
+      "b": "velocity: crawl per row product 3.900 [2.514, 6.561] rev/s about the tile's line, bounds tiles <vel:emf_noise_boxcar_rev_s/crawl valid w_prod boxcar 1> against table 3.896 [2.514, 6.536] rev/s about the tile's line, bounds tiles <vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 1>",
+      "conditions": "speed: by band; velocity: the camera crawl",
+      "verdict": "agree: the same at a crawl",
+      "sigma": "",
+      "sources": [
+        "spd:product_over_table_noise_by_band/box 16/303",
+        "spd:product_over_table_noise_by_band/box 16/hold 22",
+        "vel:emf_noise_boxcar_rev_s/crawl valid w_prod boxcar 1",
+        "vel:emf_noise_boxcar_rev_s/crawl valid w_tab boxcar 1"
+      ]
+    },
+    {
+      "quantity": "the carries",
+      "a": "position: codes [1023, 1279, 2047, 2303, 2559] <pos:carry_codes>, missing [12, 3, 11, 3, 7] <pos:carry_missing_codes>, blind [0.772, 0.139, 0.467, 0.0298, 0.279] <pos:carry_blind_span_deg> deg",
+      "b": "velocity: dwell at a crawl 30.70 [19.15, 34.30] ms, median, bounds the crossings <vel:carry_dwell_ms_crawl/1023>, 10.35 [8.650, 11.50] ms, median, bounds the crossings <vel:carry_dwell_ms_crawl/1279>, 21 [8.850, 45.50] ms, median, bounds the crossings <vel:carry_dwell_ms_crawl/2047>, 5.650 [3.500, 11.40] ms, median, bounds the crossings <vel:carry_dwell_ms_crawl/2303>, 15.42 [10.60, 41.80] ms, median, bounds the crossings <vel:carry_dwell_ms_crawl/2559>; mask half-width 12 counts, the longest missing run <vel:carry_mask_half_counts>",
+      "conditions": "velocity reads position's codes",
+      "verdict": "same codes and run (velocity reads position's)",
+      "sigma": "",
+      "sources": [
+        "pos:carry_blind_span_deg",
+        "pos:carry_codes",
+        "pos:carry_missing_codes",
+        "vel:carry_dwell_ms_crawl/1023",
+        "vel:carry_dwell_ms_crawl/1279",
+        "vel:carry_dwell_ms_crawl/2047",
+        "vel:carry_dwell_ms_crawl/2303",
+        "vel:carry_dwell_ms_crawl/2559",
+        "vel:carry_mask_half_counts"
+      ]
+    },
+    {
+      "quantity": "holding the pot through a carry's band",
+      "a": "position: 0.698 deg <pos:carry_hold_near_rms_deg> against 0.201 deg <pos:carry_near_rms_deg> with no hold; added delay 29.57 [-, 108.3] ms <pos:carry_hold_added_delay_ms>",
+      "b": "velocity, two-point at 25.6 ms: hold12 31.41 deg/s rms <vel:carry_near_rms_deg_s/hold12/near/25.6 ms> against 10.78 deg/s rms <vel:carry_near_rms_deg_s/none/near/25.6 ms> with no mask; longest dwell on the wide code 45.50 ms, the longest crossing at a crawl <vel:carry_dwell_max_ms_crawl>",
+      "conditions": "position: the angle near a carry; velocity: the two-point slope",
+      "verdict": "agree in the verdict (never hold); the two delays are different quantities (the band's dwell against the wide code's)",
+      "sigma": "",
+      "sources": [
+        "pos:carry_hold_added_delay_ms",
+        "pos:carry_hold_near_rms_deg",
+        "pos:carry_near_rms_deg",
+        "vel:carry_dwell_max_ms_crawl",
+        "vel:carry_near_rms_deg_s/hold12/near/25.6 ms",
+        "vel:carry_near_rms_deg_s/none/near/25.6 ms"
+      ]
+    },
+    {
+      "quantity": "mechanical time constant of the kept duty steps",
+      "a": "speed: 18.29 [11.94, 26.66] ms, median, 10th to 90th percentile of the kept <spd:steps_truth/tau_ms_range>, kept 60 <spd:steps_truth/kept>",
+      "b": "velocity: 18.29 [11.94, 26.66] ms, median [10-90 %] of the kept steps <vel:mechanical_tau_ms>",
+      "conditions": "the same kept steps",
+      "verdict": "same steps, the two files' medians apart by 5e-09 of the value",
+      "sigma": "",
+      "sources": [
+        "spd:steps_truth/kept",
+        "spd:steps_truth/tau_ms_range",
+        "vel:mechanical_tau_ms"
+      ]
+    },
+    {
+      "quantity": "the pot against the shaft in motion (related, not the same quantity)",
+      "a": "position, pot less tag by direction on steady crawl holds: bound 0.5 deg <pos:direction_bound_moving_deg>, clip means -0.194 deg <pos:direction_offset_clip_min_deg> to 0.528 deg <pos:direction_offset_clip_max_deg>",
+      "b": "velocity, commutation count less pot over a kick's start: 0.483 [0.372, 0.594] deg of horn, +/- 2 se, n 38 <vel:count_kick_start_145ms/count_pot>; whole pulse pot less tag 0.185 [0.0531, 0.317] deg of horn, +/- 2 se <vel:whole_pulse_deg/pot_tag>; steady holds -0.0258 [-0.0776, 0.026] deg of horn, +/- 2 se, n 27 <vel:count_steady_hold_100ms/count_pot>",
+      "conditions": "the count runs through the gear to the motor, the tag sits on the horn",
+      "verdict": "the kick's 0.483 deg reaches the position bound's 0.5 deg, and its bracket passes it",
+      "sigma": "",
+      "sources": [
+        "pos:direction_bound_moving_deg",
+        "pos:direction_offset_clip_max_deg",
+        "pos:direction_offset_clip_min_deg",
+        "vel:count_kick_start_145ms/count_pot",
+        "vel:count_steady_hold_100ms/count_pot",
+        "vel:whole_pulse_deg/pot_tag"
+      ]
+    },
+    {
+      "quantity": "R at the reference temperature",
+      "a": "winding-temperature: 4.177 [4.168, 4.193] ohm <wt:ref_r0_ohm> at 26.26 [26.10, 26.32] C <wt:ref_t0_c>; locked first row 4.180 [4.168, 4.192] ohm (sd 0.0121, n 6) <wt:locked_first_row_r_ohm>",
+      "b": "speed: 4.177 ohm <spd:constants_used/r_ohm> at 26.26 C <spd:constants_used/t0_c>; stage 3 4.177 [4.168, 4.193] ohm <s3:constants_used/r_c>",
+      "conditions": "one constant through the chain",
+      "verdict": "identical (one constant through the chain); winding-temperature holds it open: R0 as a cold value open by 1.2 to 2.2 % <wt:stage56_table/3/note>",
+      "sigma": "",
+      "sources": [
+        "s3:constants_used/r_c",
+        "spd:constants_used/r_ohm",
+        "spd:constants_used/t0_c",
+        "wt:locked_first_row_r_ohm",
+        "wt:ref_r0_ohm",
+        "wt:ref_t0_c",
+        "wt:stage56_table/3/note"
+      ]
+    }
+  ],
+  "discrepancies": [
+    {
+      "quantity": "pot noise per row at rest",
+      "a": "position 1.031 [1.027, 1.160] counts <pos:pot_noise_row_counts>",
+      "b": "velocity 0.962 counts <vel:rest_sigma_row_counts>",
+      "sigma": "velocity under position's low bound; ratio 0.933; the boxcar-16 values agree",
+      "causes": [
+        {
+          "cause": "the statistic: a pooled sd against the median of per-baseline sds; the position notebook's own open discrepancy names the same effect",
+          "confidence": "moderate"
+        },
+        {
+          "cause": "a different row set behind the two keys",
+          "confidence": "low"
+        },
+        {
+          "cause": "the cut at the baselines' start applied differently",
+          "confidence": "low"
+        }
+      ],
+      "sources": [
+        "pos:pot_noise_row_counts",
+        "vel:rest_sigma_row_counts"
+      ]
+    },
+    {
+      "quantity": "crawl bias of the back-EMF, table form",
+      "a": "speed -0.579 +/- 0.443 rev/s (n 18 windows, 11 sweeps, 23.43 rev/s, 38.53 mA) <spd:brush_heldout_scores/157>",
+      "b": "velocity 0.661 [0.571, 0.752] rev/s, +/- se over segments <vel:emf_bias_crawl_tach_rev_s/table>",
+      "sigma": "2.75 sigma tach to tach; the product form agrees at 0.66 sigma",
+      "causes": [
+        {
+          "cause": "different sets and rails",
+          "confidence": "moderate"
+        },
+        {
+          "cause": "rows under the tap floor inside speed's windows, which velocity's valid flag leaves out; it would move both forms",
+          "confidence": "low to moderate"
+        },
+        {
+          "cause": "direction mix; it moves the two forms opposite ways",
+          "confidence": "low"
+        },
+        {
+          "cause": "chance among the pairs compared",
+          "confidence": "low to moderate"
+        }
+      ],
+      "sources": [
+        "spd:brush_heldout_scores/157",
+        "vel:emf_bias_crawl_tach_rev_s/table"
+      ]
+    },
+    {
+      "quantity": "duty step's direct path, rows 10 to 39",
+      "a": "speed 0.114 of the volts' step / Ke <spd:duty_step_response/share_rows_10_39>, n 39 <spd:duty_step_response/n> steps, no bracket",
+      "b": "velocity 0.0712 [0.0567, 0.0856] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/row/r10_39>, 60 kept duty steps of steps/capture-1 <vel:emf_direct_path_steps>",
+      "sigma": "2.934 of velocity's se as the keys stand; speed's own by-step shares weighted over all 60 steps give 0.0916, 1.414 se from velocity, under the threshold of 2",
+      "causes": [
+        {
+          "cause": "the step set: speed's n leaves out the smallest steps; this is about half the difference, and the rest is under the threshold",
+          "confidence": "high"
+        }
+      ],
+      "sources": [
+        "spd:duty_step_response/n",
+        "spd:duty_step_response/share_rows_10_39",
+        "vel:emf_direct_path_share/row/r10_39",
+        "vel:emf_direct_path_steps"
+      ]
+    },
+    {
+      "quantity": "commutation share of the per-row back-EMF variance at a crawl",
+      "a": "speed 0.756 <spd:.noise.csv[kind=hold,band=0-30].table_comm_share> (0-30 rev/s), 0.77 <spd:.noise.csv[kind=hold,band=30-100].table_comm_share> (30-100 rev/s), no bracket",
+      "b": "velocity 0.719 [0.701, 0.738] of the per-row variance, +/- se over segments <vel:emf_commutation_locked_share_crawl>",
+      "sigma": "1.961 and 2.722 of velocity's se; the like-for-like band under the threshold, the second faster than velocity's crawl",
+      "causes": [
+        {
+          "cause": "two constructions of the share",
+          "confidence": "moderate"
+        }
+      ],
+      "sources": [
+        "spd:.noise.csv[kind=hold,band=0-30].table_comm_share",
+        "spd:.noise.csv[kind=hold,band=30-100].table_comm_share",
+        "vel:emf_commutation_locked_share_crawl"
+      ]
+    }
+  ],
+  "open_choices": [
+    {
+      "choice": "brush term: signed speed table against the speed x current product",
+      "options": [
+        {
+          "option": "table",
+          "cost": "free shaft ladder (third repeat) 30-100 (94 rev/s, 73 mA): table -0.31, product 0.12 rev/s <spd:stage5_bias_by_band_form/0>; under current run-up 160-250 (218.9 rev/s, 655 mA): table 30, product -1.340 rev/s <spd:stage5_bias_by_band_form/11>, run-up 250-350 (306.2 rev/s, 512 mA): table 27.10, product -1.920 rev/s <spd:stage5_bias_by_band_form/12>; lifts lifts 100-160 (111.5 rev/s, 218 mA): table 7.420, product 3.580 rev/s <spd:stage5_bias_by_band_form/17>; crawl 0.54 [0.437, 0.643] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/table>; direction split 0.814 [0.746, 0.883] rev/s, +/- se <vel:emf_direction_split_rev_s/table/under_45>; lift error by speed 4.033 [3.495, 4.571] rev/s, +/- se over sweeps <vel:emf_bias_lift_by_speed_rev_s/table/0-30> to 7.604 [6.395, 8.812] rev/s, +/- se over sweeps <vel:emf_bias_lift_by_speed_rev_s/table/100-170>; costs 2 <spd:solve_recommendation/steps> newton steps per row and a table per direction <spd:brush_forms/table_signed_mv>, steepest slope 0.655 of Ke <spd:table_slopes_share_of_ke/+1/share_of_ke>"
+        },
+        {
+          "option": "product",
+          "cost": "the same rows in the cells left; crawl 1.382 [1.198, 1.566] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/product>; direction split -1.828 [-1.896, -1.759] rev/s, +/- se <vel:emf_direction_split_rev_s/product/under_45>; lift error by speed 4.003 [3.668, 4.339] rev/s, +/- se over sweeps <vel:emf_bias_lift_by_speed_rev_s/product/0-30> to 3.329 [2.408, 4.250] rev/s, +/- se over sweeps <vel:emf_bias_lift_by_speed_rev_s/product/100-170>; stopped rotor mean 6.314 [5.686, 6.943] rev/s, +/- se <spd:rest_bias_by_current/mean/product> against the table's 4.426 [3.747, 5.105] rev/s, +/- se <spd:rest_bias_by_current/mean/table>; closed form, three constants and a sign; noise ratio to the table 1.205 ratio <spd:product_over_table_noise_by_band/box 16/303> at 303 rev/s; c_dir depends on the fit set (12.39 [9.149, 15.63] mV, +/- se <spd:brush_forms/product_ladder_alone/c_dir_mv> against 36.02 [34.22, 37.82] mV, +/- se <spd:brush_forms/product_ladder_runups/c_dir_mv>); crossover against the pot 50.81 [38.96, 64.82] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/crawl_rms_product> against the table's 103.0 [66.15, 115.2] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/crawl_rms>"
+        }
+      ],
+      "decided_by": "matched-speed holds at two currents, the tag on the hub (the speed notebook's brush-form gap, stage 3's, and the README's velocity gap)",
+      "sources": [
+        "spd:brush_forms/product_ladder_alone/c_dir_mv",
+        "spd:brush_forms/product_ladder_runups/c_dir_mv",
+        "spd:brush_forms/table_signed_mv",
+        "spd:product_over_table_noise_by_band/box 16/303",
+        "spd:rest_bias_by_current/mean/product",
+        "spd:rest_bias_by_current/mean/table",
+        "spd:solve_recommendation/steps",
+        "spd:stage5_bias_by_band_form/0",
+        "spd:stage5_bias_by_band_form/11",
+        "spd:stage5_bias_by_band_form/12",
+        "spd:stage5_bias_by_band_form/17",
+        "spd:table_slopes_share_of_ke/+1/share_of_ke",
+        "vel:crossover_window_ms/crawl_rms",
+        "vel:crossover_window_ms/crawl_rms_product",
+        "vel:emf_bias_crawl_rev_s/product",
+        "vel:emf_bias_crawl_rev_s/table",
+        "vel:emf_bias_lift_by_speed_rev_s/product/0-30",
+        "vel:emf_bias_lift_by_speed_rev_s/product/100-170",
+        "vel:emf_bias_lift_by_speed_rev_s/table/0-30",
+        "vel:emf_bias_lift_by_speed_rev_s/table/100-170",
+        "vel:emf_direction_split_rev_s/product/under_45",
+        "vel:emf_direction_split_rev_s/table/under_45"
+      ]
+    },
+    {
+      "choice": "one velocity: the switch against the complementary pair",
+      "options": [
+        {
+          "option": "switch sw5",
+          "cost": "crawl bias 0.404 [0.278, 0.53] rev/s, +/- se <vel:blend_bias_crawl_rev_s/sw5>, stall over the floor 1.226 rev/s <vel:blend_bias_stall_over_floor_rev_s/sw5>, own sd 3.426 rev/s <vel:blend_own_sd_rev_s/crawl/sw5>, seams 13.47 rev/s <vel:blend_seam_rev_s/sw5_kick/median> at a start and 6.815 rev/s <vel:blend_seam_rev_s/sw5_coast/median> at a coast, direct path 0.117 [0.103, 0.131] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/boxcar_32/r10_39>, no state of its own; with the rest verdict (swr5) a seam of 44.69 rev/s <vel:blend_seam_rev_s/swr5_kick/median>"
+        },
+        {
+          "option": "pair cp5",
+          "cost": "crawl bias 0.0442 [9.35e-05, 0.0883] rev/s, +/- se <vel:blend_bias_crawl_rev_s/cp5>, stall over the floor 0.0156 rev/s <vel:blend_bias_stall_over_floor_rev_s/cp5>, own sd 3.517 rev/s <vel:blend_own_sd_rev_s/crawl/cp5>, seams 0.205 rev/s <vel:blend_seam_rev_s/cp5_handover/median> at the handover, 5.408 rev/s <vel:blend_seam_rev_s/cp5_coast/median> at a coast, 14.39 rev/s <vel:blend_seam_rev_s/cpr5_kick/median> at a start with rest on pot rows, direct path 0.153 [0.125, 0.18] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/pair_5/r10_39> and 0.0496 [0.00671, 0.0925] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/pair_5/r40_199>, one one-pole at 1030.5 rows, the pair's one-pole <vel:blend_corner_rows> and the pot slope's delay below it; cp25 under the floor 1.853 rev/s <vel:blend_own_sd_rev_s/under_floor/cp25> against cp5 4.130 rev/s <vel:blend_own_sd_rev_s/under_floor/cp5>"
+        }
+      ],
+      "decided_by": "the loop design (stage 5): the back-EMF's bias at DC against the pot's delay below the corner and a step of 14.39 rev/s <vel:blend_seam_rev_s/cpr5_kick/median> in the feedback at a start",
+      "sources": [
+        "vel:blend_bias_crawl_rev_s/cp5",
+        "vel:blend_bias_crawl_rev_s/sw5",
+        "vel:blend_bias_stall_over_floor_rev_s/cp5",
+        "vel:blend_bias_stall_over_floor_rev_s/sw5",
+        "vel:blend_corner_rows",
+        "vel:blend_own_sd_rev_s/crawl/cp5",
+        "vel:blend_own_sd_rev_s/crawl/sw5",
+        "vel:blend_own_sd_rev_s/under_floor/cp25",
+        "vel:blend_own_sd_rev_s/under_floor/cp5",
+        "vel:blend_seam_rev_s/cp5_coast/median",
+        "vel:blend_seam_rev_s/cp5_handover/median",
+        "vel:blend_seam_rev_s/cpr5_kick/median",
+        "vel:blend_seam_rev_s/sw5_coast/median",
+        "vel:blend_seam_rev_s/sw5_kick/median",
+        "vel:blend_seam_rev_s/swr5_kick/median",
+        "vel:emf_direct_path_share/boxcar_32/r10_39",
+        "vel:emf_direct_path_share/pair_5/r10_39",
+        "vel:emf_direct_path_share/pair_5/r40_199"
+      ]
+    },
+    {
+      "choice": "rest verdict: the band against the slope",
+      "options": [
+        {
+          "option": "band",
+          "cost": "band of 2 <vel:rest_verdict/band/counts> counts: declare 56.35 ms, median <vel:rest_declare_ms/band 2 T50/coast_down/median> (p90 64.53 ms, p90 <vel:rest_declare_ms/band 2 T50/coast_down/p90>), drop 7.725 ms, median <vel:rest_drop_ms/band 2 T50/median>, false motion on coast tails 0.0193 share of rows <vel:rest_false_motion_share/band 2 T50/rest_coast>, on load holds 0.0058 share of rows <vel:rest_false_motion_stage3_share/band 2 T50/load holds>; reads counts, no slope; a band of 1 count holds 0.0892 share of rows <vel:rest_false_motion_stage3_share/band 1 T50/stalls resistance> of the stalls' rows as motion"
+        },
+        {
+          "option": "slope",
+          "cost": "slope of 192 <vel:rest_verdict/slope/rows> rows: declare 56.10 ms, median <vel:rest_declare_ms/slope 192 T50/coast_down/median> (p90 57.83 ms, p90 <vel:rest_declare_ms/slope 192 T50/coast_down/p90>), drop 6.500 ms, median <vel:rest_drop_ms/slope 192 T50/median>, false motion on coast tails 0.00777 share of rows <vel:rest_false_motion_share/slope 192 T50/rest_coast>, on load holds 0.0011 share of rows <vel:rest_false_motion_stage3_share/slope 192 T50/load holds>; keeps the slope's rows; a 992-row slope holds 0.0039 share of rows <vel:rest_false_motion_share/slope 992 T75/rest_base> of the baselines as motion"
+        }
+      ],
+      "decided_by": "nothing in this data over 2 sigma (equal alternatives <vel:rest_verdict/note>); a driven sweep at 2 to 10 deg/s (the velocity notebook's rest-verdict gap); the veto is a separate option: drop 5.750 ms, median <vel:rest_drop_ms/band 2 T50 + emf/median>, fires on 1 of 106 <vel:rest_veto/fires_on_stopped>",
+      "sources": [
+        "vel:rest_declare_ms/band 2 T50/coast_down/median",
+        "vel:rest_declare_ms/band 2 T50/coast_down/p90",
+        "vel:rest_declare_ms/slope 192 T50/coast_down/median",
+        "vel:rest_declare_ms/slope 192 T50/coast_down/p90",
+        "vel:rest_drop_ms/band 2 T50 + emf/median",
+        "vel:rest_drop_ms/band 2 T50/median",
+        "vel:rest_drop_ms/slope 192 T50/median",
+        "vel:rest_false_motion_share/band 2 T50/rest_coast",
+        "vel:rest_false_motion_share/slope 192 T50/rest_coast",
+        "vel:rest_false_motion_share/slope 992 T75/rest_base",
+        "vel:rest_false_motion_stage3_share/band 1 T50/stalls resistance",
+        "vel:rest_false_motion_stage3_share/band 2 T50/load holds",
+        "vel:rest_false_motion_stage3_share/slope 192 T50/load holds",
+        "vel:rest_verdict/band/counts",
+        "vel:rest_verdict/note",
+        "vel:rest_verdict/slope/rows",
+        "vel:rest_veto/fires_on_stopped"
+      ]
+    },
+    {
+      "choice": "tap floor's rung",
+      "options": [
+        {
+          "option": "84 ticks",
+          "cost": "floor 84 [72, 96] ticks; bounds: the failing rung below, the first rung with 10 runs or more <spd:valid_rule/tap_floor_ticks>; deficit 10.50 [9.413, 29.59] mV, median [10-90 %] <spd:tap_deficit_by_ticks/84-84/deficit_mv> on n 3 <spd:tap_deficit_by_ticks/84-84/n> runs of 3 <spd:tap_deficit_by_ticks/84-84/sweeps> sweeps; valid share 85.21 <spd:valid_coverage_by_set/all/valid_pct> %, under the floor 14.62 <spd:valid_coverage_by_set/all/under_floor_pct> %"
+        },
+        {
+          "option": "96 ticks",
+          "cost": "deficit -22.81 [-29.34, -10.51] mV, median [10-90 %] <spd:tap_deficit_by_ticks/96-96/deficit_mv> on n 16 <spd:tap_deficit_by_ticks/96-96/n> runs; rows under 96 ticks 21.11 <spd:valid_coverage_by_set/all/under_96_ticks_pct> %; stage 3's closing table: 93 ticks <spd:valid_rule/tap_floor_stage3_closing_ticks>; stage 3's key 72 half-ticks, V_on low with window_valid 1 <s3:tap_floor_half_ticks> is the failing rung (482.5 [341.8, 504.8] mV, median [10-90 %] <spd:tap_deficit_by_ticks/72-72/deficit_mv>, as speed -3.975 <spd:tap_deficit_by_ticks/72-72/as_rev_s> rev/s)"
+        }
+      ],
+      "decided_by": "a hold ladder at rest from 72 to 96 ticks in steps of 4 (the speed notebook's tap-floor gap, stage 3's tap-floor discrepancy)",
+      "sources": [
+        "s3:tap_floor_half_ticks",
+        "spd:tap_deficit_by_ticks/72-72/as_rev_s",
+        "spd:tap_deficit_by_ticks/72-72/deficit_mv",
+        "spd:tap_deficit_by_ticks/84-84/deficit_mv",
+        "spd:tap_deficit_by_ticks/84-84/n",
+        "spd:tap_deficit_by_ticks/84-84/sweeps",
+        "spd:tap_deficit_by_ticks/96-96/deficit_mv",
+        "spd:tap_deficit_by_ticks/96-96/n",
+        "spd:valid_coverage_by_set/all/under_96_ticks_pct",
+        "spd:valid_coverage_by_set/all/under_floor_pct",
+        "spd:valid_coverage_by_set/all/valid_pct",
+        "spd:valid_rule/tap_floor_stage3_closing_ticks",
+        "spd:valid_rule/tap_floor_ticks"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "gap": "the brush term's form under load",
+      "listed_by": "speed 1, stage 3 5, README",
+      "capture": "holds at one speed and two currents, at a few speeds across the crawl and the lower ladder, the tag on the hub",
+      "limits": "velocity loop's feedback (bias under load), thermal and stall limits that read the speed",
+      "sources": []
+    },
+    {
+      "gap": "the run-ups' direction term (c_dir 12.39 [9.149, 15.63] mV, +/- se <spd:brush_forms/product_ladder_alone/c_dir_mv> against 36.02 [34.22, 37.82] mV, +/- se <spd:brush_forms/product_ladder_runups/c_dir_mv>)",
+      "listed_by": "speed 2",
+      "capture": "100 % run-ups on the 3.7 V rail, scored row by row with the dropout rows out",
+      "limits": "velocity loop's feedback at speed under current",
+      "sources": [
+        "spd:brush_forms/product_ladder_alone/c_dir_mv",
+        "spd:brush_forms/product_ladder_runups/c_dir_mv"
+      ]
+    },
+    {
+      "gap": "the top of the speed range, neither form resolved (ladder (third repeat) 450-600 (456.9 rev/s, 272 mA): table 5.960, product -1.710 rev/s <spd:stage5_bias_by_band_form/5>)",
+      "listed_by": "speed 3",
+      "capture": "the 7.4 V top rungs held twice as long",
+      "limits": "velocity loop's feedback at the top",
+      "sources": [
+        "spd:stage5_bias_by_band_form/5"
+      ]
+    },
+    {
+      "gap": "the tap floor's rung, between 72 and 96 ticks <spd:valid_rule/tap_floor_ticks>",
+      "listed_by": "speed 4, stage 3's tap-floor discrepancy",
+      "capture": "a hold ladder at rest from 72 to 96 ticks in steps of 4",
+      "limits": "valid flags for the faults; the velocity loop's handover to the pot",
+      "sources": [
+        "spd:valid_rule/tap_floor_ticks"
+      ]
+    },
+    {
+      "gap": "the duty step's residue, 0.114 of the volts' step / Ke <spd:duty_step_response/share_rows_10_39> after the L / R spike",
+      "listed_by": "speed 5",
+      "capture": "the steps on the RL dummy and the same steps with the horn locked",
+      "limits": "velocity loop's feedback (the direct path a loop design carries)",
+      "sources": [
+        "spd:duty_step_response/share_rows_10_39"
+      ]
+    },
+    {
+      "gap": "the stopped rotor: its slope, its convexity, its law below the lowest stopped hold ([69.72, 483.7] <vel:emf_stopped_rotor_rev_s/table/valid_ma> mA), and whether it is the winding's heat",
+      "listed_by": "speed 6, velocity 1, the winding-temperature notebook's open discrepancy, section 4",
+      "capture": "the bias against time inside each hold (existing rows), holds of 0.2 s against 3 s at one current, stopped holds at 20 to 70 mA or a crawl against a brake at 100 to 200 mA",
+      "limits": "velocity loop's feedback at a stall, the rest verdict's veto, the stall fault",
+      "sources": [
+        "vel:emf_stopped_rotor_rev_s/table/valid_ma"
+      ]
+    },
+    {
+      "gap": "the load holds read two ways, a stopped-rotor bias or the winding's heat (section 4)",
+      "listed_by": "this notebook",
+      "capture": "none: an offline analysis, the speed estimate re-run on the load holds with the one-node R(T)",
+      "limits": "velocity loop's feedback at a stall, the rest verdict's veto, thermal derate and cutoff",
+      "sources": []
+    },
+    {
+      "gap": "the crawl's slow noise and the commutation pattern's cause",
+      "listed_by": "speed 7, velocity 6",
+      "capture": "per-period tach intervals against the estimate's period means (existing rows); a coast with the taps streamed, as an identification capture",
+      "limits": "velocity loop's feedback (what a filter may remove)",
+      "sources": []
+    },
+    {
+      "gap": "no rail, reference or board temperature channel in the rows (no rail, reference or temperature channel in the rows <cz:gaps/0/gap>)",
+      "listed_by": "current-zero 1, speed 8, stage 3 row 14",
+      "capture": "one sweep's raw frames against the loader; a stage 3 schedule re-streamed with vbus, vref_raw and ntc_raw; a torque-off and coast series while the board warms",
+      "limits": "current loop's feedback (the start rule before the first drive), thermal derate, the sag cap",
+      "sources": [
+        "cz:gaps/0/gap"
+      ]
+    },
+    {
+      "gap": "closed loop: every filter and blend was scored open loop; chirps and PRBS",
+      "listed_by": "speed 9, velocity 10, stage 3 1 and 2, README",
+      "capture": "a closed-loop hold and chirps, stage 5's bench",
+      "limits": "velocity and position loops' feedback",
+      "sources": []
+    },
+    {
+      "gap": "the direction split of the back-EMF at a crawl, speed and current collinear",
+      "listed_by": "velocity 2",
+      "capture": "the same speed at two currents, a crawl against a brake in both directions",
+      "limits": "velocity loop's feedback at a crawl",
+      "sources": []
+    },
+    {
+      "gap": "the crossover's move against stage 3",
+      "listed_by": "velocity 3",
+      "capture": "three offline re-scorings of the same rows (stage 3's truth, then its zero, then its band)",
+      "limits": "velocity loop's feedback (which source at short windows)",
+      "sources": []
+    },
+    {
+      "gap": "the tag as the truth under 100 ms of window",
+      "listed_by": "velocity 4",
+      "capture": "a lookup fitted on other chains than it is scored on; a second tag on the output shaft or an encoder",
+      "limits": "velocity loop's feedback (noise against delay at loop windows)",
+      "sources": []
+    },
+    {
+      "gap": "the rest verdict between 2 and 10 deg/s",
+      "listed_by": "velocity 5",
+      "capture": "a driven sweep at 2 to 10 deg/s",
+      "limits": "velocity loop's feedback at a crawl, valid flags for the faults (stall)",
+      "sources": []
+    },
+    {
+      "gap": "the angle-locked motion's shaft, at periods of 4 deg and longer <vel:crawl_angle_locked_motion_rev_s/periods>",
+      "listed_by": "velocity 7",
+      "capture": "passes of 40 deg and more at a steady crawl; a crawl at two duties over the same angles",
+      "limits": "velocity loop's feedback (the smooth crawl)",
+      "sources": [
+        "vel:crawl_angle_locked_motion_rev_s/periods"
+      ]
+    },
+    {
+      "gap": "the kick's end: the back-EMF low under negative current; the commutation count runs 1.024 [1.018, 1.030] ratio, +/- 2 se, n 38 <vel:count_kick_start_145ms/ratio_count_pot> of the pot over a kick",
+      "listed_by": "velocity 8",
+      "capture": "a kick straight into a coast; kick ends into holds that keep the current from reversing; a time mark the camera and the rows both see; kicks of both directions over the same angles",
+      "limits": "velocity loop's feedback through a hard transient, position loop's feedback in motion",
+      "sources": [
+        "vel:count_kick_start_145ms/ratio_count_pot"
+      ]
+    },
+    {
+      "gap": "the direction term of the position and the stamp lead (the grade at speed)",
+      "listed_by": "position 1, stage 3 6, README, velocity 8",
+      "capture": "crawl segments in both directions over the same span, each started from both ends, with a marker driven from the PWM timer in the camera's view",
+      "limits": "position loop's feedback (the lash bound, the grade at speed)",
+      "sources": []
+    },
+    {
+      "gap": "the high end of the lookup, a hole of 7.966 deg <pos:high_end_hole_deg>",
+      "listed_by": "position 2",
+      "capture": "rest points every 2 deg from -30 to -16 deg, or one slow pass to the guard",
+      "limits": "position loop's feedback near the high stop",
+      "sources": [
+        "pos:high_end_hole_deg"
+      ]
+    },
+    {
+      "gap": "the carries outside the covered codes",
+      "listed_by": "position 3",
+      "capture": "one slow pass guard to guard",
+      "limits": "position and velocity loops' feedback at the ends",
+      "sources": []
+    },
+    {
+      "gap": "one sitting, one servo: between sittings, temperature, wear",
+      "listed_by": "position 4, 5 and 7, velocity 9",
+      "capture": "the opening pass and 20 rest points in a second sitting; rest points at two bed temperatures; the same over the servo's life; a second servo",
+      "limits": "every deliverable (a candidate until repeated)",
+      "sources": []
+    },
+    {
+      "gap": "side load and torque on the pot",
+      "listed_by": "position 6, stage 3 row 4",
+      "capture": "the load ladder's holds with the tag in view",
+      "limits": "position loop's feedback under load (stage 7's bound)",
+      "sources": []
+    },
+    {
+      "gap": "the step's shape off 4.9 V rests on one day <cz:gaps/1/gap>; the 6.0-6.8 V band sits above the curve <cz:gaps/2/gap>",
+      "listed_by": "current-zero 2 and 3",
+      "capture": "three sweeps with a coast at 3.7, 5.0 and 7.4 V on another day; a ladder sweep with coasts at 6.0, 6.4 and 6.8 V",
+      "limits": "current loop's feedback on a 2S rail",
+      "sources": [
+        "cz:gaps/1/gap",
+        "cz:gaps/2/gap"
+      ]
+    },
+    {
+      "gap": "the step under a rail that sags with the load <cz:gaps/3/gap>; the trough's rise under a drive grows with the rail <cz:gaps/8/gap>",
+      "listed_by": "current-zero 4 and 9, stage 3 3",
+      "capture": "a narrow drive with a series resistor for half the run; stage 1's dummy-load trough at two rails",
+      "limits": "current loop's feedback on a real pack",
+      "sources": [
+        "cz:gaps/3/gap",
+        "cz:gaps/8/gap"
+      ]
+    },
+    {
+      "gap": "a drive between two readings adds 0.40 counts <cz:gaps/4/gap>; fast alphas against a far truth <cz:gaps/5/gap>; nothing between 80 and 100 % duty <cz:gaps/7/gap>; the zero during and after a wide drive over 2.4 s <cz:gaps/10/gap>",
+      "listed_by": "current-zero 5, 6, 8 and 11",
+      "capture": "the ladder with a rest in place of every second rung; a 0.1 s coast after every narrow rung; holds at 60 % for 10 and 60 s; rungs at 85, 90 and 95 %",
+      "limits": "current loop's feedback (the hold bound in a long wide drive)",
+      "sources": [
+        "cz:gaps/10/gap",
+        "cz:gaps/4/gap",
+        "cz:gaps/5/gap",
+        "cz:gaps/7/gap"
+      ]
+    },
+    {
+      "gap": "stalls and loaded holds scored on the proxy truth <cz:gaps/6/gap>",
+      "listed_by": "current-zero 7",
+      "capture": "a 0.1 s coast after a stall hold",
+      "limits": "current loop's feedback at a stall, the stall fault",
+      "sources": [
+        "cz:gaps/6/gap"
+      ]
+    },
+    {
+      "gap": "the 3.3 V laps moved both zeros <cz:gaps/9/gap>",
+      "listed_by": "current-zero 10",
+      "capture": "the asleep baseline with vref_raw while the supply steps 3.3 to 3.8 V in 50 mV",
+      "limits": "current loop's feedback near the regulator's dropout",
+      "sources": [
+        "cz:gaps/9/gap"
+      ]
+    },
+    {
+      "gap": "no thermal capture: a plateau, the total gain winding to ambient <wt:gaps/0/gap>; the slower nodes (rotor iron, can) <wt:gaps/1/gap>; cooling at all <wt:gaps/2/gap>; a hot ambient <wt:gaps/3/gap>; the NTC against the can <wt:gaps/4/gap>",
+      "listed_by": "winding-temperature 1 to 5, README",
+      "capture": "a stall hold on the horn lock at 0.25 and 0.4 A for 10 to 15 min with a 100 ms window every 10 s, then the cooling with probe pulses; a second ambient; a thermocouple on the can",
+      "limits": "thermal derate and cutoff (no graded basis past the graded drive)",
+      "sources": [
+        "wt:gaps/0/gap",
+        "wt:gaps/1/gap",
+        "wt:gaps/2/gap",
+        "wt:gaps/3/gap",
+        "wt:gaps/4/gap"
+      ]
+    },
+    {
+      "gap": "the seek press <wt:gaps/5/gap>; the reference under the construction <wt:gaps/6/gap>; the bridged seats' rate <wt:gaps/7/gap>; between the windows of a hold <wt:gaps/8/gap>",
+      "listed_by": "winding-temperature 6 to 9, stage 3 2",
+      "capture": "stream the seek or chains on the lock with no seek; partial-duty chains on the horn lock; stopped reads at 20 or more rest angles; stream the hold at a low rate",
+      "limits": "thermal derate and cutoff (R0 open as a cold value), the hold deadband's drift",
+      "sources": [
+        "wt:gaps/5/gap",
+        "wt:gaps/6/gap",
+        "wt:gaps/7/gap",
+        "wt:gaps/8/gap"
+      ]
+    },
+    {
+      "gap": "The loaded speed estimate at partial duty rests on the lift alone, pot truth, 12 lifts <s3:gaps/3>",
+      "listed_by": "stage 3 4",
+      "capture": "the lift with the tag on the hub (stage 3's lift discrepancy)",
+      "limits": "velocity loop's feedback under load",
+      "sources": [
+        "s3:gaps/3"
+      ]
+    },
+    {
+      "gap": "the dropout rate flag of stage 3 was not run in stage 4",
+      "listed_by": "this notebook, section 3 row 9",
+      "capture": "none needed for the rule; a sitting where both directions drop out (stage 3's dropout discrepancy)",
+      "limits": "valid flags for the faults",
+      "sources": []
+    },
+    {
+      "gap": "the pot slope's start-up",
+      "listed_by": "this notebook, section 2",
+      "capture": "not named; the cell reads 'not measured'",
+      "limits": "velocity loop's feedback (start-up)",
+      "sources": []
+    },
+    {
+      "gap": "the share of rows inside the position's valid range",
+      "listed_by": "this notebook, section 2",
+      "capture": "not named; the cell reads 'not measured'",
+      "limits": "position loop's feedback",
+      "sources": []
+    },
+    {
+      "gap": "the winding estimate's start-up error",
+      "listed_by": "this notebook, section 2",
+      "capture": "not named; the cell reads 'not measured'",
+      "limits": "thermal derate and cutoff",
+      "sources": []
+    },
+    {
+      "gap": "cp25's share of rows by source",
+      "listed_by": "this notebook, section 2",
+      "capture": "not named; the cell reads 'not measured'",
+      "limits": "velocity loop's feedback (the blend)",
+      "sources": []
+    },
+    {
+      "gap": "cpr5's delay",
+      "listed_by": "this notebook, section 2",
+      "capture": "not named; the cell reads 'not measured'",
+      "limits": "velocity loop's feedback (the blend)",
+      "sources": []
+    }
+  ],
+  "stages_5_to_7": [
+    {
+      "deliverable": "current loop's feedback",
+      "from": "current-zero",
+      "readme_from": "`current-zero`: the zero's error and its start-up time",
+      "numbers": "zero error all runs 0.408 counts <cz:design_all_runs_rms_counts> rms, worst 1.967 counts <cz:design_all_runs_worst_counts>; warm 0.411 [0.373, 0.447] counts <cz:design_warm_rms_counts>; start-up to half a count 0.0625 [-, 0.303] s <cz:start_rule_settle_to_half_count_fed_s> of feed; hold p90 at 60 s 0.946 [0.877, 0.992] counts <cz:hold_p90_counts/60s>; noise per tick 1.109 [1.038, 1.463] counts <cz:trough_sd_per_tick_counts/coast>; counts per A 1135.0 counts/A <spd:constants_used/counts_per_a>",
+      "readme_gap": "no rail, reference or temperature channel in the rows",
+      "gap": "the current-zero file lists 11 <cz:gaps>, among them: no rail, reference or temperature channel in the rows <cz:gaps/0/gap>; the step's shape off 4.9 V rests on one day <cz:gaps/1/gap>; nothing between 80 and 100 % duty <cz:gaps/7/gap>",
+      "sources": [
+        "cz:design_all_runs_rms_counts",
+        "cz:design_all_runs_worst_counts",
+        "cz:design_warm_rms_counts",
+        "cz:gaps",
+        "cz:gaps/0/gap",
+        "cz:gaps/1/gap",
+        "cz:gaps/7/gap",
+        "cz:hold_p90_counts/60s",
+        "cz:start_rule_settle_to_half_count_fed_s",
+        "cz:trough_sd_per_tick_counts/coast",
+        "spd:constants_used/counts_per_a"
+      ]
+    },
+    {
+      "deliverable": "velocity loop's feedback",
+      "from": "velocity, speed",
+      "readme_from": "`velocity`: noise against delay, the rest verdict, the crawl",
+      "numbers": "over the floor at a crawl, 5 ms of delay: back-EMF 1.718 <vel:stage5_by_regime/0/noise_rev_s> rev/s own noise, bias table 0.54 [0.437, 0.643] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/table>, product 1.382 [1.198, 1.566] rev/s, +/- se over segments <vel:emf_bias_crawl_rev_s/product>; the pot's two-point 7.434 <vel:stage5_by_regime/2/noise_rev_s> rev/s; under the floor the pot at 50 ms 1.470 <vel:stage5_by_regime/3/noise_rev_s> rev/s; crossover 103.0 [66.15, 115.2] ms of window, 5-95 % of 200 resamplings, never 0% <vel:crossover_window_ms/crawl_rms>; blends sw5 0.404 [0.278, 0.53] rev/s, +/- se <vel:blend_bias_crawl_rev_s/sw5>, 3.426 rev/s <vel:blend_own_sd_rev_s/crawl/sw5>; cp5 0.0442 [9.35e-05, 0.0883] rev/s, +/- se <vel:blend_bias_crawl_rev_s/cp5>, 3.517 rev/s <vel:blend_own_sd_rev_s/crawl/cp5>; rest verdict declares 56.35 ms, median <vel:rest_declare_ms/band 2 T50/coast_down/median>, drops 7.725 ms, median <vel:rest_drop_ms/band 2 T50/median>; crawl's angle-locked motion 2.236 rev/s <vel:crawl_angle_locked_motion_rev_s/sd>; mechanical tau 18.29 [11.94, 26.66] ms, median [10-90 %] of the kept steps <vel:mechanical_tau_ms>; direct path 0.788 [0.74, 0.835] of the volts' step / Ke, +/- se <vel:emf_direct_path_share/row/r0_3>",
+      "readme_gap": "the brush term's form under load; the blend and the rest verdict's form are open",
+      "gap": "the brush term's form under load; also open: the blend, the verdict's form, the kick's end, the stopped rotor's law",
+      "sources": [
+        "vel:blend_bias_crawl_rev_s/cp5",
+        "vel:blend_bias_crawl_rev_s/sw5",
+        "vel:blend_own_sd_rev_s/crawl/cp5",
+        "vel:blend_own_sd_rev_s/crawl/sw5",
+        "vel:crawl_angle_locked_motion_rev_s/sd",
+        "vel:crossover_window_ms/crawl_rms",
+        "vel:emf_bias_crawl_rev_s/product",
+        "vel:emf_bias_crawl_rev_s/table",
+        "vel:emf_direct_path_share/row/r0_3",
+        "vel:mechanical_tau_ms",
+        "vel:rest_declare_ms/band 2 T50/coast_down/median",
+        "vel:rest_drop_ms/band 2 T50/median",
+        "vel:stage5_by_regime/0/noise_rev_s",
+        "vel:stage5_by_regime/2/noise_rev_s",
+        "vel:stage5_by_regime/3/noise_rev_s"
+      ]
+    },
+    {
+      "deliverable": "position loop's feedback",
+      "from": "position",
+      "readme_from": "`position`: noise against delay, the held-out residual, the lash as a bound",
+      "numbers": "boxcar 16: 0.139 [0.139, 0.161] counts <pos:filter_boxcar16_noise_counts> at 7.500 ticks <pos:filter_boxcar16_delay_ticks>; per row 1.031 [1.027, 1.160] counts <pos:pot_noise_row_counts>; held-out residual 0.165 [0.16, 0.17] deg <pos:table_term_heldout_deg_rms> (table term), 0.41 [0.376, 0.446] deg <pos:heldout_lead_applied_deg_rms> (nothing out but the lead); the lash as a bound 0.5 deg <pos:direction_bound_moving_deg> in motion, 0.3 deg <pos:direction_bound_rest_deg> at rest, not an offset; carries blind up to 0.772 deg <pos:carry_blind_span_deg>",
+      "readme_gap": "the grade at speed is bounded by the stamp lead",
+      "gap": "the grade at speed is bounded by the stamp lead (0.479 share <pos:share_stamp_lead> of the error)",
+      "sources": [
+        "pos:carry_blind_span_deg",
+        "pos:direction_bound_moving_deg",
+        "pos:direction_bound_rest_deg",
+        "pos:filter_boxcar16_delay_ticks",
+        "pos:filter_boxcar16_noise_counts",
+        "pos:heldout_lead_applied_deg_rms",
+        "pos:pot_noise_row_counts",
+        "pos:share_stamp_lead",
+        "pos:table_term_heldout_deg_rms"
+      ]
+    },
+    {
+      "deliverable": "thermal derate and cutoff",
+      "from": "winding-temperature",
+      "readme_from": "`winding-temperature`",
+      "numbers": "one node 23.24 [14.27, 23.85] C/W (fold_lo 14.27, fold_hi 23.24, stat_factor 1.012) <wt:one_node_gain_c_per_w>, 2.375 [1.203, 3.227] s (fold_lo 1.400, fold_hi 2.699, stat_factor 1.044) <wt:one_node_tau_s>, 0.102 [0.0625, 0.135] J/C (fold_lo 0.0981, fold_hi 0.117) <wt:one_node_c_j_per_c>; rise at 3 s 16.67 [12.60, 16.67] C/W <wt:one_node_rise_at_3s_c_per_w>; across seats 1.549 [0.769, 2.786] C <wt:floor_across_seats_c>; graded to 3.093 [3.092, 3.433] s, the same-seat pairs' span <wt:graded_drive_s_max>; plateau graded False <wt:plateau_graded>; second node's heat capacity 0.761 [0.511, 1.268] J/C <wt:two_node_slow_c_j_per_c>, tau at least 35 s <wt:two_node_slow_tau_s_min>",
+      "readme_gap": "no thermal capture",
+      "gap": "no thermal capture; no graded basis past 3.093 [3.092, 3.433] s, the same-seat pairs' span <wt:graded_drive_s_max> of drive from a rest",
+      "sources": [
+        "wt:floor_across_seats_c",
+        "wt:graded_drive_s_max",
+        "wt:one_node_c_j_per_c",
+        "wt:one_node_gain_c_per_w",
+        "wt:one_node_rise_at_3s_c_per_w",
+        "wt:one_node_tau_s",
+        "wt:plateau_graded",
+        "wt:two_node_slow_c_j_per_c",
+        "wt:two_node_slow_tau_s_min"
+      ]
+    },
+    {
+      "deliverable": "valid flags for the faults",
+      "from": "speed, velocity",
+      "readme_from": "`speed`, `velocity`",
+      "numbers": "speed valid on 85.21 <spd:valid_coverage_by_set/all/valid_pct> % of driven rows (floor 84 [72, 96] ticks; bounds: the failing rung below, the first rung with 10 runs or more <spd:valid_rule/tap_floor_ticks>, start 16 rows, 4 L / R rounded up <spd:valid_rule/start_rows>, dropout 0.25 of the one-pole mean <spd:valid_rule/dropout_frac>); camera sitting 0.843 of driven rows <vel:emf_valid_share_camera>; dropout rule hit rate 1 <spd:dropout_rule_vs_stage3/reference 32 rows/hit_rate>, precision 0.957 <spd:dropout_rule_vs_stage3/reference 32 rows/precision>; rest verdict: false rest 0 share of rows <vel:rest_false_rest_10_35_deg_s/band 2 50> at 10 to 35 deg/s, a stall declared in 55.33 ms, median <vel:rest_declare_ms/band 2 T50/stall_in_hold/median>; zero fed on 0.911 share <cz:feed_share_awake_rows> of awake rows",
+      "readme_gap": "the tap floor's rung is open; stage 3's dropout rate flag was not run",
+      "gap": "the tap floor's rung is open (84 against 96 <spd:valid_rule/tap_floor_ticks>); the dropout rate flag of stage 3 was not run",
+      "sources": [
+        "cz:feed_share_awake_rows",
+        "spd:dropout_rule_vs_stage3/reference 32 rows/hit_rate",
+        "spd:dropout_rule_vs_stage3/reference 32 rows/precision",
+        "spd:valid_coverage_by_set/all/valid_pct",
+        "spd:valid_rule/dropout_frac",
+        "spd:valid_rule/start_rows",
+        "spd:valid_rule/tap_floor_ticks",
+        "vel:emf_valid_share_camera",
+        "vel:rest_declare_ms/band 2 T50/stall_in_hold/median",
+        "vel:rest_false_rest_10_35_deg_s/band 2 50"
+      ]
+    }
+  ]
+}
