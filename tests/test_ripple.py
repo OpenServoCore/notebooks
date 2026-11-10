@@ -288,3 +288,129 @@ def test_sharp_drops_are_the_first_falls_past_the_rise():
         current[row:] -= 0.2
     drops = ripple.sharp_drops(current, 60 / FS)
     assert drops.tolist() == [40, 60, 100]
+
+
+# the phase count: a ripple on a sweeping angle, 200 to 600 Hz at the rows
+SWEEP_ROWS = 4000
+RIPPLE_COUNTS, NOISE_COUNTS = 8.0, 2.0
+# cycles of the count's own centers left out at each end: passes 2 and 3
+# pull the end centers off a 20 % seed (see the xfail below)
+END_CYCLES = 2.0
+
+
+def sweep_phase(rows=SWEEP_ROWS):
+    r = np.arange(rows)
+    return 0.01 * r + 2.5e-6 * r ** 2 + 0.37
+
+
+def sweep_current(mean, seed=7, ripple_counts=RIPPLE_COUNTS):
+    rng = np.random.default_rng(seed)
+    phi = sweep_phase(len(mean))
+    return (ripple_counts * np.cos(2 * np.pi * phi) + mean
+            + rng.normal(0, NOISE_COUNTS, len(mean)))
+
+
+def inner_change(count, phi):
+    first = phi[count.c] - phi[count.c[0]] >= END_CYCLES
+    last = phi[count.c[-1]] - phi[count.c] >= END_CYCLES
+    r0, r1 = count.c[first][0], count.c[last][-1]
+    got = count.phi([r0, r1])
+    return (got[1] - got[0]) - (phi[r1] - phi[r0]), r1 - r0
+
+
+@pytest.mark.parametrize("rate", [0.8, 1.2])
+def test_phase_count_reads_a_sweep_from_a_seed_20_pct_off(rate):
+    phi = sweep_phase()
+    ramp = 50 + 0.01 * np.arange(SWEEP_ROWS)
+    count = ripple.PhaseCount(sweep_current(ramp), rate * phi, 0, SWEEP_ROWS)
+    assert count.ok
+    err, span = inner_change(count, phi)
+    assert span > 0.8 * SWEEP_ROWS
+    assert abs(err) < 0.02
+
+
+@pytest.mark.parametrize("rate", [0.8, 1.2])
+def test_phase_count_reads_through_the_current_s_change_of_sign(rate):
+    phi = sweep_phase()
+    through_zero = -30 + 60 * np.arange(SWEEP_ROWS) / SWEEP_ROWS
+    count = ripple.PhaseCount(sweep_current(through_zero), rate * phi, 0,
+                              SWEEP_ROWS)
+    assert count.ok
+    err, _ = inner_change(count, phi)
+    assert abs(err) < 0.02
+
+
+@pytest.mark.xfail(strict=True, reason="the later passes pull the end "
+                   "centers off a seed whose rate is 20 % off: 0.08 cycle "
+                   "between the first and last centers, 0.016 after one pass")
+def test_phase_count_end_centers_read_a_seed_20_pct_off():
+    phi = sweep_phase()
+    ramp = 50 + 0.01 * np.arange(SWEEP_ROWS)
+    count = ripple.PhaseCount(sweep_current(ramp), 0.8 * phi, 0, SWEEP_ROWS)
+    got = count.phi([count.c[0], count.c[-1]])
+    err = (got[1] - got[0]) - (phi[count.c[-1]] - phi[count.c[0]])
+    assert abs(err) < 0.02
+
+
+def test_phase_is_nan_outside_the_centers():
+    phi = sweep_phase()
+    count = ripple.PhaseCount(sweep_current(np.zeros(SWEEP_ROWS)), phi, 0,
+                              SWEEP_ROWS)
+    c0, c1 = count.c[0], count.c[-1]
+    out = count.phi([0, c0 - 0.5, c0, c1, c1 + 0.5, SWEEP_ROWS - 1])
+    assert np.isnan(out[[0, 1, 4, 5]]).all()
+    assert np.isfinite(out[[2, 3]]).all()
+    # the first center's window of one cycle back lies inside the stretch
+    assert phi[c0] - phi[0] >= ripple.PHASE_HALF_CYCLES
+
+
+def test_phase_count_crossings_are_one_row_per_whole_cycle():
+    phi = sweep_phase()
+    count = ripple.PhaseCount(sweep_current(np.zeros(SWEEP_ROWS)), phi, 0,
+                              SWEEP_ROWS)
+    rows = count.crossings()
+    truth = np.interp(rows, np.arange(SWEEP_ROWS), phi)
+    k = np.round(truth)
+    assert np.all(np.diff(k) == 1)
+    assert len(rows) == int(np.floor(count.phi_c[-1])
+                            - np.ceil(count.phi_c[0])) + 1
+    assert np.abs(truth - k).max() < 0.05
+
+
+def test_a_seed_under_two_cycles_gives_no_count():
+    seed = np.linspace(0, 1.5, SWEEP_ROWS)
+    count = ripple.PhaseCount(sweep_current(np.zeros(SWEEP_ROWS)), seed, 0,
+                              SWEEP_ROWS)
+    assert not count.ok
+
+
+def test_the_trust_numbers_flag_pure_noise():
+    phi = sweep_phase()
+    zero = np.zeros(SWEEP_ROWS)
+    noise = ripple.PhaseCount(sweep_current(zero, ripple_counts=0), phi, 0,
+                              SWEEP_ROWS)
+    signal = ripple.PhaseCount(sweep_current(zero), phi, 0, SWEEP_ROWS)
+    assert noise.ok and signal.ok
+    assert noise.min_snr(0, SWEEP_ROWS) < 0.5 < 2 < signal.min_snr(
+        0, SWEEP_ROWS)
+    assert signal.conv < 0.05 < noise.conv
+    assert signal.max_step(0, SWEEP_ROWS) < 0.05
+
+
+def test_angle_seed_keeps_a_quadratic_angle():
+    r = np.arange(3000.0)
+    theta = 0.3 + 0.004 * r + 1e-6 * r ** 2
+    seed = ripple.angle_seed(theta, 0.2)
+    assert seed == pytest.approx(theta / 0.2, rel=1e-9)
+
+
+def test_order_crossing_rows_sit_on_the_whole_cycles():
+    phi = sweep_phase()
+    x = np.sin(2 * np.pi * phi)
+    a, b = 500, 3500
+    rows = ripple.order_crossing_rows(x, phi[a:b + 1], 0, b + 1 - a, PER_REV,
+                                      offset=a)
+    truth = np.interp(rows, np.arange(SWEEP_ROWS), phi)
+    assert np.all((rows > a) & (rows < b))
+    assert np.all(np.diff(np.round(truth)) == 1)
+    assert np.abs(truth - np.round(truth)).max() < 0.01
