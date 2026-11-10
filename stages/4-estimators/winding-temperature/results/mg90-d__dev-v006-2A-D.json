@@ -1,0 +1,1192 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D",
+  "notes": "stage 4 winding-temperature of mg90-d on dev-v006-2A-D, no capture of its own: stage 3's sittings, 521 sweeps over four days. One servo, one board. Reads: 20 ms sub-windows of streamed driven segments of the stopped-rotor sweeps through oscnb.winding.gate, R = (V_c - V0) / i_w under oscnb.speed.construct with stage 1's in-drive offset; blocks of 100 ms at read_current_floor_a or more, bridged seats (under 0.9 of R0) out. Floors: same seat = a sub-window's sd about its window's line, median and 10 to 90 %; across seats = pooled sd of the first read of repeated stop, rail and duty chains, median and range over stop-1, rails-7, meter-8. Heat: oscnb.winding.heat, joules at R0, bounds from its named constants. Estimate: oscnb.winding.run from a zero state over every piece; residual ln R - ln R(T_w), seat-referenced (group mean out, weights 0.10 % same seat, 0.70 % across seats); fit sittings 1, 6, 9, held out 2, 3, 5, 10. one_node_*: value the fit sittings, lo/hi over the fit, the swap, all and the unstreamed heat at its bounds, fold_lo/hi over the three fits, stat_factor the fit's se as a factor. two_node_slow_c: tau2 / gain2 over tau2 35 to 263 s on the fit sittings and on all, median and range; the slow gain and tau are not graded. load anchored: each load block's residual less its group's reads under 0.25 A, across seats; speed = residual x R0 i / Ke. Candidates: a_ntc the NTC alone, b_one one node, c_two two nodes.",
+  "reads_n": {
+    "value": 4476.0,
+    "lo": null,
+    "hi": null,
+    "unit": "sub-windows"
+  },
+  "read_windows_n": {
+    "value": 426.0,
+    "lo": null,
+    "hi": null,
+    "unit": "windows"
+  },
+  "read_sweeps_n": {
+    "value": 246.0,
+    "lo": null,
+    "hi": null,
+    "unit": "sweeps"
+  },
+  "read_blocks_n": {
+    "value": 960.0,
+    "lo": null,
+    "hi": null,
+    "unit": "blocks"
+  },
+  "read_blocks_bridged_n": {
+    "value": 12.0,
+    "lo": null,
+    "hi": null,
+    "unit": "blocks"
+  },
+  "read_current_floor_a": {
+    "value": 0.14,
+    "lo": null,
+    "hi": null,
+    "unit": "A"
+  },
+  "rise_over_ref_c": {
+    "value": 3.993143838248974,
+    "lo": -5.968507983317418,
+    "hi": 25.26927728388043,
+    "unit": "C",
+    "p05": -3.4177930715611113,
+    "p95": 13.402647563286273
+  },
+  "ref_r0_ohm": {
+    "value": 4.1767417953059445,
+    "lo": 4.167627855761983,
+    "hi": 4.193229051913686,
+    "unit": "ohm"
+  },
+  "ref_t0_c": {
+    "value": 26.258318085906645,
+    "lo": 26.0957642228614,
+    "hi": 26.317474633098282,
+    "unit": "C"
+  },
+  "locked_first_row_r_ohm": {
+    "value": 4.179644269712067,
+    "lo": 4.167570048103372,
+    "hi": 4.191718491320761,
+    "unit": "ohm",
+    "sd": 0.012074221608694116,
+    "n": 6
+  },
+  "floor_same_seat_pct": {
+    "value": 0.06782463600415672,
+    "lo": 0.03413363150403887,
+    "hi": 0.12933800293921627,
+    "unit": "%"
+  },
+  "floor_same_seat_c": {
+    "value": 0.17390932308758136,
+    "lo": 0.08752213206163814,
+    "hi": 0.33163590497234946,
+    "unit": "C"
+  },
+  "floor_block_pct": {
+    "value": 0.030332099330894827,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "floor_across_seats_pct": {
+    "value": 0.6040264511222976,
+    "lo": 0.30007871392045554,
+    "hi": 1.0866584463654054,
+    "unit": "%"
+  },
+  "floor_across_seats_c": {
+    "value": 1.5487857721084555,
+    "lo": 0.76943259979604,
+    "hi": 2.786303708629245,
+    "unit": "C"
+  },
+  "floor_across_seats_by_dataset_pct": {
+    "stop-1": {
+      "value": 0.30007871392045554,
+      "lo": null,
+      "hi": null,
+      "unit": "%, 2 groups, 6 reads"
+    },
+    "rails-7": {
+      "value": 1.0866584463654054,
+      "lo": null,
+      "hi": null,
+      "unit": "%, 4 groups, 12 reads"
+    },
+    "meter-8": {
+      "value": 0.6040264511222976,
+      "lo": null,
+      "hi": null,
+      "unit": "%, 12 groups, 34 reads"
+    }
+  },
+  "floor_sag_stop_laps_pct": {
+    "value": 0.507576489917386,
+    "lo": null,
+    "hi": null,
+    "unit": "%"
+  },
+  "bridged_seat_ratio": {
+    "value": 0.77438055732957,
+    "lo": 0.7456096895776212,
+    "hi": 0.8031514250815188,
+    "unit": "of R0"
+  },
+  "bridged_seat_holds": {
+    "value": 3.0,
+    "lo": null,
+    "hi": null,
+    "unit": "holds"
+  },
+  "v0_same_seat_mv_stop_1": {
+    "value": 29.516639612638837,
+    "lo": 27.57905698955805,
+    "hi": 31.454222235719623,
+    "unit": "mV"
+  },
+  "v0_same_seat_mv_rails_7": {
+    "value": 22.749182121321365,
+    "lo": 20.842930797807202,
+    "hi": 24.655433444835527,
+    "unit": "mV"
+  },
+  "v0_same_seat_mv_load": {
+    "value": 12.606639713778362,
+    "lo": 6.764803290110703,
+    "hi": 18.448476137446022,
+    "unit": "mV"
+  },
+  "ntc_span_c": {
+    "value": 26.597733544194966,
+    "lo": 24.539175753766642,
+    "hi": 28.65629133462329,
+    "unit": "C"
+  },
+  "ntc_self_heating_c": {
+    "value": 2.1768225393213356,
+    "lo": 0.29420968864860697,
+    "hi": 2.1768225393213356,
+    "unit": "C"
+  },
+  "ntc_c_per_count": {
+    "value": 0.022213771319513853,
+    "lo": null,
+    "hi": null,
+    "unit": "C/count"
+  },
+  "heat_total_j": {
+    "value": 271.3447483571774,
+    "lo": null,
+    "hi": null,
+    "unit": "J"
+  },
+  "heat_streamed_j": {
+    "value": 63.78669006327894,
+    "lo": null,
+    "hi": null,
+    "unit": "J"
+  },
+  "heat_hold_j": {
+    "value": 184.30080200012043,
+    "lo": 161.81215864541747,
+    "hi": 225.39140209590613,
+    "unit": "J"
+  },
+  "heat_seek_j": {
+    "value": 23.257256293778052,
+    "lo": 10.782429476070368,
+    "hi": 45.029115336635115,
+    "unit": "J"
+  },
+  "heat_free_seek_hi_j": {
+    "value": 67.5944262928526,
+    "lo": null,
+    "hi": null,
+    "unit": "J"
+  },
+  "heat_unstreamed_share_pct": {
+    "value": 76.49238083675198,
+    "lo": 73.01533752879521,
+    "hi": 80.91402919128348,
+    "unit": "%"
+  },
+  "heat_by_sitting_j": {
+    "1": {
+      "value": 18.94061717524214,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "2": {
+      "value": 7.958773887594902,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "3": {
+      "value": 4.671103334170814,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "4": {
+      "value": 1.3870765503606501,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "5": {
+      "value": 9.475540920044201,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "6": {
+      "value": 53.089647889196456,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "7": {
+      "value": 0.8834119366986384,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "8": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "9": {
+      "value": 79.84512734784536,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    },
+    "10": {
+      "value": 95.09344931602426,
+      "lo": null,
+      "hi": null,
+      "unit": "J"
+    }
+  },
+  "mean_power_by_sitting_mw": {
+    "1": {
+      "value": 1.3107212797924808,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "2": {
+      "value": 21.25899877138497,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "3": {
+      "value": 45.06959857949525,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "4": {
+      "value": 1.345561928287294,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "5": {
+      "value": 5.862634056463756,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "6": {
+      "value": 30.31052818903859,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "7": {
+      "value": 0.90006402130618,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "8": {
+      "value": 0.0,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "9": {
+      "value": 21.00372285753515,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    },
+    "10": {
+      "value": 12.693370229129119,
+      "lo": null,
+      "hi": null,
+      "unit": "mW"
+    }
+  },
+  "seek_press_s": {
+    "value": 0.35377293174779956,
+    "lo": 0.16,
+    "hi": 0.4349320198785751,
+    "unit": "s"
+  },
+  "seek_press_a": {
+    "value": 0.4944477331254534,
+    "lo": null,
+    "hi": null,
+    "unit": "A"
+  },
+  "fit_sittings": [
+    1,
+    6,
+    9
+  ],
+  "held_out_sittings": [
+    2,
+    3,
+    5,
+    10
+  ],
+  "one_node_gain_c_per_w": {
+    "value": 23.238778454241114,
+    "lo": 14.272707625718965,
+    "hi": 23.85184369046071,
+    "unit": "C/W",
+    "fold_lo": 14.272707625718965,
+    "fold_hi": 23.238778454241114,
+    "stat_factor": 1.0115935536661866
+  },
+  "one_node_tau_s": {
+    "value": 2.3752191114749404,
+    "lo": 1.2032400402255934,
+    "hi": 3.2271300880695795,
+    "unit": "s",
+    "fold_lo": 1.3995549121769497,
+    "fold_hi": 2.6985483361714335,
+    "stat_factor": 1.0438603338228598
+  },
+  "one_node_c_j_per_c": {
+    "value": 0.10220929280564052,
+    "lo": 0.06253670432008494,
+    "hi": 0.13529897855905518,
+    "unit": "J/C",
+    "fold_lo": 0.09805812245848827,
+    "fold_hi": 0.11678626525257736
+  },
+  "one_node_rise_at_3s_c_per_w": {
+    "value": 16.66702293812845,
+    "lo": 12.599386182065563,
+    "hi": 16.66702293812845,
+    "unit": "C/W"
+  },
+  "one_node_chi2": {
+    "fit": {
+      "chi2": 735.8218943402555,
+      "dof": 335,
+      "chi2_ntc_alone": 17396.711945661595
+    },
+    "swap": {
+      "chi2": 1474.4688324811311,
+      "dof": 505,
+      "chi2_ntc_alone": 4014.3700698455414
+    },
+    "all": {
+      "chi2": 2314.2374062869294,
+      "dof": 842,
+      "chi2_ntc_alone": 21411.082015507138
+    }
+  },
+  "one_node_sensitivity": {
+    "unstreamed low": {
+      "gain_c_per_w": 19.24054126784465,
+      "tau_s": 1.2032400402255934,
+      "c_j_per_c": 0.06253670432008494
+    },
+    "unstreamed high": {
+      "gain_c_per_w": 23.85184369046071,
+      "tau_s": 3.2271300880695795,
+      "c_j_per_c": 0.13529897855905518
+    },
+    "load V0 in situ": {
+      "gain_c_per_w": 23.17772613845978,
+      "tau_s": 2.598060115102605,
+      "c_j_per_c": 0.11209296803242205
+    },
+    "same seat only": {
+      "gain_c_per_w": 23.159349248065507,
+      "tau_s": 2.509205258909969,
+      "c_j_per_c": 0.10834524027567667
+    },
+    "across seats only": {
+      "gain_c_per_w": 45.09412973520617,
+      "tau_s": 5.124500658255694,
+      "c_j_per_c": 0.1136400832735189
+    }
+  },
+  "two_node_fast_gain_c_per_w": {
+    "value": 17.091535635901888,
+    "lo": 9.219053228164718,
+    "hi": 17.091535635901888,
+    "unit": "C/W"
+  },
+  "two_node_fast_tau_s": {
+    "value": 1.9309413982997294,
+    "lo": 1.0258076647663932,
+    "hi": 1.9309413982997294,
+    "unit": "s"
+  },
+  "two_node_slow_c_j_per_c": {
+    "value": 0.760834006239402,
+    "lo": 0.5109421039343426,
+    "hi": 1.2679228504590616,
+    "unit": "J/C"
+  },
+  "two_node_slow_tau_s_min": {
+    "value": 35.0,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "two_node_slow_fitted": {
+    "fit": {
+      "gain_c_per_w": 260.2279406565567,
+      "tau_s": 255.68720850064364
+    },
+    "swap": {
+      "gain_c_per_w": 161.49474199887746,
+      "tau_s": 126.95199513061539
+    },
+    "all": {
+      "gain_c_per_w": 147.74577000122744,
+      "tau_s": 107.084810598966
+    }
+  },
+  "two_node_chi2": {
+    "fit": {
+      "chi2": 658.9380802009846,
+      "dof": 333
+    },
+    "swap": {
+      "chi2": 974.71107382133,
+      "dof": 503
+    },
+    "all": {
+      "chi2": 1868.4794672642356,
+      "dof": 840
+    }
+  },
+  "two_node_separated": false,
+  "tau_profile": [
+    {
+      "tau_s": 1.5,
+      "gain": 24.040025312327835,
+      "c_j_per_c": 0.06239594095729979,
+      "chi2": 1213.9639062074502
+    },
+    {
+      "tau_s": 2.5,
+      "gain": 23.356873507798152,
+      "c_j_per_c": 0.10703487344593983,
+      "chi2": 738.7861386725102
+    },
+    {
+      "tau_s": 4.0,
+      "gain": 26.427589517424533,
+      "c_j_per_c": 0.151356974776783,
+      "chi2": 917.3276932435256
+    },
+    {
+      "tau_s": 6.0,
+      "gain": 32.275444579652444,
+      "c_j_per_c": 0.18589984051784705,
+      "chi2": 1126.8600739331578
+    },
+    {
+      "tau_s": 10.0,
+      "gain": 45.414829887387796,
+      "c_j_per_c": 0.22019239144562142,
+      "chi2": 1346.9108605849888
+    },
+    {
+      "tau_s": 20.0,
+      "gain": 80.68320308654019,
+      "c_j_per_c": 0.2478830690267484,
+      "chi2": 1507.7316470564588
+    },
+    {
+      "tau_s": 50.0,
+      "gain": 190.52947838910936,
+      "c_j_per_c": 0.2624265831342243,
+      "chi2": 1503.3467573836801
+    },
+    {
+      "tau_s": 200.0,
+      "gain": 717.313587320391,
+      "c_j_per_c": 0.27881808393888574,
+      "chi2": 1596.51743098232
+    }
+  ],
+  "tau2_profile": [
+    {
+      "set": "fit",
+      "tau2_s": 15.0,
+      "gain1": 18.187647590344124,
+      "tau1": 1.9606857027623519,
+      "gain2": 14.329841699959955,
+      "c2_j_per_c": 1.0467666226935304,
+      "chi2": 732.035451718101
+    },
+    {
+      "set": "fit",
+      "tau2_s": 35.0,
+      "gain1": 15.94837865002648,
+      "tau1": 1.7337142001601848,
+      "gain2": 46.746143102613765,
+      "c2_j_per_c": 0.7487248717647256,
+      "chi2": 712.9040922282804
+    },
+    {
+      "set": "fit",
+      "tau2_s": 60.0,
+      "gain1": 15.346122437114353,
+      "tau1": 1.6912947911188383,
+      "gain2": 85.47244451995192,
+      "c2_j_per_c": 0.7019806247146019,
+      "chi2": 691.7250543158204
+    },
+    {
+      "set": "fit",
+      "tau2_s": 120.0,
+      "gain1": 16.02534799319588,
+      "tau1": 1.797006589844136,
+      "gain2": 149.72019809979597,
+      "c2_j_per_c": 0.8014950656157563,
+      "chi2": 669.5976306766427
+    },
+    {
+      "set": "fit",
+      "tau2_s": 263.0,
+      "gain1": 17.135604681730673,
+      "tau1": 1.9353954268942546,
+      "gain2": 265.3876424391913,
+      "c2_j_per_c": 0.991003189081276,
+      "chi2": 658.9468484520808
+    },
+    {
+      "set": "fit",
+      "tau2_s": 600.0,
+      "gain1": 20.402898520803284,
+      "tau1": 2.190276840568505,
+      "gain2": 267.13950694025135,
+      "c2_j_per_c": 2.2460174718155654,
+      "chi2": 704.6786570090185
+    },
+    {
+      "set": "fit",
+      "tau2_s": 2000.0,
+      "gain1": 23.151601387522376,
+      "tau1": 2.3717410096069895,
+      "gain2": 26.603899999480713,
+      "c2_j_per_c": 75.17694774221216,
+      "chi2": 735.4132713484477
+    },
+    {
+      "set": "all",
+      "tau2_s": 15.0,
+      "gain1": 11.178975707933853,
+      "tau1": 1.436610976232744,
+      "gain2": 34.67250834051476,
+      "c2_j_per_c": 0.432619407072794,
+      "chi2": 2151.8581411833047
+    },
+    {
+      "set": "all",
+      "tau2_s": 35.0,
+      "gain1": 12.103817234048094,
+      "tau1": 1.508677256189557,
+      "gain2": 68.50091180682497,
+      "c2_j_per_c": 0.5109421039343426,
+      "chi2": 2005.309618151357
+    },
+    {
+      "set": "all",
+      "tau2_s": 60.0,
+      "gain1": 12.777560834418296,
+      "tau1": 1.609175766506051,
+      "gain2": 105.28722393491825,
+      "c2_j_per_c": 0.5698697121797809,
+      "chi2": 1908.5506705513803
+    },
+    {
+      "set": "all",
+      "tau2_s": 120.0,
+      "gain1": 14.810527772437627,
+      "tau1": 1.9027786141376408,
+      "gain2": 155.2507470201997,
+      "c2_j_per_c": 0.7729431407140784,
+      "chi2": 1869.814192583975
+    },
+    {
+      "set": "all",
+      "tau2_s": 263.0,
+      "gain1": 17.608494595264496,
+      "tau1": 2.2595114227058857,
+      "gain2": 207.42586972447,
+      "c2_j_per_c": 1.2679228504590616,
+      "chi2": 1929.733894483044
+    },
+    {
+      "set": "all",
+      "tau2_s": 600.0,
+      "gain1": 19.864336639736123,
+      "tau1": 2.4752718105732594,
+      "gain2": 265.96735161172444,
+      "c2_j_per_c": 2.255915985041341,
+      "chi2": 2074.0630076294797
+    },
+    {
+      "set": "all",
+      "tau2_s": 2000.0,
+      "gain1": 22.419276410636204,
+      "tau1": 2.653200390879596,
+      "gain2": 182.34215715368123,
+      "c2_j_per_c": 10.96839058624476,
+      "chi2": 2275.32112703437
+    }
+  ],
+  "heldout_rms_pct_all": {
+    "a_ntc": {
+      "value": 1.292012528556256,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "b_one": {
+      "value": 1.055451597226377,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "c_two": {
+      "value": 1.0022906439803867,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    }
+  },
+  "heldout_as_used_pct": {
+    "a_ntc": {
+      "value": 0.5303885957803516,
+      "lo": -1.0747984149857794,
+      "hi": 2.1355756065464826,
+      "unit": "%",
+      "sd": 1.605187010766131
+    },
+    "b_one": {
+      "value": -1.4644742777276452,
+      "lo": -2.9043173220206837,
+      "hi": -0.024631233434606603,
+      "unit": "%",
+      "sd": 1.4398430442930386
+    },
+    "c_two": {
+      "value": -2.958941185655217,
+      "lo": -4.485588461295001,
+      "hi": -1.4322939100154324,
+      "unit": "%",
+      "sd": 1.5266472756397844
+    }
+  },
+  "heldout_rms_pct_by_kind": {
+    "held-5": {
+      "a_ntc": 1.007616088038776,
+      "b_one": 0.5822563143261299,
+      "c_two": 0.1398454226667507,
+      "n": 2
+    },
+    "load across seats": {
+      "a_ntc": 1.5168133611997632,
+      "b_one": 1.2499958756421483,
+      "c_two": 1.1882119762473171,
+      "n": 394
+    },
+    "load same seat": {
+      "a_ntc": 0.30290474923220645,
+      "b_one": 0.30360577674436634,
+      "c_two": 0.20438550558004628,
+      "n": 16
+    },
+    "locked-4": {
+      "a_ntc": 0.6043804433370887,
+      "b_one": 0.15690796997387887,
+      "c_two": 0.1567721422159734,
+      "n": 36
+    },
+    "rails-7": {
+      "a_ntc": 0.21506856311906816,
+      "b_one": 0.0811764976452745,
+      "c_two": 0.0799213075020603,
+      "n": 108
+    }
+  },
+  "heldout_by_current_pct": {
+    "mean": {
+      "[0.14, 0.25)": {
+        "a_ntc": -0.8477925983155844,
+        "b_one": -0.16543633889930828,
+        "c_two": 0.12075883076651708,
+        "n": 258
+      },
+      "[0.25, 0.35)": {
+        "a_ntc": 0.7161856922447413,
+        "b_one": 0.23141461510033284,
+        "c_two": -0.05166238965295018,
+        "n": 174
+      },
+      "[0.35, 0.45)": {
+        "a_ntc": 0.7875069571969986,
+        "b_one": 0.11379967488084229,
+        "c_two": -0.15470696869880482,
+        "n": 73
+      },
+      "[0.45, 0.6)": {
+        "a_ntc": 2.441744802630326,
+        "b_one": -0.39272959051585704,
+        "c_two": -0.7248609215423504,
+        "n": 15
+      },
+      "[0.6, 0.8)": {
+        "a_ntc": -1.0485439677015367e-16,
+        "b_one": -9.868649107779169e-17,
+        "c_two": -2.929755203871941e-17,
+        "n": 36
+      }
+    },
+    "rms": {
+      "[0.14, 0.25)": {
+        "a_ntc": 1.3902258523495243,
+        "b_one": 0.9924357128730374,
+        "c_two": 1.0370479558763837,
+        "n": 258
+      },
+      "[0.25, 0.35)": {
+        "a_ntc": 1.0647166170942342,
+        "b_one": 1.369168510482506,
+        "c_two": 1.2062291629051938,
+        "n": 174
+      },
+      "[0.35, 0.45)": {
+        "a_ntc": 1.288023144911347,
+        "b_one": 0.4762524974004144,
+        "c_two": 0.3853697991315687,
+        "n": 73
+      },
+      "[0.45, 0.6)": {
+        "a_ntc": 2.5557471639441776,
+        "b_one": 1.2008884329259968,
+        "c_two": 1.038755295243478,
+        "n": 15
+      },
+      "[0.6, 0.8)": {
+        "a_ntc": 0.6043804433370887,
+        "b_one": 0.15690796997387887,
+        "c_two": 0.1567721422159734,
+        "n": 36
+      }
+    }
+  },
+  "heldout_rms_pct_by_drive_s": {
+    "[0.0, 0.4)": {
+      "a_ntc": 1.380283166766982,
+      "b_one": 0.34591038312380795,
+      "c_two": 0.30450586220882875,
+      "n": 49
+    },
+    "[0.4, 1.2)": {
+      "a_ntc": 1.0975705252599852,
+      "b_one": 0.865747862344091,
+      "c_two": 1.1049917882695777,
+      "n": 118
+    },
+    "[1.2, 4.5)": {
+      "a_ntc": 1.348367023281137,
+      "b_one": 1.174273621789038,
+      "c_two": 1.0381842619965453,
+      "n": 380
+    },
+    "[4.5, 9.0)": {
+      "a_ntc": 0.30290474923220645,
+      "b_one": 0.30360577674436634,
+      "c_two": 0.2043855055800462,
+      "n": 8
+    },
+    "[9.0, 60.0)": {
+      "a_ntc": 1.007616088038776,
+      "b_one": 0.5822563143261299,
+      "c_two": 0.1398454226667507,
+      "n": 1
+    }
+  },
+  "heldout_rms_pct_by_rest_s": {
+    "[0.0, 30.0)": {
+      "a_ntc": 1.8656969084593737,
+      "b_one": 0.4729611897273324,
+      "c_two": 0.6033033723182528,
+      "n": 36
+    },
+    "[30.0, 70.0)": {
+      "a_ntc": 1.236823317133034,
+      "b_one": 1.0888347489970247,
+      "c_two": 1.0276298013964815,
+      "n": 515
+    },
+    "[600.0, 1000000000000.0)": {
+      "a_ntc": 1.7324634421923004,
+      "b_one": 0.3885652815500679,
+      "c_two": 0.5648301426490268,
+      "n": 5
+    }
+  },
+  "swap_rms_pct_on_fit": {
+    "all": {
+      "a_ntc": 1.3194034985049827,
+      "b_one": 0.6237584883845828,
+      "c_two": 0.48488312819168344,
+      "n": 404
+    }
+  },
+  "pair_rise_pct_meter_low": {
+    "value": 0.5480849608275934,
+    "lo": 0.31993183535753117,
+    "hi": 0.7762380862976557,
+    "unit": "%",
+    "sd": 0.22815312547006222,
+    "n": 18,
+    "p_w": 0.2322540089774797,
+    "dt_s": 3.0915001100964017
+  },
+  "pair_rise_pct_meter_high": {
+    "value": 2.490918514209345,
+    "lo": 2.304579954349743,
+    "hi": 2.677257074068947,
+    "unit": "%",
+    "sd": 0.1863385598596018,
+    "n": 16,
+    "p_w": 0.546580188760575,
+    "dt_s": 3.0939487367868423
+  },
+  "pair_dir_split_pct": {
+    "low": {
+      "value": 0.16122325857216657,
+      "lo": 0.05794725288305182,
+      "hi": 0.26449926426128134,
+      "unit": "%"
+    },
+    "high": {
+      "value": -0.12013465347453511,
+      "lo": -0.21107238172623388,
+      "hi": -0.029196925222836345,
+      "unit": "%"
+    }
+  },
+  "chain_first_step_slope_pct_per_s": {
+    "value": -0.021789102477429195,
+    "lo": -0.20305514753921744,
+    "hi": 0.15947694258435907,
+    "unit": "%/s",
+    "n": 18,
+    "cold_copper_would_be": 0.9132939178767963
+  },
+  "press_rise_c": {
+    "stop-1": {
+      "one_node": 3.1793374172306694,
+      "two_node": 4.4532355644497725,
+      "n": 6
+    },
+    "rails-7": {
+      "one_node": 3.702571631460047,
+      "two_node": 5.713886969000733,
+      "n": 12
+    },
+    "capture-1": {
+      "one_node": 3.8412517158670094,
+      "two_node": 4.321872561226613,
+      "n": 13
+    }
+  },
+  "speed_rev_s_per_pct_by_current": {
+    "[0.14, 0.25)": {
+      "value": 1.0039485922496292,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s per % at 0.175 A"
+    },
+    "[0.25, 0.35)": {
+      "value": 1.6709936964763186,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s per % at 0.291 A"
+    },
+    "[0.35, 0.45)": {
+      "value": 2.263401756115134,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s per % at 0.395 A"
+    },
+    "[0.45, 0.6)": {
+      "value": 2.774844474629781,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s per % at 0.484 A"
+    }
+  },
+  "speed_bias_ntc_alone_rev_s": {
+    "[0.25, 0.35)": {
+      "value": 3.3435054042199726,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "[0.35, 0.45)": {
+      "value": 6.667801696765031,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    },
+    "[0.45, 0.6)": {
+      "value": 10.724239478446567,
+      "lo": null,
+      "hi": null,
+      "unit": "rev/s"
+    }
+  },
+  "speed_rms_rev_s_by_current": {
+    "[0.14, 0.25)": {
+      "a_ntc": 1.0847751514628692,
+      "b_one": 1.1710525869125905,
+      "c_two": 1.2033664609005907
+    },
+    "[0.25, 0.35)": {
+      "a_ntc": 3.607993977813271,
+      "b_one": 2.461351659384857,
+      "c_two": 2.2561155488863616
+    },
+    "[0.35, 0.45)": {
+      "a_ntc": 7.024138222657386,
+      "b_one": 1.844885516424604,
+      "c_two": 2.4966436496041164
+    },
+    "[0.45, 0.6)": {
+      "a_ntc": 10.929956088956606,
+      "b_one": 3.185256529200326,
+      "c_two": 3.046781517861314
+    }
+  },
+  "load_anchored_mean_pct": {
+    "[0.14, 0.25)": {
+      "a_ntc": {
+        "value": 1.0092936587501423e-17,
+        "lo": -1.0835914332551209,
+        "hi": 1.0835914332551209,
+        "unit": "%"
+      },
+      "b_one": {
+        "value": 1.0597583416876495e-16,
+        "lo": -1.1697747218476602,
+        "hi": 1.1697747218476602,
+        "unit": "%"
+      },
+      "c_two": {
+        "value": 6.560408781875925e-17,
+        "lo": -1.2020533345919355,
+        "hi": 1.2020533345919355,
+        "unit": "%"
+      }
+    },
+    "[0.25, 0.35)": {
+      "a_ntc": {
+        "value": 2.000908448230856,
+        "lo": 1.1869917438840298,
+        "hi": 2.814825152577682,
+        "unit": "%"
+      },
+      "b_one": {
+        "value": 0.48062713527085843,
+        "lo": -0.9159534370129792,
+        "hi": 1.877207707554696,
+        "unit": "%"
+      },
+      "c_two": {
+        "value": -0.24491509011078982,
+        "lo": -1.5766973747199433,
+        "hi": 1.0868671944983639,
+        "unit": "%"
+      }
+    },
+    "[0.35, 0.45)": {
+      "a_ntc": {
+        "value": 2.945920528138821,
+        "lo": 1.9565690059794396,
+        "hi": 3.935272050298203,
+        "unit": "%"
+      },
+      "b_one": {
+        "value": 0.37814746658877324,
+        "lo": -0.35388109613382096,
+        "hi": 1.1101760293113674,
+        "unit": "%"
+      },
+      "c_two": {
+        "value": -0.8079685848766078,
+        "lo": -1.5692625264096667,
+        "hi": -0.046674643343549094,
+        "unit": "%"
+      }
+    },
+    "[0.45, 0.6)": {
+      "a_ntc": {
+        "value": 3.8648074068646285,
+        "lo": 3.0774921409512928,
+        "hi": 4.652122672777964,
+        "unit": "%"
+      },
+      "b_one": {
+        "value": -0.0564583259520041,
+        "lo": -1.2432143740168282,
+        "hi": 1.1302977221128199,
+        "unit": "%"
+      },
+      "c_two": {
+        "value": -0.7878890640325888,
+        "lo": -1.5794765045331818,
+        "hi": 0.003698376468004083,
+        "unit": "%"
+      }
+    }
+  },
+  "hold_pct_at_0p5a_3s_one_node": {
+    "value": 7.120750594460024,
+    "lo": 5.351164999329905,
+    "hi": 7.120750594460024,
+    "unit": "%"
+  },
+  "graded_drive_s_max": {
+    "value": 3.092724423441622,
+    "lo": 3.0915001100964017,
+    "hi": 3.4325555324554444,
+    "unit": "s, the same-seat pairs' span"
+  },
+  "longest_drive_s": {
+    "value": 36.29199981689453,
+    "lo": null,
+    "hi": null,
+    "unit": "s"
+  },
+  "plateau_graded": false,
+  "can_node_graded": false,
+  "ambient_graded": false,
+  "stage56_table": [
+    {
+      "quantity": "form",
+      "value": "T_w = T_ntc + x; x += (G P - x)(1 - exp(-dt / tau)); P = i_w^2 R(T_w); R(T) = R0 (1 + alpha (T - T0))",
+      "note": "one node; oscnb.winding step, run, estimate"
+    },
+    {
+      "quantity": "state",
+      "value": "one float per node, the rise over the NTC (C)",
+      "note": "zero after a power cycle"
+    },
+    {
+      "quantity": "constants",
+      "value": "G 23.2 C/W (14.3 to 23.9), tau 2.38 s (1.20 to 3.23), C 0.102 J/C (0.063 to 0.135)",
+      "note": "fit sittings 1, 6, 9"
+    },
+    {
+      "quantity": "reference",
+      "value": "R0 4.1767 ohm at T0 26.26 C, alpha 0.39 %/C",
+      "note": "R0 as a cold value open by 1.2 to 2.2 %"
+    },
+    {
+      "quantity": "rate",
+      "value": "any step: a control tick, a decimated block, a gap at zero current",
+      "note": "exact over a step of constant power"
+    },
+    {
+      "quantity": "error at one seat",
+      "value": "0.08 to 0.16 % of R rms (0.2 to 0.4 C), held out",
+      "note": "drives up to 3 s from a rest of about 45 s"
+    },
+    {
+      "quantity": "error across seats",
+      "value": "1.25 % rms (3.2 C), the seat floor",
+      "note": "load holds, held out"
+    },
+    {
+      "quantity": "bias under load",
+      "value": "within 0.48 % of R, against +2.00 to +3.86 % for the NTC alone",
+      "note": "0.29 to 0.48 A after 3 s"
+    },
+    {
+      "quantity": "speed",
+      "value": "1.84 to 3.19 rev/s rms at 0.3 to 0.5 A, against 3.61 to 10.93 for the NTC alone",
+      "note": "held out, across seats"
+    },
+    {
+      "quantity": "second node, as a ceiling",
+      "value": "C2 0.51 J/C, tau2 at least 35 s",
+      "note": "its gain and tau not graded"
+    }
+  ],
+  "gaps": [
+    {
+      "gap": "a plateau, the total gain winding to ambient",
+      "why": "the longest drive is 6.9 s, one of 36.3 s, mean power at most 45.1 mW",
+      "capture": "a stall hold on the horn lock at two currents (0.25 and 0.4 A) for 10 to 15 min each, a 100 ms window every 10 s"
+    },
+    {
+      "gap": "the slower nodes (rotor iron, can)",
+      "why": "only the slow node's first seconds are seen, its heat capacity",
+      "capture": "the same hold, then the cooling, a 100 ms probe pulse at low duty every 10 to 20 s for 15 min"
+    },
+    {
+      "gap": "cooling at all",
+      "why": "no read at one seat after a rest, every sweep re-seats",
+      "capture": "probe pulses after a hold with the seat kept (the lock, no seek, no move at torque off)"
+    },
+    {
+      "gap": "a hot ambient",
+      "why": "the NTC is 24.5 to 28.7 C in every sitting",
+      "capture": "a second ambient, on the printer bed or in a warm room"
+    },
+    {
+      "gap": "the NTC against the can",
+      "why": "the NTC sits outside the case and climbs up to 2.18 C after power-up",
+      "capture": "a thermocouple on the can, once, through a sitting"
+    },
+    {
+      "gap": "the seek press",
+      "why": "its length is not recorded, 0.16 to 0.43 s",
+      "capture": "stream the seek, or chains on the lock with no seek"
+    },
+    {
+      "gap": "the reference under the construction",
+      "why": "the chains are read on warmed copper, the 100 % laps on cold",
+      "capture": "partial-duty chains on the horn lock, static load, no seek, 60 s rests"
+    },
+    {
+      "gap": "the bridged seats' rate",
+      "why": "3 holds in one sitting pair",
+      "capture": "stopped reads at 20 or more rest angles a few counts apart"
+    },
+    {
+      "gap": "between the windows of a hold",
+      "why": "holds are unstreamed between their windows",
+      "capture": "stream the hold at a low rate, or holds of 1 and 2 s"
+    }
+  ]
+}
