@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-d__dev-v006-2A-D",
-  "notes": "stage 3 friction of mg90-d on dev-v006-2A-D, no capture of its own: ladder/capture-1, ladder/rail-1 and ladder/low-1 (sitting servo-1), the six run-up sets, steps/capture-1 and load/lift-1 re-read from raw, the rest from the results named. Torques at the motor in uN m (mA at Ke = Kt), w in rad/s, output torques in mN m. Route 1: each spin's held duty's last 100 ms (at most half the held rows, at least 20 ms), crest current over the sweep's torque-off zero with stage 1's in-drive offset out, the ripple tach seeded by the coast's EMF line and vetted by the pot, construction C at the probe's rail (stage 1's edge lags on the rail, the brake loop, g the resistance result's meter_g_ms off the current), the J-free settled-equivalent i / (1 + a_drive / a_coast); rung means; tier 1 settle within 2.5 %, tier 2 within 7 %, fits over tiers 1 and 2, T = Tc + b w by least squares, se bounds; flat band the widest run of 75 rev/s bins whose mean residual sits within 2 se or half the rms. x_c_mv_by_rung the volts balance v_c - R_C i_c - V0_C - Ke w. Route 2: coast EMF from the cut, open rows bridged, quadratics every 0.5 ms over +/-5 ms (oscnb.coast), 25 rev/s bins with 5 fits or more, the median deceleration +/- sd, torque J x it with J's bracket as lo and hi; lines weighted by the bin se. route1_over_route2 the steady rungs over route 2 interpolated at their speed. Train share: route 2's mean of directions less the mean of mg90-b's and mg90-c's 5 V meter drive drag (stage 2 no-load-current), a type comparison; mg90-d's motor never ran bare. Low holds: the hold's last 400 ms, turning when the pot and the coast's early EMF both read over 1 rev/s; stiction_driven_lower the highest level that never restarted, its C current and (V_c - V0_C) / R_C, lower bounds. takeup_turns the current through J with the drag named off until the pot moves 3 counts from its 1 to 2 ms reference, steps 20 % starts. Load bounds from the load result, divided by N with no loss. Stall lines, Kt through the gears and intercepts the load result's; eta over Ke N; the prediction -eta N Tc with route 1's Tc per direction. Lift rows recomputed the load notebook's way (pot slope over +/-12.5 ms, +/-2 deg windows past 30 ms, construction C at 5 V), against route 1's 5 V rungs; falls' friction gravity at the 40 ms Savitzky-Golay speed peak, over N times the forward drag at that motor speed. firmware_pair: route 1 with bounds the wider of 2 se plus the crest term's bracket, current-scale's 2 % and Ke's bound, and route 2's line under 230 rev/s through J's bracket; the pooled bounds the union of the directions'. drag_table route 2 above 230 rev/s. One servo, its train in fresh Super Lube still running in.",
+  "notes": "stage 3 friction of mg90-d on dev-v006-2A-D, no capture of its own: ladder/capture-1, ladder/rail-1 and ladder/low-1 (sitting servo-1), the six run-up sets, steps/capture-1 and load/lift-1 re-read from raw, the rest from the results named. Torques at the motor in uN m (mA at Ke = Kt), w in rad/s, output torques in mN m. Route 1: each spin's held duty's last 100 ms (at most half the held rows, at least 20 ms), crest current over the sweep's torque-off zero with stage 1's in-drive offset out, the ripple tach seeded by the coast's EMF line and vetted by the pot, construction C at the probe's rail (stage 1's edge lags on the rail, the brake loop, g the resistance result's meter_g_ms off the current), the J-free settled-equivalent i / (1 + a_drive / a_coast); rung means; tier 1 settle within 2.5 %, tier 2 within 7 %, fits over tiers 1 and 2, T = Tc + b w by least squares, se bounds; flat band the widest run of 75 rev/s bins whose mean residual sits within 2 se or half the rms. x_c_mv_by_rung the volts balance v_c - R_C i_c - V0_C - Ke w. Route 2: coast EMF from the cut, open rows bridged, quadratics every 0.5 ms over +/-5 ms (oscnb.coast), 25 rev/s bins with 5 fits or more, the median deceleration +/- sd, torque J x it with J's bracket as lo and hi; lines weighted by the bin se. route1_over_route2 the steady rungs over route 2 interpolated at their speed. Train share: route 2's mean of directions less the mean of mg90-b's and mg90-c's 5 V meter drive drag (stage 2 no-load-current), a type comparison; mg90-d's motor never ran bare. Low holds: the hold's last 400 ms, turning when the pot and the coast's early EMF both read over 1 rev/s; stiction_driven_lower the highest level that never restarted, its C current and (V_c - V0_C) / R_C, lower bounds. takeup_turns the current through J with the drag named off until the pot moves 3 counts from its 1 to 2 ms reference, steps 20 % starts. Load bounds from the load result, divided by N with no loss. Stall lines, Kt through the gears and intercepts the load result's; eta over Ke N; the prediction -eta N Tc with route 1's Tc per direction. Lift rows recomputed the load notebook's way (pot slope over +/-12.5 ms, +/-2 deg windows past 30 ms, construction C at 5 V), against route 1's 5 V rungs; falls' friction gravity at the 40 ms Savitzky-Golay speed peak, over N times the forward drag at that motor speed. firmware_pair: route 1 with bounds the wider of 2 se plus the crest term's bracket, current-scale's 2 % and Ke's bound, and route 2's line under 230 rev/s through J's bracket; the pooled bounds the union of the directions'. drag_table route 2 above 230 rev/s. One servo, its train in fresh Super Lube still running in. load_static_friction_uNm_motor the load result's measured static friction of sittings 2 and 3, back_driven_measured it over route 1's pooled Tc.",
   "coulomb_uNm": {
     "+1": {
       "value": 54.2720332276097,
@@ -1693,6 +1693,12 @@
     "hi": 123.57468024267027,
     "unit": "uN m"
   },
+  "load_static_friction_uNm_motor": {
+    "value": 99.00884035327654,
+    "lo": 81.15478717481683,
+    "hi": 116.86289353173623,
+    "unit": "uN m"
+  },
   "stiction_over_coulomb": {
     "driven_lower": {
       "value": 0.8999119276190717,
@@ -1710,6 +1716,12 @@
       "value": 1.96898983046637,
       "lo": null,
       "hi": null,
+      "unit": "ratio"
+    },
+    "back_driven_measured": {
+      "value": 1.7983653717049677,
+      "lo": 1.4740699768073506,
+      "hi": 2.1226607666025847,
       "unit": "ratio"
     }
   },

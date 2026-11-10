@@ -21054,20 +21054,20 @@
     },
     {
       "effect": "train friction pair and stiction",
-      "size (mg90-d)": "Tc 55 uN m (47 mA), b 0.26 mA per rev/s. Stiction >= 50 to 60 uN m driven. The floor 0.34 V effective at 20 rev/s",
+      "size (mg90-d)": "Tc 55 uN m (47 mA), b 0.26 mA per rev/s. Stiction >= 50 to 60 uN m driven, a bound, and 81 to 117 uN m back-driven, measured (load 11.7). The floor 0.34 V effective at 20 rev/s",
       "how": "Compensate in firmware, the feed-forward 47 mA + 0.26 mA per rev/s (friction). Design around, the loop and not a duty carries a crawl under the floor's speed",
       "owner": "5"
     },
     {
       "effect": "hold deadband",
-      "size (mg90-d)": ">= 5 % of duty (47 to 53 mA) moves nothing, the load notebook's sitting 1 bound. Pos sd 0.87 counts at rest under torque. The drift over seconds is unmeasured",
-      "how": "Design around, integral action or dither in the position loop. A later section of the load notebook measures the band, a streamed hold the drift",
+      "size (mg90-d)": "A ratchet, follows a rise of 5 to 10 % of duty and holds through a cut of 20 to 25 % (load 11.4), measured. Pos sd 0.87 counts at rest under torque. The drift over seconds is unmeasured",
+      "how": "Design around, integral action or dither in the position loop. A streamed hold measures the drift",
       "owner": "5"
     },
     {
       "effect": "Kt through the gears and its side split",
-      "size (mg90-d)": "216 / 234 / 223 mN m/A up / down / pooled, absolute. The split 2.6 sigma, 1.6 table-only, not established",
-      "how": "Compensate in firmware, pooled Kt through the gears for the torque limit. Bound the split",
+      "size (mg90-d)": "One for both directions, 225.7 mN m/A (221 to 242) over three sittings. The split as a ratio not established. The rests dip 3 to 6 mN m at 41.5 to 49.5 deg on both sides, cause open (rig or train)",
+      "how": "Compensate in firmware, the one Kt through the gears for the torque limit. The dip sits inside the static friction band, design around",
       "owner": "6"
     },
     {
