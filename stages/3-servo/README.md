@@ -282,7 +282,8 @@ load block's cups, 70 degrees of lift either side of the bottom inside the
 guards, the resistance result for the stall checks. The mass is 22 US
 quarters, 124.7 g at the mint weight, in the outer cup pair at 68.4 mm
 from the axis in sitting 1 (about 84 mN m at horizontal) and in the inner
-pair at 41.6 mm in sitting 2; the notebook takes the pair of the sitting.
+pair at 41.6 mm in sittings 2 and 3; the notebook takes the pair of the
+sitting.
 The printed arm weighs too: the whole arm with the quarters and its three
 screws came to 166 g on a kitchen scale and the coin block with its lid,
 the quarters and the screws to 153 g, so the block and lid are about 28 g
