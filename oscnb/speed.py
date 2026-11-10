@@ -29,6 +29,23 @@ the direction of the drive (rev/s); the signed shaft speed is dir x w. At
 `chain_of`, `motor_of`, `table_of`, `brush_table` and `brush_product` bind
 the constants through the chain: the board's scales, the identification's
 result files.
+
+Behind the estimate sit the filters, the L term's slopes and the valid
+flag, on the same rows and as causal. `first` marks the rows with nothing
+before them (the first row after torque on or after a gap in the rows);
+row 0 is always one, and a filter's state restarts on one.
+    filters      boxcar, one_pole (gain from pole_alpha), median3,
+                 locked_boxcar (its window per row from lock_rows: a whole
+                 number of commutation periods at a causal speed)
+    L term       slope_line (least-squares line over the last n rows),
+                 slope_ends (two rows n apart), slope_pole (one-pole on the
+                 row-to-row difference)
+    valid flag   valid_rows = tap_floor_valid (the on-time reaches the
+                 taps' floor) and holdoff_rows (past the start-up after
+                 torque on and a flip) and not dropout_flag (the current
+                 under a share of its recent mean); hold_last and
+                 one_pole_skip carry the estimate over the rows it leaves
+                 out.
 """
 from dataclasses import dataclass
 
@@ -38,6 +55,8 @@ import numpy as np
 from .scales import RAIL_LINE
 
 ALPHA_CU = 0.0039       # per C, copper's 0.39 %/C (typed, physical)
+LOCK_W_MIN_REV_S = 1e-9     # rev/s, lock_rows reads a slower w_ref as this
+NEVER_ROWS = 1 << 30        # rows, rows_since before the first mark
 
 
 @dataclass(frozen=True)
@@ -375,3 +394,316 @@ def estimate_rows(crest, zero, tap_a, tap_b, duty_ticks, direction, ntc_c,
     else:
         w = solve_steps(u, direction, first, brush, ke, steps, kind)
     return w, u, i_w
+
+
+def _first(first, n):
+    f = (np.zeros(n, np.bool_) if first is None
+         else np.ascontiguousarray(first, dtype=np.bool_).copy())
+    if n:
+        f[0] = True
+    return f
+
+
+def _f8(x):
+    return np.ascontiguousarray(x, dtype=np.float64)
+
+
+@nb.njit(cache=True)
+def _boxcar_var(x, n, first, out):
+    start = 0
+    c = np.empty(len(x) + 1)
+    c[0] = 0.0
+    for k in range(len(x)):
+        c[k + 1] = c[k] + x[k]
+        if first[k]:
+            start = k
+        m = min(n[k], k - start + 1)
+        if m < 1:
+            m = 1
+        out[k] = (c[k + 1] - c[k + 1 - m]) / m
+
+
+def boxcar(x, n, first=None):
+    """The mean of the last n rows (of fewer after a first row). State: the
+    last n rows. DC delay (n - 1) / 2 rows. Per row.
+
+    Not oscnb.position.boxcar: this one's window restarts on a first row
+    (position's has no first rows). As in position's, a NaN row spoils
+    every later output, past a first row too (the sum runs over all rows).
+    """
+    x = _f8(x)
+    out = np.empty(len(x))
+    _boxcar_var(x, np.full(len(x), int(n), np.int64), _first(first, len(x)),
+                out)
+    return out
+
+
+def locked_boxcar(x, n_rows, first=None):
+    """The mean of the last n_rows[k] rows, a window length per row (see
+    lock_rows), of fewer after a first row. State: the last max(n_rows)
+    rows. Per row."""
+    x = _f8(x)
+    out = np.empty(len(x))
+    _boxcar_var(x, np.ascontiguousarray(n_rows, dtype=np.int64),
+                _first(first, len(x)), out)
+    return out
+
+
+def lock_rows(w_ref, fs_hz, events_per_rev, periods, n_min, n_max):
+    """The window in rows that spans `periods` commutation periods at the
+    speed w_ref (rev/s), clipped to [n_min, n_max]; no speed reads n_max.
+    w_ref must be causal (a filtered estimate of the rows before).
+    Stateless, per row."""
+    w = np.maximum(np.abs(np.asarray(w_ref, float)), LOCK_W_MIN_REV_S)
+    n = np.rint(periods * fs_hz / (events_per_rev * w))
+    return np.clip(np.nan_to_num(n, nan=n_max, posinf=n_max), n_min,
+                   n_max).astype(np.int64)
+
+
+@nb.njit(cache=True)
+def _one_pole(x, alpha, first, out):
+    y = 0.0
+    for k in range(len(x)):
+        if first[k]:
+            y = x[k]
+        else:
+            y += alpha * (x[k] - y)
+        out[k] = y
+
+
+def pole_alpha(tau_rows):
+    """The one-pole's gain for a time constant in rows."""
+    return 1.0 - np.exp(-1.0 / float(tau_rows))
+
+
+def one_pole(x, alpha, first=None):
+    """y += alpha (x - y), seeded with x on a first row. State: y. DC delay
+    (1 - alpha) / alpha rows. Per row.
+
+    Not oscnb.position.one_pole: this one takes the gain (position's takes
+    the delay, a = 1 / (1 + delay)) and reseeds on a first row, so a NaN
+    row spoils the output only until the next first row (position's
+    stays NaN to the end)."""
+    x = _f8(x)
+    out = np.empty(len(x))
+    _one_pole(x, float(alpha), _first(first, len(x)), out)
+    return out
+
+
+@nb.njit(cache=True)
+def _median3(x, first, out):
+    start = 0
+    for k in range(len(x)):
+        if first[k]:
+            start = k
+        if k - start < 2:
+            out[k] = x[k]
+        else:
+            a, b_, c = x[k - 2], x[k - 1], x[k]
+            out[k] = max(min(a, b_), min(max(a, b_), c))
+
+
+def median3(x, first=None):
+    """The median of the row and the two before it (the row itself on a
+    run's first two rows). State: the two rows before. Delay 1 row on a
+    ramp. Per row.
+
+    Not oscnb.position.median3: this one restarts on a first row, and a NaN
+    among the three rows may read as a finite one (the min / max network;
+    position's np.median reads NaN)."""
+    x = _f8(x)
+    out = np.empty(len(x))
+    _median3(x, _first(first, len(x)), out)
+    return out
+
+
+@nb.njit(cache=True)
+def _slope_line(x, n, fs, first, out):
+    start = 0
+    for k in range(len(x)):
+        if first[k]:
+            start = k
+        m = min(n, k - start + 1)
+        if m < 2:
+            out[k] = 0.0
+            continue
+        mid = (m - 1) / 2.0
+        acc = 0.0
+        for j in range(m):
+            acc += (j - mid) * x[k - m + 1 + j]
+        out[k] = acc / (m * (m * m - 1.0) / 12.0) * fs
+
+
+def slope_line(i_w, n, fs_hz, first=None):
+    """di/dt (A/s): the least-squares line over the last n rows (fewer
+    after a first row, zero on it). It reads the slope (n - 1) / 2 rows
+    ago. State: the last n rows. Per row."""
+    x = _f8(i_w)
+    out = np.empty(len(x))
+    _slope_line(x, int(n), float(fs_hz), _first(first, len(x)), out)
+    return out
+
+
+def slope_ends(i_w, n, fs_hz, first=None):
+    """di/dt (A/s): the row less the row n before, over n rows (fewer after
+    a first row, zero on it); n = 1 is backward_didt. State: the last n
+    rows. Per row."""
+    return trailing_didt(i_w, float(fs_hz), int(n), _first(first, len(i_w)))
+
+
+@nb.njit(cache=True)
+def _slope_pole(x, alpha, fs, first, out):
+    y = 0.0
+    for k in range(len(x)):
+        if first[k]:
+            y = 0.0
+        else:
+            y += alpha * ((x[k] - x[k - 1]) * fs - y)
+        out[k] = y
+
+
+def slope_pole(i_w, alpha, fs_hz, first=None):
+    """di/dt (A/s): a one-pole (gain alpha) on the row-to-row difference,
+    zero on a first row. State: the previous row and y. Per row."""
+    x = _f8(i_w)
+    out = np.empty(len(x))
+    _slope_pole(x, float(alpha), float(fs_hz), _first(first, len(x)), out)
+    return out
+
+
+def tap_floor_valid(duty_ticks, floor_ticks):
+    """The taps' crest sample is settled: the on-time is at least the floor
+    (timer ticks). Stateless, per row."""
+    return np.abs(np.asarray(duty_ticks, float)) >= floor_ticks
+
+
+@nb.njit(cache=True)
+def _dropout(x, frac, alpha, floor_a, first, hold, max_rows, out):
+    ref = 0.0
+    since = 0
+    run = 0
+    for k in range(len(x)):
+        if first[k]:
+            ref = x[k]
+            since = 0
+            run = 0
+            out[k] = False
+            continue
+        since += 1
+        hit = since > hold and ref > floor_a and x[k] < frac * ref
+        if hit:
+            run += 1
+            if max_rows > 0 and run > max_rows:
+                hit = False
+                ref = x[k]
+                run = 0
+        else:
+            run = 0
+            ref += alpha * (x[k] - ref)
+        out[k] = hit
+
+
+def dropout_flag(i_over_zero, frac, alpha, floor_a, first=None, hold_rows=0,
+                 max_rows=0):
+    """A dropout row: the row's current under `frac` of its recent mean.
+
+    The recent mean is a one-pole (gain alpha) over the rows not flagged,
+    so a dropout does not pull its own reference down. No row is flagged
+    while the reference is under floor_a (a few sd of the current's own
+    noise: a ratio means nothing at no current) or in the first hold_rows
+    rows of a run (the current is still building). A dropout is short:
+    after max_rows flagged rows in a row (0 = no limit) the current's level
+    is taken to have moved (the duty fell, the drive flipped), the
+    reference restarts at the row and the flag clears. State: the
+    reference, the rows since the run's first and the flagged rows running.
+    Per row."""
+    x = _f8(i_over_zero)
+    out = np.zeros(len(x), np.bool_)
+    _dropout(x, float(frac), float(alpha), float(floor_a),
+             _first(first, len(x)), int(hold_rows), int(max_rows), out)
+    return out
+
+
+@nb.njit(cache=True)
+def _since(mark, out):
+    c = NEVER_ROWS
+    for k in range(len(mark)):
+        c = 0 if mark[k] else min(c + 1, NEVER_ROWS)
+        out[k] = c
+
+
+def rows_since(mark):
+    """Rows since the last marked row (0 on it, NEVER_ROWS before any).
+    State: the count. Per row."""
+    out = np.empty(len(mark), np.int64)
+    _since(np.ascontiguousarray(mark, dtype=np.bool_), out)
+    return out
+
+
+def holdoff_rows(first, flip, n_first, n_flip):
+    """True where the estimate is past its start-up: n_first rows after
+    torque on (a first row), n_flip after the drive's direction flips (None
+    or n_flip 0: no flip hold-off). State: the rows since each. Per row."""
+    f = _first(first, len(first))
+    ok = rows_since(f) >= n_first
+    if flip is not None and n_flip:
+        ok &= rows_since(np.asarray(flip, bool)) >= n_flip
+    return ok
+
+
+@nb.njit(cache=True)
+def _hold_last(x, valid, first, out):
+    last = np.nan
+    for k in range(len(x)):
+        if first[k]:
+            last = np.nan
+        if valid[k]:
+            last = x[k]
+        out[k] = last
+
+
+def hold_last(x, valid, first=None):
+    """x on a valid row, else the last valid row's value (NaN before the
+    first one of a run). State: the last valid value. Per row."""
+    x = _f8(x)
+    out = np.empty(len(x))
+    _hold_last(x, np.ascontiguousarray(valid, dtype=np.bool_),
+               _first(first, len(x)), out)
+    return out
+
+
+@nb.njit(cache=True)
+def _one_pole_skip(x, alpha, valid, first, out):
+    y = np.nan
+    for k in range(len(x)):
+        if first[k]:
+            y = np.nan
+        if valid[k]:
+            if np.isnan(y):
+                y = x[k]
+            else:
+                y += alpha * (x[k] - y)
+        out[k] = y
+
+
+def one_pole_skip(x, alpha, valid, first=None):
+    """A one-pole (gain alpha) that an invalid row does not move, seeded
+    with a run's first valid row (NaN before it). State: y. Per row."""
+    x = _f8(x)
+    out = np.empty(len(x))
+    _one_pole_skip(x, float(alpha), np.ascontiguousarray(valid,
+                                                         dtype=np.bool_),
+                   _first(first, len(x)), out)
+    return out
+
+
+def valid_rows(duty_ticks, i_over_zero, first, flip, floor_ticks, n_first,
+               n_flip, frac, alpha, floor_a, hold_rows=0, max_rows=0):
+    """(valid, tap ok, past start-up, dropout) per row: the estimate's
+    valid flag from the servo's own signals, tap_floor_valid and
+    holdoff_rows and not dropout_flag. State: theirs. Per row."""
+    tap_ok = tap_floor_valid(duty_ticks, floor_ticks)
+    started = holdoff_rows(first, flip, n_first, n_flip)
+    drop = dropout_flag(i_over_zero, frac, alpha, floor_a, first, hold_rows,
+                        max_rows)
+    return tap_ok & started & ~drop, tap_ok, started, drop

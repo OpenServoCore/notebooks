@@ -227,3 +227,153 @@ def test_binding_reads_the_result_keys_and_the_scales():
         pytest.approx([10e-3]))
     assert astuple(sp.brush_product(comp)) == pytest.approx(
         (-35e-3, 14e-3, 1.96e-3))
+
+
+EVENTS_PER_REV = 6
+
+
+def test_a_boxcar_and_a_one_pole_delay_a_ramp_by_their_dc_delay():
+    k = np.arange(4000.0)
+    for n in (1, 8, 16, 100):
+        y = sp.boxcar(k, n)
+        assert y[n - 1:] == pytest.approx(k[n - 1:] - (n - 1) / 2, abs=1e-9)
+    for tau in (4.0, 16.0, 100.0):
+        a = sp.pole_alpha(tau)
+        y = sp.one_pole(k, a)
+        assert y[0] == 0.0
+        assert k[-200:] - y[-200:] == pytest.approx((1 - a) / a, abs=1e-9)
+
+
+def ripple(period_rows):
+    """5 + a sine of the given period per row, phase continuous."""
+    phase = np.cumsum(2 * np.pi / np.asarray(period_rows, float))
+    return 5.0 + np.sin(phase)
+
+
+def test_a_boxcar_of_one_commutation_period_nulls_its_ripple():
+    period = 40
+    x = ripple(np.full(2000, period))
+    assert np.abs(sp.boxcar(x, period)[period:] - 5.0).max() < 1e-12
+    assert np.abs(sp.boxcar(x, period + 7)[period:] - 5.0).max() > 1e-2
+
+
+def test_the_locked_window_follows_the_commutation_period():
+    periods = np.r_[np.full(1000, 40), np.full(1000, 20)]
+    w = FS / (EVENTS_PER_REV * periods)
+    n = sp.lock_rows(w, FS, EVENTS_PER_REV, 1, 4, 800)
+    assert np.array_equal(n, periods)
+    assert np.array_equal(sp.lock_rows(w, FS, EVENTS_PER_REV, 2, 4, 800),
+                          2 * periods)
+    y = sp.locked_boxcar(ripple(periods), n)
+    assert np.abs(y[40:1000] - 5.0).max() < 1e-12
+    assert np.abs(y[1020:] - 5.0).max() < 1e-12
+    edge = sp.lock_rows(np.array([0.0, np.nan, 1.0, -1.0, 1e6, -1e6]), FS,
+                        EVENTS_PER_REV, 1, 4, 800)
+    assert list(edge) == [800, 800, 800, 800, 4, 4]
+
+
+def test_slope_line_recovers_a_ramp_restarts_and_looks_at_no_later_row():
+    k = np.arange(400)
+    i_w = 0.1 + 50.0 * k / FS           # 50 A/s
+    i_w[200:] += 0.3                    # a jump the restart must not see
+    first = np.zeros(len(k), bool)
+    first[200] = True
+    for n in (2, 20, 100):
+        out = sp.slope_line(i_w, n, FS, first)
+        assert out[0] == 0.0 and out[200] == 0.0
+        assert np.delete(out, [0, 200]) == pytest.approx(50.0, rel=1e-9)
+        for m in (5, 100, 210, 399):
+            later = i_w.copy()
+            later[m:] += np.random.default_rng(m).normal(0, 1, len(k) - m)
+            assert np.array_equal(sp.slope_line(later, n, FS, first)[:m],
+                                  out[:m])
+
+
+def test_the_tap_floor_is_false_under_its_ticks_and_true_at_them():
+    duty = np.array([0.0, 83.0, -83.0, 84.0, -84.0, 85.0, ARR, -ARR])
+    assert list(sp.tap_floor_valid(duty, 84)) == [False, False, False, True,
+                                                  True, True, True, True]
+
+
+DROP = dict(frac=0.25, alpha=sp.pole_alpha(32), floor_a=5e-3, hold_rows=39,
+            max_rows=8)
+
+
+def test_dropout_flags_a_single_low_row_under_a_steady_current():
+    i_w = np.full(1000, 0.2)
+    i_w[[20, 500]] = 0.02               # row 20 is inside the hold
+    fl = sp.dropout_flag(i_w, **DROP)
+    assert list(np.flatnonzero(fl)) == [500]
+
+
+def test_dropout_does_not_flag_while_the_reference_is_under_its_floor():
+    i_w = np.full(1000, 4e-3)
+    i_w[500] = 0.0
+    assert not sp.dropout_flag(i_w, **DROP).any()
+
+
+def test_dropout_does_not_latch_after_a_step_down_of_the_current():
+    i_w = np.r_[np.full(600, 0.2), np.full(600, 0.02)]
+    fl = sp.dropout_flag(i_w, **DROP)
+    assert fl[600:608].all()
+    assert not fl[:600].any() and not fl[608:].any()
+    latched = sp.dropout_flag(i_w, **{**DROP, "max_rows": 0})
+    assert latched[600:].all()
+
+
+def test_holdoff_marks_n_rows_after_torque_on_and_after_a_flip():
+    first = np.zeros(500, bool)
+    first[300] = True
+    flip = np.zeros(500, bool)
+    flip[150] = True
+    ok = sp.holdoff_rows(first, flip, 16, 10)
+    held = np.r_[0:16, 150:160, 300:316]
+    assert list(np.flatnonzero(~ok)) == list(held)
+    assert sp.holdoff_rows(first, flip, 16, 0)[150:160].all()
+
+
+def test_hold_last_holds_the_last_valid_value():
+    x = np.arange(10.0)
+    valid = np.array([0, 1, 1, 0, 0, 1, 0, 1, 1, 0], bool)
+    first = np.zeros(10, bool)
+    first[6] = True
+    out = sp.hold_last(x, valid, first)
+    assert np.isnan(out[[0, 6]]).all()
+    assert list(np.delete(out, [0, 6])) == [1, 2, 2, 2, 5, 7, 8, 8]
+
+
+def test_one_pole_skip_does_not_move_on_a_flagged_row():
+    rng = np.random.default_rng(5)
+    x = rng.normal(100, 5, 2000)
+    valid = rng.random(2000) > 0.1
+    valid[:2] = False, True
+    a = sp.pole_alpha(16)
+    out = sp.one_pole_skip(x, a, valid)
+    assert np.isnan(out[0]) and out[1] == x[1]
+    k = np.flatnonzero(~valid[1:]) + 1
+    k = k[k > 1]
+    assert np.array_equal(out[k], out[k - 1])
+    assert np.array_equal(out[valid], sp.one_pole(x[valid], a))
+
+
+def test_valid_rows_is_the_and_of_the_three_rules():
+    rng = np.random.default_rng(9)
+    n = 3000
+    duty = rng.integers(-ARR, ARR + 1, n).astype(float)
+    i_w = np.full(n, 0.2)
+    i_w[rng.random(n) < 0.01] = 0.01
+    first = rng.random(n) < 0.003
+    flip = (rng.random(n) < 0.005) & ~first
+    args = (84, 16, 16, DROP["frac"], DROP["alpha"], DROP["floor_a"],
+            DROP["hold_rows"], DROP["max_rows"])
+    valid, tap_ok, started, drop = sp.valid_rows(duty, i_w, first, flip,
+                                                 *args)
+    assert np.array_equal(tap_ok, sp.tap_floor_valid(duty, 84))
+    assert np.array_equal(started, sp.holdoff_rows(first, flip, 16, 16))
+    assert np.array_equal(drop, sp.dropout_flag(
+        i_w, DROP["frac"], DROP["alpha"], DROP["floor_a"], first,
+        DROP["hold_rows"], DROP["max_rows"]))
+    assert np.array_equal(valid, tap_ok & started & ~drop)
+    assert tap_ok.any() and started.any() and drop.any()
+    assert (~valid).sum() > max((~tap_ok).sum(), (~started).sum(),
+                                drop.sum())
