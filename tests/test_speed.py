@@ -377,3 +377,71 @@ def test_valid_rows_is_the_and_of_the_three_rules():
     assert tap_ok.any() and started.any() and drop.any()
     assert (~valid).sum() > max((~tap_ok).sum(), (~started).sum(),
                                 drop.sum())
+
+
+RULE = sp.ValidRule(floor_ticks=84, holdoff_rows=5, dropout_frac=0.25,
+                    dropout_tau_rows=32, dropout_floor_a=5e-3,
+                    dropout_hold_rows=3, dropout_max_rows=8)
+
+
+def emf_store():
+    """Rows 0..9 off, 10..59 drive +, 60..99 drive - (a flip), 100..109
+    off, 110..149 drive +, a gap no row covers before row 130; on-time 50
+    ticks (under the floor) on rows 30..34."""
+    n = 150
+    d = np.zeros(n, np.int64)
+    d[10:60], d[60:100], d[110:] = 1, -1, 1
+    h = np.where(d != 0, 300.0, 0.0)
+    h[30:35] = 50.0
+    w = np.where(d != 0, 100.0, 0.0)
+    crest, ta, tb = rows_of(w, 0.1, np.maximum(h, 1.0), np.where(d, d, 1),
+                            30.0, TABLE)
+    gap = np.zeros(n, np.int64)
+    gap[130] = 400
+    arrays = {"duty": h.astype(np.int16), "pre_gap": gap, "raw": crest,
+              "va": ta, "vb": tb}
+    return arrays, d.astype(np.int8)
+
+
+def test_emf_run_marks_first_and_flip_rows_and_leaves_the_rest_nan():
+    arrays, sign = emf_store()
+    g0, g1 = 5, 150
+    zero_rows = np.full(200, ZERO)
+    out = sp.emf_run(arrays, g0, g1, zero_rows, sign, 30.0, CHAIN, MOTOR,
+                     TABLE, PRODUCT, RULE)
+    assert all(len(v) == g1 - g0 for v in out.values())
+    off = arrays["duty"][g0:g1] == 0
+    for name in sp.EMF_FLOATS:
+        assert np.isnan(out[name][off]).all()
+        assert np.isfinite(out[name][~off]).all()
+    for name in sp.EMF_FLAGS:
+        assert not out[name][off].any()
+    assert list(np.flatnonzero(out["first"]) + g0) == [10, 110, 130]
+    started = out["started"]
+    for row in (10, 60, 110, 130):    # a first row and the flip
+        k = row - g0
+        assert not started[k:k + RULE.holdoff_rows].any()
+        assert started[k + RULE.holdoff_rows]
+    assert not out["tap_ok"][30 - g0:35 - g0].any()
+    assert not out["valid"][30 - g0:35 - g0].any()
+    # the driven rows are estimate_rows' over them, first rows as marked
+    drv = ~off
+    d = sign[g0:g1][drv].astype(np.int64)
+    args = (arrays["raw"][g0:g1][drv], np.full(drv.sum(), ZERO),
+            arrays["va"][g0:g1][drv], arrays["vb"][g0:g1][drv],
+            arrays["duty"][g0:g1][drv].astype(float), d,
+            np.full(drv.sum(), 30.0), CHAIN, MOTOR)
+    first = out["first"][drv]
+    wt, _, _ = sp.estimate_rows(*args, TABLE, first=first,
+                                steps=sp.EMF_TABLE_STEPS)
+    wp, _, _ = sp.estimate_rows(*args, PRODUCT, first=first)
+    np.testing.assert_array_equal(out["w_tab"][drv], wt)
+    np.testing.assert_array_equal(out["w_prod"][drv], wp)
+
+
+def test_emf_run_off_the_drive_is_all_nan():
+    arrays, sign = emf_store()
+    out = sp.emf_run(arrays, 100, 110, np.full(150, ZERO), sign, 30.0,
+                     CHAIN, MOTOR, TABLE, PRODUCT, RULE)
+    assert all(np.isnan(out[k]).all() for k in sp.EMF_FLOATS)
+    assert not any(out[k].any() for k in sp.EMF_FLAGS)

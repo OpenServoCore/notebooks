@@ -46,6 +46,10 @@ row 0 is always one, and a filter's state restarts on one.
                  under a share of its recent mean); hold_last and
                  one_pole_skip carry the estimate over the rows it leaves
                  out.
+
+`emf_run` is the whole path over a run of a row store's rows as a
+controller meets them: the tracked zero, the duty's sign, the row's own
+V_on, both brush forms and the valid rule (`ValidRule`).
 """
 from dataclasses import dataclass
 
@@ -57,6 +61,7 @@ from .scales import RAIL_LINE
 ALPHA_CU = 0.0039       # per C, copper's 0.39 %/C (typed, physical)
 LOCK_W_MIN_REV_S = 1e-9     # rev/s, lock_rows reads a slower w_ref as this
 NEVER_ROWS = 1 << 30        # rows, rows_since before the first mark
+EMF_TABLE_STEPS = 2         # newton steps per row of emf_run's table form
 
 
 @dataclass(frozen=True)
@@ -707,3 +712,70 @@ def valid_rows(duty_ticks, i_over_zero, first, flip, floor_ticks, n_first,
     drop = dropout_flag(i_over_zero, frac, alpha, floor_a, first, hold_rows,
                         max_rows)
     return tap_ok & started & ~drop, tap_ok, started, drop
+
+
+@dataclass(frozen=True)
+class ValidRule:
+    """valid_rows' constants, as emf_run applies them."""
+    floor_ticks: int            # timer ticks, the on-time the taps need
+    holdoff_rows: int           # rows after a first row and after a flip
+    dropout_frac: float         # of the recent mean, a dropout's current
+    dropout_tau_rows: float     # rows, the recent mean's one-pole
+    dropout_floor_a: float      # A, no dropout under this recent mean
+    dropout_hold_rows: int      # rows after a first row, never a dropout
+    dropout_max_rows: int       # rows, a dropout's longest (0: no limit)
+
+
+EMF_FLOATS = ("w_tab", "w_prod", "i_w", "u", "v_on")
+EMF_FLAGS = ("valid", "tap_ok", "started", "drop", "first")
+
+
+def emf_run(arrays, g0, g1, zero, sign, ntc_c, chain, motor, table, product,
+            rule):
+    """The back-EMF speed over the global rows g0..g1 of a row store as a
+    controller meets them: rows in time order, from a row with nothing the
+    estimate needs before it (a sweep's first, say).
+
+    arrays: a RowStore's arrays with duty, pre_gap, raw, va and vb; zero
+    the awake zero each row may use (counts, oscnb.zero.zero_rows) and
+    sign the duty's sign (the store's duty_sign), both per global row;
+    ntc_c the board NTC (C); table and product the brush term's two forms;
+    rule a ValidRule. Only driven rows are estimated: a first row is the
+    first driven row, one after an undriven row and one after a gap no
+    row covers; a flip is the duty's sign changing on any other.
+
+    Returns per row of the run: w_tab (the table form, EMF_TABLE_STEPS
+    newton steps seeded from the row before) and w_prod (the product form)
+    in rev/s in the drive's direction, i_w (A), u (V) and v_on (V), all NaN
+    off the drive; the flags valid, tap_ok, started, drop and first, False
+    off the drive. State: estimate_rows' and valid_rows'. Per row."""
+    n = g1 - g0
+    duty = arrays["duty"][g0:g1].astype(float)
+    gap = arrays["pre_gap"][g0:g1]
+    drv = np.flatnonzero(duty != 0)
+    out = {name: np.full(n, np.nan) for name in EMF_FLOATS}
+    out.update({name: np.zeros(n, bool) for name in EMF_FLAGS})
+    if len(drv) == 0:
+        return out
+    d = np.asarray(sign[g0:g1])[drv].astype(np.int64)
+    first = np.r_[True, (np.diff(drv) > 1) | (gap[drv][1:] > 0)]
+    flip = np.r_[False, d[1:] != d[:-1]] & ~first
+    h = np.abs(duty[drv])
+    tap_a = arrays["va"][g0:g1][drv].astype(float)
+    tap_b = arrays["vb"][g0:g1][drv].astype(float)
+    args = (arrays["raw"][g0:g1][drv].astype(float),
+            np.asarray(zero[g0:g1])[drv], tap_a, tap_b, h, d,
+            np.full(len(drv), ntc_c), chain, motor)
+    wt, u, i_w = estimate_rows(*args, table, first=first,
+                               steps=EMF_TABLE_STEPS, kind="newton")
+    wp, _, _ = estimate_rows(*args, product, first=first)
+    flags = valid_rows(h, i_w, first, flip, rule.floor_ticks,
+                       rule.holdoff_rows, rule.holdoff_rows,
+                       rule.dropout_frac, pole_alpha(rule.dropout_tau_rows),
+                       rule.dropout_floor_a, rule.dropout_hold_rows,
+                       rule.dropout_max_rows)
+    v_on = tap_volts(tap_a, tap_b, d, chain)
+    for name, v in zip(EMF_FLOATS + EMF_FLAGS,
+                       (wt, wp, i_w, u, v_on) + flags + (first,)):
+        out[name][drv] = v
+    return out

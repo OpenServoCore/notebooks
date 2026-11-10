@@ -179,3 +179,16 @@ def test_the_drive_feed_constant_leaves_the_zero_at_the_crest_column():
     assert abs(out[-1] - 1203) < 1e-3
     out, _, _ = zero.replay(zero.Rule(drive_off=3.0), st)
     assert abs(out[-1] - 1200) < 1e-3
+
+
+def test_the_zero_a_row_may_use_is_the_state_after_the_row_before():
+    b, d, t = rows((ASLEEP, 0, 1200, 3000), (COAST, 0, 1260, 3000))
+    st = store_of(b, d, t)
+    z, _, _ = zero.replay(zero.Rule(), st)
+    use = zero.zero_rows(zero.Rule(), st)
+    assert use.dtype == np.float64 and len(use) == len(z)
+    assert use[0] == z[0]
+    np.testing.assert_array_equal(use[1:], z[:-1])
+    # the first fed coast row reads the zero before its own feed
+    fed = 3000 + SETTLE
+    assert use[fed] == z[fed - 1] and z[fed] > z[fed - 1]
