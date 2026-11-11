@@ -433,7 +433,7 @@ fn rest_before_seek<S: Servo>(s: &mut S, lease: &mut Lease) -> Result<()> {
     )
 }
 
-fn check_stop() -> Result<()> {
+pub(crate) fn check_stop() -> Result<()> {
     if STOP.load(std::sync::atomic::Ordering::SeqCst) {
         bail!("interrupted");
     }
@@ -636,7 +636,7 @@ fn hold<S: Servo>(s: &mut S, lease: &mut Lease, ms: u32) -> Result<()> {
 }
 
 /// The host clock, unix seconds: segments.csv's anchor.
-fn unix_s() -> f64 {
+pub(crate) fn unix_s() -> f64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0.0, |d| d.as_secs_f64())
@@ -665,29 +665,55 @@ pub(crate) fn write_times(w: &mut impl Write, g: &Segment) -> Result<()> {
 pub(crate) const CSV_HEADER: &str = "seg,cmd_duty_q15,dir,tick,window_valid,pos,current,current_trough,duty_counts,vdiff,vbus,current_raw,vmotor_a,vmotor_b,vbus_raw,ntc_raw,vref_raw,pos_lin";
 
 pub(crate) fn write_rows(w: &mut impl Write, s: &Segment) -> Result<()> {
-    let opt = |v: Option<i32>| v.map(|v| v.to_string()).unwrap_or_default();
     let (seg, cmd_duty_q15, dir) = (s.seg, s.cmd_duty_q15, s.dir);
     for f in &s.frames {
-        writeln!(
-            w,
-            "{seg},{cmd_duty_q15},{dir},{},{},{},{},{},{},{},{},{},{},{},{},{},{},",
-            f.tick,
-            f.window_valid as u8,
-            opt(f.pos.map(|v| v as i32)),
-            opt(f.current.map(|v| v as i32)),
-            opt(f.current_trough.map(|v| v as i32)),
-            opt(f.duty_counts.map(|v| v as i32)),
-            opt(f.vdiff.map(|v| v as i32)),
-            opt(f.vbus.map(|v| v as i32)),
-            opt(f.current_raw.map(|v| v as i32)),
-            opt(f.vmotor_a.map(|v| v as i32)),
-            opt(f.vmotor_b.map(|v| v as i32)),
-            opt(f.vbus_raw.map(|v| v as i32)),
-            opt(f.ntc_raw.map(|v| v as i32)),
-            opt(f.vref_raw.map(|v| v as i32)),
-        )?;
+        writeln!(w, "{seg},{cmd_duty_q15},{dir},{},", RowFields(f))?;
     }
     Ok(())
+}
+
+/// A row's fields as the CSVs write them, `tick` to `vref_raw` in
+/// [`CSV_HEADER`]'s order; a field the row does not carry is empty.
+pub(crate) struct RowFields<'a>(pub(crate) &'a TelFrame);
+
+impl std::fmt::Display for RowFields<'_> {
+    fn fmt(&self, w: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let f = self.0;
+        write!(w, "{},{}", f.tick, f.window_valid as u8)?;
+        let u = |v: Option<u16>| v.map(i32::from);
+        let i = |v: Option<i16>| v.map(i32::from);
+        for v in [
+            u(f.pos),
+            i(f.current),
+            u(f.current_trough),
+            i(f.duty_counts),
+            i(f.vdiff),
+            u(f.vbus),
+            u(f.current_raw),
+            u(f.vmotor_a),
+            u(f.vmotor_b),
+            u(f.vbus_raw),
+            u(f.ntc_raw),
+            u(f.vref_raw),
+        ] {
+            match v {
+                Some(v) => write!(w, ",{v}")?,
+                None => w.write_str(",")?,
+            }
+        }
+        Ok(())
+    }
+}
+
+/// A row's chunks as meta.json records them, `[addr, len]` pairs.
+pub(crate) fn chunks_json(chunks: &Chunks) -> serde_json::Value {
+    chunks
+        .0
+        .iter()
+        .filter(|c| c.len != 0)
+        .map(|c| [c.addr, c.len])
+        .collect::<Vec<_>>()
+        .into()
 }
 
 /// The run's constants, written as meta.json before the first burst. The
@@ -717,13 +743,7 @@ pub(crate) fn meta<P: Pipe>(
         "stall": cfg.stall,
         "static_load": cfg.static_load,
         "guard": [cfg.guard.0, cfg.guard.1],
-        "tel_chunks": cfg
-            .tel_chunks
-            .0
-            .iter()
-            .filter(|c| c.len != 0)
-            .map(|c| [c.addr, c.len])
-            .collect::<Vec<_>>(),
+        "tel_chunks": chunks_json(&cfg.tel_chunks),
         "post_rung_brake": true,
         "drive": drive,
     });
