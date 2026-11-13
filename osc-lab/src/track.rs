@@ -342,6 +342,7 @@ pub(crate) struct Poll {
     pub(crate) t_winding_cc: i16,
     pub(crate) current_bias_counts: u16,
     pub(crate) limit_flags: u8,
+    pub(crate) omega_hat_src: u8,
 }
 
 const POLL_BASE: u16 = telemetry::FAULT_FLAGS.addr;
@@ -370,6 +371,7 @@ impl Poll {
             t_winding_cc: at(t::T_WINDING_CC)? as u16 as i16,
             current_bias_counts: at(t::CURRENT_BIAS_COUNTS)? as u16,
             limit_flags: at(t::LIMIT_FLAGS)? as u8,
+            omega_hat_src: at(t::OMEGA_HAT_SRC)? as u8,
         })
     }
 
@@ -1294,7 +1296,7 @@ pub(crate) fn write_rows(w: &mut impl Write, g: &Seg) -> Result<()> {
 
 /// segments.csv: one row a schedule item, the poll before it last.
 /// `tick0` is the servo's `sample_tick` of the first row, low 16 bits.
-pub(crate) const SEGMENTS_HEADER: &str = "seg,kind,field,value,ms,tick0,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags";
+pub(crate) const SEGMENTS_HEADER: &str = "seg,kind,field,value,ms,tick0,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,i_tick_counts,current_bias_counts,fault_code,omega_hat_src";
 
 pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
     let (field, value, ms) = match &g.item {
@@ -1305,7 +1307,7 @@ pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
     let p = &g.poll;
     writeln!(
         w,
-        "{},{},{field},{value},{ms},{},{},{},{:.3},{:.3},{},{},{},{},{},{},{},{}",
+        "{},{},{field},{value},{ms},{},{},{},{:.3},{:.3},{},{},{},{},{},{},{},{},{},{},{},{},{}",
         g.idx,
         g.item.kind(),
         g.stats.stamp0.map(|t| t.to_string()).unwrap_or_default(),
@@ -1321,6 +1323,11 @@ pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
         p.i_lim_counts,
         p.limit_flags,
         p.fault_flags,
+        p.pos,
+        p.i_tick_counts,
+        p.current_bias_counts,
+        p.fault_code,
+        p.omega_hat_src,
     )?;
     Ok(())
 }
@@ -2394,6 +2401,10 @@ mod tests {
     fn the_files_carry_every_row_item_and_ending() {
         let out = std::env::temp_dir().join(format!("osc-lab-track-{}", std::process::id()));
         let mut r = rig_at(2029, 0);
+        r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.mode.omega_hat_src = 1;
+            t.telemetry.refs.current_bias_counts = 2047;
+        });
         let a = parse(&[
             "--mode",
             "position",
@@ -2414,9 +2425,10 @@ mod tests {
         assert_eq!(segs[0], SEGMENTS_HEADER);
         assert_eq!(segs.len(), 4);
         let cols: Vec<&str> = segs[1].split(',').collect();
-        assert_eq!(cols.len(), 18);
+        assert_eq!(cols.len(), 23);
         assert_eq!(cols[..5], ["0", "goal", "", "2100", "20"]);
         assert_eq!((cols[6], cols[7]), ("400", "0"));
+        assert_eq!(cols[18..], ["2029", "0", "2047", "0", "1"]);
         assert!(segs[2].starts_with("1,rest,,,100,,0,0,"));
         let meta: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(out.join("meta.json")).unwrap()).unwrap();

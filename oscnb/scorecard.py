@@ -64,6 +64,8 @@ HOLD_HEAD_MS = 500        # the head of a hold that starts at torque-on, left to
 TAIL_DRIVEN_SHARE = 0.02  # a hunting tail: above the share a single noise wake leaves
 FOLLOW_TAIL = 2 / 3       # the share of a ramp, from its end, a follow score reads
 RAIL_TOL_V = 0.3          # the rail against the servo's rated voltage before a run
+REPORT_POT_MS = 50        # the pot a position report is read against, its span the quiet gate
+Q16 = 1 << 16
 
 # Other people's measurements of stock smart servos (STS3215, LX-16A),
 # shown beside the ladder for scale; never a target or a result here.
@@ -84,7 +86,7 @@ UNITS = {
     "hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
     "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "enable_kick_deg": "deg",
-    "enable_drive_ms": "ms",
+    "enable_drive_ms": "ms", "speed_report_error_deg_s": "deg/s", "position_report_error_deg": "deg",
 }
 
 
@@ -141,7 +143,8 @@ def load(folder):
     Under a LIVE table `pos` is the raw pot read through the rung's table,
     the raw kept as `pos_raw`. Rows gain `t` (s from the first row),
     `pos_f` (the median pot) and `i_ma` (the shunt's read current, NaN
-    where the drive window was not read)."""
+    where the drive window was not read). `polls` is segments.csv by
+    item, each line the poll taken before its item."""
     folder = Path(folder)
     meta = json.loads((folder / "meta.json").read_text())
     plan = json.loads((folder / "plan.json").read_text())
@@ -164,8 +167,8 @@ def load(folder):
     if table is not None:
         rows["pos_raw"] = rows["pos"]
         rows["pos"] = postable.interp_q4(rows["pos_raw"].to_numpy(), table.points) / postable.GRID
-    segs = pd.read_csv(folder / "segments.csv")
-    segs = segs[segs["rows"] > 0]
+    polls = pd.read_csv(folder / "segments.csv")
+    segs = polls[polls["rows"] > 0]
     last = rows.groupby("seg")["tick"].max().reindex(segs["seg"]).to_numpy()
     start = dict(zip(segs["seg"], unwrap_ticks(segs["tick0"].to_numpy(), last)))
     tick_hz = meta["tick_hz"]
@@ -175,7 +178,7 @@ def load(folder):
     read = rows["window_valid"] == 1
     rows["i_ma"] = np.where(read, (rows["current_raw"] - current_zero(rows)) * board.a_per_count * 1e3, np.nan)
     return {"rows": rows, "plan": plan, "meta": meta, "cpd": plan["counts_per_deg"],
-            "tick_hz": tick_hz, "folder": folder}
+            "tick_hz": tick_hz, "folder": folder, "polls": polls.set_index("seg"), "table": table}
 
 
 def plan_segs(cap, test):
@@ -184,6 +187,12 @@ def plan_segs(cap, test):
 
 def seg_rows(cap, k):
     return cap["rows"][cap["rows"]["seg"] == k]
+
+
+def polls_of(cap, *cols):
+    """The capture's polls, None when segments.csv lacks one of `cols`."""
+    p = cap["polls"]
+    return None if any(c not in p for c in cols) else p
 
 
 # --- plain numbers ---
@@ -383,6 +392,28 @@ def enable_drive_ms(cap, test):
     return drive_end_s(g, cap["tick_hz"]) * 1000
 
 
+def position_report_error_deg(cap):
+    """Over the polls of the steps capture that close a goal item (a poll
+    is recorded on the next item's line): the reported position less the
+    mean median pot over the last REPORT_POT_MS of the item it closes,
+    where that pot spans no more than the capture's deadband; the worst
+    |error|. NaN under a position table: the report is then in linearized
+    counts, not raw pot counts."""
+    p = polls_of(cap, "theta_hat_q16")
+    band = cap["meta"].get("config", {}).get("pos_deadband_counts")
+    if p is None or band is None or cap["table"] is not None:
+        return np.nan
+    errs = []
+    for s in goal_segs(cap):
+        g = seg_rows(cap, s["seg"])
+        if s["seg"] + 1 not in p.index or g.empty:
+            continue
+        pot = tail(g, REPORT_POT_MS)["pos_f"]
+        if pot.max() - pot.min() <= band:
+            errs.append(p.loc[s["seg"] + 1, "theta_hat_q16"] / Q16 - pot.mean())
+    return float(np.max(np.abs(errs))) / cap["cpd"] if errs else np.nan
+
+
 # --- the hold capture ---
 
 def hold_scores(cap):
@@ -420,12 +451,28 @@ def ramp_speed_deg_s(cap, segs, g):
     return abs(segs[-1]["goal_counts"] - segs[0]["goal_counts"]) / (t[1] - t[0]) / cap["cpd"]
 
 
+def speed_report_error_deg_s(cap, segs, g):
+    """One ramp, over the items in its follow tail: the mean reported
+    speed along the travel less the pot's, the slope of a line through
+    each item's median pot against its t_start; negative reads slow."""
+    p = polls_of(cap, "omega_hat_cps", "t_start")
+    items = ramp_tail(g)["seg"].unique()
+    if p is None or len(items) < 2:
+        return np.nan
+    pot = g[g["seg"].isin(items)].groupby("seg")["pos"].median().reindex(items).to_numpy(float)
+    t = p.loc[items, "t_start"].to_numpy(float)
+    slope = np.polyfit(t - t[0], pot, 1)[0]
+    report = p.loc[items, "omega_hat_cps"].to_numpy(float).mean() / Q16
+    return float(segs[0]["direction"] * (report - slope) / cap["cpd"])
+
+
 def follow_scores(cap):
     """Per speed, over the last FOLLOW_TAIL of its up and down ramps pooled:
     the lag (mean of goal - pos along the travel, the goal the one in force
     at each row), its sd, the current rms, the duty reversals per second
     and the duty rms;
-    the goals' real speed, the mean of the two; and on the slowest speed
+    the goals' real speed, the mean of the two; the reported speed's error
+    (speed_report_error_deg_s), the median ramp; and on the slowest speed
     the crawl ripple over CRAWL_WINDOW_MS windows, the worse ramp."""
     by_pct = {}
     for segs, g in ramps(cap).values():
@@ -444,6 +491,8 @@ def follow_scores(cap):
         out[f"follow_reversals_per_s_{tag}"] = sum(reversals(t["duty_counts"]) for t in tails) / span_s
         out[f"follow_duty_rms_pct_{tag}"] = duty_rms_pct(cap, pd.concat(tails)["duty_counts"])
         out[f"ramp_speed_deg_s_{tag}"] = float(np.mean([ramp_speed_deg_s(cap, s, g) for s, g in rs]))
+        out[f"speed_report_error_deg_s_{tag}"] = float(np.median([speed_report_error_deg_s(cap, s, g)
+                                                                  for s, g in rs]))
         if pct == slowest:
             out["crawl_speed_ripple_pct"] = max(
                 ripple_pct(window_speeds(t["t"].to_numpy(), t["pos_f"].to_numpy(), CRAWL_WINDOW_MS / 1000))
@@ -475,6 +524,7 @@ def score_run(run_dir):
     out["landing_tail_driven"] = landing_tail_driven(steps)
     out.update(landing_drive_scores(steps))
     out["enable_kick_deg"] = enable_kick_deg(steps)
+    out["position_report_error_deg"] = position_report_error_deg(steps)
     out["enable_drive_ms"] = max(enable_drive_ms(steps, "enable"), enable_drive_ms(hold, "hold"))
     out.update(hold_scores(hold))
     out.update(follow_scores(load(run_dir / "follow")))
