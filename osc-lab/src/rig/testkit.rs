@@ -7,11 +7,12 @@ use osc_client::blocking::Client;
 use osc_client::fake::{FakePipe, TelSample};
 use osc_client::{BaudRate, Id};
 use osc_protocol::tel::Chunks;
+use osc_servo_core::kernel::phases::loops::faults::{BIT_DEADMAN, CODE_DEADMAN};
 
 use super::pump::{BurstCap, BurstStats, exchange_tel_burst, read_snapshot, write_reg};
 use super::servo::Servo;
 use crate::instrument::frame::{TelFrame, TelemetrySnapshot};
-use crate::instrument::regs::{Reg, calib, config};
+use crate::instrument::regs::{Reg, calib, config, control};
 
 /// The in-process servo stack at `rate`, calibrated and identified like the
 /// bench servo: limit 280, stall yield 168 released under 84, soft limits
@@ -57,9 +58,16 @@ pub(crate) fn rail_at(c: &mut Client<FakePipe>, vbus_raw: u16, vbus_counts: u16)
     c.pipe_mut().set_track(0, vec![s]);
 }
 
+/// What a test does to the table after a burst, given the burst's index.
+pub(crate) type AfterBurst = Box<dyn FnMut(&mut Client<FakePipe>, u32)>;
+
 /// The bench servo as a drive sees it: the table on the fake adapter at
 /// 3 Mbaud, a clock that moves only when the drive sleeps, every write
 /// logged, and `drop` TEL rows lost from each burst.
+///
+/// The sim runs no kernel, so with `deadman_honored` the rig plays the
+/// dead-man's part of one: bus silence under torque for the count last
+/// written latches the `deadman` fault, and a torque enable acks it.
 pub(crate) struct Rig {
     pub(crate) c: Client<FakePipe>,
     id: Id,
@@ -68,6 +76,12 @@ pub(crate) struct Rig {
     pub(crate) experiment: bool,
     pub(crate) drop: u16,
     pub(crate) cap: Option<BurstCap>,
+    pub(crate) deadman_honored: bool,
+    pub(crate) after_burst: Option<AfterBurst>,
+    bursts: u32,
+    torque: bool,
+    deadman_ticks: u16,
+    silent_ms: f64,
 }
 
 impl Rig {
@@ -81,7 +95,21 @@ impl Rig {
             experiment: false,
             drop: 0,
             cap: None,
+            deadman_honored: false,
+            after_burst: None,
+            bursts: 0,
+            torque: false,
+            deadman_ticks: 0,
+            silent_ms: 0.0,
         }
+    }
+
+    /// The `fault_flags` bit and `fault_code` the kernel latches, or 0, 0.
+    pub(crate) fn latch(&mut self, flags: u8, code: u8) {
+        self.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.common.fault_flags = flags;
+            t.telemetry.mode.fault_code = code;
+        });
     }
 }
 
@@ -89,6 +117,7 @@ impl Servo for Rig {
     type P = FakePipe;
 
     fn client(&mut self) -> &mut Client<FakePipe> {
+        self.silent_ms = 0.0;
         &mut self.c
     }
 
@@ -102,10 +131,21 @@ impl Servo for Rig {
 
     fn write(&mut self, reg: Reg, value: i32) -> Result<()> {
         self.writes.push((reg, value));
+        self.silent_ms = 0.0;
+        if reg == control::TORQUE_ENABLE {
+            let on = value != 0;
+            if on && !self.torque && self.deadman_honored {
+                self.latch(0, 0);
+            }
+            self.torque = on;
+        } else if reg == control::BUS_DEADMAN_TICKS {
+            self.deadman_ticks = value as u16;
+        }
         write_reg(&mut self.c, self.id, reg, value)
     }
 
     fn snapshot(&mut self) -> Result<TelemetrySnapshot> {
+        self.silent_ms = 0.0;
         read_snapshot(&mut self.c, self.id)
     }
 
@@ -120,7 +160,12 @@ impl Servo for Rig {
         if let Some((reg, value)) = goal {
             self.writes.push((reg, value));
         }
+        self.silent_ms = 0.0;
         let r = exchange_tel_burst(&mut self.c, self.id, samples, goal, chunks)?;
+        if let Some(f) = self.after_burst.as_mut() {
+            f(&mut self.c, self.bursts);
+        }
+        self.bursts += 1;
         let drop = self.drop;
         self.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
             let h = &mut t.telemetry_ext.health;
@@ -131,6 +176,15 @@ impl Servo for Rig {
 
     fn sleep(&mut self, ms: u32) {
         self.t_ms += ms as f64;
+        self.silent_ms += ms as f64;
+        let ticks_per_ms = osc_servo_core::kernel::TICK_HZ as f64 / 1000.0;
+        if self.deadman_honored
+            && self.torque
+            && self.deadman_ticks > 0
+            && self.silent_ms * ticks_per_ms >= self.deadman_ticks as f64
+        {
+            self.latch(BIT_DEADMAN, CODE_DEADMAN);
+        }
     }
 
     fn burst_cap(&mut self) -> Result<BurstCap> {

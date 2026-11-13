@@ -58,10 +58,12 @@ pub(crate) fn read_snapshot<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<Teleme
 /// [`Servo::experiment`]) the lease is the bus dead-man instead: every
 /// torque enable is preceded by `bus_deadman_ticks`, hold or not, the same
 /// write repeats at the permit's cadence, and torque off alone releases it.
+/// [`Lease::deadman`] is that dead-man lease on any image, never the permit.
 pub(crate) struct Lease {
     state: PermitLease,
     hold: bool,
-    experiment: bool,
+    /// The count the dead-man is fed with, when the lease is the dead-man.
+    deadman: Option<u16>,
 }
 
 impl Lease {
@@ -69,17 +71,26 @@ impl Lease {
         Self {
             state: PermitLease::new(experiment),
             hold,
-            experiment,
+            deadman: experiment.then_some(DEADMAN_TICKS),
+        }
+    }
+
+    /// The bus dead-man at `ticks` and no stall permit, whatever the image:
+    /// a closed-loop run keeps the firmware's stall protection.
+    pub(crate) fn deadman(ticks: u16) -> Self {
+        Self {
+            state: PermitLease::new(true),
+            hold: false,
+            deadman: Some(ticks),
         }
     }
 
     /// The held register's write: the dead-man on the experiment image,
     /// the permit on the production one.
     fn feed<S: Servo>(&mut self, s: &mut S) -> Result<()> {
-        let (reg, value) = if self.experiment {
-            (control::BUS_DEADMAN_TICKS, DEADMAN_TICKS as i32)
-        } else {
-            (control::STALL_PERMIT, 1)
+        let (reg, value) = match self.deadman {
+            Some(ticks) => (control::BUS_DEADMAN_TICKS, ticks as i32),
+            None => (control::STALL_PERMIT, 1),
         };
         self.write(s, reg, value)
     }
@@ -96,7 +107,7 @@ impl Lease {
     /// boot, which trips at once. Else torque on, then the permit when this
     /// run holds one.
     pub(crate) fn torque_on<S: Servo>(&mut self, s: &mut S) -> Result<()> {
-        if self.experiment {
+        if self.deadman.is_some() {
             self.feed(s)?;
             return self.write(s, control::TORQUE_ENABLE, 1);
         }
@@ -191,6 +202,8 @@ pub(crate) struct BurstStats {
     /// TEL rows the servo dropped from the burst: [`Servo::stream`] reads
     /// them off the table, a bare burst leaves 0.
     pub(crate) rows_dropped: u16,
+    /// The first row's `sample_tick`, low 16 bits.
+    pub(crate) stamp0: Option<u16>,
 }
 
 /// Chunks a burst can stream, or why not in words: the servo's own arm
@@ -387,6 +400,7 @@ pub(crate) fn stream_tel_burst<P: Pipe>(
         garble: reply.garble,
         laps: reply.laps,
         rows_dropped: 0,
+        stamp0: asm.first_stamp(),
     };
     if matches!(reply.outcome, Outcome::Timeout { .. }) {
         bail!(

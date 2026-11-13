@@ -1,9 +1,9 @@
 """The `osc` and `osc-lab` tools from a capture script.
 
-`osc-lab` is the capture instrument: `sweep()` and `bursts()` run it. It
-installs with `cargo install --locked --path osc-lab` from this repo, and is
-found on the PATH or named by the OSC_LAB environment variable. Every other call
-(get, set, status, ping, baud) runs `osc`, on the PATH (`cargo install
+`osc-lab` is the capture instrument: `sweep()`, `bursts()` and `track()` run
+it. It installs with `cargo install --locked --path osc-lab` from this repo,
+and is found on the PATH or named by the OSC_LAB environment variable. Every
+other call (get, set, status, ping, baud) runs `osc`, on the PATH (`cargo install
 --path tools/osc` in the firmware repo) or named by the OSC environment
 variable. Every call addresses one servo id, OSC_ID or 1. The tools print
 their connection status on stderr and their output on stdout, so stdout is
@@ -122,6 +122,36 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
             args += [flag, value]
     if background:
         return start(*args, tool=LAB)
+    run(*args, tool=LAB)
+    return out
+
+
+def track(out, mode, schedule, tel_chunks=CHUNKS_SERVO, current_cap_ma=None,
+          current_cap_ms=None, ntc_max_c=None, guard_lo=None, guard_hi=None,
+          deadman_ms=None, deadman_check=False, center=True):
+    """`osc-lab track` into `out` (track.csv, segments.csv + meta.json): the
+    production image's `mode` loop (position, velocity or current) driven
+    through `schedule`, the items as the tool takes them (`set:FIELD=VALUE`,
+    `goal:VALUE@MS`, `hold@MS`, `rest@MS`), a list or one comma-joined
+    string. The watchdog caps, the guard in counts and the dead-man as the
+    tool takes them, None for the tool's default. `deadman_check` proves the
+    image honors the dead-man first; `center` False leaves the shaft where
+    the last item left it. A refusal (exit 2) or an abort (exit 3) raises."""
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    if not isinstance(schedule, str):
+        schedule = ",".join(map(str, schedule))
+    args = ["track", "--out", out, "--mode", mode, "--schedule", schedule,
+            "--tel-chunks", tel_chunks]
+    for flag, value in (("--current-cap-ma", current_cap_ma), ("--current-cap-ms", current_cap_ms),
+                        ("--ntc-max-c", ntc_max_c), ("--guard-lo", guard_lo),
+                        ("--guard-hi", guard_hi), ("--deadman-ms", deadman_ms)):
+        if value is not None:
+            args += [flag, value]
+    if deadman_check:
+        args.append("--deadman-check")
+    if not center:
+        args.append("--no-center")
     run(*args, tool=LAB)
     return out
 

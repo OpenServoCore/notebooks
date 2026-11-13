@@ -1,6 +1,7 @@
 //! `osc-lab` - the raw capture instrument the notebooks record with, driven
-//! through the osc-adapter: open-loop duty sweeps of TEL rungs (`sweep`) and
-//! high-rate shunt bursts from rest (`burst`). Raw captures only: nothing
+//! through the osc-adapter: open-loop duty sweeps of TEL rungs (`sweep`),
+//! high-rate shunt bursts from rest (`burst`) and closed-loop goal
+//! schedules (`track`). Raw captures only: nothing
 //! here fits, identifies or calibrates. Every other verb (get, set, status,
 //! baud, cal) is `osc`'s.
 
@@ -10,6 +11,7 @@ mod instrument;
 mod rig;
 mod state;
 mod sweep;
+mod track;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -38,6 +40,10 @@ enum Cmd {
     /// Raw high-rate shunt bursts from rest at a list of step duties, no fit
     /// (burst-K.csv + meta.json).
     Burst(burst::Args),
+    /// Closed-loop schedule on the production image: goals committed with
+    /// TEL bursts, raw rows under a host watchdog (track.csv, segments.csv
+    /// + meta.json). Exit 2 refused before torque, 3 aborted.
+    Track(track::Args),
 }
 
 pub(crate) fn parse_u16(s: &str) -> Result<u16> {
@@ -65,6 +71,16 @@ fn main() -> Result<()> {
     match &cli.cmd {
         Cmd::Sweep(args) => sweep::run(args, cli.bus.clone(), cli.id),
         Cmd::Burst(args) => burst::run(args, cli.bus.clone(), cli.id),
+        Cmd::Track(args) => {
+            let r = track::run(args, cli.bus.clone(), cli.id);
+            if let Err(e) = &r
+                && let Some(code) = track::exit_code(e)
+            {
+                eprintln!("osc-lab track: {e}");
+                std::process::exit(code);
+            }
+            r
+        }
     }
 }
 

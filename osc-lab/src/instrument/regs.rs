@@ -1,4 +1,4 @@
-//! Register addresses sweep and burst read and write, mirrored from the
+//! Register addresses the captures read and write, mirrored from the
 //! servo core's control table. The cross-check test below fails loudly on
 //! any drift from the pinned firmware, so these consts are safe to hardcode.
 
@@ -15,8 +15,11 @@ const fn reg(addr: u16, width: u8) -> Reg {
 pub mod config {
     use super::{Reg, reg};
 
+    /// The first field past the identity and comms block.
+    pub const POS_MIN_PHYS_COUNTS: Reg = reg(0x0020, 4);
     pub const POS_MIN_SOFT_COUNTS: Reg = reg(0x0028, 4);
     pub const POS_MAX_SOFT_COUNTS: Reg = reg(0x002c, 4);
+    pub const POS_DEADBAND_COUNTS: Reg = reg(0x0042, 2);
     pub const CURRENT_LIMIT_COUNTS: Reg = reg(0x0048, 2);
     /// 0 = a stall latches a fault, 1 = it folds the limit to the
     /// continuous current.
@@ -31,6 +34,8 @@ pub mod config {
     /// The collision trip on the disturbance estimate; `u16::MAX` (the boot
     /// value) trips nothing.
     pub const STALL_TAU_TRIP_COUNTS: Reg = reg(0x0056, 2);
+    /// Centi-C where the winding estimate's derate begins.
+    pub const DERATE_START_CC: Reg = reg(0x0060, 2);
 }
 
 pub mod calib {
@@ -40,6 +45,11 @@ pub mod calib {
     /// The pot stops.
     pub const RAW_MIN: Reg = reg(0x00a0, 2);
     pub const RAW_MAX: Reg = reg(0x00a2, 2);
+    /// The board NTC's counts-to-centi-C quadratic about its reference.
+    pub const NTC_RAW_REF: Reg = reg(0x0094, 2);
+    pub const NTC_T_REF_CC: Reg = reg(0x0096, 2);
+    pub const NTC_K1_Q88: Reg = reg(0x0098, 2);
+    pub const NTC_K2_Q24: Reg = reg(0x009a, 2);
     pub const SHUNT_R_MOHM: Reg = reg(0x00ac, 2);
     pub const GAIN_MILLI: Reg = reg(0x00ae, 2);
     pub const VMOTOR_DIV_TOP: Reg = reg(0x00b0, 2);
@@ -66,6 +76,8 @@ pub mod control {
     pub const STALL_PERMIT: Reg = reg(0x0181, 1);
     pub const MODE: Reg = reg(0x0184, 1);
     pub const GOAL_DUTY: Reg = reg(0x0186, 2);
+    /// Linearized counts, the soft limits' unit.
+    pub const GOAL_POSITION: Reg = reg(0x0188, 4);
     pub const GOAL_VELOCITY: Reg = reg(0x018c, 4);
     pub const GOAL_CURRENT: Reg = reg(0x0190, 2);
     /// Bus dead-man, kernel ticks: on the experiment image a nonzero value
@@ -132,6 +144,12 @@ pub mod telemetry {
     /// Published at the medium step: a TEL row carries it as last
     /// published, up to a tick old.
     pub const VBUS_COUNTS: Reg = reg(0x0266, 2);
+    /// The observer's position, linearized counts in Q16, and its speed.
+    pub const THETA_HAT_Q16: Reg = reg(0x0258, 4);
+    pub const OMEGA_HAT_CPS: Reg = reg(0x025c, 4);
+    /// The current limit in force after every fold.
+    pub const I_LIM_COUNTS: Reg = reg(0x0262, 2);
+    pub const T_WINDING_CC: Reg = reg(0x0264, 2);
     pub const CURRENT_BIAS_COUNTS: Reg = reg(0x026c, 2);
     pub const VMOTOR_BIAS_COUNTS: Reg = reg(0x026e, 2);
     /// What shaped the command; bit 3 the stall permit lease is live.
@@ -152,7 +170,19 @@ mod tests {
 
     /// Every const above with its control table field name.
     const ALL: &[(&str, Reg)] = &[
+        ("pos_min_phys_counts", config::POS_MIN_PHYS_COUNTS),
         ("pos_min_soft_counts", config::POS_MIN_SOFT_COUNTS),
+        ("pos_deadband_counts", config::POS_DEADBAND_COUNTS),
+        ("derate_start_cc", config::DERATE_START_CC),
+        ("ntc_raw_ref", calib::NTC_RAW_REF),
+        ("ntc_t_ref_cc", calib::NTC_T_REF_CC),
+        ("ntc_k1_q88", calib::NTC_K1_Q88),
+        ("ntc_k2_q24", calib::NTC_K2_Q24),
+        ("goal_position", control::GOAL_POSITION),
+        ("theta_hat_q16", telemetry::THETA_HAT_Q16),
+        ("omega_hat_cps", telemetry::OMEGA_HAT_CPS),
+        ("i_lim_counts", telemetry::I_LIM_COUNTS),
+        ("t_winding_cc", telemetry::T_WINDING_CC),
         ("pos_max_soft_counts", config::POS_MAX_SOFT_COUNTS),
         ("current_limit_counts", config::CURRENT_LIMIT_COUNTS),
         ("stall_response", config::STALL_RESPONSE),

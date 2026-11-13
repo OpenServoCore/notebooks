@@ -155,6 +155,7 @@ pub struct StreamAssembler {
     frame_idx: u64,
     /// The previous frame's stamp and the tick it unwrapped to.
     stamp: Option<(u16, u64)>,
+    first: Option<u16>,
     holes: u64,
     skipped: u64,
 }
@@ -169,6 +170,7 @@ impl StreamAssembler {
             last_seq: None,
             frame_idx: 0,
             stamp: None,
+            first: None,
             holes: 0,
             skipped: 0,
         })
@@ -200,9 +202,16 @@ impl StreamAssembler {
             .stamp
             .map_or(0, |(s, t)| t + f.tick.wrapping_sub(s) as u64);
         self.stamp = Some((f.tick, tick));
+        self.first.get_or_insert(f.tick);
         out.extend(f.rows().enumerate().map(|(i, row)| {
             decode_row(&self.chunks, self.i_window_min_ticks, row, tick + i as u64)
         }));
+    }
+
+    /// The servo's `sample_tick` of the first row received, low 16 bits:
+    /// where the burst sits on the servo's own clock.
+    pub fn first_stamp(&self) -> Option<u16> {
+        self.first
     }
 
     /// Frames missing from stream_seq continuity (dropped or corrupt).
