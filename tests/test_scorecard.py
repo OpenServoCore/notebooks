@@ -63,6 +63,16 @@ def test_a_step_reads_its_overshoot_and_settle_through_spikes(tmp_path):
     assert s["move_current_rms_ma_20deg"] == pytest.approx(i_ma * np.sqrt(2500 / 2700))
 
 
+def test_a_landing_reads_the_share_of_its_tail_driven(tmp_path):
+    goal, pos, duty = step_rows()
+    # the last 500 ms is 10000 rows: 1000 of them driven
+    duty[-4000:-3000] = 90
+    segs = [{"item": f"goal:{goal}@1500", "test": "step", "size_deg": 20, "direction": 1,
+             "leg": "out", "goal_counts": goal, "goal_deg": 20.0}]
+    synth.write(tmp_path, [(segs[0]["item"], goal, pos, duty)], CENTER, GUARD, plan=plan(segs))
+    assert sc.landing_buzz_share(sc.load(tmp_path)) == pytest.approx(0.1, abs=0.001)
+
+
 def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
     """Goals 10 counts apart every 512 ticks (a 400-row burst and a gap),
     the shaft 30 counts behind the goal in force, up and back down."""
@@ -238,7 +248,7 @@ def test_a_rung_end_to_end(bus):
                                          "ramp_speed_deg_s")
                  for p in TS.FOLLOW_SPEED_PCT}
     expected |= {"speed_ripple_pct", "rest_error_deg", "two_sided_deg", "enable_kick_deg",
-                 "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct"}
+                 "landing_buzz_share", "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct"}
     assert set(s) == expected
     assert all(set(q) == {"value", "lo", "hi", "unit"} for q in s.values())
     # the fake servo is first order: no overshoot, and it rests inside its deadband
