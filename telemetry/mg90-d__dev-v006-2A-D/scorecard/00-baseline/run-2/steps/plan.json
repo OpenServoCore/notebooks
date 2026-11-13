@@ -1,0 +1,152 @@
+{
+  "capture": "steps",
+  "center_counts": 1937,
+  "guard_counts": [
+    314,
+    3560
+  ],
+  "counts_per_deg": 18.913054076268125,
+  "no_load_deg_s": 623.7219681271883,
+  "goal_period_s": 0.0256,
+  "sources": {
+    "counts_per_deg": "stages/3-servo/pot-table/results/mg90-d__dev-v006-2A-D.json pot_scale_counts_per_deg",
+    "no_load_deg_s": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json no_load_speed_rev_s / servos mg90-d gear_ratio x 360",
+    "current_cap_ma": "servos mg90-d lock_hold_a"
+  },
+  "segments": [
+    {
+      "seg": 0,
+      "item": "hold@1000",
+      "test": "enable",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 1,
+      "item": "goal:1937@1200",
+      "test": "lead",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 2,
+      "item": "goal:1975@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": 1,
+      "leg": "out",
+      "goal_counts": 1975,
+      "goal_deg": 2.009194276437984
+    },
+    {
+      "seg": 3,
+      "item": "goal:1937@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": -1,
+      "leg": "back",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 4,
+      "item": "goal:1899@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": -1,
+      "leg": "out",
+      "goal_counts": 1899,
+      "goal_deg": -2.009194276437984
+    },
+    {
+      "seg": 5,
+      "item": "goal:1937@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": 1,
+      "leg": "back",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 6,
+      "item": "goal:2315@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": 1,
+      "leg": "out",
+      "goal_counts": 2315,
+      "goal_deg": 19.986195697198895
+    },
+    {
+      "seg": 7,
+      "item": "goal:1937@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": -1,
+      "leg": "back",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 8,
+      "item": "goal:1559@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": -1,
+      "leg": "out",
+      "goal_counts": 1559,
+      "goal_deg": -19.986195697198895
+    },
+    {
+      "seg": 9,
+      "item": "goal:1937@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": 1,
+      "leg": "back",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 10,
+      "item": "goal:3072@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": 1,
+      "leg": "out",
+      "goal_counts": 3072,
+      "goal_deg": 60.011460625187155
+    },
+    {
+      "seg": 11,
+      "item": "goal:1937@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": -1,
+      "leg": "back",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 12,
+      "item": "goal:802@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": -1,
+      "leg": "out",
+      "goal_counts": 802,
+      "goal_deg": -60.011460625187155
+    },
+    {
+      "seg": 13,
+      "item": "goal:1937@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": 1,
+      "leg": "back",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    }
+  ]
+}
