@@ -43,7 +43,7 @@ the bus at 3 Mbps, torque off, the production image flashed. The runner
 never touches the supply and never prompts; it refuses to start otherwise.
 
 ```
-uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE]
+uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table]
 uv run python -m oscnb.scorecard score 00-baseline
 uv run python -m oscnb.scorecard table
 ```
@@ -52,8 +52,14 @@ A rung of settings runs on a file of CONFIG fields, `{"fields": {...}}`,
 passed as `--settings`: the fields are written volatile and stamped
 (`oscnb/settings.py`), and a reboot brings the stored set back when the
 runs end. The pot's position table in the servo's format is built and
-graded offline by `oscnb/postable.py` into [calibration/](calibration);
-its install is a printed plan, not yet a command.
+graded offline by `oscnb/postable.py` into [calibration/](calibration),
+and `uv run python -m oscnb.postable install` writes it to the servo
+volatile and reads every page back. A rung passed `--pos-table` runs on
+the pair's table: installed after the settings, one stamp over both, the
+file and its sha1 kept in `rung.json`, and the same reboot dropping it at
+the end. `score` reads such a rung's raw pot through the table its
+`rung.json` names, and refuses a capture with a live table and no table
+named.
 
 `table` prints the ladder, one column per rung in label order, with a
 last column of other people's figures for stock smart servos (STS3215,

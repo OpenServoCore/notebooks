@@ -26,15 +26,15 @@ BOARD = boards.BOARDS[boards.DEFAULT]
 GOAL_PERIOD_S = scorecard.testset().GOAL_PERIOD_S
 
 
-def meta(center, guard, tick_hz, config=None):
+def meta(center, guard, tick_hz, config=None, lut_state="IDENTITY"):
     return {"center": center, "guard": list(guard), "tick_hz": tick_hz, "ended": "ok",
             "config": config or {"p_kp_q88": 40212, "pos_deadband_counts": 4},
             "sense": BOARD.sense,
-            "plant": {"lut_state": "IDENTITY"}, "pwm_period_ticks": 1200}
+            "plant": {"lut_state": lut_state}, "pwm_period_ticks": 1200}
 
 
 def write(out, segs, center, guard, tick_hz=20_000, tick0=60_000, gap_ticks=500,
-          plan=None, config=None):
+          plan=None, config=None, lut_state="IDENTITY"):
     """One capture into `out`. `segs` are (item, goal, pos, duty) per
     schedule item, the arrays one value a row; tick0 starts at `tick0` and
     each segment opens `gap_ticks` after the last, wrapping at 2^16."""
@@ -59,7 +59,7 @@ def write(out, segs, center, guard, tick_hz=20_000, tick0=60_000, gap_ticks=500,
         t += n + gap_ticks
     pd.concat(frames).reindex(columns=HEADER).to_csv(out / "track.csv", index=False)
     pd.DataFrame(seg_rows).reindex(columns=SEG_HEADER).to_csv(out / "segments.csv", index=False)
-    (out / "meta.json").write_text(json.dumps(meta(center, guard, tick_hz, config)))
+    (out / "meta.json").write_text(json.dumps(meta(center, guard, tick_hz, config, lut_state)))
     if plan is not None:
         (out / "plan.json").write_text(json.dumps(plan))
     return out

@@ -3,7 +3,7 @@
 `osc-lab` is the capture instrument: `sweep()`, `bursts()` and `track()` run
 it. It installs with `cargo install --locked --path osc-lab` from this repo,
 and is found on the PATH or named by the OSC_LAB environment variable. Every
-other call (get, set, status, ping, baud) runs `osc`, on the PATH (`cargo install
+other call (get, set, read, write, status, ping, baud) runs `osc`, on the PATH (`cargo install
 --path tools/osc` in the firmware repo) or named by the OSC environment
 variable. Every call addresses one servo id, OSC_ID or 1. The tools print
 their connection status on stderr and their output on stdout, so stdout is
@@ -66,6 +66,20 @@ def get(field):
 def set_(field, value):
     """Write one register, volatile until a SAVE."""
     run("set", field, value)
+
+
+def write(addr, data):
+    """`osc write`: raw bytes at a table address, committed."""
+    run("write", f"0x{addr:x}", bytes(data).hex())
+
+
+def read(addr, n):
+    """`osc read`: `n` raw bytes from a table address, off its hex dump."""
+    out = run("read", f"0x{addr:x}", n, capture=True)
+    data = b"".join(bytes.fromhex(m.group(1)) for m in re.finditer(r"^0x[0-9a-f]+\s+(.+)$", out, re.M))
+    if len(data) != n:
+        raise RuntimeError(f"osc read 0x{addr:x} {n}: unexpected output {out!r}")
+    return data
 
 
 def status():

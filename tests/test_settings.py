@@ -65,6 +65,21 @@ def test_apply_reads_writes_stamps_then_checks_in_that_order(fake):
     assert not any("save" in str(c) for c in f.log)
 
 
+def test_apply_without_its_stamp_leaves_it_to_the_caller(fake):
+    f = fake()
+    settings.apply({"p_kp_q88": 5026}, stamp=False)
+    assert ("run", "stamp") not in f.log and ("status",) not in f.log
+    f.log.clear()
+    settings.stamp_live()
+    assert f.log == [("run", "stamp"), ("status",)]
+
+
+def test_stamp_refuses_a_data_state_that_is_not_clean(fake):
+    fake(status=STALE)
+    with pytest.raises(settings.Refused, match="STAMP_MISMATCH"):
+        settings.stamp_live()
+
+
 def test_apply_refuses_with_torque_on_and_writes_nothing(fake):
     f = fake()
     f.regs["torque_enable"] = "on"

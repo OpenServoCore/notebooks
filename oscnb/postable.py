@@ -25,20 +25,24 @@ stops. Past the lookup's knots the angle runs on its end lines, which stage
     uv run python -m oscnb.postable build --stops RAW_MIN RAW_MAX
     uv run python -m oscnb.postable check
     uv run python -m oscnb.postable plan
+    uv run python -m oscnb.postable install
 
 `build` writes stages/5-closed-loop/calibration/<pair>.pos_lut.json, `check`
 grades it offline, `plan` prints the `osc` commands an install takes and
-runs none of them.
+runs none of them. `install` runs the plan's steps 1 to 4 on the servo,
+each read checked and every page read back, and stops short of the stamp:
+the table is volatile until a SAVE, which nothing here sends.
 """
 import argparse
 import json
 import re
+import time
 from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 
-from . import boards, osc, results, servos
+from . import boards, osc, results, servos, settings
 from . import position as pe
 
 ADC_BITS = 12
@@ -54,6 +58,8 @@ STATES = ("IDENTITY", "LOADING", "LIVE", "REJECT_TORQUE", "REJECT_ENDS",
 STORE, FETCH, COMMIT = 1, 2, 3          # pos_lut_cmd
 # the window, page then cmd then points then state, protocol sec 5.7
 WINDOW_ADDR, POINTS_ADDR = 0x19C, 0x19E
+COMMIT_WAIT_S = 0.05    # s between reads of a COMMIT still LOADING
+COMMIT_TRIES = 20       # reads before giving up on its verdict
 
 STAGE4 = ("4-estimators", "position")   # the lookup's experiment
 OUT_DIR = results.ROOT / "stages" / "5-closed-loop" / "calibration"
@@ -231,18 +237,23 @@ def build(pair, raw_min, raw_max):
     return t, path
 
 
-def load(pair):
-    """(Table, its document) of a pair's built table, refused where the
-    servo would refuse it."""
-    doc = json.loads(out_path(pair).read_text())
+def load_file(path):
+    """(Table, its document) of a table file, refused where the servo would
+    refuse it."""
+    doc = json.loads(path.read_text())
     s = doc["inputs"]["stops"]
     th = doc["target"]["theta_at_stops_deg"]
     points = np.concatenate(doc["points_by_page"]).astype(np.int64)
     t = Table(points, s["raw_min"], s["raw_max"], *th)
     why = validate(t.points, t.raw_min, t.raw_max)
     if why:
-        raise ValueError(f"{results.rel(out_path(pair))}: the servo would refuse it: {why}")
+        raise ValueError(f"{results.rel(path)}: the servo would refuse it: {why}")
     return t, doc
+
+
+def load(pair):
+    """(Table, its document) of a pair's built table."""
+    return load_file(out_path(pair))
 
 
 def rms(x):
@@ -378,34 +389,63 @@ def page_bytes(points, page):
     return k.tobytes()
 
 
+@dataclass(frozen=True)
+class Step:
+    """One wire step of an install. `get` reads `field` and, with `want`
+    set, refuses any other value; `write` puts `data` at the window;
+    `poll` reads `field` while it is LOADING and refuses anything but
+    `want` after; `fetch` brings `page` back into the window and compares
+    its points with `data`."""
+    op: str
+    field: str = ""
+    want: object = None
+    data: bytes = b""
+    page: int = 0
+    note: str = ""
+
+
+def install_steps(t):
+    """The install's steps 1 to 4 for table `t`, section headings as
+    strings between them: what `plan` prints and `install` runs."""
+    states = ", ".join(f"{i} {s}" for i, s in enumerate(STATES))
+    out = [
+        "1. preconditions, each read before anything is written",
+        Step("get", "torque_enable", "off", note="off; STORE and COMMIT are refused under torque"),
+        Step("get", "raw_min", t.raw_min, note=f"{t.raw_min}, the stop the table was built against; else rebuild"),
+        Step("get", "raw_max", t.raw_max, note=f"{t.raw_max}"),
+        Step("get", "pos_lut_page", note=f"addr 0x{WINDOW_ADDR:04x}: page, cmd, points, state in a row"),
+        Step("get", "pos_lut_state", note=f"the state before: {states}"),
+        "2. STORE, one 66 B write a page: page, cmd 1, 32 points i16 LE",
+    ]
+    out += [Step("write", data=bytes([p, STORE]) + page_bytes(t.points, p)) for p in range(PAGES)]
+    out += [
+        Step("get", "pos_lut_state", "LOADING", note="1 LOADING"),
+        "3. COMMIT: page 0 and cmd 3, the write covers the command",
+        Step("write", data=bytes([0, COMMIT])),
+        Step("poll", "pos_lut_state", "LIVE", note="again while 1 LOADING; 2 LIVE goes on, any REJECT stops here"),
+        "4. read back: FETCH a page into the window, read its 64 B, compare with its STORE above",
+    ]
+    out += [Step("fetch", data=page_bytes(t.points, p), page=p) for p in range(PAGES)]
+    return out
+
+
+def shown_step(s, o):
+    if isinstance(s, str):
+        return f"# {s}"
+    if s.op in ("get", "poll"):
+        return f"{o} get {s.field:<16} # {s.note}"
+    if s.op == "write":
+        return f"{o} write 0x{WINDOW_ADDR:x} {s.data.hex()}"
+    return (f"{o} write 0x{WINDOW_ADDR:x} {bytes([s.page, FETCH]).hex()} && "
+            f"{o} read 0x{POINTS_ADDR:x} {len(s.data)}")
+
+
 def plan(pair):
     """The install's wire steps as `osc` commands, one string; runs none."""
     t, doc = load(pair)
     o = f"osc -i {osc.ID}"
-    states = ", ".join(f"{i} {s}" for i, s in enumerate(STATES))
-    lines = [
-        f"# install {results.rel(out_path(pair))} (protocol sec 5.7); nothing here has run",
-        "# 1. preconditions, each read before anything is written",
-        f"{o} get torque_enable    # off; STORE and COMMIT are refused under torque",
-        f"{o} get raw_min          # {t.raw_min}, the stop the table was built against; else rebuild",
-        f"{o} get raw_max          # {t.raw_max}",
-        f"{o} get pos_lut_page     # addr 0x{WINDOW_ADDR:04x}: page, cmd, points, state in a row",
-        f"{o} get pos_lut_state    # the state before: {states}",
-        "# 2. STORE, one 66 B write a page: page, cmd 1, 32 points i16 LE",
-    ]
-    for p in range(PAGES):
-        payload = bytes([p, STORE]) + page_bytes(t.points, p)
-        lines.append(f"{o} write 0x{WINDOW_ADDR:x} {payload.hex()}")
-    lines += [
-        f"{o} get pos_lut_state    # 1 LOADING",
-        "# 3. COMMIT: page 0 and cmd 3, the write covers the command",
-        f"{o} write 0x{WINDOW_ADDR:x} {bytes([0, COMMIT]).hex()}",
-        f"{o} get pos_lut_state    # again while 1 LOADING; 2 LIVE goes on, any REJECT stops here",
-        "# 4. read back: FETCH a page into the window, read its 64 B, compare with its STORE above",
-    ]
-    for p in range(PAGES):
-        lines.append(f"{o} write 0x{WINDOW_ADDR:x} {bytes([p, FETCH]).hex()} && "
-                     f"{o} read 0x{POINTS_ADDR:x} {2 * PAGE_POINTS}")
+    lines = [f"# install {results.rel(out_path(pair))} (protocol sec 5.7); nothing here has run"]
+    lines += [shown_step(s, o) for s in install_steps(t)]
     lines += [
         "# 5. stamp the live set, the LIVE points in it; no --save",
         f"{o} stamp                # 'data state clean: closed loop allowed'",
@@ -418,6 +458,54 @@ def plan(pair):
     return "\n".join(lines)
 
 
+def state_name(v):
+    """A `pos_lut_state` read as its name; refused when it is none."""
+    if isinstance(v, int) and 0 <= v < len(STATES):
+        return STATES[v]
+    if v in STATES:
+        return v
+    raise settings.Refused(f"pos_lut_state reads {v}, not a state of protocol sec 5.7")
+
+
+def got(s):
+    v = osc.get(s.field)
+    return state_name(v) if s.field == "pos_lut_state" else v
+
+
+def install(pair):
+    """Run `plan`'s steps 1 to 4 on the servo: the preconditions, STORE of
+    every page, COMMIT, LIVE, every page read back the same. No stamp and
+    no SAVE; returns the Table. A refusal past the first STORE leaves the
+    array loading: `osc reboot` returns the saved table."""
+    t, _ = load(pair)
+    for s in install_steps(t):
+        if isinstance(s, str):
+            continue
+        if s.op == "get":
+            v = got(s)
+            if s.want is not None and not settings.same(s.want, v):
+                raise settings.Refused(f"{s.field} reads {v}, the install wants {s.want}")
+        elif s.op == "write":
+            osc.write(WINDOW_ADDR, s.data)
+        elif s.op == "poll":
+            for _ in range(COMMIT_TRIES):
+                v = got(s)
+                if v != "LOADING":
+                    break
+                time.sleep(COMMIT_WAIT_S)
+            else:
+                raise settings.Refused(f"{s.field} still LOADING {COMMIT_TRIES * COMMIT_WAIT_S:g} s "
+                                       "after the COMMIT")
+            if v != s.want:
+                raise settings.Refused(f"the COMMIT landed {v}, not {s.want}")
+        else:
+            osc.write(WINDOW_ADDR, bytes([s.page, FETCH]))
+            back = osc.read(POINTS_ADDR, len(s.data))
+            if back != s.data:
+                raise settings.Refused(f"page {s.page} reads back {back.hex()}, it was stored as {s.data.hex()}")
+    return t
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m oscnb.postable",
                                  description="the pot's position table in the servo's format, offline")
@@ -428,6 +516,7 @@ def main(argv=None):
                    help="the servo's raw_min and raw_max")
     sub.add_parser("check", help="the verdict and the held-out grade through the table")
     sub.add_parser("plan", help="print the install's osc commands without running them")
+    sub.add_parser("install", help="run the plan's steps 1 to 4 on the servo; no stamp, no SAVE")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "build":
@@ -437,9 +526,13 @@ def main(argv=None):
                   f"{t.scale:.3f} counts/deg")
         elif a.cmd == "check":
             check(a.pair)
+        elif a.cmd == "install":
+            install(a.pair)
+            print(f"{results.rel(out_path(a.pair))}: LIVE, {PAGES} pages read back the same; not "
+                  "stamped and not saved (osc stamp blesses it, osc reboot drops it)")
         else:
             print(plan(a.pair))
-    except ValueError as e:
+    except (ValueError, settings.Refused) as e:
         raise SystemExit(f"refused: {e}")
 
 
