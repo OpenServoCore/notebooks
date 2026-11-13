@@ -1,0 +1,4 @@
+{
+  "note": "position gain / 4, velocity PI / 2 from the stored set",
+  "fields": {"p_kp_q88": 10053, "v_kp_q88": 248, "v_ki_q412": 623, "v_kaw_q412": 1246}
+}

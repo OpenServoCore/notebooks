@@ -1,0 +1,15 @@
+{
+  "label": "01b-gains-3hz-50hz",
+  "fw": "65af3765",
+  "image_sha": "9d9325c7db123d9a1b9eecf6e79905b294864e4b",
+  "note": "candidate, see the settings file",
+  "utc": "2026-11-13T05:03:33+00:00",
+  "config_hash": "a433f89fcbe17f4f77da10563f60cfeab96ce14b1b095f6555b4a3b5c131f06c",
+  "runs_asked": 3,
+  "settings": {
+    "p_kp_q88": 5026,
+    "v_kp_q88": 124,
+    "v_ki_q412": 311,
+    "v_kaw_q412": 623
+  }
+}

@@ -58,3 +58,44 @@ its install is a printed plan, not yet a command.
 `table` prints the ladder, one column per rung in label order, with a
 last column of other people's figures for stock smart servos (STS3215,
 LX-16A) where a row has one, for scale only.
+
+## The ladder
+
+On mg90-d with board dev-v006-2A-D, a free horn. A rung is kept when the
+rows it aims at gain by more than the baseline's own spread over its three
+runs and no other row loses. A rung that is not kept leaves its result
+file, its settings file and one line here, not its rows.
+
+Kept:
+
+- `00-baseline`: the servo's stored settings.
+- `01b-gains-3hz-50hz`: softer loop gains, the position gain an eighth and
+  the velocity gains a quarter of the stored set. The current of a move
+  and of a slow follow falls to between a third and a half, the settle
+  times shorten, overshoot and lag do not lose. Open on it: the rest error
+  is one count worse (0.25 against 0.21 deg), one hold in three buzzes at
+  the edge of the deadband, and its stiffness under a load is not measured
+  (free horn only).
+
+Tried, not kept:
+
+- `01a-gains-6hz-100hz`, the position gain a quarter and the velocity
+  gains half: over the stored set, under `01b` on every current row, and
+  two holds in three buzz. Recorded before the capture tool turned torque
+  on at the servo's own estimate, so its enable kick is not comparable.
+- `01c-gains-rule`, the set a gain rule over the measured plant gives,
+  between `01a` and `01b`: the slow follow's current lands where the rule
+  predicted (101 mA against 80 to 119), and it loses to `01b` on settle,
+  overshoot and current.
+- `02a-limits-half`, `01b` with the speed limit at half the no-load speed
+  and the acceleration limit five times the stored one: the 60 degree move
+  settles in 258 ms against 811, the 20 degree landings oscillate and
+  never settle, and the currents are back at the stored set's. Recorded
+  before the same tool fix.
+- `02b-speed-half`, `01b` with the speed limit alone raised: the 60 degree
+  move settles in 438 ms against 811, and its landing on the way down
+  oscillates about the goal in all three runs (landing buzz 0.06 against
+  0.007).
+- `02c-speed-half-accel-40`, `02b` with the acceleration limit 2.7 times
+  the stored one: 271 ms, the same landing oscillates, and the holds buzz
+  more.
