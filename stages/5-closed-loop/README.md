@@ -163,7 +163,7 @@ Kept:
   one count (0.05 deg) against 0.11 and 0.48 deg, and no other row moves
   beyond the spread between the two sets. Not measured: a shaft moved by
   hand with the torque off, the case the change leaves on the old path.
-- `09a-wide-codes`: `01b`'s settings on firmware 276710ee, which reads a
+- `09a-wide-codes`: `01b`'s settings on firmware c15722d6, which reads a
   pot sample at one of the ADC's wide codes as the middle of the span
   that code stands for, on the board's slots
   ([stage 1](../1-board/README.md#wide-codes)). Before it a goal inside
