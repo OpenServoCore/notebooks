@@ -3,11 +3,11 @@
 `osc-lab` is the capture instrument: `sweep()`, `bursts()` and `track()` run
 it. It installs with `cargo install --locked --path osc-lab` from this repo,
 and is found on the PATH or named by the OSC_LAB environment variable. Every
-other call (get, set, read, write, status, ping, baud) runs `osc`, on the PATH (`cargo install
---path tools/osc` in the firmware repo) or named by the OSC environment
-variable. Every call addresses one servo id, OSC_ID or 1. The tools print
-their connection status on stderr and their output on stdout, so stdout is
-parsed and stderr is passed through.
+other call (get, set, read, write, status, ping, baud, flash) runs `osc`, on
+the PATH (`cargo install --path tools/osc` in the firmware repo) or named by
+the OSC environment variable. Every call addresses one servo id, OSC_ID or 1.
+The tools print their connection status on stderr and their output on
+stdout, so stdout is parsed and stderr is passed through.
 """
 import os
 import re
@@ -84,6 +84,28 @@ def read(addr, n):
 
 def status():
     return run("status", capture=True)
+
+
+FLASH_RATE = 500_000    # baud, the bootloaders' rate for an install
+
+
+def last_line(out):
+    return next((s.strip() for s in reversed(re.split(r"[\r\n]", out or "")) if s.strip()), "")
+
+
+def flash(image, rate=FLASH_RATE):
+    """`osc flash`: install the raw .bin `image` on this servo through its
+    bootloader at `rate`, the bus at the rate the tool finds; returns when
+    the tool has the app back. The tool's progress rewrites one line with
+    carriage returns, so stdout is captured and only its last line shown;
+    a failed install raises with that line."""
+    cmd = [TOOL, "-b", str(bus_baud()), "flash", str(image), "--rate", str(rate), ID]
+    r = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+    last = last_line(r.stdout)
+    if r.returncode != 0:
+        raise RuntimeError(f"osc flash {image}: exit {r.returncode}, {last or 'no output'}")
+    print(last)
+    return last
 
 
 # The TEL row a static load wants, one chunk: vbus_raw, ntc_raw, current_raw,

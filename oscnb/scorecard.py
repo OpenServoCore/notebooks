@@ -3,6 +3,7 @@ fixed test set, scored from the pot, so a change is kept or dropped on
 numbers.
 
   uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table]
+  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-note TEXT] [--rounds 3]
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard table
 
@@ -14,7 +15,10 @@ CONFIG fields applied volatile (oscnb.settings) and rebooted away at the
 end, the fields kept in `rung.json`. With `--pos-table` it runs on the
 pair's position table (oscnb.postable) installed volatile after the
 fields, one stamp over both, the file and its sha1 kept in `rung.json`
-and the same reboot dropping it. `score` writes the rung's scores, the median
+and the same reboot dropping it. `ab` records two such rungs at once, one
+run of each per round, A then B, flashing a side's image (and verifying
+the stamp) whenever the servo holds the other's, so the two share the
+servo's drift through the session. `score` writes the rung's scores, the median
 over its runs and their range, to
 `stages/5-closed-loop/scorecard/results/<pair>/<label>.json`. `table`
 prints the ladder, one column per rung.
@@ -35,7 +39,9 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import re
 import sys
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -553,49 +559,132 @@ def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     return meta
 
 
-def run(label, fw, image_sha, runs=3, note="", settings_file=None, pos_table=False, servo=None, board=None):
-    servo = servo or servos.selected()
-    board = board or boards.BOARDS[boards.DEFAULT]
-    pair = pair_of(servo, board)
+def new_rung(pair, label, fw, image_sha, runs, note="", settings_file=None, pos_table=False):
+    """A rung to record, refused when its label already holds one: its
+    folder and what `rung.json` names, the settings file's fields and the
+    pair's table it runs on loaded."""
     rung = rung_dir(pair, label)
     if rung.exists():
         raise SystemExit(f"{shown(rung)} already holds a rung: pick a new label or remove it")
-    ts = testset()
-    inp = ts.inputs(servo, pair)
     fields = settings.load(settings_file)[0] if settings_file else None
     table = None
     if pos_table:
         postable.load(pair)
         path = postable.out_path(pair)
         table = {"file": str(results.rel(path)), "sha1": file_sha1(path)}
+    return {"dir": rung, "label": label, "fw": fw, "image_sha": image_sha, "note": note,
+            "runs": runs, "fields": fields, "table": table}
+
+
+def bench_set(servo, board, pair):
+    """The test set built for the servo at hand, after the preflight: the
+    module, its inputs, the soft range read off the servo, the center and
+    the captures' segments."""
+    ts = testset()
+    inp = ts.inputs(servo, pair)
     preflight(servo, board)
     guard = (osc.get("pos_min_soft_counts"), osc.get("pos_max_soft_counts"))
     center, sets = ts.build(guard, inp)
+    return {"ts": ts, "inp": inp, "guard": guard, "center": center, "sets": sets}
+
+
+@contextmanager
+def applied(r, pair):
+    """Rung `r`'s settings and table on the servo for the body."""
     try:
-        if fields:
-            settings.apply(fields, stamp=not table)
-        if table:
+        if r["fields"]:
+            settings.apply(r["fields"], stamp=not r["table"])
+        if r["table"]:
             postable.install(pair)
             settings.stamp_live()
+        yield
+    finally:
+        # the stored set comes back whether the runs ended or aborted
+        if r["fields"] or r["table"]:
+            settings.restore()
+
+
+def record_run(r, k, s):
+    """Run `k` of rung `r` on bench set `s`: the test set's captures in
+    order, and `rung.json` once the rung's first capture lands."""
+    rung, ts = r["dir"], s["ts"]
+    for i, name in enumerate(ts.CAPTURES):
+        meta = capture(rung / f"run-{k}" / name, name, s["sets"][name], s["center"], s["guard"], s["inp"],
+                       deadman_check=i == 0, ts=ts)
+        if not (rung / "rung.json").exists():
+            (rung / "rung.json").write_text(json.dumps({
+                "label": r["label"], "fw": r["fw"], "image_sha": r["image_sha"], "note": r["note"],
+                "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "config_hash": config_hash(meta["config"]), "runs_asked": r["runs"],
+                "settings": r["fields"], "pos_table": r["table"],
+            }, indent=2) + "\n")
+
+
+def run(label, fw, image_sha, runs=3, note="", settings_file=None, pos_table=False, servo=None, board=None):
+    servo = servo or servos.selected()
+    board = board or boards.BOARDS[boards.DEFAULT]
+    pair = pair_of(servo, board)
+    r = new_rung(pair, label, fw, image_sha, runs, note, settings_file, pos_table)
+    s = bench_set(servo, board, pair)
+    with applied(r, pair):
         for k in range(1, runs + 1):
             if k > 1:
                 preflight(servo, board)
-            for i, name in enumerate(ts.CAPTURES):
-                meta = capture(rung / f"run-{k}" / name, name, sets[name], center, guard, inp,
-                               deadman_check=i == 0, ts=ts)
-                if not (rung / "rung.json").exists():
-                    (rung / "rung.json").write_text(json.dumps({
-                        "label": label, "fw": fw, "image_sha": image_sha, "note": note,
-                        "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                        "config_hash": config_hash(meta["config"]), "runs_asked": runs,
-                        "settings": fields, "pos_table": table,
-                    }, indent=2) + "\n")
+            record_run(r, k, s)
             print(f"run-{k} of {runs} done")
+    return r["dir"]
+
+
+def require_live_set(image):
+    """Refuse unless `osc status` reads the plant stamp as the live set."""
+    stamp = settings.plant_stamp(osc.status())
+    if not stamp or not re.fullmatch(r"\S+ = live set", stamp):
+        raise SystemExit(f"after flashing {shown(image)} osc status reads the stamp {stamp!r}, not "
+                         f"'= live set': nothing runs on an unverified image")
+
+
+def ab(a, b, rounds=3, servo=None, board=None):
+    """Two rungs recorded alternately, one run of each per round, A then B,
+    so both share the servo's drift through the session. `a` and `b` are
+    {"label", "fw", "image", "note", "settings_file"}, the last two
+    optional; each rung is the one `run` records, its image sha the image
+    file's. A side's image is flashed, the bus awaited and the stamp
+    verified before its run whenever the servo holds the other side's,
+    and before the first run always; its settings are applied around its
+    own runs alone. Returns the two rungs' folders."""
+    servo = servo or servos.selected()
+    board = board or boards.BOARDS[boards.DEFAULT]
+    pair = pair_of(servo, board)
+    if a["label"] == b["label"]:
+        raise SystemExit(f"both sides are labeled {a['label']!r}: an A/B records two rungs")
+    sides = []
+    for side in (a, b):
+        r = new_rung(pair, side["label"], side["fw"], file_sha1(side["image"]), rounds,
+                     side.get("note", ""), side.get("settings_file"))
+        r["image"] = Path(side["image"])
+        sides.append(r)
+    s = bench_set(servo, board, pair)
+    on_servo = None
+    flashing = None
+    try:
+        for k in range(1, rounds + 1):
+            for r in sides:
+                if on_servo is None or on_servo["image_sha"] != r["image_sha"]:
+                    on_servo, flashing = None, r
+                    osc.flash(r["image"])
+                    on_servo, flashing = r, None
+                    settings.await_boot()
+                    require_live_set(r["image"])
+                preflight(servo, board)
+                with applied(r, pair):
+                    record_run(r, k, s)
+                print(f"{r['label']} run-{k} of {rounds} done")
     finally:
-        # the stored set comes back whether the runs ended or aborted
-        if fields or table:
-            settings.restore()
-    return rung
+        if on_servo:
+            print(f"left on the servo: {shown(on_servo['image'])} (sha1 {on_servo['image_sha']})")
+        elif flashing:
+            print(f"the flash of {shown(flashing['image'])} did not finish: the servo's image is unknown")
+    return sides[0]["dir"], sides[1]["dir"]
 
 
 def score(label, servo=None, board=None):
@@ -657,12 +746,27 @@ def main(argv=None):
     r.add_argument("--settings", type=Path, help="a file of CONFIG fields the rung runs on, applied volatile")
     r.add_argument("--pos-table", action="store_true",
                    help="run on the pair's position table, installed volatile")
+    x = sub.add_parser("ab", help="record two rungs on the bench, their runs alternated")
+    for side in ("a", "b"):
+        x.add_argument(f"--{side}-label", required=True)
+        x.add_argument(f"--{side}-fw", required=True, help="the firmware commit the image was built from")
+        x.add_argument(f"--{side}-image", required=True, type=Path, help="the raw .bin image to flash")
+        x.add_argument(f"--{side}-settings", type=Path,
+                       help="a file of CONFIG fields the side runs on, applied volatile")
+        x.add_argument(f"--{side}-note", default="")
+    x.add_argument("--rounds", type=int, default=3)
     s = sub.add_parser("score", help="score a recorded rung")
     s.add_argument("label")
     sub.add_parser("table", help="print the ladder")
     a = ap.parse_args(argv)
     if a.cmd == "run":
         print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.settings, a.pos_table)))
+    elif a.cmd == "ab":
+        sides = [{"label": getattr(a, f"{side}_label"), "fw": getattr(a, f"{side}_fw"),
+                  "image": getattr(a, f"{side}_image"), "note": getattr(a, f"{side}_note"),
+                  "settings_file": getattr(a, f"{side}_settings")} for side in ("a", "b")]
+        for rung in ab(*sides, rounds=a.rounds):
+            print(shown(rung))
     elif a.cmd == "score":
         print(score(a.label))
     else:
