@@ -105,3 +105,30 @@ Tried, not kept:
 - `02c-speed-half-accel-40`, `02b` with the acceleration limit 2.7 times
   the stored one: 271 ms, the same landing oscillates, and the holds buzz
   more.
+- `01d-gains-band-8` and `02d-speed-half-band-8`, `01b` and `02b` with the
+  hold band at 8 counts in place of 4, over half the play between the
+  motor and the pot: the oscillation of `02b`'s landing is gone in all
+  three runs (landing buzz 0.001 against 0.06) and its 60 degree move
+  settles in 390 ms, and the rest error grows to 0.42 deg against 0.25
+  and the two-sided error to 0.5 to 0.6 deg against 0.3. A trade of
+  accuracy for speed and quiet, not a gain: held for a decision, and for
+  the same test under a load, where the play is taken up.
+- `03a-pos-table`, `01b` on the pair's position table: the rest error
+  and the two-sided error fall (0.19 and 0.15 deg against 0.25 and 0.30),
+  the speed ripple of a move does not change (46.5 %), and the crawl's
+  ripple, the overshoot and the follow's current are worse. Every score
+  here reads the pot, through the table once it is live, so what the
+  table buys in true angle needs the camera.
+- `04a-hold-settle`, firmware 0bf126a7 on `01b`'s settings: against the
+  control below, no row gains beyond the spread (2 landings of 45 buzz
+  against 3).
+
+One control, and what it says about reading the ladder:
+
+- `zz-control-01b` is `01b` recorded again on the same build a few hours
+  into the session. Its follow current at 3 % reads 113 mA against 90,
+  its 20 degree settle 664 ms against 362, its 60 degree overshoot 0.21
+  deg against 0. The spread of three runs taken back to back is narrower
+  than the servo's drift over a session, so a candidate is judged against
+  a control recorded next to it in time, not against a rung from hours
+  before.
