@@ -941,10 +941,14 @@ fn put_back<S: Servo>(s: &mut S, cfg: &Cfg, ran: &mut Ran) -> Result<()> {
     first.map_or(Ok(()), Err)
 }
 
-/// The goal torque comes on at: the present position, or zero.
+/// The goal torque comes on at: the present position, or zero. The
+/// position is the servo's own estimate, rounded to the count: one `pos`
+/// sample read over the bus sits a few counts off the shaft's rest, since
+/// the read's own traffic rings the pot channel, and a goal that far from
+/// the estimate is a move the loop then makes.
 fn start_goal<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<i32> {
     Ok(match cfg.mode {
-        Mode::Position => cfg.wd.lin(Poll::read(s)?.pos),
+        Mode::Position => (Poll::read(s)?.theta_hat_q16 + (1 << 15)) >> 16,
         Mode::Velocity | Mode::Current => 0,
     })
 }
@@ -1503,6 +1507,10 @@ mod tests {
             s.tick.i_tick_counts,
         ) = (pos, 1961, ntc, i);
         c.pipe_mut().set_track(0, vec![s]);
+        // the estimate torque comes on at, at the pot's reading
+        c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.estimates.theta_hat_q16 = (pos as i32) << 16;
+        });
     }
 
     fn cfg(r: &mut Rig, argv: &[&str]) -> Cfg {
@@ -1832,6 +1840,21 @@ mod tests {
                 .contains("over the 1000 rows")
         );
         assert!(r.writes.is_empty(), "nothing written by a refusal");
+    }
+
+    /// Torque comes on at the servo's estimate, not at the pot sample the
+    /// poll read: a goal off the estimate is a move the loop makes.
+    #[test]
+    fn torque_comes_on_at_the_estimate() {
+        let mut r = rig_at(2029, 0);
+        r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.estimates.theta_hat_q16 = (2025 << 16) + 0x6000;
+        });
+        let mut c = cfg(&mut r, &["--mode", "position", "--schedule", "hold@20"]);
+        let (_, _, res) = drive(&mut r, &mut c);
+        res.unwrap();
+        let goal = r.writes.iter().find(|w| w.0 == control::GOAL_POSITION);
+        assert_eq!(goal, Some(&(control::GOAL_POSITION, 2025)));
     }
 
     /// The dead-man goes out before torque on, the goal holds the present
