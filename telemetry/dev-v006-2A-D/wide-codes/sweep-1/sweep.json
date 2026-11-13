@@ -1,0 +1,21 @@
+{
+  "label": "sweep-1",
+  "utc": "2026-11-13T22:05:13+00:00",
+  "board": "dev-v006-2A-D",
+  "ramp_servo": "mg90-d",
+  "settings_file": "stages/5-closed-loop/scorecard/settings/01b-gains-3hz-50hz.json",
+  "fields": {
+    "p_kp_q88": 5026,
+    "v_kp_q88": 124,
+    "v_ki_q412": 311,
+    "v_kaw_q412": 623,
+    "velocity_limit_cps": 400
+  },
+  "speed_cps": 400,
+  "passes": 4,
+  "swept_counts": [
+    409,
+    3465
+  ],
+  "config_hash": "dab7874635dd94599d9ec14e802b4deaaa0dc040ac6823dfd7e7aa2f7ffbc064"
+}

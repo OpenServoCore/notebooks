@@ -38,6 +38,8 @@ place. compensation captures nothing of its own and closes the
 stage: it reads this stage's results and datasets and, as earlier-stage data,
 two motors' stage 2 coast datasets taken on the same board, one of them with
 the trough shunt sample in every row.
+wide-codes is a tool, not a notebook, and runs on the production image
+with a servo on the board, once per board.
 
 ## TL;DR
 
@@ -456,3 +458,31 @@ asleep zero plus a per-rail table, and the tracker with a rail term are
 scored against each dataset's own zero.
 
 Run: the notebook alone.
+
+## wide-codes
+
+Targets: the ADC's wide codes. A few codes just under a multiple of 256
+hold while the converter's input rises on through the codes above them,
+which are never read. Per wide code, the stuck code, the codes it skips
+and how many times the median rows it reads, and the 16 slot values of
+the servo's `adc_wide_mid_q4` field: one byte per multiple of 256, half
+the skipped span in 1/16 counts, which the servo adds to its pot reading
+at that stuck code. A property of the board's chip, found once per board.
+
+Needs: board with a servo on it, DPS at the servo's rated voltage, the
+production image, host. The servo's pot is only the ramp; `sweep.json`
+and the result name the servo that served.
+
+How: a closed-loop sweep of the pot across the servo's soft range less
+5 deg at each end, four passes at 400 counts/s, so every code gets about
+200 rows; a run of codes never read inside the range, 15 counts in from
+each end, is a skipped run, and the sweep is refused under a median of
+100 rows per code. A run takes a slot only under a code that reads wide
+(at least half of what a code standing for itself and the run would read)
+and when it skips three codes or more: a shorter one moves the reading by
+a count or less, inside the converter's ripple from code to code. No
+notebook: the tool prints the table and writes `results/<board>.json`.
+
+Run: `uv run python -m oscnb.widecodes capture`, then `find`. `install`
+writes the board's slots to the servo volatile and reads them back, no
+SAVE; the scorecard's `--wide-codes` does the same for a rung.

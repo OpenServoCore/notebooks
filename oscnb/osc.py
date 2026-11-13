@@ -63,6 +63,17 @@ def get(field):
         return v
 
 
+def field(name):
+    """(addr, width, raw bytes) of a register as the servo's own descriptor
+    places it, off `osc get`'s line; None when the descriptor names no such
+    field (the tool's own error on stderr says why)."""
+    out = run("get", name, capture=True, check=False) or ""
+    m = re.search(rf"^{re.escape(name)} = .*\(addr (0x[0-9a-f]+), (\d+) B, raw ([0-9a-f ]*)\)\s*$", out, re.M)
+    if not m:
+        return None
+    return int(m.group(1), 16), int(m.group(2)), bytes.fromhex(m.group(3))
+
+
 def set_(field, value):
     """Write one register, volatile until a SAVE."""
     run("set", field, value)

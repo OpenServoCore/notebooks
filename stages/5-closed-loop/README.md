@@ -63,8 +63,8 @@ the bus at 3 Mbps, torque off, the production image flashed. The runner
 never touches the supply and never prompts; it refuses to start otherwise.
 
 ```
-uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table]
-uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-note TEXT] [--rounds 3]
+uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table] [--wide-codes]
+uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
 uv run python -m oscnb.scorecard score 00-baseline
 uv run python -m oscnb.scorecard table
 ```
@@ -81,6 +81,13 @@ file and its sha1 kept in `rung.json`, and the same reboot dropping it at
 the end. `score` reads such a rung's raw pot through the table its
 `rung.json` names, and refuses a capture with a live table and no table
 named.
+
+A rung passed `--wide-codes` (on `ab`, `--a-wide-codes` or
+`--b-wide-codes`) runs on the board's ADC wide-code slots, found once per
+board ([stage 1, wide-codes](../1-board/README.md#wide-codes)): written
+after the settings and the table, outside the stamp, the board's result
+file and its sha1 kept in `rung.json`, and the same reboot dropping them
+at the end.
 
 The same servo drifts within a session, so a candidate and its control
 are best recorded together. `ab` records two rungs at once, one run of
@@ -156,6 +163,23 @@ Kept:
   one count (0.05 deg) against 0.11 and 0.48 deg, and no other row moves
   beyond the spread between the two sets. Not measured: a shaft moved by
   hand with the torque off, the case the change leaves on the old path.
+- `09a-wide-codes`: `01b`'s settings on firmware c15722d6, which reads a
+  pot sample at one of the ADC's wide codes as the middle of the span
+  that code stands for, on the board's slots
+  ([stage 1](../1-board/README.md#wide-codes)). Before it a goal inside
+  a wide code is never within the deadband of the reading, and the loop
+  hunts across the code without end. Against the firmware before it,
+  alternated in one sitting outside the scorecard, nine holds of 2 s a
+  run at goals inside the codes at 1023, 2047 and 2559: 10 of 27 holds
+  are still driven in their last second (8 of 12 at 1023, on 80 % of the
+  rows at 250 to 340 mA rms), against 0 of 27. On the scorecard,
+  alternated in two sets of three rounds with the order of the sides
+  swapped (this rung against `zz-ab-before-wide-codes`,
+  `zz-ab-after-wide-codes-2` against `zz-ab-before-wide-codes-2`): the
+  speed report on the 1 % ramp reads -5.8 and -5.7 deg/s against -7.2
+  and -7.4, and no other row moves the same way beyond the spread in
+  both sets. The set has no hold at a wide-code goal, so the rung's own
+  gain is not one of its rows yet.
 
 Tried, not kept:
 
@@ -270,3 +294,15 @@ The controls, and what they say about reading the ladder:
   the worst of 13 landings a run moves by a count or two between sets on
   one firmware, so one alternated set of three rounds does not carry an
   accuracy claim of that size either.
+- `zz-ab-before-wide-codes`, `zz-ab-after-wide-codes-2` and
+  `zz-ab-before-wide-codes-2` are the other three sides of `09a`'s two
+  sets. The first set reads the 60 degree overshoot as a gain for the
+  change (0.21 against 0.63 deg), the second as a loss (0.63 against
+  0.26), and the slow follow's current as lower by a fifth with the
+  ranges apart only in the first. The speed report on the 3 % ramp
+  reads -4.8 and -4.9 deg/s against -4.3 and -4.4, the ranges of three
+  runs apart by a hair in both sets; over the twelve ramps a side, nine
+  of the change's sit between -3.3 and -5.3 deg/s, inside the control's
+  -3.2 to -5.4, and three read -7 to -9. A ramp's speed report is one
+  poll per goal item, so the row carries a shift of that size only as a
+  pointer.

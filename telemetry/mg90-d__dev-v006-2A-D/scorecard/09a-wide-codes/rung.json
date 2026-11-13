@@ -1,0 +1,20 @@
+{
+  "label": "09a-wide-codes",
+  "fw": "c15722d6",
+  "image_sha": "fd7255e8553d2b68ef9580a914ba2969626a7f50",
+  "note": "01b's gains on the firmware that corrects the ADC's wide codes on the pot, the board's slots installed; recorded with ab against zz-ab-before-wide-codes on a build of the same tree, image identical",
+  "utc": "2026-11-13T22:25:57+00:00",
+  "config_hash": "a433f89fcbe17f4f77da10563f60cfeab96ce14b1b095f6555b4a3b5c131f06c",
+  "runs_asked": 3,
+  "settings": {
+    "p_kp_q88": 5026,
+    "v_kp_q88": 124,
+    "v_ki_q412": 311,
+    "v_kaw_q412": 623
+  },
+  "pos_table": null,
+  "wide_codes": {
+    "file": "stages/1-board/wide-codes/results/dev-v006-2A-D.json",
+    "sha1": "68f01864e8cba762cf8c680f3078df4ecd4b77fc"
+  }
+}
