@@ -32,6 +32,10 @@ a recorded sweep, prints the ADC's wide codes and writes the board's
 result, `stages/1-board/wide-codes/results/<board>.json`. `install`
 writes the board's slots to the servo volatile and reads them back;
 nothing here sends a SAVE.
+
+`compensated` gives a recording's pot rows the board's step offline, each
+stuck code's slot added, with the slots of record `slots_of_meta` finds
+from the recording's own meta.
 """
 import argparse
 import json
@@ -195,6 +199,31 @@ def slots_of_record(board):
     if not isinstance(v, list) or len(v) != SLOTS or not all(isinstance(x, int) and 0 <= x <= SLOT_MAX for x in v):
         raise settings.Refused(f"{sc.shown(path)}: {FIELD} is not {SLOTS} values 0..{SLOT_MAX}")
     return bytes(v)
+
+
+# --- the readings ---
+
+def slots_of_meta(meta):
+    """The 16 slots of record, as an array, of the board a recording's
+    meta names; refused when no board's sense block matches."""
+    board = boards.from_meta(meta)
+    if board is None:
+        raise ValueError(f"no board matches the sense block {meta.get('sense')}")
+    return np.frombuffer(slots_of_record(board.key), np.uint8)
+
+
+def compensated(pos, slots):
+    """Raw pot codes `pos` as float counts with each stuck code's slot / 16
+    added: the reading the code stands for, the middle of the span it
+    covers. Codes whose low byte is not CARRY, and stuck codes whose slot
+    is zero, come back unchanged."""
+    if isinstance(slots, (bytes, bytearray)):
+        slots = np.frombuffer(slots, np.uint8)
+    raw = np.asarray(pos).astype(np.int64)
+    out = raw.astype(float)
+    stuck = (raw & CARRY) == CARRY
+    out[stuck] += np.asarray(slots)[raw[stuck] >> SLOT_SHIFT] / 16.0
+    return out
 
 
 # --- the capture ---

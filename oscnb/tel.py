@@ -33,8 +33,10 @@ def dropout_rows(i_over_zero, ref=None):
     return x < DROPOUT_FRAC * (x.mean() if ref is None else np.asarray(ref, float))
 
 
-def load(folder, board=None):
-    """(frame, meta) of one recording. With a board, its sense block is checked."""
+def load(folder, board=None, wide_codes=False):
+    """(frame, meta) of one recording. With a board, its sense block is checked.
+    With `wide_codes` the raw pot code is kept as `pos_raw` and `pos` carries
+    the ADC's wide-code step of the board the meta names (`widecodes.compensated`)."""
     folder = Path(folder)
     meta = json.loads((folder / "meta.json").read_text())
     df = pd.read_csv(folder / "sweep.csv")
@@ -43,6 +45,10 @@ def load(folder, board=None):
     arr = meta.get("pwm_period_ticks", 1200)
     df["duty_q15"] = (df["duty_counts"] * 32768 / arr).round()
     df["t"] = (df["tick"] - df["tick"].iloc[0]) / meta.get("tick_hz", 20_000)
+    if wide_codes:
+        from . import widecodes    # the bench stack it imports stays out of a plain load
+        df["pos_raw"] = df["pos"].to_numpy()
+        df["pos"] = widecodes.compensated(df["pos"], widecodes.slots_of_meta(meta))
     return df, meta
 
 

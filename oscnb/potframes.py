@@ -114,10 +114,11 @@ def board_of(meta, where=""):
     return board
 
 
-def load_sweep(data, block, k):
-    """(rows with a host time each, meta, segments) of one chain."""
+def load_sweep(data, block, k, wide_codes=False):
+    """(rows with a host time each, meta, segments) of one chain; with
+    `wide_codes` the pot carries the board's step (`tel.load`)."""
     folder = data / block / "chains" / str(k)
-    df, meta = tel.load(folder)
+    df, meta = tel.load(folder, wide_codes=wide_codes)
     board_of(meta, str(results.rel(folder)))
     seg = pd.read_csv(folder / "segments.csv").set_index("seg")
     df["host"] = df["seg"].map(seg["t_start"]) + df["tick"] / meta["tick_hz"]
@@ -390,17 +391,18 @@ class PotFrames:
         return model["c"], counts_at
 
 
-def load(pair_dir, manifest=None):
+def load(pair_dir, manifest=None, wide_codes=False):
     """The pot-table sitting of one pair's folder: its data under
     EXPERIMENT, its events in sittings/SITTING.csv unless `manifest` names
-    another log."""
+    another log. With `wide_codes` every chain's pot carries the board's
+    wide-code step before the frames are made (`tel.load`)."""
     pair_dir = Path(pair_dir)
     data = pair_dir / EXPERIMENT
     if manifest is None:
         manifest = pair_dir / "sittings" / f"{SITTING}.csv"
     clips, chains = clips_and_chains(data, clip_events(manifest))
     guards, rail_v = guards_and_rail(manifest)
-    sweeps = {(name, k): load_sweep(data, block, k)
+    sweeps = {(name, k): load_sweep(data, block, k, wide_codes)
               for name, (block, _, ks) in clips.items() for k in ks}
     clocks = clocks_of(data, clips)
     tags = {name: clip_angles(data, clips, clocks, name) for name in clips}

@@ -184,3 +184,25 @@ def test_groups_of_is_the_baseline_then_the_lead_groups():
     assert pf.groups_of("pass", range(5)) == [[0], [1, 2], [3, 4]]
     assert pf.groups_of("crawl", range(7)) == [[0], [1, 2, 3], [4, 5, 6]]
     assert pf.groups_of("steps", [2, 0, 1]) == [[0], [1], [2]]
+
+
+def test_a_chains_load_passes_the_wide_code_step_through_and_leaves_it_off(
+        monkeypatch, tmp_path):
+    folder = tmp_path / "block" / "chains" / "3"
+    folder.mkdir(parents=True)
+    pd.DataFrame({"seg": [0, 1], "t_start": [10.0, 20.0]}).to_csv(
+        folder / "segments.csv", index=False)
+    seen = []
+
+    def load(f, wide_codes=False):
+        seen.append(wide_codes)
+        return (pd.DataFrame({"seg": [0, 1], "tick": [0, 20], "pos": [1, 2]}),
+                {"tick_hz": FS, "sense": {}})
+
+    monkeypatch.setattr(pf.tel, "load", load)
+    monkeypatch.setattr(pf, "board_of", lambda meta, where="": None)
+    monkeypatch.setattr(pf.results, "rel", str)
+    df, _, _ = pf.load_sweep(tmp_path, "block", 3)
+    pf.load_sweep(tmp_path, "block", 3, wide_codes=True)
+    assert seen == [False, True]
+    np.testing.assert_allclose(df["host"], [10.0, 20.001])
