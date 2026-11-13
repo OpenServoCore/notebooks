@@ -979,6 +979,13 @@ fn rest<S: Servo>(s: &mut S, lease: &mut Lease, wd: &mut Watchdog, ms: u32) -> R
     Ok(())
 }
 
+/// Polls of `fault_flags` the dead-man check waits through after its ack:
+/// the servo clears the latch at the enable edge its control phase reads
+/// and publishes it a phase later, so a read right behind the write can
+/// still carry the old flags.
+const ACK_POLLS: u32 = 5;
+const ACK_POLL_MS: u32 = 2;
+
 /// Torque on holding, then silence for 1.5 x the dead-man: an image that
 /// honors it has latched `deadman` and coasts, and the ack restarts it
 /// holding. Anything else turns torque off and is refused.
@@ -1011,7 +1018,14 @@ fn check_deadman<S: Servo>(s: &mut S, cfg: &Cfg, lease: &mut Lease) -> Result<&'
     let goal = start_goal(s, cfg)?;
     s.write(cfg.mode.goal(), goal)?;
     lease.torque_on(s)?;
-    let p = Poll::read(s)?;
+    let mut p = Poll::read(s)?;
+    for _ in 0..ACK_POLLS {
+        if p.fault_flags == 0 {
+            break;
+        }
+        s.sleep(ACK_POLL_MS);
+        p = Poll::read(s)?;
+    }
     if p.fault_flags != 0 {
         lease.write(s, control::TORQUE_ENABLE, 0)?;
         return refuse(format!(
