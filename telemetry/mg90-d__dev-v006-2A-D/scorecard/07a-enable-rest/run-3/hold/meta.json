@@ -1,0 +1,123 @@
+{
+  "center": 1937,
+  "config": {
+    "accel_limit_q88": 3840,
+    "baud_rate_idx": 3,
+    "capability_flags": 1,
+    "current_limit_counts": 554,
+    "cutoff_cc": 10000,
+    "derate_start_cc": 8000,
+    "drive_polarity": true,
+    "duty_max_q15": 32767,
+    "firmware_version": 65,
+    "hardware_revision": 2,
+    "i_cont_counts": 277,
+    "i_kaw_q412": 3160,
+    "i_ki_q412": 1580,
+    "i_kp_q88": 275,
+    "id": 1,
+    "j_ff_q88": 789,
+    "l1_q016": 8640,
+    "l2_q88": 3180,
+    "l3_q88": 77,
+    "model_number": 257,
+    "oc_trip_counts": 2439,
+    "oc_trip_ticks": 8,
+    "openloop_decay": "Slow",
+    "openloop_zero_brake": false,
+    "p_kp_q88": 5026,
+    "pos_deadband_counts": 4,
+    "pos_error_counts": 400,
+    "pos_error_time_ticks": 10000,
+    "pos_max_phys_counts": 3792,
+    "pos_max_soft_counts": 3560,
+    "pos_min_phys_counts": 82,
+    "pos_min_soft_counts": 314,
+    "rail_fold_q8": 1430,
+    "response_deadline_us": 1000,
+    "sensor_bad_count": 4,
+    "sensor_delta_max": 256,
+    "stall_omega_max_cps": 500,
+    "stall_release_counts": 100,
+    "stall_response": "Fault",
+    "stall_tau_trip_counts": 65535,
+    "stall_time_ticks": 10000,
+    "tel_chunks_max": 2,
+    "tel_row_bytes_max": 12,
+    "thermal_tau2_s": 0,
+    "thermal_tau_s": 115,
+    "v_kaw_q412": 623,
+    "v_ki_q412": 311,
+    "v_kp_q88": 124,
+    "v_undervolt_counts": 720,
+    "velocity_limit_cps": 1500
+  },
+  "control": {
+    "bus_deadman_ticks": 20000,
+    "goal_current": 0,
+    "goal_duty": 0,
+    "goal_position": 1930,
+    "goal_velocity": 0,
+    "mode": "Position",
+    "stall_permit": false,
+    "torque_enable": true
+  },
+  "data_flags_after": [],
+  "deadman": {
+    "check": null,
+    "ms": 1000,
+    "ticks": 20000
+  },
+  "ended": "ok",
+  "fw": 65,
+  "guard": [
+    314,
+    3560
+  ],
+  "mode": "position",
+  "model": 257,
+  "plant": {
+    "data_flags": [],
+    "lut_band": null,
+    "lut_crc": "0x0000",
+    "lut_nonzero_points": 0,
+    "lut_state": "IDENTITY",
+    "plant_stamp": "0x00f1",
+    "stamp_computed": "0x00f1",
+    "stamp_verdict": "match"
+  },
+  "pwm_period_ticks": 1200,
+  "restored": [],
+  "rows_dropped": 0,
+  "schedule": [
+    "hold@3000",
+    "hold@3000"
+  ],
+  "sense": {
+    "gain_milli": 14884,
+    "shunt_r_mohm": 60,
+    "vdd_mv": 3300,
+    "vmotor_div_bot": 1600,
+    "vmotor_div_top": 6400
+  },
+  "tel_chunks": [
+    [
+      568,
+      2
+    ],
+    [
+      576,
+      10
+    ]
+  ],
+  "tick_hz": 20000,
+  "vbus_counts": 1241,
+  "watchdog": {
+    "current_cap_counts": 942.1842618181818,
+    "current_cap_ma": 850.0,
+    "current_cap_ms": 100,
+    "current_cap_polls": 2,
+    "current_cap_rows": 2000,
+    "ntc_max_c": 80.0
+  }
+}

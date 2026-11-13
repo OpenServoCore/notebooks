@@ -1,0 +1,16 @@
+{
+  "label": "07a-enable-rest",
+  "fw": "f5e9ee6f",
+  "image_sha": "4c9d953d47a08ec6d1150993f741d3f57f90efe7",
+  "note": "01b's gains on the torque-on that keeps an agreeing estimate and starts the profile on the goal; recorded with ab against zz-ab-before-enable-rest-2 on a build of the same tree, image identical",
+  "utc": "2026-11-13T08:31:03+00:00",
+  "config_hash": "a433f89fcbe17f4f77da10563f60cfeab96ce14b1b095f6555b4a3b5c131f06c",
+  "runs_asked": 3,
+  "settings": {
+    "p_kp_q88": 5026,
+    "v_kp_q88": 124,
+    "v_ki_q412": 311,
+    "v_kaw_q412": 623
+  },
+  "pos_table": null
+}

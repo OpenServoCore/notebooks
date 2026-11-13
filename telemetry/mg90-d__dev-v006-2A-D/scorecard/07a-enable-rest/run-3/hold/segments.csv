@@ -1,0 +1,3 @@
+seg,kind,field,value,ms,tick0,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags
+0,hold,,,3000,33549,60000,0,1794558882.519,1794558885.523,1245,1983,126441220,-3360330,2690,554,0,0
+1,hold,,,3000,28347,60000,0,1794558885.535,1794558888.538,1241,1980,126545739,451133,2705,554,0,0
