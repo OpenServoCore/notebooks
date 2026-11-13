@@ -97,15 +97,15 @@ Kept:
   are driven in their tail, one a swing of 17 counts either side of the
   goal, wider than the zone, that runs past a second, and the settle
   times are the control's, so this rung's shorter settle times are not a
-  gain. Its hold rows read a kick at torque-on in the head of the first
-  hold, as common on the firmware before it (13 of 48 enables after a
-  move against 9 of 48), not the hold.
+  gain. The kick at torque-on that the enable rows read is as common
+  on the firmware before it (13 of 48 enables after a move against 9 of
+  48).
 
 Tried, not kept:
 
 - `01a-gains-6hz-100hz`, the position gain a quarter and the velocity
   gains half: over the stored set, under `01b` on every current row, and
-  two holds in three buzz. Recorded before the capture tool turned torque
+  one hold in three buzzes. Recorded before the capture tool turned torque
   on at the servo's own estimate, so its enable kick is not comparable.
 - `01c-gains-rule`, the set a gain rule over the measured plant gives,
   between `01a` and `01b`: the slow follow's current lands where the rule
@@ -121,8 +121,8 @@ Tried, not kept:
   oscillates about the goal in all three runs (landing buzz 0.06 against
   0.007).
 - `02c-speed-half-accel-40`, `02b` with the acceleration limit 2.7 times
-  the stored one: 271 ms, the same landing oscillates, and the holds buzz
-  more.
+  the stored one: 271 ms, the same landing oscillates, and one hold in
+  three buzzes.
 - `01d-gains-band-8` and `02d-speed-half-band-8`, `01b` and `02b` with the
   hold band at 8 counts in place of 4, over half the play between the
   motor and the pot: the oscillation of `02b`'s landing is gone in all
