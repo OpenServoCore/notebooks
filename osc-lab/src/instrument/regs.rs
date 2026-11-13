@@ -125,6 +125,9 @@ pub mod telemetry {
 
     pub const FAULT_FLAGS: Reg = reg(0x0200, 1);
     pub const FAULT_CODE: Reg = reg(0x0221, 1);
+    /// Which estimate `OMEGA_HAT_CPS` is: 0 the pot observer, 1 the
+    /// back-EMF boxcar.
+    pub const OMEGA_HAT_SRC: Reg = reg(0x0222, 1);
     /// The tick block, `I_TICK_COUNTS..=SAMPLE_TICK`, written every control
     /// tick: what a TEL row's first chunk copies.
     pub const I_TICK_COUNTS: Reg = reg(0x024a, 2);
@@ -231,6 +234,7 @@ mod tests {
         ("frame_len", burst::FRAME_LEN),
         ("fault_flags", telemetry::FAULT_FLAGS),
         ("fault_code", telemetry::FAULT_CODE),
+        ("omega_hat_src", telemetry::OMEGA_HAT_SRC),
         ("i_tick_counts", telemetry::I_TICK_COUNTS),
         ("vdiff_counts", telemetry::VDIFF_COUNTS),
         ("duty_ticks", telemetry::DUTY_TICKS),

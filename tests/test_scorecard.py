@@ -2,7 +2,8 @@
 overshoot and settle through pot spikes, a ramp with a known lag, the
 tick unwrap across a wrap, the reversal count, the test set's schedules
 and refusal, the hold rows past a torque-on head, a landing's drive
-after arrival and the landings that hunt, and the runner's refusals with
+after arrival and the landings that hunt, the servo's speed and position
+reports against the pot, and the runner's refusals with
 `osc` stubbed, then one rung end to end on a fake servo; a rung on a
 position table, its install's place in the runner and its rows read
 through the table; an A/B of two rungs, its flashes, settings and
@@ -15,6 +16,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from oscnb import boards, postable, results, scorecard as sc, servos
@@ -174,10 +176,10 @@ def test_landing_drive_reads_the_drive_after_arrival(tmp_path):
     assert s["landing_drive_ms_worst"] == pytest.approx(1500.0)
 
 
-def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
+def ramp_rows(n=50):
     """Goals 10 counts apart every 512 ticks (a 400-row burst and a gap),
-    the shaft 30 counts behind the goal in force, up and back down."""
-    n = 50
+    the shaft 30 counts behind the goal in force, up and back down, a
+    pause after each: the plan's segments and the rows."""
     segs, rows = [], []
     for ramp, direction in ((0, 1), (1, -1)):
         base = CENTER if direction > 0 else CENTER + 10 * n
@@ -189,6 +191,11 @@ def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
             rows.append((segs[-1]["item"], goal, np.full(400, goal - direction * 30), np.full(400, 100 * direction)))
         segs.append({"item": "hold@500", "test": "pause", "goal_counts": None, "goal_deg": None})
         rows.append(("hold@500", goal, np.full(10_000, goal), np.zeros(10_000, int)))
+    return segs, rows
+
+
+def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
+    segs, rows = ramp_rows()
     synth.write(tmp_path, rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs))
     f = sc.follow_scores(sc.load(tmp_path))
     assert f["lag_deg_1pct"] == pytest.approx(1.5)
@@ -196,6 +203,58 @@ def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
     assert f["ramp_speed_deg_s_1pct"] == pytest.approx(10 / 0.0256 / CPD)
     assert f["follow_reversals_per_s_1pct"] == 0
     assert np.isfinite(f["crawl_speed_ripple_pct"])
+
+
+def slow_report(segs, slow_deg_s):
+    """omega_hat_cps a poll an item: the ramps' real speed less
+    `slow_deg_s` along the travel, 0 on a pause."""
+    cps = 10 / (512 / 20_000)
+    return [round(s["direction"] * (cps - slow_deg_s * CPD) * sc.Q16) if s["test"] == "ramp" else 0
+            for s in segs]
+
+
+def test_a_speed_report_that_reads_slow_scores_negative(tmp_path):
+    segs, rows = ramp_rows()
+    synth.write(tmp_path, rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
+                polls={"omega_hat_cps": slow_report(segs, 4.0)})
+    f = sc.follow_scores(sc.load(tmp_path))
+    assert f["speed_report_error_deg_s_1pct"] == pytest.approx(-4.0, abs=1e-6)
+
+
+def steps_with_reports(tmp_path, offsets):
+    """Three goals held flat, the middle one hunting 10 counts either side
+    over its last 50 ms, then a hold; `offsets` are each poll's report
+    less the goal the item before it held, in counts, the first poll
+    taken before any goal."""
+    goals = [CENTER + 400, CENTER, CENTER - 400]
+    rows, segs = [], [goal_seg(g) for g in goals] + [hold_seg(500)]
+    for k, goal in enumerate(goals):
+        pos = np.full(30_000, float(goal))
+        if k == 1:
+            pos[-1000:] += 10 * np.sin(np.arange(1000) / 100)
+        rows.append((goal_seg(goal)["item"], goal, pos, np.zeros(30_000, int)))
+    rows.append(("hold@500", goals[-1], np.full(10_000, goals[-1]), np.zeros(10_000, int)))
+    before = [CENTER, *goals]
+    theta = [round((b + o) * sc.Q16) for b, o in zip(before, offsets)]
+    return synth.write(tmp_path, rows, CENTER, GUARD, plan=plan(segs), polls={"theta_hat_q16": theta})
+
+
+def test_a_position_report_reads_against_the_quiet_pot_of_the_item_it_closes(tmp_path):
+    # the first poll closes no goal, the third closes the hunting one
+    cap = sc.load(steps_with_reports(tmp_path, [300, 1, 50, -0.5]))
+    assert sc.position_report_error_deg(cap) == pytest.approx(1 / CPD)
+
+
+def test_a_capture_without_the_report_columns_scores_nan(tmp_path):
+    segs, rows = ramp_rows()
+    synth.write(tmp_path / "follow", rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
+                polls={"omega_hat_cps": slow_report(segs, 4.0)})
+    steps_with_reports(tmp_path / "steps", [0, 1, 0, 1])
+    for name, col in (("follow", "omega_hat_cps"), ("steps", "theta_hat_q16")):
+        f = tmp_path / name / "segments.csv"
+        pd.read_csv(f).drop(columns=col).to_csv(f, index=False)
+    assert np.isnan(sc.follow_scores(sc.load(tmp_path / "follow"))["speed_report_error_deg_s_1pct"])
+    assert np.isnan(sc.position_report_error_deg(sc.load(tmp_path / "steps")))
 
 
 def test_ticks_unwrap_across_the_u16_wrap(tmp_path):
@@ -346,9 +405,10 @@ def test_a_rung_end_to_end(bus):
                 for n in TS.STEP_SIZES_DEG}
     expected |= {f"{b}_{p}pct" for b in ("lag_deg", "follow_error_sd_deg", "follow_current_rms_ma",
                                          "follow_reversals_per_s", "follow_duty_rms_pct",
-                                         "ramp_speed_deg_s")
+                                         "ramp_speed_deg_s", "speed_report_error_deg_s")
                  for p in TS.FOLLOW_SPEED_PCT}
     expected |= {"speed_ripple_pct", "rest_error_deg", "two_sided_deg", "enable_kick_deg", "enable_drive_ms",
+                 "position_report_error_deg",
                  "landing_buzz_share", "landing_tail_driven", "landing_drive_ms", "landing_drive_ms_worst",
                  "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct"}
     assert set(s) == expected

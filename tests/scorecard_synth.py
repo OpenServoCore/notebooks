@@ -18,7 +18,8 @@ from oscnb import boards, scorecard
 HEADER = ("seg,goal,tick,window_valid,pos,current,current_trough,duty_counts,vdiff,vbus,"
           "current_raw,vmotor_a,vmotor_b,vbus_raw,ntc_raw,vref_raw").split(",")
 SEG_HEADER = ("seg,kind,field,value,ms,tick0,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,"
-              "theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags").split(",")
+              "theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,"
+              "i_tick_counts,current_bias_counts,fault_code,omega_hat_src").split(",")
 ZERO = 1210           # the shunt's raw zero
 I_PER_DUTY = 0.2      # raw current counts per duty count
 WINDOW_MIN = 64       # a drive window under this many duty counts reads no current
@@ -34,10 +35,12 @@ def meta(center, guard, tick_hz, config=None, lut_state="IDENTITY"):
 
 
 def write(out, segs, center, guard, tick_hz=20_000, tick0=60_000, gap_ticks=500,
-          plan=None, config=None, lut_state="IDENTITY"):
+          plan=None, config=None, lut_state="IDENTITY", polls=None):
     """One capture into `out`. `segs` are (item, goal, pos, duty) per
     schedule item, the arrays one value a row; tick0 starts at `tick0` and
-    each segment opens `gap_ticks` after the last, wrapping at 2^16."""
+    each segment opens `gap_ticks` after the last, wrapping at 2^16, its
+    t_start the host's clock on the same axis. `polls` are a column of
+    segments.csv each, one value an item; the rest are left empty."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     frames, seg_rows = [], []
@@ -55,7 +58,8 @@ def write(out, segs, center, guard, tick_hz=20_000, tick0=60_000, gap_ticks=500,
         value = kind.split(":")[1] if kind.startswith("goal:") else ""
         seg_rows.append({"seg": k, "kind": "goal" if value else "hold", "value": value, "ms": rest,
                          "tick0": t % 65536, "rows": n, "rows_dropped": 0,
-                         "t_start": 0.0, "t_end": 0.0})
+                         "t_start": (t - tick0) / tick_hz, "t_end": (t - tick0 + n) / tick_hz,
+                         **{c: v[k] for c, v in (polls or {}).items()}})
         t += n + gap_ticks
     pd.concat(frames).reindex(columns=HEADER).to_csv(out / "track.csv", index=False)
     pd.DataFrame(seg_rows).reindex(columns=SEG_HEADER).to_csv(out / "segments.csv", index=False)
