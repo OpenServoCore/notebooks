@@ -1,0 +1,9 @@
+{
+  "label": "00-baseline",
+  "fw": "65af3765",
+  "image_sha": "9d9325c7db123d9a1b9eecf6e79905b294864e4b",
+  "note": "stored settings (the old ident set, stamp 0x9c45), identity position table, free horn",
+  "utc": "2026-11-13T04:29:52+00:00",
+  "config_hash": "6a4f365e3ddb3c0477bc34db2b51e7d329e4c6759167ec4834731e98a398d8c8",
+  "runs_asked": 3
+}

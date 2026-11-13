@@ -65,15 +65,13 @@ position, velocity and winding temperature.
 No new captures. Each estimator is designed offline over the stage 3 data
 and graded against the stage 0 instruments.
 
-### 5. Control design
+### 5. Closed loop
 
-Folder `stages/5-control/`. Targets the control loops. Current, velocity, position and trajectory,
-including how a hold behaves.
-
-The loops are designed from the measured plant and the estimators' noise
-and delay, over the stage 3 data. Each notebook ends with the loop the data
-supports, which is what the firmware carries, and the acceptance it has to
-meet in stage 7.
+Folder `stages/5-closed-loop/`. Targets the servo's closed loop, scored on
+the bench. A firmware build runs one fixed test set of steps, slow goal
+ramps and holds in Position mode, and the scorecard turns the rows into a
+short list of numbers, so a change to the firmware or its settings is kept
+or dropped on them.
 
 ### 6. Safety design
 
@@ -274,10 +272,13 @@ README is stale. A stage with no `tldr.toml` is skipped.
 ## osc-lab
 
 `osc-lab` is the little Rust tool in [osc-lab/](osc-lab) that every capture
-records with. It has two commands. `osc-lab sweep` drives open-loop duty
+records with. It has three commands. `osc-lab sweep` drives open-loop duty
 rungs and streams the raw TEL rows into `sweep.csv`. `osc-lab burst` takes
-the high-rate shunt bursts from rest into `burst-K.csv`. Both write a
-`meta.json` beside the data with the servo's constants at the time.
+the high-rate shunt bursts from rest into `burst-K.csv`. `osc-lab track`
+drives a closed loop of the production image through a schedule of goals
+and streams the raw rows into `track.csv`, one segment of `segments.csv`
+per item. All three write a `meta.json` beside the data with the servo's
+constants at the time.
 
 It is the only capture instrument. Nothing in it fits, identifies or
 calibrates. It is a raw instrument on purpose, so a dataset never goes
