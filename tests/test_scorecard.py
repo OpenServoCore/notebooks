@@ -5,10 +5,12 @@ and refusal, the hold rows past a torque-on head, a landing's drive
 after arrival and the landings that hunt, and the runner's refusals with
 `osc` stubbed, then one rung end to end on a fake servo; a rung on a
 position table, its install's place in the runner and its rows read
-through the table."""
+through the table; an A/B of two rungs, its flashes, settings and
+refusals, and the flash's command line."""
 import hashlib
 import io
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -464,6 +466,163 @@ def test_a_refused_install_reboots_and_runs_nothing(bus, monkeypatch):
     with pytest.raises(sc.settings.Refused, match="REJECT_ENDS"):
         sc.run("03-table", "abc123", "f" * 40, runs=1, pos_table=True, servo=SERVO, board=BOARD)
     assert [c[0] for c in calls] == ["install", "restore"] and bus["log"] == []
+
+
+@pytest.fixture
+def ab_bench(bus, monkeypatch, tmp_path):
+    """The fake servo with two images on disk, a.bin and b.bin: every flash,
+    wait for the bus, status read, settings apply and restore, and every
+    run's first capture logged in one order."""
+    images = {}
+    for name in ("a", "b"):
+        images[name] = tmp_path / f"{name}.bin"
+        images[name].write_bytes(name.encode() * 64)
+    events = []
+    track = sc.osc.track
+
+    def tracked(out, mode, schedule, **kw):
+        out = Path(out)
+        if out.name == "steps":
+            events.append(("run", out.parent.parent.name, out.parent.name))
+        return track(out, mode, schedule, **kw)
+
+    def status():
+        events.append(("status",))
+        return f"id 1: model 0x0101\n      data  clean\n      stamp {bus['stamp']}\n"
+
+    bus["stamp"] = "0x9c45 = live set"
+    monkeypatch.setattr(sc.osc, "track", tracked)
+    monkeypatch.setattr(sc.osc, "flash", lambda image: events.append(("flash", Path(image).name)))
+    monkeypatch.setattr(sc.osc, "status", status)
+    monkeypatch.setattr(sc.settings, "await_boot", lambda: events.append(("boot",)))
+    monkeypatch.setattr(sc.settings, "apply",
+                        lambda fields, note="", stamp=True: events.append(("apply", dict(fields), stamp)))
+    monkeypatch.setattr(sc.settings, "restore", lambda: events.append(("restore",)))
+    return {"images": images, "events": events}
+
+
+def side(bench, label, image, **kw):
+    return {"label": label, "fw": "abc123", "image": bench["images"][image], **kw}
+
+
+def settings_file(tmp_path, name, fields):
+    f = tmp_path / f"{name}.json"
+    f.write_text(json.dumps({"fields": fields}))
+    return f
+
+
+def flashed(image):
+    return [("flash", image), ("boot",), ("status",)]
+
+
+def test_ab_alternates_the_runs_flashing_before_each_when_the_images_differ(ab_bench):
+    a, b = sc.ab(side(ab_bench, "10-a", "a"), side(ab_bench, "10-b", "b"), rounds=3, servo=SERVO, board=BOARD)
+    expected = []
+    for k in (1, 2, 3):
+        expected += [*flashed("a.bin"), ("run", "10-a", f"run-{k}"), *flashed("b.bin"), ("run", "10-b", f"run-{k}")]
+    assert ab_bench["events"] == expected
+    assert (a.name, b.name) == ("10-a", "10-b")
+
+
+def test_ab_on_one_image_flashes_once_and_applies_each_sides_settings_around_its_own_runs(ab_bench, tmp_path):
+    fa = settings_file(tmp_path, "fa", {"p_kp_q88": 5026})
+    fb = settings_file(tmp_path, "fb", {"p_kp_q88": 6000})
+    sc.ab(side(ab_bench, "11-a", "a", settings_file=fa), side(ab_bench, "11-b", "a", settings_file=fb),
+          rounds=3, servo=SERVO, board=BOARD)
+    expected = flashed("a.bin")
+    for k in (1, 2, 3):
+        expected += [("apply", {"p_kp_q88": 5026}, True), ("run", "11-a", f"run-{k}"), ("restore",),
+                     ("apply", {"p_kp_q88": 6000}, True), ("run", "11-b", f"run-{k}"), ("restore",)]
+    assert ab_bench["events"] == expected
+
+
+def test_ab_stops_before_any_run_when_the_stamp_is_not_the_live_set(ab_bench, bus, capsys):
+    bus["stamp"] = "0x9c45 != live set 0x1234"
+    with pytest.raises(SystemExit, match="unverified image"):
+        sc.ab(side(ab_bench, "12-a", "a"), side(ab_bench, "12-b", "b"), rounds=3, servo=SERVO, board=BOARD)
+    assert ab_bench["events"] == flashed("a.bin") and bus["log"] == []
+    pair = sc.pair_of(SERVO, BOARD)
+    assert not sc.rung_dir(pair, "12-a").exists() and not sc.rung_dir(pair, "12-b").exists()
+    assert "left on the servo: " in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("labels, change, match", [
+    (("13-a", "13-b"), {"torque": "on"}, "torque is on"),
+    (("13-a", "13-a"), {}, "both sides are labeled"),
+    (("13-a", "00-baseline"), {}, "already holds a rung"),
+])
+def test_ab_refuses_before_anything_is_flashed(ab_bench, bus, labels, change, match):
+    sc.rung_dir(sc.pair_of(SERVO, BOARD), "00-baseline").mkdir(parents=True)
+    bus.update(change)
+    with pytest.raises(SystemExit, match=match):
+        sc.ab(side(ab_bench, labels[0], "a"), side(ab_bench, labels[1], "b"), servo=SERVO, board=BOARD)
+    assert ab_bench["events"] == [] and bus["log"] == []
+
+
+def test_ab_restores_a_sides_settings_after_an_abort_in_its_run(ab_bench, bus, monkeypatch, tmp_path):
+    track = sc.osc.track
+
+    def abort_b(out, mode, schedule, **kw):
+        if Path(out).parent.parent.name == "14-b":
+            raise RuntimeError("aborted")
+        return track(out, mode, schedule, **kw)
+
+    monkeypatch.setattr(sc.osc, "track", abort_b)
+    fb = settings_file(tmp_path, "fb", {"p_kp_q88": 6000})
+    with pytest.raises(RuntimeError, match="aborted"):
+        sc.ab(side(ab_bench, "14-a", "a"), side(ab_bench, "14-b", "b", settings_file=fb),
+              servo=SERVO, board=BOARD)
+    assert ab_bench["events"] == [*flashed("a.bin"), ("run", "14-a", "run-1"), *flashed("b.bin"),
+                                  ("apply", {"p_kp_q88": 6000}, True), ("restore",)]
+    assert sc.run_complete(sc.rung_dir(sc.pair_of(SERVO, BOARD), "14-a") / "run-1")
+
+
+FLASH_OUT = ("image: 12288 B, fw 0.4.0; bootloaders at 500000\ninstall\n"
+             "  0011aa: 1024/12288 B\r  0011aa: 8192/12288 B\r  0011aa: 12288/12288 B\n"
+             "confirm\nuid 0011aa                    id 1    confirmed\n")
+
+
+@pytest.mark.parametrize("code", [0, 1])
+def test_flash_names_the_bus_rate_and_the_id_and_shows_the_last_line_only(monkeypatch, capsys, code):
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append((cmd, kw))
+        return subprocess.CompletedProcess(cmd, code, stdout=FLASH_OUT)
+
+    monkeypatch.setattr(sc.osc, "bus_baud", lambda: 3_000_000)
+    monkeypatch.setattr(sc.osc.subprocess, "run", fake_run)
+    last = "uid 0011aa                    id 1    confirmed"
+    if code:
+        with pytest.raises(RuntimeError, match=f"exit 1, {last}"):
+            sc.osc.flash(Path("fw.bin"))
+    else:
+        assert sc.osc.flash(Path("fw.bin")) == last
+    (cmd, kw), = calls
+    assert cmd == [sc.osc.TOOL, "-b", "3000000", "flash", "fw.bin", "--rate", "500000", sc.osc.ID]
+    assert kw["stdout"] == subprocess.PIPE
+    assert capsys.readouterr().out == ("" if code else last + "\n")
+
+
+def test_ab_rungs_are_the_rungs_run_records(ab_bench, tmp_path):
+    fb = settings_file(tmp_path, "fb", {"p_kp_q88": 6000})
+    rungs = sc.ab(side(ab_bench, "15-a", "a", note="control"),
+                  side(ab_bench, "15-b", "b", note="candidate", settings_file=fb),
+                  rounds=3, servo=SERVO, board=BOARD)
+    refs = [sc.run("ref-a", "abc123", hashlib.sha1(ab_bench["images"]["a"].read_bytes()).hexdigest(),
+                   runs=3, note="control", servo=SERVO, board=BOARD),
+            sc.run("ref-b", "abc123", hashlib.sha1(ab_bench["images"]["b"].read_bytes()).hexdigest(),
+                   runs=3, note="candidate", settings_file=fb, servo=SERVO, board=BOARD)]
+    for rung, ref in zip(rungs, refs):
+        doc, want = (json.loads((p / "rung.json").read_text()) for p in (rung, ref))
+        assert list(doc) == list(want)
+        assert {k: v for k, v in doc.items() if k not in ("label", "utc")} == \
+            {k: v for k, v in want.items() if k not in ("label", "utc")}
+        assert sorted(p.name for p in rung.iterdir()) == ["run-1", "run-2", "run-3", "rung.json"]
+        sc.score(rung.name, servo=SERVO, board=BOARD)
+        out = json.loads(sc.result_path(sc.pair_of(SERVO, BOARD), rung.name).read_text())
+        assert out["runs"] == ["run-1", "run-2", "run-3"] and out["skipped"] == []
+    assert json.loads((rungs[1] / "rung.json").read_text())["settings"] == {"p_kp_q88": 6000}
 
 
 STOPS = (82, 3792)

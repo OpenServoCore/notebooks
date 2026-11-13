@@ -102,19 +102,23 @@ def apply(fields, note="", stamp=True):
     return old
 
 
-def restore():
-    """Reboot onto the saved images, wait for the bus, check the data state
-    is clean; returns the stamp line."""
-    osc.run("reboot")
+def await_boot():
+    """Wait for the bus to answer after a reboot, refused when it stays silent."""
     for _ in range(BOOT_TRIES):
         time.sleep(BOOT_WAIT_S)
         try:
             osc.bus_baud()
-            break
+            return
         except RuntimeError:
             continue
-    else:
-        raise Refused(f"no answer {BOOT_TRIES * BOOT_WAIT_S:g} s after the reboot")
+    raise Refused(f"no answer {BOOT_TRIES * BOOT_WAIT_S:g} s after the reboot")
+
+
+def restore():
+    """Reboot onto the saved images, wait for the bus, check the data state
+    is clean; returns the stamp line."""
+    osc.run("reboot")
+    await_boot()
     stamp = plant_stamp(require_clean())
     print(f"plant stamp {stamp}")
     return stamp

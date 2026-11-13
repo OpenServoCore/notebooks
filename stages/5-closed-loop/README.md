@@ -44,6 +44,7 @@ never touches the supply and never prompts; it refuses to start otherwise.
 
 ```
 uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table]
+uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-note TEXT] [--rounds 3]
 uv run python -m oscnb.scorecard score 00-baseline
 uv run python -m oscnb.scorecard table
 ```
@@ -60,6 +61,17 @@ file and its sha1 kept in `rung.json`, and the same reboot dropping it at
 the end. `score` reads such a rung's raw pot through the table its
 `rung.json` names, and refuses a capture with a live table and no table
 named.
+
+The same servo drifts within a session, so a candidate and its control
+are best recorded together. `ab` records two rungs at once, one run of
+each per round, A then B, for `--rounds` rounds. Each side names its
+image file, and the image sha in its `rung.json` is that file's sha1.
+Before a side's run the servo is flashed with its image whenever it
+holds the other side's, and before the first run always, and nothing
+runs until `osc status` reads the stamp as the live set; two sides on
+one image file, a comparison of settings alone, flash once. A side's
+`--settings` are applied around its own runs only. Each side comes out
+a rung like any other, for `score` and `table`.
 
 `table` prints the ladder, one column per rung in label order, with a
 last column of other people's figures for stock smart servos (STS3215,
@@ -99,7 +111,14 @@ Kept:
   times are the control's, so this rung's shorter settle times are not a
   gain. The kick at torque-on that the enable rows read is as common
   on the firmware before it (13 of 48 enables after a move against 9 of
-  48).
+  48). Alternated run by run with the firmware before it
+  (`zz-ab-after-hold` against `zz-ab-before-hold`, three rounds): the
+  worst drive after an arrival is 218 ms against 1180, no landing is
+  driven in its tail against 1 of 13, and the accuracy rows lose, the
+  two-sided error 0.37 against 0.23 deg and the rest error 0.36 against
+  0.26 deg, each beyond the spread. So the rung trades about 0.1 deg at
+  rest for a loop that goes quiet: a trade, held for a decision with the
+  test under a load, where the play is taken up.
 
 Tried, not kept:
 
@@ -171,3 +190,7 @@ The controls, and what they say about reading the ladder:
   70, 362 and 842. A settle time is the worst of four moves and one slow
   landing sets it, so one recording of three runs does not carry a settle
   claim either way.
+- `zz-ab-before-hold` and `zz-ab-after-hold` are `01b` on the firmware
+  before `05a` and on `05a`'s, recorded with `ab`: one run of each per
+  round, the image flashed between. This is how a firmware rung and its
+  control are recorded from here on.
