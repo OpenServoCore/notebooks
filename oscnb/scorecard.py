@@ -65,7 +65,8 @@ UNITS = {
     "overshoot_deg": "deg", "settle_ms": "ms", "move_current_rms_ma": "mA",
     "move_reversals_per_s": "1/s", "move_duty_rms_pct": "% of the rail",
     "follow_duty_rms_pct": "% of the rail", "speed_ripple_pct": "%", "rest_error_deg": "deg",
-    "two_sided_deg": "deg", "hold_jitter_counts": "counts", "hold_buzz_share": "share",
+    "two_sided_deg": "deg", "landing_buzz_share": "share",
+    "hold_jitter_counts": "counts", "hold_buzz_share": "share",
     "hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
     "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "enable_kick_deg": "deg",
@@ -261,6 +262,14 @@ def rest_error_deg(cap):
     return max(abs(s["goal_counts"] - settled_pos(cap, s["seg"])) for s in goals) / cap["cpd"]
 
 
+def landing_buzz_share(cap):
+    """The share of rows driven over the last REST_MS of every goal of the
+    steps capture, pooled: the loop awake on a shaft that has landed."""
+    goals = [s for s in cap["plan"]["segments"] if s["goal_counts"] is not None]
+    tails = pd.concat([tail(seg_rows(cap, s["seg"]), REST_MS) for s in goals])
+    return float((tails["duty_counts"] != 0).mean())
+
+
 def two_sided_deg(cap):
     """Per size, the settled center arriving from above against from
     below; the worst size."""
@@ -367,6 +376,7 @@ def score_run(run_dir):
     out["speed_ripple_pct"] = speed_ripple_pct(steps)
     out["rest_error_deg"] = rest_error_deg(steps)
     out["two_sided_deg"] = two_sided_deg(steps)
+    out["landing_buzz_share"] = landing_buzz_share(steps)
     out["enable_kick_deg"] = enable_kick_deg(steps)
     out.update(hold_scores(load(run_dir / "hold")))
     out.update(follow_scores(load(run_dir / "follow")))
