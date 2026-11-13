@@ -72,10 +72,18 @@ def require_clean():
     return status
 
 
-def apply(fields, note=""):
-    """Write `fields` volatile and stamp them; returns the old values. A
-    refusal past the first write leaves the servo half set: `restore` puts
-    it back."""
+def stamp_live():
+    """Bless the live set with `osc stamp`, no `--save`; returns the
+    `osc status` report, refused unless its data state is clean."""
+    osc.run("stamp")
+    return require_clean()
+
+
+def apply(fields, note="", stamp=True):
+    """Write `fields` volatile and stamp them; returns the old values.
+    `stamp` False leaves the stamp to the caller, for a step that writes
+    more first. A refusal past the first write leaves the servo half set:
+    `restore` puts it back."""
     torque = osc.get("torque_enable")
     if not same("off", torque):
         raise Refused(f"torque_enable reads {torque}: apply runs with torque off")
@@ -85,8 +93,8 @@ def apply(fields, note=""):
         back = osc.get(name)
         if not same(value, back):
             raise Refused(f"{name}: wrote {value}, read back {back}")
-    osc.run("stamp")
-    require_clean()
+    if stamp:
+        stamp_live()
     if note:
         print(note)
     for name, value in fields.items():

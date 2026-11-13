@@ -2,7 +2,7 @@
 fixed test set, scored from the pot, so a change is kept or dropped on
 numbers.
 
-  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE]
+  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table]
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard table
 
@@ -11,13 +11,18 @@ numbers.
 `telemetry/<pair>/scorecard/<label>/run-K/{steps,follow,hold}`, with
 `rung.json` naming the build. With `--settings` the rung runs on a file of
 CONFIG fields applied volatile (oscnb.settings) and rebooted away at the
-end, the fields kept in `rung.json`. `score` writes the rung's scores, the median
+end, the fields kept in `rung.json`. With `--pos-table` it runs on the
+pair's position table (oscnb.postable) installed volatile after the
+fields, one stamp over both, the file and its sha1 kept in `rung.json`
+and the same reboot dropping it. `score` writes the rung's scores, the median
 over its runs and their range, to
 `stages/5-closed-loop/scorecard/results/<pair>/<label>.json`. `table`
 prints the ladder, one column per rung.
 
 Every score reads the pot, `pos` in counts against the goal in counts,
-turned to degrees by the plan's counts per degree. The rows' `pos` carries
+turned to degrees by the plan's counts per degree. Under a LIVE position
+table the goals are linearized counts, so the rows' raw pot is read
+through the table the rung ran on first. The rows' `pos` carries
 spikes while the bridge drives, so every peak, slope and settle read goes
 through a centered rolling median of MEDIAN_ROWS rows, taken within one
 segment; the hold's jitter alone reads the raw pot. A capture's rows go on
@@ -37,7 +42,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import bench, boards, osc, results, servos, settings
+from . import bench, boards, osc, postable, results, servos, settings
 
 STAGE = "5-closed-loop"
 TESTSET = results.ROOT / "stages" / STAGE / "scorecard" / "testset.py"
@@ -104,16 +109,41 @@ def current_zero(rows):
     return float(rows.loc[idle, "current_raw"].median()) if idle.any() else np.nan
 
 
+def file_sha1(path):
+    return hashlib.sha1(Path(path).read_bytes()).hexdigest()
+
+
+def rung_table(folder):
+    """The Table a capture's rung names (`rung.json` two levels up), None
+    when it names none; refused when the file is not the one recorded."""
+    p = Path(folder).parent.parent / "rung.json"
+    named = json.loads(p.read_text()).get("pos_table") if p.exists() else None
+    if not named:
+        return None
+    path = results.ROOT / named["file"]
+    if not path.exists() or file_sha1(path) != named["sha1"]:
+        raise ValueError(f"{named['file']} is not the table the rung ran on (sha1 {named['sha1']})")
+    return postable.load_file(path)[0]
+
+
 def load(folder):
     """A capture's rows on its time axis, with its plan, meta and board.
-    Rows gain `t` (s from the first row), `pos_f` (the median pot) and
-    `i_ma` (the shunt's read current, NaN where the drive window was not
-    read)."""
+    Under a LIVE table `pos` is the raw pot read through the rung's table,
+    the raw kept as `pos_raw`. Rows gain `t` (s from the first row),
+    `pos_f` (the median pot) and `i_ma` (the shunt's read current, NaN
+    where the drive window was not read)."""
     folder = Path(folder)
     meta = json.loads((folder / "meta.json").read_text())
     plan = json.loads((folder / "plan.json").read_text())
     lut = meta.get("plant", {}).get("lut_state")
-    if lut not in (None, "IDENTITY"):
+    table = None
+    if lut == "LIVE":
+        table = rung_table(folder)
+        if table is None:
+            raise ValueError(f"{folder}: the position table is LIVE and the rung names none: the rows "
+                             f"carry the raw pot and the goals linearized counts, and only the table "
+                             f"the rung ran on reconciles them")
+    elif lut not in (None, "IDENTITY"):
         raise ValueError(f"{folder}: the position table is {lut}: the rows carry the raw pot and the "
                          f"goals linearized counts, which this scorer does not reconcile")
     board = boards.from_meta(meta)
@@ -121,6 +151,9 @@ def load(folder):
         raise ValueError(f"{folder}: no board entry matches the sense block {meta.get('sense')}")
     rows = pd.read_csv(folder / "track.csv", usecols=[
         "seg", "goal", "tick", "window_valid", "pos", "current_raw", "duty_counts"])
+    if table is not None:
+        rows["pos_raw"] = rows["pos"]
+        rows["pos"] = postable.interp_q4(rows["pos_raw"].to_numpy(), table.points) / postable.GRID
     segs = pd.read_csv(folder / "segments.csv")
     segs = segs[segs["rows"] > 0]
     last = rows.groupby("seg")["tick"].max().reindex(segs["seg"]).to_numpy()
@@ -461,7 +494,7 @@ def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     return meta
 
 
-def run(label, fw, image_sha, runs=3, note="", settings_file=None, servo=None, board=None):
+def run(label, fw, image_sha, runs=3, note="", settings_file=None, pos_table=False, servo=None, board=None):
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
@@ -471,12 +504,20 @@ def run(label, fw, image_sha, runs=3, note="", settings_file=None, servo=None, b
     ts = testset()
     inp = ts.inputs(servo, pair)
     fields = settings.load(settings_file)[0] if settings_file else None
+    table = None
+    if pos_table:
+        postable.load(pair)
+        path = postable.out_path(pair)
+        table = {"file": str(results.rel(path)), "sha1": file_sha1(path)}
     preflight(servo, board)
     guard = (osc.get("pos_min_soft_counts"), osc.get("pos_max_soft_counts"))
     center, sets = ts.build(guard, inp)
-    if fields:
-        settings.apply(fields)
     try:
+        if fields:
+            settings.apply(fields, stamp=not table)
+        if table:
+            postable.install(pair)
+            settings.stamp_live()
         for k in range(1, runs + 1):
             if k > 1:
                 preflight(servo, board)
@@ -488,12 +529,12 @@ def run(label, fw, image_sha, runs=3, note="", settings_file=None, servo=None, b
                         "label": label, "fw": fw, "image_sha": image_sha, "note": note,
                         "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                         "config_hash": config_hash(meta["config"]), "runs_asked": runs,
-                        "settings": fields,
+                        "settings": fields, "pos_table": table,
                     }, indent=2) + "\n")
             print(f"run-{k} of {runs} done")
     finally:
         # the stored set comes back whether the runs ended or aborted
-        if fields:
+        if fields or table:
             settings.restore()
     return rung
 
@@ -555,12 +596,14 @@ def main(argv=None):
     r.add_argument("--runs", type=int, default=3)
     r.add_argument("--note", default="")
     r.add_argument("--settings", type=Path, help="a file of CONFIG fields the rung runs on, applied volatile")
+    r.add_argument("--pos-table", action="store_true",
+                   help="run on the pair's position table, installed volatile")
     s = sub.add_parser("score", help="score a recorded rung")
     s.add_argument("label")
     sub.add_parser("table", help="print the ladder")
     a = ap.parse_args(argv)
     if a.cmd == "run":
-        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.settings)))
+        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.settings, a.pos_table)))
     elif a.cmd == "score":
         print(score(a.label))
     else:

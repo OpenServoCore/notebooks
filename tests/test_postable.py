@@ -1,7 +1,7 @@
 """The position table in the format of protocol sec 5.7, offline: the
 interpolation on hand-computed points, the servo's two rules, the build
-from a small synthetic lookup, the held-out grade through it and the
-install plan's wire steps."""
+from a small synthetic lookup, the held-out grade through it, the
+install plan's wire steps and the install itself on a fake window."""
 import json
 
 import numpy as np
@@ -219,3 +219,127 @@ def test_heldout_through_the_table_matches_the_lookup():
     assert abs(g["table"][0] - g["lookup"][0]) < 0.005
     assert abs(g["table"][2] - g["lookup"][2]) < 0.005
     assert g["lookup"][2] > g["lookup"][0]
+
+
+class FakeWindow:
+    """The table's paged window: a STORE lands its page in a dict, a COMMIT
+    lands `verdict` (LOADING for one that never lands), a FETCH copies a
+    page back with `flip` xor-ed into its first byte on page `bad`."""
+
+    def __init__(self, stops, torque="off", verdict="LIVE", bad=None, flip=0):
+        self.regs = {"torque_enable": torque, "raw_min": stops[0], "raw_max": stops[1],
+                     "pos_lut_page": 0, "pos_lut_state": pt.STATES.index("IDENTITY")}
+        self.verdict, self.bad, self.flip = verdict, bad, flip
+        self.pages, self.window, self.log = {}, bytes(64), []
+
+    def get(self, field):
+        self.log.append(("get", field))
+        return self.regs[field]
+
+    def write(self, addr, data):
+        self.log.append(("write", data.hex()))
+        assert addr == pt.WINDOW_ADDR
+        page, cmd = data[0], data[1]
+        if len(data) > 2:
+            self.window = bytes(data[2:])
+        if cmd == pt.STORE:
+            self.pages[page] = self.window
+            self.regs["pos_lut_state"] = pt.STATES.index("LOADING")
+        elif cmd == pt.COMMIT:
+            self.regs["pos_lut_state"] = pt.STATES.index(self.verdict)
+        elif cmd == pt.FETCH:
+            w = bytearray(self.pages[page])
+            if page == self.bad:
+                w[0] ^= self.flip
+            self.window = bytes(w)
+
+    def read(self, addr, n):
+        self.log.append(("read", addr, n))
+        assert addr == pt.POINTS_ADDR and n == len(self.window)
+        return self.window
+
+    def writes(self):
+        return [c for c in self.log if c[0] == "write"]
+
+
+@pytest.fixture
+def window(repo, monkeypatch):
+    write_lookup(repo)
+    t, _ = pt.build(PAIR, *STOPS)
+
+    def make(**kw):
+        stops = kw.pop("stops", STOPS)
+        w = FakeWindow(stops, **kw)
+        for name in ("get", "write", "read"):
+            monkeypatch.setattr(pt.osc, name, getattr(w, name))
+        monkeypatch.setattr(pt.time, "sleep", lambda s: None)
+        return w
+    make.table = t
+    return make
+
+
+def test_install_stores_commits_and_reads_every_page_back(window):
+    w = window()
+    t = pt.install(PAIR)
+    assert w.regs["pos_lut_state"] == pt.STATES.index("LIVE")
+    for p in range(pt.PAGES):
+        np.testing.assert_array_equal(np.frombuffer(w.pages[p], "<i2"), t.points[32 * p:32 * (p + 1)])
+    assert [c[1] for c in w.log[:5]] == ["torque_enable", "raw_min", "raw_max", "pos_lut_page",
+                                          "pos_lut_state"]
+    assert sum(c[0] == "read" for c in w.log) == pt.PAGES
+    # the writes are the plan's, in its order
+    planned = [c.split()[5] for c in pt.plan(PAIR).splitlines()
+               if not c.startswith("#") and c.split()[3] == "write"]
+    assert [h for _, h in w.writes()] == planned
+    assert not any(c[0] == "run" for c in w.log)
+
+
+@pytest.mark.parametrize("kw, match", [
+    ({"torque": "on"}, "torque_enable reads on"),
+    ({"stops": (STOPS[0] + 16, STOPS[1])}, f"raw_min reads {STOPS[0] + 16}, the install wants {STOPS[0]}"),
+    ({"stops": (STOPS[0], STOPS[1] - 1)}, f"raw_max reads {STOPS[1] - 1}"),
+])
+def test_install_refuses_before_anything_is_written(window, kw, match):
+    w = window(**kw)
+    with pytest.raises(pt.settings.Refused, match=match):
+        pt.install(PAIR)
+    assert w.writes() == [] and w.pages == {}
+
+
+def test_install_refuses_a_state_it_cannot_name(window):
+    w = window()
+    w.regs["pos_lut_state"] = 9
+    with pytest.raises(pt.settings.Refused, match="pos_lut_state reads 9"):
+        pt.install(PAIR)
+    assert w.writes() == []
+
+
+@pytest.mark.parametrize("verdict, match", [
+    ("REJECT_ENDS", "the COMMIT landed REJECT_ENDS"),
+    ("REJECT_SHAPE", "the COMMIT landed REJECT_SHAPE"),
+    ("LOADING", "still LOADING 1 s after the COMMIT"),
+])
+def test_install_raises_a_commit_that_does_not_land_live_by_name(window, verdict, match):
+    w = window(verdict=verdict)
+    with pytest.raises(pt.settings.Refused, match=match):
+        pt.install(PAIR)
+    assert not any(c[0] == "read" for c in w.log)
+
+
+def test_install_raises_a_read_back_that_differs_with_its_page(window):
+    w = window(bad=5, flip=0x01)
+    with pytest.raises(pt.settings.Refused, match="page 5 reads back"):
+        pt.install(PAIR)
+    assert sum(c[0] == "read" for c in w.log) == 6
+
+
+def test_osc_read_parses_the_hex_dump(monkeypatch):
+    dump = "0x019e  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f\n0x01ae  10 11\n"
+    seen = []
+    monkeypatch.setattr(pt.osc, "run", lambda *a, **kw: seen.append(a) or dump)
+    assert pt.osc.read(pt.POINTS_ADDR, 18) == bytes(range(18))
+    assert seen == [("read", "0x19e", 18)]
+    with pytest.raises(RuntimeError, match="unexpected output"):
+        pt.osc.read(pt.POINTS_ADDR, 64)
+    pt.osc.write(pt.WINDOW_ADDR, bytes([0, pt.COMMIT]))
+    assert seen[-1] == ("write", "0x19c", "0003")

@@ -2,7 +2,9 @@
 overshoot and settle through pot spikes, a ramp with a known lag, the
 tick unwrap across a wrap, the reversal count, the test set's schedules
 and refusal, and the runner's refusals with `osc` stubbed, then one rung
-end to end on a fake servo."""
+end to end on a fake servo; a rung on a position table, its install's
+place in the runner and its rows read through the table."""
+import hashlib
 import io
 import json
 import sys
@@ -11,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from oscnb import boards, results, scorecard as sc, servos
+from oscnb import boards, postable, results, scorecard as sc, servos
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scorecard_synth as synth  # noqa: E402
@@ -269,7 +271,7 @@ def test_a_rung_end_to_end(bus):
 
 def test_a_settings_rung_applies_the_file_and_reboots_it_away(bus, monkeypatch, tmp_path):
     calls = []
-    monkeypatch.setattr(sc.settings, "apply", lambda fields, note="": calls.append(("apply", dict(fields))))
+    monkeypatch.setattr(sc.settings, "apply", lambda fields, note="", stamp=True: calls.append(("apply", dict(fields))))
     monkeypatch.setattr(sc.settings, "restore", lambda: calls.append(("restore", len(bus["log"]))))
     f = tmp_path / "gains.json"
     f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}, "note": "softer"}))
@@ -280,7 +282,7 @@ def test_a_settings_rung_applies_the_file_and_reboots_it_away(bus, monkeypatch, 
 
 def test_a_settings_rung_reboots_after_an_abort(bus, monkeypatch, tmp_path):
     calls = []
-    monkeypatch.setattr(sc.settings, "apply", lambda fields, note="": calls.append("apply"))
+    monkeypatch.setattr(sc.settings, "apply", lambda fields, note="", stamp=True: calls.append("apply"))
     monkeypatch.setattr(sc.settings, "restore", lambda: calls.append("restore"))
 
     def abort(out, mode, schedule, **kw):
@@ -292,3 +294,170 @@ def test_a_settings_rung_reboots_after_an_abort(bus, monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="aborted"):
         sc.run("01-gains", "abc123", "f" * 40, runs=1, settings_file=f, servo=SERVO, board=BOARD)
     assert calls == ["apply", "restore"]
+
+
+def pos_table_stubs(bus, monkeypatch):
+    """settings, the table's install and the stamp stubbed, every call
+    logged in order; the reboot logs the captures run before it."""
+    calls = []
+    monkeypatch.setattr(sc.settings, "apply",
+                        lambda fields, note="", stamp=True: calls.append(("apply", dict(fields), stamp)))
+    monkeypatch.setattr(sc.postable, "install", lambda pair: calls.append(("install", pair)))
+    monkeypatch.setattr(sc.settings, "stamp_live", lambda: calls.append(("stamp",)))
+    monkeypatch.setattr(sc.settings, "restore", lambda: calls.append(("restore", len(bus["log"]))))
+    return calls
+
+
+def table_of_record():
+    path = postable.out_path(sc.pair_of(SERVO, BOARD))
+    return {"file": str(results.rel(path)), "sha1": hashlib.sha1(path.read_bytes()).hexdigest()}
+
+
+def test_a_pos_table_rung_installs_after_the_settings_and_before_the_one_stamp(bus, monkeypatch, tmp_path):
+    calls = pos_table_stubs(bus, monkeypatch)
+    f = tmp_path / "gains.json"
+    f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}}))
+    rung = sc.run("03-table", "abc123", "f" * 40, runs=1, settings_file=f, pos_table=True,
+                  servo=SERVO, board=BOARD)
+    pair = sc.pair_of(SERVO, BOARD)
+    assert calls == [("apply", {"p_kp_q88": 5026}, False), ("install", pair), ("stamp",), ("restore", 3)]
+    doc = json.loads((rung / "rung.json").read_text())
+    assert doc["pos_table"] == table_of_record()
+    assert doc["pos_table"]["file"] == f"stages/5-closed-loop/calibration/{pair}.pos_lut.json"
+
+
+def test_a_pos_table_rung_without_settings_still_installs_and_stamps(bus, monkeypatch):
+    calls = pos_table_stubs(bus, monkeypatch)
+    rung = sc.run("03-table", "abc123", "f" * 40, runs=1, pos_table=True, servo=SERVO, board=BOARD)
+    assert calls == [("install", sc.pair_of(SERVO, BOARD)), ("stamp",), ("restore", 3)]
+    doc = json.loads((rung / "rung.json").read_text())
+    assert doc["settings"] is None and doc["pos_table"] == table_of_record()
+
+
+def test_a_rung_without_a_table_names_none_and_stamps_with_its_settings(bus, monkeypatch, tmp_path):
+    calls = pos_table_stubs(bus, monkeypatch)
+    f = tmp_path / "gains.json"
+    f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}}))
+    rung = sc.run("01-gains", "abc123", "f" * 40, runs=1, settings_file=f, servo=SERVO, board=BOARD)
+    assert calls == [("apply", {"p_kp_q88": 5026}, True), ("restore", 3)]
+    assert json.loads((rung / "rung.json").read_text())["pos_table"] is None
+
+
+def test_a_pos_table_rung_reboots_after_an_abort(bus, monkeypatch):
+    calls = pos_table_stubs(bus, monkeypatch)
+
+    def abort(out, mode, schedule, **kw):
+        raise RuntimeError("aborted")
+
+    monkeypatch.setattr(sc.osc, "track", abort)
+    with pytest.raises(RuntimeError, match="aborted"):
+        sc.run("03-table", "abc123", "f" * 40, runs=1, pos_table=True, servo=SERVO, board=BOARD)
+    assert [c[0] for c in calls] == ["install", "stamp", "restore"]
+
+
+def test_a_refused_install_reboots_and_runs_nothing(bus, monkeypatch):
+    calls = pos_table_stubs(bus, monkeypatch)
+
+    def refuse(pair):
+        calls.append(("install", pair))
+        raise sc.settings.Refused("the COMMIT landed REJECT_ENDS, not LIVE")
+
+    monkeypatch.setattr(sc.postable, "install", refuse)
+    with pytest.raises(sc.settings.Refused, match="REJECT_ENDS"):
+        sc.run("03-table", "abc123", "f" * 40, runs=1, pos_table=True, servo=SERVO, board=BOARD)
+    assert [c[0] for c in calls] == ["install", "restore"] and bus["log"] == []
+
+
+STOPS = (82, 3792)
+
+
+def bump_points(height):
+    """A table bending the pot by up to `height` counts mid travel, zero at
+    and beyond the stops."""
+    lo, hi = (STOPS[0] + postable.GRID - 1) >> postable.GRID_SHIFT, STOPS[1] >> postable.GRID_SHIFT
+    k = np.arange(postable.INTERVALS)
+    c = np.where((k > lo) & (k < hi), np.rint(height * np.sin(np.pi * (k - lo) / (hi - lo))), 0)
+    return c.astype(np.int64)
+
+
+def table_rung(root, points, lut_state, segs, plan_doc, named=True):
+    """A rung under `root` with one capture, steps, its table file under
+    the repo root `root` and `rung.json` naming it (or not)."""
+    path = root / "stages" / "5-closed-loop" / "calibration" / "synth.pos_lut.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    assert postable.validate(points, *STOPS) is None
+    path.write_text(json.dumps({
+        "inputs": {"stops": {"raw_min": STOPS[0], "raw_max": STOPS[1]}},
+        "target": {"theta_at_stops_deg": [-90.0, 90.0]},
+        "points_by_page": [[int(x) for x in points[p * 32:(p + 1) * 32]] for p in range(postable.PAGES)]}))
+    rung = root / "telemetry" / "synth" / "scorecard" / "03-table"
+    cap = synth.write(rung / "run-1" / "steps", segs, CENTER, GUARD, plan=plan_doc, lut_state=lut_state)
+    table = {"file": str(path.relative_to(root)), "sha1": hashlib.sha1(path.read_bytes()).hexdigest()}
+    (rung / "rung.json").write_text(json.dumps({"label": "03-table", "pos_table": table if named else None}))
+    return cap, path
+
+
+def resting_on(goal, points):
+    """The raw pot the table reads nearest `goal` linearized counts, 12000
+    rows of it under one goal."""
+    raw = np.arange(4096)
+    r = int(raw[np.argmin(np.abs(postable.interp_q4(raw, points) / 16 - goal))])
+    segs = [{"item": f"goal:{goal}@600", "test": "step", "size_deg": 20, "direction": 1,
+             "leg": "out", "goal_counts": goal, "goal_deg": 20.0}]
+    return r, [(segs[0]["item"], goal, np.full(12_000, r), np.zeros(12_000, int))], plan(segs)
+
+
+def test_a_live_rung_reads_the_raw_pot_through_its_table(tmp_path, monkeypatch):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    points = bump_points(40)
+    goal = CENTER + 400
+    r, segs, plan_doc = resting_on(goal, points)
+    assert abs(goal - r) > 30
+    cap_dir, _ = table_rung(tmp_path, points, "LIVE", segs, plan_doc)
+    cap = sc.load(cap_dir)
+    assert (cap["rows"]["pos_raw"] == r).all()
+    assert (cap["rows"]["pos"] == postable.interp_q4(r, points) / 16).all()
+    assert sc.rest_error_deg(cap) < 0.6 / CPD
+    # the same rows read raw miss the goal by the table's bend there
+    raw_dir = synth.write(tmp_path / "raw", segs, CENTER, GUARD, plan=plan_doc)
+    assert sc.rest_error_deg(sc.load(raw_dir)) == pytest.approx(abs(goal - r) / CPD)
+
+
+@pytest.mark.parametrize("rung_json", ["null", "absent"])
+def test_a_live_capture_without_a_named_table_is_refused(tmp_path, monkeypatch, rung_json):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    _, segs, plan_doc = resting_on(CENTER, bump_points(40))
+    cap_dir, _ = table_rung(tmp_path, bump_points(40), "LIVE", segs, plan_doc, named=False)
+    if rung_json == "absent":
+        (cap_dir.parent.parent / "rung.json").unlink()
+    with pytest.raises(ValueError, match="LIVE and the rung names none"):
+        sc.load(cap_dir)
+
+
+def test_a_live_rung_whose_table_changed_since_is_refused(tmp_path, monkeypatch):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    _, segs, plan_doc = resting_on(CENTER, bump_points(40))
+    cap_dir, path = table_rung(tmp_path, bump_points(40), "LIVE", segs, plan_doc)
+    path.write_text(path.read_text().replace("[-90.0, 90.0]", "[-91.0, 90.0]"))
+    with pytest.raises(ValueError, match="not the table the rung ran on"):
+        sc.load(cap_dir)
+
+
+def test_identity_rows_score_bit_for_bit_as_before(tmp_path, monkeypatch):
+    """An IDENTITY capture's rows are the file's raw pot untouched, and the
+    same rows under a LIVE all-zero table score exactly the same."""
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    goal, pos, duty = step_rows()
+    segs = [{"item": f"goal:{goal}@1500", "test": "step", "size_deg": 20, "direction": 1,
+             "leg": "out", "goal_counts": goal, "goal_deg": 20.0}]
+    rows = [(segs[0]["item"], goal, pos, duty)]
+    ident = sc.load(synth.write(tmp_path / "ident", rows, CENTER, GUARD, plan=plan(segs)))
+    assert "pos_raw" not in ident["rows"]
+    assert ident["rows"]["pos"].dtype.kind == "i"
+    np.testing.assert_array_equal(ident["rows"]["pos"], np.round(pos).astype(int))
+    live_dir, _ = table_rung(tmp_path, np.zeros(postable.INTERVALS, np.int64), "LIVE", rows, plan(segs))
+    live = sc.load(live_dir)
+    np.testing.assert_array_equal(live["rows"]["pos_f"], ident["rows"]["pos_f"])
+    for f in (sc.step_scores, sc.rest_error_deg, sc.landing_buzz_share):
+        assert f(live) == f(ident)
+    assert float(live["rows"]["pos"].std()) == float(ident["rows"]["pos"].std())
