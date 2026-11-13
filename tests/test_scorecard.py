@@ -255,3 +255,30 @@ def test_a_rung_end_to_end(bus):
     lag = next(r for r in lines if r.startswith("lag_deg_10pct"))
     assert lag.rstrip().endswith("2.7 to 7")
     assert out["capture"] == "telemetry/mg90-d__dev-v006-2A-D/scorecard/00-baseline"
+
+
+def test_a_settings_rung_applies_the_file_and_reboots_it_away(bus, monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(sc.settings, "apply", lambda fields, note="": calls.append(("apply", dict(fields))))
+    monkeypatch.setattr(sc.settings, "restore", lambda: calls.append(("restore", len(bus["log"]))))
+    f = tmp_path / "gains.json"
+    f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}, "note": "softer"}))
+    rung = sc.run("01-gains", "abc123", "f" * 40, runs=1, settings_file=f, servo=SERVO, board=BOARD)
+    assert calls == [("apply", {"p_kp_q88": 5026}), ("restore", 3)]
+    assert json.loads((rung / "rung.json").read_text())["settings"] == {"p_kp_q88": 5026}
+
+
+def test_a_settings_rung_reboots_after_an_abort(bus, monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(sc.settings, "apply", lambda fields, note="": calls.append("apply"))
+    monkeypatch.setattr(sc.settings, "restore", lambda: calls.append("restore"))
+
+    def abort(out, mode, schedule, **kw):
+        raise RuntimeError("aborted")
+
+    monkeypatch.setattr(sc.osc, "track", abort)
+    f = tmp_path / "gains.json"
+    f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}}))
+    with pytest.raises(RuntimeError, match="aborted"):
+        sc.run("01-gains", "abc123", "f" * 40, runs=1, settings_file=f, servo=SERVO, board=BOARD)
+    assert calls == ["apply", "restore"]

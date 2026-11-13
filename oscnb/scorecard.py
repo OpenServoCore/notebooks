@@ -2,14 +2,16 @@
 fixed test set, scored from the pot, so a change is kept or dropped on
 numbers.
 
-  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT]
+  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE]
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard table
 
 `run` records a rung: `--runs` runs of the three captures of the test set
 (stages/5-closed-loop/scorecard/testset.py) under
 `telemetry/<pair>/scorecard/<label>/run-K/{steps,follow,hold}`, with
-`rung.json` naming the build. `score` writes the rung's scores, the median
+`rung.json` naming the build. With `--settings` the rung runs on a file of
+CONFIG fields applied volatile (oscnb.settings) and rebooted away at the
+end, the fields kept in `rung.json`. `score` writes the rung's scores, the median
 over its runs and their range, to
 `stages/5-closed-loop/scorecard/results/<pair>/<label>.json`. `table`
 prints the ladder, one column per rung.
@@ -35,7 +37,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import bench, boards, osc, results, servos
+from . import bench, boards, osc, results, servos, settings
 
 STAGE = "5-closed-loop"
 TESTSET = results.ROOT / "stages" / STAGE / "scorecard" / "testset.py"
@@ -449,7 +451,7 @@ def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     return meta
 
 
-def run(label, fw, image_sha, runs=3, note="", servo=None, board=None):
+def run(label, fw, image_sha, runs=3, note="", settings_file=None, servo=None, board=None):
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
@@ -458,22 +460,31 @@ def run(label, fw, image_sha, runs=3, note="", servo=None, board=None):
         raise SystemExit(f"{shown(rung)} already holds a rung: pick a new label or remove it")
     ts = testset()
     inp = ts.inputs(servo, pair)
+    fields = settings.load(settings_file)[0] if settings_file else None
     preflight(servo, board)
     guard = (osc.get("pos_min_soft_counts"), osc.get("pos_max_soft_counts"))
     center, sets = ts.build(guard, inp)
-    for k in range(1, runs + 1):
-        if k > 1:
-            preflight(servo, board)
-        for i, name in enumerate(ts.CAPTURES):
-            meta = capture(rung / f"run-{k}" / name, name, sets[name], center, guard, inp,
-                           deadman_check=i == 0, ts=ts)
-            if not (rung / "rung.json").exists():
-                (rung / "rung.json").write_text(json.dumps({
-                    "label": label, "fw": fw, "image_sha": image_sha, "note": note,
-                    "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                    "config_hash": config_hash(meta["config"]), "runs_asked": runs,
-                }, indent=2) + "\n")
-        print(f"run-{k} of {runs} done")
+    if fields:
+        settings.apply(fields)
+    try:
+        for k in range(1, runs + 1):
+            if k > 1:
+                preflight(servo, board)
+            for i, name in enumerate(ts.CAPTURES):
+                meta = capture(rung / f"run-{k}" / name, name, sets[name], center, guard, inp,
+                               deadman_check=i == 0, ts=ts)
+                if not (rung / "rung.json").exists():
+                    (rung / "rung.json").write_text(json.dumps({
+                        "label": label, "fw": fw, "image_sha": image_sha, "note": note,
+                        "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                        "config_hash": config_hash(meta["config"]), "runs_asked": runs,
+                        "settings": fields,
+                    }, indent=2) + "\n")
+            print(f"run-{k} of {runs} done")
+    finally:
+        # the stored set comes back whether the runs ended or aborted
+        if fields:
+            settings.restore()
     return rung
 
 
@@ -533,12 +544,13 @@ def main(argv=None):
     r.add_argument("--image-sha", required=True, help="the sha1 of the flashed image")
     r.add_argument("--runs", type=int, default=3)
     r.add_argument("--note", default="")
+    r.add_argument("--settings", type=Path, help="a file of CONFIG fields the rung runs on, applied volatile")
     s = sub.add_parser("score", help="score a recorded rung")
     s.add_argument("label")
     sub.add_parser("table", help="print the ladder")
     a = ap.parse_args(argv)
     if a.cmd == "run":
-        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note)))
+        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.settings)))
     elif a.cmd == "score":
         print(score(a.label))
     else:
