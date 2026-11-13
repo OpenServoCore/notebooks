@@ -2,7 +2,8 @@
 overshoot and settle through pot spikes, a ramp with a known lag, the
 tick unwrap across a wrap, the reversal count, the test set's schedules
 and refusal, the hold rows past a torque-on head, a landing's drive
-after arrival and the landings that hunt, the servo's speed and position
+after arrival and the landings that hunt, the crawl's swing inside a
+goal item, the servo's speed and position
 reports against the pot, and the runner's refusals with
 `osc` stubbed, then one rung end to end on a fake servo; a rung on a
 position table, its install's place in the runner and its rows read
@@ -203,6 +204,19 @@ def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
     assert f["ramp_speed_deg_s_1pct"] == pytest.approx(10 / 0.0256 / CPD)
     assert f["follow_reversals_per_s_1pct"] == 0
     assert np.isfinite(f["crawl_speed_ripple_pct"])
+    assert f["crawl_swing_deg"] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_the_crawl_swing_reads_the_items_that_swing_about_their_own_line(tmp_path):
+    """One item in ten swings 16 counts peak to peak about its place, the
+    others sit still: the 95th percentile is a swinging item's span."""
+    segs, rows = ramp_rows()
+    swing = np.round(8 * np.cos(2 * np.pi * np.arange(400) / 200))
+    rows = [(item, goal, pos + swing if k % 10 == 0 and len(pos) == 400 else pos, duty)
+            for k, (item, goal, pos, duty) in enumerate(rows)]
+    synth.write(tmp_path, rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs))
+    f = sc.follow_scores(sc.load(tmp_path))
+    assert f["crawl_swing_deg"] == pytest.approx(16 / CPD, abs=1 / CPD)
 
 
 def slow_report(segs, slow_deg_s):
@@ -410,7 +424,8 @@ def test_a_rung_end_to_end(bus):
     expected |= {"speed_ripple_pct", "rest_error_deg", "two_sided_deg", "enable_kick_deg", "enable_drive_ms",
                  "position_report_error_deg",
                  "landing_buzz_share", "landing_tail_driven", "landing_drive_ms", "landing_drive_ms_worst",
-                 "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct"}
+                 "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct",
+                 "crawl_swing_deg"}
     assert set(s) == expected
     assert all(set(q) == {"value", "lo", "hi", "unit"} for q in s.values())
     # the fake servo is first order: no overshoot, and it rests inside its deadband

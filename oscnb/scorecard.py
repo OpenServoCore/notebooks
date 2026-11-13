@@ -65,6 +65,7 @@ TAIL_DRIVEN_SHARE = 0.02  # a hunting tail: above the share a single noise wake 
 FOLLOW_TAIL = 2 / 3       # the share of a ramp, from its end, a follow score reads
 RAIL_TOL_V = 0.3          # the rail against the servo's rated voltage before a run
 REPORT_POT_MS = 50        # the pot a position report is read against, its span the quiet gate
+CRAWL_SWING_PCTL = 95     # the crawl's widest goal items, short of a lone one
 Q16 = 1 << 16
 
 # Other people's measurements of stock smart servos (STS3215, LX-16A),
@@ -85,7 +86,8 @@ UNITS = {
     "hold_jitter_counts": "counts", "hold_buzz_share": "share",
     "hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
-    "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "enable_kick_deg": "deg",
+    "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "crawl_swing_deg": "deg",
+    "enable_kick_deg": "deg",
     "enable_drive_ms": "ms", "speed_report_error_deg_s": "deg/s", "position_report_error_deg": "deg",
 }
 
@@ -469,6 +471,20 @@ def speed_report_error_deg_s(cap, segs, g):
     return float(segs[0]["direction"] * (report - slope) / cap["cpd"])
 
 
+def item_swings(g):
+    """Per goal item of a ramp's rows, the span of the median pot about
+    the item's own line, counts: a shaft that keeps the ramp's pace reads
+    the pot's noise, one that stops and jumps or swings back reads the
+    travel it does so over."""
+    out = []
+    for _, q in g.groupby("seg"):
+        t, p = q["t"].to_numpy() - q["t"].iloc[0], q["pos_f"].to_numpy()
+        if len(p) > 2:
+            res = p - np.polyval(np.polyfit(t, p, 1), t)
+            out.append(res.max() - res.min())
+    return np.array(out)
+
+
 def follow_scores(cap):
     """Per speed, over the last FOLLOW_TAIL of its up and down ramps pooled:
     the lag (mean of goal - pos along the travel, the goal the one in force
@@ -476,7 +492,9 @@ def follow_scores(cap):
     and the duty rms;
     the goals' real speed, the mean of the two; the reported speed's error
     (speed_report_error_deg_s), the median ramp; and on the slowest speed
-    the crawl ripple over CRAWL_WINDOW_MS windows, the worse ramp."""
+    the crawl ripple over CRAWL_WINDOW_MS windows, the worse ramp, and the
+    crawl swing, the CRAWL_SWING_PCTL-th percentile of item_swings over
+    every goal item of its ramps."""
     by_pct = {}
     for segs, g in ramps(cap).values():
         by_pct.setdefault(segs[0]["speed_pct"], []).append((segs, g))
@@ -500,6 +518,8 @@ def follow_scores(cap):
             out["crawl_speed_ripple_pct"] = max(
                 ripple_pct(window_speeds(t["t"].to_numpy(), t["pos_f"].to_numpy(), CRAWL_WINDOW_MS / 1000))
                 for t in tails)
+            out["crawl_swing_deg"] = float(np.percentile(
+                np.concatenate([item_swings(g) for _, g in rs]), CRAWL_SWING_PCTL)) / cap["cpd"]
     return out
 
 
