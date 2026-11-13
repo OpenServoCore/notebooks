@@ -82,6 +82,24 @@ Kept:
   is one count worse (0.25 against 0.21 deg), one hold in three buzzes at
   the edge of the deadband, and its stiffness under a load is not measured
   (free horn only).
+- `05a-hold-zone`: `01b`'s settings on firmware fcf2703e, whose hold
+  settles on nearness to the goal: a shaft that has stayed within twice
+  the deadband of a stopped goal for 64 ms is parked where it is and wakes
+  only past that zone. Against the firmware before it, alternated in one
+  sitting outside the scorecard: a landing that parks on the band's edge
+  and is woken by noise without end, 0 and 1 of 48 small landings against
+  5, 2 and 2; a 60 degree landing that oscillates to the end of a 2 s hold
+  at a raised speed limit, 0 of 36 against 10 of 36. On the scorecard no
+  landing is driven in its last 500 ms (3 of 39 on `zz-control-01b-2`,
+  recorded next to it). The cost is the rest error, 0.32 against 0.27
+  deg: a landing parked by the zone rests up to 7 counts out. Open on it:
+  recorded again an hour later (`zz-control-hold-zone`) 2 landings of 39
+  are driven in their tail, one a swing of 17 counts either side of the
+  goal, wider than the zone, that runs past a second, and the settle
+  times are the control's, so this rung's shorter settle times are not a
+  gain. Its hold rows read a kick at torque-on in the head of the first
+  hold, as common on the firmware before it (13 of 48 enables after a
+  move against 9 of 48), not the hold.
 
 Tried, not kept:
 
@@ -122,8 +140,22 @@ Tried, not kept:
 - `04a-hold-settle`, firmware 0bf126a7 on `01b`'s settings: against the
   control below, no row gains beyond the spread (2 landings of 45 buzz
   against 3).
+- `02e-speed-quarter` and `02f-speed-third`, `01b` with the speed limit
+  at a quarter and a third of the no-load speed, on the firmware before
+  `05a`: the 60 degree move settles in 466 and 417 ms against 1210 on
+  `zz-control-01b-2`, and the landing at one goal oscillates to the end
+  of its hold in two runs of three (landing buzz 0.06 against 0.016).
+- `06a-hold-zone-speed-third` and `06b-hold-zone-speed-half`, `05a` with
+  the speed limit at a third and a half: against `zz-control-hold-zone`,
+  recorded between them, the 60 degree move settles in 523 and 514 ms
+  against 1290, its current is 226 and 242 mA against 151, its overshoot
+  1.16 and 0.53 deg against 0.63, and the 20 degree settle is 294 and 877
+  ms against 595; 3 and 2 landings of 39 are driven in their tail against
+  2. The landing that blocked `02b` no longer oscillates to the end. A
+  trade of current and overshoot for speed, in a setting: held for a
+  decision, with the same test under a load.
 
-One control, and what it says about reading the ladder:
+The controls, and what they say about reading the ladder:
 
 - `zz-control-01b` is `01b` recorded again on the same build a few hours
   into the session. Its follow current at 3 % reads 113 mA against 90,
@@ -132,3 +164,10 @@ One control, and what it says about reading the ladder:
   than the servo's drift over a session, so a candidate is judged against
   a control recorded next to it in time, not against a rung from hours
   before.
+- `zz-control-01b-2` is `01b` once more, recorded next to `05a`, and
+  `zz-control-hold-zone` is `05a` again an hour on, between `06a` and
+  `06b`. The second shows the same drift on a second firmware: its 2, 20
+  and 60 degree settle times read 462, 595 and 1290 ms against `05a`'s
+  70, 362 and 842. A settle time is the worst of four moves and one slow
+  landing sets it, so one recording of three runs does not carry a settle
+  claim either way.
