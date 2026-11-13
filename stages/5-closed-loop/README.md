@@ -120,6 +120,23 @@ Kept:
   rest for a loop that goes quiet: a trade, held for a decision with the
   test under a load, where the play is taken up.
 
+- `07a-enable-rest`: `01b`'s settings on firmware f5e9ee6f, whose
+  torque-on keeps the position estimate and starts the profile on the
+  goal when the goal is within the deadband of the estimate and the pot
+  sample of the edge within twice the deadband of it. Before it the motor
+  was driven for 8 to 90 ms at most torque-ons, the profile running from
+  one raw pot sample to a goal a few counts off. Against the firmware
+  before it, alternated in one sitting outside the scorecard: 42 of 48
+  torque-ons at rest and 46 of 48 after a move are driven, 6 of them
+  with duty peaks over 500 counts, against 0 of 96. On the scorecard,
+  alternated in two sets of three rounds with the order of the sides
+  swapped (`zz-ab-after-enable-rest` against `zz-ab-before-enable-rest`,
+  this rung against `zz-ab-before-enable-rest-2`): the drive after
+  torque-on is 0 ms in all six runs against 9.7 and 32.9 ms, the kick is
+  one count (0.05 deg) against 0.11 and 0.48 deg, and no other row moves
+  beyond the spread between the two sets. Not measured: a shaft moved by
+  hand with the torque off, the case the change leaves on the old path.
+
 Tried, not kept:
 
 - `01a-gains-6hz-100hz`, the position gain a quarter and the velocity
@@ -194,3 +211,11 @@ The controls, and what they say about reading the ladder:
   before `05a` and on `05a`'s, recorded with `ab`: one run of each per
   round, the image flashed between. This is how a firmware rung and its
   control are recorded from here on.
+- `zz-ab-before-enable-rest`, `zz-ab-after-enable-rest` and
+  `zz-ab-before-enable-rest-2` are the other three sides of `07a`'s two
+  sets. The first set reads the rest error as a loss for the change
+  (0.27 against 0.23 deg, the ranges of three runs barely touching), the
+  second, the order of the sides swapped, as a gain (0.26 against 0.29):
+  the worst of 13 landings a run moves by a count or two between sets on
+  one firmware, so one alternated set of three rounds does not carry an
+  accuracy claim of that size either.
