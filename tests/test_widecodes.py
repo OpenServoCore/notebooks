@@ -1,8 +1,9 @@
 """The ADC's wide-code finder on synthetic sweeps, bands at and off the 256
 carries, at the range's edges and too wide for a byte, and a thin sweep
-refused; the slots; the bench sweep's code histogram; the sweep's
-schedule and its capture with `osc` stubbed; the install against a fake
-bus; and the scorecard's `--wide-codes` rung."""
+refused; the slots; the step on a recording's readings and its load; the
+bench sweep's code histogram; the sweep's schedule and its capture with
+`osc` stubbed; the install against a fake bus; and the scorecard's
+`--wide-codes` rung."""
 import hashlib
 import json
 import math
@@ -11,13 +12,15 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
-from oscnb import boards, results, scorecard as sc, servos
+from oscnb import boards, results, scorecard as sc, servos, tel
 from oscnb import widecodes as wc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scorecard_synth as synth  # noqa: E402
+import sweep_synth  # noqa: E402
 
 FIXTURE = Path(__file__).resolve().parent / "widecodes_bench_hist.json"
 SERVO = servos.SERVOS["mg90-d"]
@@ -91,6 +94,53 @@ def test_slots_hold_the_wide_representable_bands_only():
     assert len(s) == 16 and isinstance(s, bytes)
     assert list(s) == [0, 0, 0, 88, 0, 0, 0, 248, 0, 0, 0, 0, 0, 0, 0, 0]
     assert wc.slots([]) == bytes(16)
+
+
+# --- the step on a recording's readings ---
+
+def test_a_stuck_code_gains_its_slot_and_the_codes_beside_it_do_not():
+    slots = bytes([0, 48, 0, 80] + [0] * 12)
+    pos = np.array([1022, 1023, 1024, 511, 510, 512, 2047])
+    out = wc.compensated(pos, slots)
+    assert out.dtype == float
+    assert list(out) == [1022, 1023 + 5.0, 1024, 511 + 3.0, 510, 512, 2047]
+
+
+def test_a_zero_slot_leaves_its_stuck_code_and_an_all_zero_map_is_the_identity():
+    pos = np.arange(4096)
+    np.testing.assert_array_equal(wc.compensated(pos, bytes(16)), pos.astype(float))
+    slots = np.zeros(16, np.uint8)
+    slots[7] = 88
+    out = wc.compensated(pos, slots)
+    assert out[0x7FF] == 0x7FF + 5.5
+    assert out[0x3FF] == 0x3FF and out[0xFFF] == 0xFFF
+    assert np.count_nonzero(out != pos) == 1
+
+
+def test_the_slots_of_a_meta_are_its_boards_and_a_meta_with_no_board_is_refused(monkeypatch):
+    seen = []
+    monkeypatch.setattr(wc, "slots_of_record", lambda key: seen.append(key) or bytes(range(16)))
+    meta = {"sense": dict(BOARD.sense)}
+    assert list(wc.slots_of_meta(meta)) == list(range(16))
+    assert seen == [boards.from_meta(meta).key]
+    with pytest.raises(ValueError, match="no board matches"):
+        wc.slots_of_meta({"sense": {**BOARD.sense, "gain_milli": -1}})
+
+
+def test_a_load_with_the_step_keeps_the_raw_code_and_a_plain_load_is_unchanged(monkeypatch, tmp_path):
+    sweep_synth.write(tmp_path)
+    df = pd.read_csv(tmp_path / "sweep.csv")
+    codes = np.resize([1022, 1023, 1024, 2047, 3000], len(df))
+    df.assign(pos=codes).to_csv(tmp_path / "sweep.csv", index=False)
+    slots = bytes([0, 0, 0, 80, 0, 0, 0, 88] + [0] * 8)
+    monkeypatch.setattr(wc, "slots_of_record", lambda key: slots)
+    plain, _ = tel.load(tmp_path)
+    assert "pos_raw" not in plain and plain["pos"].dtype == np.int64
+    stepped, _ = tel.load(tmp_path, wide_codes=True)
+    np.testing.assert_array_equal(stepped["pos_raw"], codes)
+    np.testing.assert_array_equal(stepped["pos"], wc.compensated(codes, slots))
+    assert set(stepped["pos"] - stepped["pos_raw"]) == {0.0, 5.0, 5.5}
+    assert stepped.drop(columns=["pos", "pos_raw"]).equals(plain.drop(columns="pos"))
 
 
 def bench_rows():

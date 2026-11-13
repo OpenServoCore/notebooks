@@ -1,6 +1,6 @@
 {
   "capture": "telemetry/mg90-d__dev-v006-2A-D",
-  "notes": "stage 4 position of mg90-d on dev-v006-2A-D, no capture of its own: stage 3's pot-table sitting servo-camera-9 through oscnb.potframes (21 chains, 5 V) and load/ladder-1's still windows. One sitting, one servo. Lookup: knots every lookup_pitch_counts counts, angle in deg, linear between, fitted as tag = PWL(pot) + one offset per moving segment with the rest points at offset 0 and a second-difference ridge of 0.1; end lines pinned at the last knots, slopes through the drive starts past the table, carried as knots guard to guard (results/<pair>.lookup.csv). Held out: two folds by the parity of a chain's rank in its clip kind; scored on every frame with tag speed over 2 deg/s inside the table's range; lead = the pot re-read at host_cam (stage 3's stamp lead per direction group, the capture tool's); value pooled, bounds the two folds. Shares: the pooled error's mean square taken out in the order lead, kind-by-direction means, segment wander, the rest the table's. direction_contrast, speed_free_half_width, timing_slope: position-controlled reads over all kinds, +/- bootstrap sd over segments (400 draws, seed 0). Rows: one per tick; the angle through stage 3's table inverted. Noise the sd over rest windows (baselines less 4000 rows, still coast tails, still ladder windows), value the baselines, bounds the three sources; pattern = mean by tick mod 16, its share 1 - (sd without it / sd)^2, pp bounds include stage 1's divider. Filters: noise the rms over windows of the output's sd from 20 ms in, delay the DC group delay, lag at the passes' tag speed (results/<pair>.filters.csv). Carries: codes 3 LSB wide or with 2+ missing after them, blind span (width - 1) / scale; near / far against the tag with each segment's far median out; hold +/-12 counts, delay its dwell median and range. Direction: boxcar 16 less the tag along the motion on steady crawl holds, value pooled, bounds the two chain-parity folds; clip min/max over the crawl clips' hold means; rest after a coast by arrival, +/- se; bounds: max |crawl clip mean| and |rest mean| + 2 sd, each rounded to 0.1 deg; late ms of the pot source at 4 and 6 counts over four reversals, value the worst.",
+  "notes": "stage 4 position of mg90-d on dev-v006-2A-D, no capture of its own: stage 3's pot-table sitting servo-camera-9 through oscnb.potframes (21 chains, 5 V) and load/ladder-1's still windows. One sitting, one servo. Lookup: knots every lookup_pitch_counts counts, angle in deg, linear between, fitted as tag = PWL(pot) + one offset per moving segment with the rest points at offset 0 and a second-difference ridge of 0.1; end lines pinned at the last knots, slopes through the drive starts past the table, carried as knots guard to guard (results/<pair>.lookup.csv). Held out: two folds by the parity of a chain's rank in its clip kind; scored on every frame with tag speed over 2 deg/s inside the table's range; lead = the pot re-read at host_cam (stage 3's stamp lead per direction group, the capture tool's); value pooled, bounds the two folds. Shares: the pooled error's mean square taken out in the order lead, kind-by-direction means, segment wander, the rest the table's. direction_contrast, speed_free_half_width, timing_slope: position-controlled reads over all kinds, +/- bootstrap sd over segments (400 draws, seed 0). Rows: one per tick; the angle through stage 3's table inverted. Noise the sd over rest windows (baselines less 4000 rows, still coast tails, still ladder windows), value the baselines, bounds the three sources; pattern = mean by tick mod 16, its share 1 - (sd without it / sd)^2, pp bounds include stage 1's divider. Filters: noise the rms over windows of the output's sd from 20 ms in, delay the DC group delay, lag at the passes' tag speed (results/<pair>.filters.csv). Carries: codes 3 LSB wide or with 2+ missing after them, blind span (width - 1) / scale; near / far against the tag with each segment's far median out; hold +/-12 counts, delay its dwell median and range. Direction: boxcar 16 less the tag along the motion on steady crawl holds, value pooled, bounds the two chain-parity folds; clip min/max over the crawl clips' hold means; rest after a coast by arrival, +/- se; bounds: max |crawl clip mean| and |rest mean| + 2 sd, each rounded to 0.1 deg; late ms of the pot source at 4 and 6 counts over four reversals, value the worst. Wide codes: every pot row on a stuck code of the board's stage 1 wide-codes result gains slot / 16 counts before the frames are made; the code widths and the carry list are read on the raw codes. wide_code_band_less_flanks: per crossing, held out, lead applied, nothing out, the mean error of the frames over half on the stuck code less that of the same segment's frames under a tenth on it within 12 counts of the span; _raw the raw readings through a lookup fitted on them, else the route of record; +/- se over crossings; flat_sd the sd of the same contrast on stretches of 11 codes with no carry within 48 counts.",
   "lookup_pitch_counts": {
     "value": 32.0,
     "lo": null,
@@ -32,105 +32,105 @@
     "unit": "counts"
   },
   "table_term_heldout_deg_rms": {
-    "value": 0.16547176259335136,
-    "lo": 0.15986504030768464,
-    "hi": 0.1701692718513699,
+    "value": 0.1625184000570642,
+    "lo": 0.15765998869042094,
+    "hi": 0.1666037535336521,
     "unit": "deg"
   },
   "table_term_heldout_counts_rms": {
-    "value": 3.398780877353121,
-    "lo": 3.376660184096681,
-    "hi": 3.424194235794982,
+    "value": 3.3584108563987805,
+    "lo": 3.320004661191058,
+    "hi": 3.4023024897941236,
     "unit": "counts"
   },
   "heldout_lead_applied_deg_rms": {
-    "value": 0.4101780307430683,
-    "lo": 0.37639071345513025,
-    "hi": 0.4460853170416839,
+    "value": 0.4074071426087846,
+    "lo": 0.3702716224255762,
+    "hi": 0.44653282761136925,
     "unit": "deg"
   },
   "heldout_lead_applied_counts_rms": {
-    "value": 7.889935014566206,
+    "value": 7.8409539658849,
     "lo": null,
     "hi": null,
     "unit": "counts"
   },
   "heldout_no_lead_deg_rms": {
-    "value": 0.5680730802174729,
+    "value": 0.5658381919838519,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "heldout_direction_means_out_deg_rms": {
-    "value": 0.3252252827799337,
+    "value": 0.32356659723716336,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "share_stamp_lead": {
-    "value": 0.4786416032258814,
+    "value": 0.48159072538520936,
     "lo": null,
     "hi": null,
     "unit": "share"
   },
   "share_direction_means": {
-    "value": 0.19359520434366537,
+    "value": 0.19141296703061697,
     "lo": null,
     "hi": null,
     "unit": "share"
   },
   "share_segment_wander": {
-    "value": 0.24291563058729512,
+    "value": 0.2445026496341163,
     "lo": null,
     "hi": null,
     "unit": "share"
   },
   "share_table": {
-    "value": 0.08484756184315811,
+    "value": 0.08249365795005735,
     "lo": null,
     "hi": null,
     "unit": "share"
   },
   "direction_contrast_in_bin_deg": {
-    "value": -0.05511713450364072,
-    "lo": -0.10347292580273747,
-    "hi": -0.006761343204543968,
+    "value": -0.05453583201917898,
+    "lo": -0.10297977634063943,
+    "hi": -0.006091887697718533,
     "unit": "deg"
   },
   "speed_free_half_width_deg": {
-    "value": 0.19176377807639614,
-    "lo": 0.1454151014537206,
-    "hi": 0.23811245469907166,
+    "value": 0.190323949159871,
+    "lo": 0.14405257529981708,
+    "hi": 0.23659532301992492,
     "unit": "deg"
   },
   "timing_slope_ms": {
-    "value": -5.879971545816998,
-    "lo": -6.7968426456795346,
-    "hi": -4.963100445954462,
+    "value": -5.831750195887127,
+    "lo": -6.738935035990548,
+    "hi": -4.924565355783707,
     "unit": "ms"
   },
   "lookup_64_counts_heldout_deg_rms": {
-    "value": 0.18627303416126637,
+    "value": 0.18397784600528574,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "angle_form_1p5_deg_heldout_deg_rms": {
-    "value": 0.17437823261708416,
+    "value": 0.17189648752381032,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "end_line_low_counts_per_deg": {
-    "value": 22.326815451400044,
-    "lo": 22.109277789074827,
-    "hi": 22.54435311372526,
+    "value": 22.330540434735628,
+    "lo": 22.1129692108145,
+    "hi": 22.548111658656754,
     "unit": "counts/deg"
   },
   "end_line_high_counts_per_deg": {
-    "value": 21.332457076090744,
-    "lo": 21.15488077470635,
-    "hi": 21.51003337747514,
+    "value": 21.33647528524678,
+    "lo": 21.1590679756832,
+    "hi": 21.51388259481036,
     "unit": "counts/deg"
   },
   "end_line_high_free_counts_per_deg": {
@@ -140,15 +140,15 @@
     "unit": "counts/deg"
   },
   "end_residual_low_deg_rms": {
-    "value": 0.32942477759278194,
-    "lo": 0.32942477759278194,
-    "hi": 0.3724741537245679,
+    "value": 0.3293653328285575,
+    "lo": 0.3293653328285575,
+    "hi": 0.37245569254020555,
     "unit": "deg"
   },
   "end_residual_high_deg_rms": {
-    "value": 0.3947444999750817,
-    "lo": 0.3947444999750817,
-    "hi": 0.43538236983717643,
+    "value": 0.39420803154792705,
+    "lo": 0.39420803154792705,
+    "hi": 0.4348059280311381,
     "unit": "deg"
   },
   "high_end_hole_deg": {
@@ -158,33 +158,33 @@
     "unit": "deg"
   },
   "rest_level_shift_first_to_last_counts": {
-    "value": -0.0366969198534207,
-    "lo": -0.8675829080500885,
-    "hi": 0.7941890683432471,
+    "value": 0.2349410091907157,
+    "lo": -0.5423423752775911,
+    "hi": 1.0122243936590225,
     "unit": "counts"
   },
   "rest_trend_counts_per_10min": {
-    "value": -0.12110122663582007,
-    "lo": -1.0272370552433856,
-    "hi": 0.7850346019717456,
+    "value": 0.15193381608735682,
+    "lo": -0.7114654524715328,
+    "hi": 1.0153330846462465,
     "unit": "counts per 10 min"
   },
   "pass_close_minus_open_symmetric_deg": {
-    "value": 0.12664357192863335,
-    "lo": -0.013089956020318039,
-    "hi": 0.26637709987758473,
+    "value": 0.10584240300484275,
+    "lo": -0.0348583214683328,
+    "hi": 0.24654312747801832,
     "unit": "deg"
   },
   "pot_noise_row_counts": {
     "value": 1.0310963254105467,
     "lo": 1.0267247361506049,
-    "hi": 1.1603323661778981,
+    "hi": 1.1179067716048596,
     "unit": "counts"
   },
   "pot_noise_row_pattern_free_counts": {
     "value": 0.5854734387811855,
     "lo": 0.5854734387811855,
-    "hi": 0.8040408395943188,
+    "hi": 0.7501153359251379,
     "unit": "counts"
   },
   "tick_pattern_period_ticks": {
@@ -195,20 +195,20 @@
   },
   "tick_pattern_pp_counts": {
     "value": 3.013714285714286,
-    "lo": 2.9863272727272725,
+    "lo": 2.9447272727272726,
     "hi": 3.0246222222222183,
     "unit": "counts"
   },
   "tick_pattern_variance_share": {
     "value": 0.6775844970856082,
-    "lo": 0.5198340013990665,
+    "lo": 0.5497591294354283,
     "hi": 0.6775844970856082,
     "unit": "share"
   },
   "filter_boxcar16_noise_counts": {
     "value": 0.13863063515601484,
     "lo": 0.13863063515601484,
-    "hi": 0.1609035567795041,
+    "hi": 0.14848622060411903,
     "unit": "counts"
   },
   "filter_boxcar16_noise_deg": {
@@ -251,19 +251,19 @@
     7
   ],
   "carry_near_rms_deg": {
-    "value": 0.20133629239537748,
+    "value": 0.16998450428873468,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "carry_far_rms_deg": {
-    "value": 0.17622627044359818,
+    "value": 0.17580042114683414,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "carry_hold_near_rms_deg": {
-    "value": 0.6977977804356083,
+    "value": 0.6766300578195306,
     "lo": null,
     "hi": null,
     "unit": "deg"
@@ -275,33 +275,33 @@
     "unit": "ms"
   },
   "direction_offset_crawl_plus_deg": {
-    "value": 0.27384907089712246,
-    "lo": 0.24937999801719676,
-    "hi": 0.29996872029084193,
+    "value": 0.27651893600286015,
+    "lo": 0.24549300119266007,
+    "hi": 0.30963774452215076,
     "unit": "deg"
   },
   "direction_offset_crawl_minus_deg": {
-    "value": -0.2266234295970683,
-    "lo": -0.2570739427969459,
-    "hi": -0.1959532553461546,
+    "value": -0.22514592790482324,
+    "lo": -0.25572189471848705,
+    "hi": -0.19432137599511337,
     "unit": "deg"
   },
   "direction_offset_clip_min_deg": {
-    "value": -0.1936131867487944,
+    "value": -0.19902075175341877,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "direction_offset_clip_max_deg": {
-    "value": 0.528009604126845,
+    "value": 0.5400457028179685,
     "lo": null,
     "hi": null,
     "unit": "deg"
   },
   "rest_direction_split_deg": {
-    "value": -0.05259687761628024,
-    "lo": -0.07541105106395943,
-    "hi": -0.029782704168601053,
+    "value": -0.05319872248788805,
+    "lo": -0.07612685338416805,
+    "hi": -0.03027059159160805,
     "unit": "deg"
   },
   "direction_bound_moving_deg": {
@@ -323,9 +323,9 @@
     "unit": "counts"
   },
   "direction_source_late_ms": {
-    "value": 8.399009704589844,
+    "value": 8.299112319946289,
     "lo": 0.0,
-    "hi": 8.399009704589844,
+    "hi": 8.299112319946289,
     "unit": "ms"
   },
   "stage5_table": [
@@ -336,7 +336,7 @@
     },
     {
       "quantity": "bias, table term",
-      "value": "0.165 deg rms held out, segment offsets out; bins -0.09 to +0.18 deg",
+      "value": "0.163 deg rms held out, segment offsets out; bins -0.09 to +0.18 deg",
       "note": "the 32 count lookup"
     },
     {
@@ -386,7 +386,7 @@
     },
     {
       "quantity": "direction source, if ever",
-      "value": "the pot's own motion, 4 to 6 counts of hysteresis, 0 to 8.4 ms late at a reversal",
+      "value": "the pot's own motion, 4 to 6 counts of hysteresis, 0 to 8.3 ms late at a reversal",
       "note": "not the duty's sign"
     }
   ],
@@ -398,5 +398,68 @@
     "Temperature: rest points at two bed temperatures on the heated rig",
     "Side load and torque: the load ladder's holds with the tag in view",
     "Wear of the track: the between-sittings capture repeated over the servo's running life"
-  ]
+  ],
+  "wide_code_band_less_flanks_deg": {
+    "1023": {
+      "value": 0.012997507718120131,
+      "lo": -0.0025119989420560544,
+      "hi": 0.028507014378296315,
+      "unit": "deg"
+    },
+    "2047": {
+      "value": -0.1132397229919721,
+      "lo": -0.14733284659022797,
+      "hi": -0.07914659939371624,
+      "unit": "deg"
+    },
+    "2559": {
+      "value": -0.011352444242065354,
+      "lo": -0.03376699083919882,
+      "hi": 0.011062102355068111,
+      "unit": "deg"
+    }
+  },
+  "wide_code_band_less_flanks_raw_deg": {
+    "1023": {
+      "value": -0.14934614193865103,
+      "lo": -0.16380610344263918,
+      "hi": -0.13488618043466288,
+      "unit": "deg"
+    },
+    "2047": {
+      "value": -0.4073862125160517,
+      "lo": -0.4438593817481865,
+      "hi": -0.37091304328391694,
+      "unit": "deg"
+    },
+    "2559": {
+      "value": -0.1083310849744738,
+      "lo": -0.13123024149530643,
+      "hi": -0.08543192845364117,
+      "unit": "deg"
+    }
+  },
+  "wide_code_band_less_flanks_pooled_deg": {
+    "value": -0.0548493183122782,
+    "lo": -0.07519226787665512,
+    "hi": -0.03450636874790128,
+    "unit": "deg"
+  },
+  "wide_code_band_less_flanks_pooled_raw_deg": {
+    "value": -0.26327055456170606,
+    "lo": -0.2943637885784027,
+    "hi": -0.23217732054500945,
+    "unit": "deg"
+  },
+  "wide_code_band_less_flanks_crossings": {
+    "1023": 8,
+    "2047": 16,
+    "2559": 9
+  },
+  "wide_code_band_less_flanks_flat_sd_deg": {
+    "value": 0.05850245394970514,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  }
 }
