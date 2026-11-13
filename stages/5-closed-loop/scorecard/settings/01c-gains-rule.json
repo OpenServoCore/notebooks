@@ -1,0 +1,4 @@
+{
+  "note": "the gain rule's set: gain-made chatter at 4 % of the current limit, velocity PI damping 0.5, velocity crossover over position gain 12",
+  "fields": {"p_kp_q88": 6593, "v_kp_q88": 142, "v_ki_q412": 350, "v_kaw_q412": 701}
+}

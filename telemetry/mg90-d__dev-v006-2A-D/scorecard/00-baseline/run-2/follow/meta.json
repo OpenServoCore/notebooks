@@ -516,7 +516,7 @@
     ]
   ],
   "tick_hz": 20000,
-  "vbus_counts": 1240,
+  "vbus_counts": 1241,
   "watchdog": {
     "current_cap_counts": 942.1842618181818,
     "current_cap_ma": 850.0,
