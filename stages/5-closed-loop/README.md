@@ -63,8 +63,8 @@ the bus at 3 Mbps, torque off, the production image flashed. The runner
 never touches the supply and never prompts; it refuses to start otherwise.
 
 ```
-uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table]
-uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-note TEXT] [--rounds 3]
+uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table] [--wide-codes]
+uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
 uv run python -m oscnb.scorecard score 00-baseline
 uv run python -m oscnb.scorecard table
 ```
@@ -81,6 +81,13 @@ file and its sha1 kept in `rung.json`, and the same reboot dropping it at
 the end. `score` reads such a rung's raw pot through the table its
 `rung.json` names, and refuses a capture with a live table and no table
 named.
+
+A rung passed `--wide-codes` (on `ab`, `--a-wide-codes` or
+`--b-wide-codes`) runs on the board's ADC wide-code slots, found once per
+board ([stage 1, wide-codes](../1-board/README.md#wide-codes)): written
+after the settings and the table, outside the stamp, the board's result
+file and its sha1 kept in `rung.json`, and the same reboot dropping them
+at the end.
 
 The same servo drifts within a session, so a candidate and its control
 are best recorded together. `ab` records two rungs at once, one run of

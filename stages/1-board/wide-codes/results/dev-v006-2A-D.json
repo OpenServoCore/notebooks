@@ -1,0 +1,131 @@
+{
+  "capture": "telemetry/dev-v006-2A-D/wide-codes/sweep-1",
+  "notes": "the ADC's wide codes from sweep sweep-1, the pot of the ramp servo as the ramp: runs of codes never read, each slot 8 x the codes skipped in 1/16 counts at code (k << 8) | 0xff",
+  "label": "sweep-1",
+  "ramp_servo": "mg90-d",
+  "swept_lo_counts": {
+    "value": 409.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "swept_hi_counts": {
+    "value": 3465.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "edge_margin_counts": {
+    "value": 15.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "median_rows_per_code": {
+    "value": 249.0,
+    "lo": null,
+    "hi": null,
+    "unit": "rows"
+  },
+  "wide_codes": [
+    {
+      "stuck_code": 511,
+      "skipped": 6,
+      "ratio": 5.622489959839357,
+      "wide": true,
+      "representable": true,
+      "slot": 1,
+      "value_q4": 48
+    },
+    {
+      "stuck_code": 1023,
+      "skipped": 10,
+      "ratio": 9.289156626506024,
+      "wide": true,
+      "representable": true,
+      "slot": 3,
+      "value_q4": 80
+    },
+    {
+      "stuck_code": 1279,
+      "skipped": 2,
+      "ratio": 1.6746987951807228,
+      "wide": false,
+      "representable": true,
+      "slot": null,
+      "value_q4": 16
+    },
+    {
+      "stuck_code": 1791,
+      "skipped": 1,
+      "ratio": 0.5220883534136547,
+      "wide": false,
+      "representable": true,
+      "slot": null,
+      "value_q4": 8
+    },
+    {
+      "stuck_code": 2047,
+      "skipped": 11,
+      "ratio": 10.947791164658634,
+      "wide": true,
+      "representable": true,
+      "slot": 7,
+      "value_q4": 88
+    },
+    {
+      "stuck_code": 2303,
+      "skipped": 2,
+      "ratio": 2.433734939759036,
+      "wide": false,
+      "representable": true,
+      "slot": null,
+      "value_q4": 16
+    },
+    {
+      "stuck_code": 2559,
+      "skipped": 6,
+      "ratio": 6.104417670682731,
+      "wide": true,
+      "representable": true,
+      "slot": 9,
+      "value_q4": 48
+    },
+    {
+      "stuck_code": 3070,
+      "skipped": 1,
+      "ratio": 0.04819277108433735,
+      "wide": false,
+      "representable": false,
+      "slot": null,
+      "value_q4": 8
+    },
+    {
+      "stuck_code": 3327,
+      "skipped": 2,
+      "ratio": 2.5783132530120483,
+      "wide": false,
+      "representable": true,
+      "slot": null,
+      "value_q4": 16
+    }
+  ],
+  "adc_wide_mid_q4": [
+    0,
+    48,
+    0,
+    80,
+    0,
+    0,
+    0,
+    88,
+    0,
+    48,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}
