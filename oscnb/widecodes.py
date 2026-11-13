@@ -37,6 +37,7 @@ import argparse
 import json
 import math
 import re
+import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -332,7 +333,11 @@ def install(board):
     addr, width, old = found
     if width != SLOTS:
         raise settings.Refused(f"{FIELD} is {width} B on this servo, the slots are {SLOTS}")
-    osc.write(addr, data)
+    try:
+        osc.write(addr, data)
+    except subprocess.CalledProcessError:
+        raise settings.Refused(f"the servo refused the write of {FIELD} at 0x{addr:x}: "
+                               "its image is older than the tool's descriptor and has no wide-code slots") from None
     back = osc.read(addr, SLOTS)
     if back != data:
         raise settings.Refused(f"{FIELD} reads back {back.hex()}, it was written {data.hex()}")

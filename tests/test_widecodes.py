@@ -6,6 +6,7 @@ bus; and the scorecard's `--wide-codes` rung."""
 import hashlib
 import json
 import math
+import subprocess
 import sys
 from pathlib import Path
 
@@ -293,6 +294,16 @@ def test_install_refuses_before_anything_is_written(wide_bus, kw, match):
     with pytest.raises(wc.settings.Refused, match=match):
         wc.install(KEY)
     assert b.writes() == []
+
+
+def test_install_refuses_when_an_older_image_rejects_the_write(wide_bus, monkeypatch):
+    wide_bus()
+
+    def rejected(addr, data):
+        raise subprocess.CalledProcessError(1, ["osc", "write"])
+    monkeypatch.setattr(wc.osc, "write", rejected)
+    with pytest.raises(wc.settings.Refused, match="refused the write of adc_wide_mid_q4 at 0x1f0"):
+        wc.install(KEY)
 
 
 def test_install_refuses_a_read_back_that_differs(wide_bus):
