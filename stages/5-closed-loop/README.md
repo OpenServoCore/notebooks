@@ -47,6 +47,15 @@ gains: a row to see a change with, not a grade of the report. The
 position row is empty under a position table, where the report is in
 linearized counts.
 
+`crawl_swing_deg` reads how far the shaft strays inside one goal period
+of the slowest ramp, the span of the pot about the period's own line, at
+the widest twentieth of the periods. A shaft that keeps the ramp's pace
+reads the pot's noise there; one that stops and jumps, or swings back
+across the play of the train, reads that travel. With `01b`'s gains it
+reads 0.4 to 1.0 deg from one sitting to the next, about the play
+itself, and 0.25 deg with the hold band at 8 counts: a row for a change
+of two times, not of a tenth.
+
 ## Running it
 
 The servo on the board and the DPS at its rated voltage, the adapter on
