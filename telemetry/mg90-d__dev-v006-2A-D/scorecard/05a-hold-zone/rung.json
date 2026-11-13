@@ -1,0 +1,16 @@
+{
+  "label": "05a-hold-zone",
+  "fw": "fcf2703e",
+  "image_sha": "40e092fb5a844e1162ccf321a2da45cdf4f4b3d5",
+  "note": "01b's gains on the hold that settles on nearness to the goal; recorded on a build of the same tree, image identical",
+  "utc": "2026-11-13T06:31:08+00:00",
+  "config_hash": "a433f89fcbe17f4f77da10563f60cfeab96ce14b1b095f6555b4a3b5c131f06c",
+  "runs_asked": 3,
+  "settings": {
+    "p_kp_q88": 5026,
+    "v_kp_q88": 124,
+    "v_ki_q412": 311,
+    "v_kaw_q412": 623
+  },
+  "pos_table": null
+}
