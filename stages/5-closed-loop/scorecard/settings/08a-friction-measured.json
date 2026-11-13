@@ -1,0 +1,4 @@
+{
+  "note": "01b's gains; the Coulomb friction term at the stage 3 running friction, round(Tc / Ke x counts per A), in place of the stored 100",
+  "fields": {"p_kp_q88": 5026, "v_kp_q88": 124, "v_ki_q412": 311, "v_kaw_q412": 623, "fric_fc_counts": 54}
+}

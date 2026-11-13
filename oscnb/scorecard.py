@@ -454,7 +454,10 @@ def ramp_speed_deg_s(cap, segs, g):
 def speed_report_error_deg_s(cap, segs, g):
     """One ramp, over the items in its follow tail: the mean reported
     speed along the travel less the pot's, the slope of a line through
-    each item's median pot against its t_start; negative reads slow."""
+    each item's median pot against its t_start; negative reads slow. The
+    polls sit at one phase of the goal period, so on a shaft that surges
+    inside the period this reads the surge's phase with the report's
+    error."""
     p = polls_of(cap, "omega_hat_cps", "t_start")
     items = ramp_tail(g)["seg"].unique()
     if p is None or len(items) < 2:

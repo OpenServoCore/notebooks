@@ -36,6 +36,17 @@ every capture's `meta.json` carries.
 Every score reads the pot. How each one is taken is in the docstrings of
 `oscnb/scorecard.py`.
 
+Two rows read the servo's own reports against the pot,
+`position_report_error_deg` and `speed_report_error_deg_s`. A report is
+polled once a goal item, in the gap between two bursts of rows, about a
+millisecond after the rows stop. On a goal stream the shaft speeds up and
+slows down inside every goal period and the poll sits at the slow end of
+it, so the speed row reads that swing together with the report's own
+error, 5 to 7 deg/s low on the 1 % ramp on every rung with `01b`'s
+gains: a row to see a change with, not a grade of the report. The
+position row is empty under a position table, where the report is in
+linearized counts.
+
 ## Running it
 
 The servo on the board and the DPS at its rated voltage, the adapter on
@@ -190,6 +201,37 @@ Tried, not kept:
   2. The landing that blocked `02b` no longer oscillates to the end. A
   trade of current and overshoot for speed, in a setting: held for a
   decision, with the same test under a load.
+
+- `zz-ab-after-pot-speed` and its three siblings, an experiment build
+  of f5e9ee6f whose velocity loop always reads the pot observer's speed,
+  never the back-EMF estimate, alternated with f5e9ee6f: on `01b`'s
+  settings, twice, the order of the sides swapped, the duty reverses a
+  fifth to a third less often and the lag of the fast follow falls (1.68
+  and 1.76 deg against 1.94 and 2.00), and the landings lose, the 60
+  degree overshoot 0.85 and 0.85 deg against 0.63 and 0.16 and the
+  median drive after an arrival longer in two sets of three; at `02b`'s
+  speed limit (`-half`) the 60 degree move settles in 652 ms against
+  453. On `01a`'s stiffer gains (`-01a`) the currents fall by a third or
+  more, the 60 degree move 132 mA against 219 and the fast follow 156
+  against 253, to the level of `01b` on f5e9ee6f. So the back-EMF
+  estimate damps the end of a large move and is what makes a stiffer
+  loop cost current: not a rung, a pointer at how that estimate enters
+  the loop.
+- `08a-friction-measured` and `zz-ab-after-friction-2`, `01b` with the
+  Coulomb friction term at the stage 3 running friction (54 counts in
+  place of the stored 100), alternated with `zz-ab-before-friction` and
+  `zz-ab-before-friction-2`, the order of the sides swapped for the
+  second pair: the slow follow it was aimed at does not gain (current
+  72 and 98 mA against 77 and 100, error sd 0.13 and 0.18 deg against
+  0.14 and 0.20, the crawl's ripple 34 and 45 % against 36 and 27), the
+  lag grows on the 1 % and the 10 % ramp in both pairs (0.086 and 0.081
+  deg against 0.025 and 0.035; 2.04 and 2.01 against 1.98 and 1.96),
+  and the median drive after an arrival is shorter in both (27 and 40 ms
+  against 62 and 87) with the worst one longer. The first pair's gain on
+  the 2 degree move (overshoot 0.16 deg against 0.42, current 115 mA
+  against 146) is gone in the second, where both sides' 2 degree rows
+  read worse than either side of the first: those rows move more
+  between two sittings an hour apart than between the two settings.
 
 The controls, and what they say about reading the ladder:
 
