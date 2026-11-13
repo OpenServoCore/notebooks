@@ -54,6 +54,8 @@ RIPPLE_WINDOW_MS = 10     # a speed sample on a large move: several counts of tr
 CRAWL_WINDOW_MS = 100     # a speed sample on the slowest ramp, ten counts and more of travel
 WINDOW_MIN_SHARE = 0.5    # a speed window with fewer rows than this share of its span reads nothing
 KICK_MS = 200             # the head of the first hold an enable kick is read over
+HOLD_HEAD_MS = 500        # the head of a hold that starts at torque-on, left to the enable rows
+TAIL_DRIVEN_SHARE = 0.02  # a hunting tail: above the share a single noise wake leaves
 FOLLOW_TAIL = 2 / 3       # the share of a ramp, from its end, a follow score reads
 RAIL_TOL_V = 0.3          # the rail against the servo's rated voltage before a run
 
@@ -70,11 +72,13 @@ UNITS = {
     "overshoot_deg": "deg", "settle_ms": "ms", "move_current_rms_ma": "mA",
     "move_reversals_per_s": "1/s", "move_duty_rms_pct": "% of the rail",
     "follow_duty_rms_pct": "% of the rail", "speed_ripple_pct": "%", "rest_error_deg": "deg",
-    "two_sided_deg": "deg", "landing_buzz_share": "share",
+    "two_sided_deg": "deg", "landing_buzz_share": "share", "landing_tail_driven": "landings",
+    "landing_drive_ms": "ms", "landing_drive_ms_worst": "ms",
     "hold_jitter_counts": "counts", "hold_buzz_share": "share",
     "hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
     "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "enable_kick_deg": "deg",
+    "enable_drive_ms": "ms",
 }
 
 
@@ -228,6 +232,20 @@ def tail(g, ms):
     return g[g["t"] >= g["t"].iloc[-1] - ms / 1000]
 
 
+def head(g, ms):
+    return g[g["t"] < g["t"].iloc[0] + ms / 1000]
+
+
+def drive_end_s(g, tick_hz):
+    """s from the first row of `g` to the end of its last driven row, 0
+    when none is driven."""
+    driven = np.flatnonzero(g["duty_counts"].to_numpy() != 0)
+    if len(driven) == 0:
+        return 0.0
+    t = g["t"].to_numpy()
+    return float(t[driven[-1]] - t[0] + 1 / tick_hz)
+
+
 # --- the steps capture ---
 
 def step_move(cap, seg):
@@ -288,19 +306,46 @@ def settled_pos(cap, k):
     return float(tail(seg_rows(cap, k), REST_MS)["pos_f"].mean())
 
 
+def goal_segs(cap):
+    return [s for s in cap["plan"]["segments"] if s["goal_counts"] is not None]
+
+
 def rest_error_deg(cap):
     """The worst |goal - mean pos| over the last REST_MS of every goal of
     the steps capture."""
-    goals = [s for s in cap["plan"]["segments"] if s["goal_counts"] is not None]
-    return max(abs(s["goal_counts"] - settled_pos(cap, s["seg"])) for s in goals) / cap["cpd"]
+    return max(abs(s["goal_counts"] - settled_pos(cap, s["seg"])) for s in goal_segs(cap)) / cap["cpd"]
 
 
 def landing_buzz_share(cap):
     """The share of rows driven over the last REST_MS of every goal of the
     steps capture, pooled: the loop awake on a shaft that has landed."""
-    goals = [s for s in cap["plan"]["segments"] if s["goal_counts"] is not None]
-    tails = pd.concat([tail(seg_rows(cap, s["seg"]), REST_MS) for s in goals])
+    tails = pd.concat([tail(seg_rows(cap, s["seg"]), REST_MS) for s in goal_segs(cap)])
     return float((tails["duty_counts"] != 0).mean())
+
+
+def landing_tail_driven(cap):
+    """The number of goals of the steps capture whose last REST_MS is
+    driven over a share above TAIL_DRIVEN_SHARE: the landings that hunt."""
+    return sum(int((tail(seg_rows(cap, s["seg"]), REST_MS)["duty_counts"] != 0).mean() > TAIL_DRIVEN_SHARE)
+               for s in goal_segs(cap))
+
+
+def landing_drive_s(cap, seg):
+    """One goal: s from the first row of the median pot inside
+    SETTLE_BAND_DEG of it to the end of the last row driven from there, 0
+    if none is; the whole segment when the pot never enters the band."""
+    g = seg_rows(cap, seg["seg"])
+    inside = np.flatnonzero(np.abs(g["pos_f"].to_numpy() - seg["goal_counts"]) / cap["cpd"] <= SETTLE_BAND_DEG)
+    if len(inside) == 0:
+        return float(g["t"].iloc[-1] - g["t"].iloc[0] + 1 / cap["tick_hz"])
+    return drive_end_s(g.iloc[inside[0]:], cap["tick_hz"])
+
+
+def landing_drive_scores(cap):
+    """Over every goal of the steps capture, the drive after arrival
+    (landing_drive_s): the median goal and the worst."""
+    ms = [landing_drive_s(cap, s) * 1000 for s in goal_segs(cap)]
+    return {"landing_drive_ms": float(np.median(ms)), "landing_drive_ms_worst": max(ms)}
 
 
 def two_sided_deg(cap):
@@ -324,12 +369,22 @@ def enable_kick_deg(cap):
     return (max(head.max(), rest) - min(head.min(), rest)) / cap["cpd"]
 
 
+def enable_drive_ms(cap, test):
+    """Over the first HOLD_HEAD_MS of the capture's first `test` segment, a
+    hold that starts at torque-on: ms from its first row to the end of the
+    last row driven, 0 when none is."""
+    g = head(seg_rows(cap, plan_segs(cap, test)[0]["seg"]), HOLD_HEAD_MS)
+    return drive_end_s(g, cap["tick_hz"]) * 1000
+
+
 # --- the hold capture ---
 
 def hold_scores(cap):
     """Over each hold, the worst of the two: the raw pot's sd, the share of
-    rows driven, the current rms."""
+    rows driven, the current rms. The first hold starts at torque-on, so
+    its first HOLD_HEAD_MS is cut off; the other is read whole."""
     holds = [seg_rows(cap, s["seg"]) for s in plan_segs(cap, "hold")]
+    holds[0] = holds[0][holds[0]["t"] >= holds[0]["t"].iloc[0] + HOLD_HEAD_MS / 1000]
     return {
         "hold_jitter_counts": max(float(g["pos"].std()) for g in holds),
         "hold_buzz_share": max(float((g["duty_counts"] != 0).mean()) for g in holds),
@@ -405,13 +460,17 @@ def score_run(run_dir):
     """Every score of one run, {key: value}."""
     run_dir = Path(run_dir)
     steps = load(run_dir / "steps")
+    hold = load(run_dir / "hold")
     out = step_scores(steps)
     out["speed_ripple_pct"] = speed_ripple_pct(steps)
     out["rest_error_deg"] = rest_error_deg(steps)
     out["two_sided_deg"] = two_sided_deg(steps)
     out["landing_buzz_share"] = landing_buzz_share(steps)
+    out["landing_tail_driven"] = landing_tail_driven(steps)
+    out.update(landing_drive_scores(steps))
     out["enable_kick_deg"] = enable_kick_deg(steps)
-    out.update(hold_scores(load(run_dir / "hold")))
+    out["enable_drive_ms"] = max(enable_drive_ms(steps, "enable"), enable_drive_ms(hold, "hold"))
+    out.update(hold_scores(hold))
     out.update(follow_scores(load(run_dir / "follow")))
     return out
 

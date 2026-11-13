@@ -1,9 +1,11 @@
 """The stage 5 scorecard on synthetic captures: a step with a known
 overshoot and settle through pot spikes, a ramp with a known lag, the
 tick unwrap across a wrap, the reversal count, the test set's schedules
-and refusal, and the runner's refusals with `osc` stubbed, then one rung
-end to end on a fake servo; a rung on a position table, its install's
-place in the runner and its rows read through the table."""
+and refusal, the hold rows past a torque-on head, a landing's drive
+after arrival and the landings that hunt, and the runner's refusals with
+`osc` stubbed, then one rung end to end on a fake servo; a rung on a
+position table, its install's place in the runner and its rows read
+through the table."""
 import hashlib
 import io
 import json
@@ -73,6 +75,101 @@ def test_a_landing_reads_the_share_of_its_tail_driven(tmp_path):
              "leg": "out", "goal_counts": goal, "goal_deg": 20.0}]
     synth.write(tmp_path, [(segs[0]["item"], goal, pos, duty)], CENTER, GUARD, plan=plan(segs))
     assert sc.landing_buzz_share(sc.load(tmp_path)) == pytest.approx(0.1, abs=0.001)
+
+
+def hold_seg(ms, test="hold"):
+    return {"item": f"hold@{ms}", "test": test, "goal_counts": None, "goal_deg": None}
+
+
+def holds(tmp_path, drives, kick_rows=0):
+    """Two 1500 ms holds at the center, a count of jitter on each; `drives`
+    are (hold, first row, last row) spans driven, and the first hold's first
+    `kick_rows` swing the pot 20 counts either side, driven."""
+    rows = []
+    for k in range(2):
+        pos = CENTER + (np.arange(30_000) % 3 - 1).astype(float)
+        duty = np.zeros(30_000, int)
+        if k == 0 and kick_rows:
+            pos[:kick_rows] = CENTER + 20 * np.sin(np.arange(kick_rows) / 400)
+            duty[:kick_rows] = 600
+        for h, a, b in drives:
+            if h == k:
+                duty[a:b] = 600
+        rows.append(("hold@1500", CENTER, pos, duty))
+    return sc.load(synth.write(tmp_path, rows, CENTER, GUARD, plan=plan([hold_seg(1500)] * 2)))
+
+
+def test_a_kick_in_the_head_of_the_first_hold_is_left_to_the_enable_rows(tmp_path):
+    quiet = holds(tmp_path / "quiet", [])
+    kicked = holds(tmp_path / "kicked", [], kick_rows=6000)
+    assert sc.hold_scores(kicked) == sc.hold_scores(quiet)
+    assert sc.hold_scores(quiet)["hold_buzz_share"] == 0
+    assert sc.enable_drive_ms(quiet, "hold") == 0
+    # the last driven row is row 5999, read to its end
+    assert sc.enable_drive_ms(kicked, "hold") == pytest.approx(300.0)
+
+
+def test_the_enable_segment_reads_its_drive_over_the_head_only(tmp_path):
+    pos = np.full(20_000, CENTER)
+    duty = np.zeros(20_000, int)
+    duty[1000:4000] = 600
+    duty[14_000:15_000] = 600
+    cap = sc.load(synth.write(tmp_path, [("hold@1000", CENTER, pos, duty)], CENTER, GUARD,
+                              plan=plan([hold_seg(1000, "enable")])))
+    assert sc.enable_drive_ms(cap, "enable") == pytest.approx(200.0)
+
+
+@pytest.mark.parametrize("hold, a, b, scored", [(0, 12_000, 13_000, 20_000), (1, 0, 1000, 30_000)])
+def test_a_hold_driven_after_the_head_shows_in_the_hold_rows(tmp_path, hold, a, b, scored):
+    cap = holds(tmp_path, [(hold, a, b)])
+    s = sc.hold_scores(cap)
+    assert s["hold_buzz_share"] == pytest.approx((b - a) / scored)
+    i_ma = 600 * synth.I_PER_DUTY * BOARD.a_per_count * 1e3
+    assert s["hold_current_rms_ma"] == pytest.approx(i_ma * np.sqrt((b - a) / scored), rel=0.01)
+    assert sc.enable_drive_ms(cap, "hold") == 0
+
+
+def goal_seg(goal):
+    return {"item": f"goal:{goal}@1500", "test": "step", "size_deg": 20, "direction": 1,
+            "leg": "out", "goal_counts": goal, "goal_deg": (goal - CENTER) / CPD}
+
+
+@pytest.mark.parametrize("hunting", [0, 1, 2])
+def test_landing_tail_driven_counts_the_landings_that_hunt(tmp_path, hunting):
+    """Four landings held flat, their tails the last 10000 rows: `hunting`
+    of them driven over a tenth of the tail, one woken once for 1 %."""
+    goals = [CENTER + 400, CENTER, CENTER - 400, CENTER]
+    rows = []
+    for k, goal in enumerate(goals):
+        duty = np.zeros(30_000, int)
+        if k < hunting:
+            duty[-5000:-4000] = 90
+        elif k == 3:
+            duty[-2000:-1900] = 90
+        rows.append((goal_seg(goal)["item"], goal, np.full(30_000, goal), duty))
+    cap = sc.load(synth.write(tmp_path, rows, CENTER, GUARD, plan=plan([goal_seg(g) for g in goals])))
+    assert sc.landing_tail_driven(cap) == hunting
+
+
+def test_landing_drive_reads_the_drive_after_arrival(tmp_path):
+    """A quiet landing, one driven again until 300 ms after it arrives, and
+    one that rests 2 deg out and never enters the band."""
+    goal = CENTER + 400
+    approach = np.concatenate([np.linspace(CENTER, goal, 1000), np.full(29_000, goal)])
+    arrive = int(np.argmax(np.abs(np.round(approach) - goal) <= sc.SETTLE_BAND_DEG * CPD))
+    quiet = np.where(np.round(approach) < goal - sc.SETTLE_BAND_DEG * CPD, 600, 0)
+    late = quiet.copy()
+    late[arrive + 5000:arrive + 6000] = 90
+    rows = [(goal_seg(goal)["item"], goal, approach, quiet),
+            (goal_seg(goal)["item"], goal, approach, late),
+            (goal_seg(goal)["item"], goal, np.full(30_000, goal - 40), np.full(30_000, 90))]
+    segs = [goal_seg(goal)] * 3
+    cap = sc.load(synth.write(tmp_path, rows, CENTER, GUARD, plan=plan(segs)))
+    got = [sc.landing_drive_s(cap, s) for s in cap["plan"]["segments"]]
+    assert got == pytest.approx([0.0, 0.3, 1.5])
+    s = sc.landing_drive_scores(cap)
+    assert s["landing_drive_ms"] == pytest.approx(300.0)
+    assert s["landing_drive_ms_worst"] == pytest.approx(1500.0)
 
 
 def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
@@ -249,8 +346,9 @@ def test_a_rung_end_to_end(bus):
                                          "follow_reversals_per_s", "follow_duty_rms_pct",
                                          "ramp_speed_deg_s")
                  for p in TS.FOLLOW_SPEED_PCT}
-    expected |= {"speed_ripple_pct", "rest_error_deg", "two_sided_deg", "enable_kick_deg",
-                 "landing_buzz_share", "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct"}
+    expected |= {"speed_ripple_pct", "rest_error_deg", "two_sided_deg", "enable_kick_deg", "enable_drive_ms",
+                 "landing_buzz_share", "landing_tail_driven", "landing_drive_ms", "landing_drive_ms_worst",
+                 "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct"}
     assert set(s) == expected
     assert all(set(q) == {"value", "lo", "hi", "unit"} for q in s.values())
     # the fake servo is first order: no overshoot, and it rests inside its deadband
