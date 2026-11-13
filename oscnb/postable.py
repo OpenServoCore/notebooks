@@ -1,0 +1,447 @@
+"""The pot's position table in the servo's own format, from stage 4's lookup.
+
+The format is protocol sec 5.7. 256 i16 calibration points c[k], point k at
+raw 16 k over the 12-bit converter, and a 257th at 4096 fixed at 0 and never
+written. A raw sample reads, in Q4 counts,
+
+    lin = ((raw + c[i]) << 4) + (c[i + 1] - c[i]) * f,  i = raw >> 4, f = raw & 15
+
+as a u16, so the all-zero table is the identity and point k lands at
+raw + c[k]. A table is taken only with torque off, written 32 points a page
+over 8 pages, and only when every point at or beyond a stop is zero (k <=
+(raw_min + 15) >> 4 and k >= raw_max >> 4) and every interval's Q4 gain
+16 + c[k + 1] - c[k] lies in 1..255, ends judged before shape.
+
+Stage 4's lookup maps counts to the tag angle. The table maps raw counts to
+counts linear in that angle, pinned so both stops map to themselves:
+
+    L(theta) = raw_min + (theta - theta(raw_min)) * scale,
+    scale = (raw_max - raw_min) / (theta(raw_max) - theta(raw_min)),
+
+c[k] = L(theta(16 k)) - 16 k rounded to the count, zero at and beyond the
+stops. Past the lookup's knots the angle runs on its end lines, which stage
+4 carries as extrapolation.
+
+    uv run python -m oscnb.postable build --stops RAW_MIN RAW_MAX
+    uv run python -m oscnb.postable check
+    uv run python -m oscnb.postable plan
+
+`build` writes stages/5-closed-loop/calibration/<pair>.pos_lut.json, `check`
+grades it offline, `plan` prints the `osc` commands an install takes and
+runs none of them.
+"""
+import argparse
+import json
+import re
+from dataclasses import dataclass
+
+import numpy as np
+import pandas as pd
+
+from . import boards, osc, results, servos
+from . import position as pe
+
+ADC_BITS = 12
+GRID_SHIFT = 4
+GRID = 1 << GRID_SHIFT                  # raw counts per interval
+INTERVALS = 1 << (ADC_BITS - GRID_SHIFT)  # host-written points
+PAGE_POINTS = 32
+PAGES = INTERVALS // PAGE_POINTS
+GAIN_MAX = 16                           # local gain under 16x nominal
+ADC_MASK = (1 << ADC_BITS) - 1
+STATES = ("IDENTITY", "LOADING", "LIVE", "REJECT_TORQUE", "REJECT_ENDS",
+          "REJECT_SHAPE")
+STORE, FETCH, COMMIT = 1, 2, 3          # pos_lut_cmd
+# the window, page then cmd then points then state, protocol sec 5.7
+WINDOW_ADDR, POINTS_ADDR = 0x19C, 0x19E
+
+STAGE4 = ("4-estimators", "position")   # the lookup's experiment
+OUT_DIR = results.ROOT / "stages" / "5-closed-loop" / "calibration"
+MOVE_DEG_S = 2.0        # deg/s, stage 4's scored frame moves at least this
+BOX_S = 0.002           # s, the pot's centered mean at a frame
+SPEED_FRAMES = 5        # frames either side, a frame's tag speed
+
+
+def default_pair():
+    return f"{servos.DEFAULT}__{boards.DEFAULT}"
+
+
+def interp_q4(raw, points):
+    """The servo's reading of `raw` through `points` (256), Q4 counts, as
+    the u16 the format defines. Integers, scalar or array."""
+    c = np.r_[np.asarray(points, np.int64), 0]
+    raw = np.asarray(raw, np.int64) & ADC_MASK
+    i = raw >> GRID_SHIFT
+    f = raw & (GRID - 1)
+    return (((raw + c[i]) << GRID_SHIFT) + (c[i + 1] - c[i]) * f) & 0xFFFF
+
+
+def validate(points, raw_min, raw_max):
+    """None for a table the servo takes against these stops, else the
+    state it lands in and why."""
+    k = np.asarray(points, np.int64)
+    if len(k) != INTERVALS:
+        raise ValueError(f"{len(k)} points, the format holds {INTERVALS}")
+    lo, hi = (raw_min + GRID - 1) >> GRID_SHIFT, raw_max >> GRID_SHIFT
+    idx = np.arange(INTERVALS)
+    bad = np.flatnonzero(((idx <= lo) | (idx >= hi)) & (k != 0))
+    if len(bad):
+        return (f"REJECT_ENDS: points {', '.join(map(str, bad[:8]))}"
+                f"{' ...' if len(bad) > 8 else ''} nonzero at or beyond a stop"
+                f" (stops {raw_min} and {raw_max}: points <= {lo} and >= {hi}"
+                " must be zero)")
+    d = GRID + np.diff(np.r_[k, 0])
+    bad = np.flatnonzero((d < 1) | (d >= GAIN_MAX * GRID))
+    if len(bad):
+        return (f"REJECT_SHAPE: intervals {', '.join(map(str, bad[:8]))}"
+                f"{' ...' if len(bad) > 8 else ''} have Q4 gain "
+                f"{', '.join(map(str, d[bad[:8]]))}, outside 1..255")
+    return None
+
+
+@dataclass
+class Table:
+    """A position table and the line it linearizes to: the stops and the
+    tag angle at each, deg."""
+    points: np.ndarray
+    raw_min: int
+    raw_max: int
+    theta_min: float
+    theta_max: float
+
+    @property
+    def scale(self):
+        """Linearized counts per deg."""
+        return (self.raw_max - self.raw_min) / (self.theta_max - self.theta_min)
+
+    def lin(self, raw):
+        """Linearized counts at `raw`, float: the format's line between the
+        points, so at an integer raw it is interp_q4 / 16."""
+        c = np.r_[self.points, 0].astype(float)
+        r = np.clip(np.asarray(raw, float), 0, ADC_MASK)
+        i = np.minimum((r // GRID).astype(int), INTERVALS - 1)
+        return r + c[i] + (c[i + 1] - c[i]) * (r - GRID * i) / GRID
+
+    def angle(self, raw):
+        """deg at pot counts `raw` through the table."""
+        return self.theta_min + (self.lin(raw) - self.raw_min) / self.scale
+
+    def counts(self, theta):
+        """Pot counts the table reads as `theta` deg."""
+        r = np.arange(ADC_MASK + 1, dtype=float)
+        target = self.raw_min + (np.asarray(theta, float) - self.theta_min) * self.scale
+        return np.interp(target, self.lin(r), r)
+
+    def errors(self, pos, theta):
+        """(deg, counts) as `position.errors` reads them."""
+        return (self.angle(pos) - np.asarray(theta, float),
+                np.asarray(pos, float) - self.counts(theta))
+
+
+def from_lookup(lk, raw_min, raw_max):
+    """The Table linearizing lookup `lk` between the stops; raises where
+    the servo would refuse it."""
+    if not 0 <= raw_min < raw_max <= ADC_MASK:
+        raise ValueError(f"stops {raw_min} and {raw_max}: want 0 <= raw_min < raw_max <= {ADC_MASK}")
+    th0, th1 = (float(v) for v in lk.angle(np.array([raw_min, raw_max], float)))
+    t = Table(np.zeros(INTERVALS, np.int64), raw_min, raw_max, th0, th1)
+    raw = GRID * np.arange(INTERVALS, dtype=float)
+    c = np.rint(raw_min + (lk.angle(raw) - th0) * t.scale - raw).astype(np.int64)
+    lo, hi = (raw_min + GRID - 1) >> GRID_SHIFT, raw_max >> GRID_SHIFT
+    c[:lo + 1] = 0
+    c[hi:] = 0
+    t.points = c
+    why = validate(c, raw_min, raw_max)
+    if why:
+        raise ValueError(f"the servo would refuse this table: {why}")
+    return t
+
+
+def lookup_of_record(pair):
+    """(Lookup, its csv path, stage 4's result) of a pair, the csv checked
+    against the result's lookup keys and end lines."""
+    res = results.read(*STAGE4, pair=pair)
+    path = results.path(*STAGE4, pair=pair).with_suffix(".lookup.csv")
+    t = pd.read_csv(path)
+    c, a = t["counts"].to_numpy(float), t["angle_deg"].to_numpy(float)
+    pitch = res["lookup_pitch_counts"]["value"]
+    checks = (("lookup_pitch_counts", np.diff(c).max(), np.diff(c).min()),
+              ("lookup_knot_first_counts", c[0], c[0]),
+              ("lookup_knot_last_counts", c[-1], c[-1]),
+              ("lookup_entries_guard_to_guard", len(c), len(c)))
+    for key, x, y in checks:
+        if not (x == y == res[key]["value"]):
+            raise ValueError(f"{results.rel(path)} disagrees with {key}")
+    lo, hi = (res[f"end_line_{e}_counts_per_deg"]["value"] for e in ("low", "high"))
+    lk = pe.Lookup("counts", c, a, lo, hi)
+    for e, want, cell in (("low", lo, (c[1] - c[0]) / (a[1] - a[0])),
+                          ("high", hi, (c[-1] - c[-2]) / (a[-1] - a[-2]))):
+        if abs(cell - want) > 0.01:
+            raise ValueError(f"the lookup's {e} cell runs {cell:.3f} counts/deg,"
+                             f" its end line {want:.3f}")
+    if not lk.monotone or pitch % GRID:
+        raise ValueError(f"lookup not monotone, or its pitch {pitch:g} off the"
+                         f" format's grid of {GRID}")
+    return lk, path, res
+
+
+def out_path(pair):
+    return OUT_DIR / f"{pair}.pos_lut.json"
+
+
+def build(pair, raw_min, raw_max):
+    """Write the pair's table against stops `raw_min`, `raw_max`; returns
+    (Table, path)."""
+    lk, src, res = lookup_of_record(pair)
+    t = from_lookup(lk, raw_min, raw_max)
+    d = GRID + np.diff(np.r_[t.points, 0])
+    inside = slice((raw_min + GRID - 1) >> GRID_SHIFT, raw_max >> GRID_SHIFT)
+    quoted = ("table_term_heldout_deg_rms", "table_term_heldout_counts_rms",
+              "heldout_lead_applied_deg_rms")
+    doc = {
+        "format": "protocol sec 5.7: 256 i16 calibration points, point k at "
+                  "raw 16 k, point 256 fixed 0 and not written; 8 pages of 32",
+        "inputs": {
+            "lookup": str(results.rel(src)),
+            "result": str(results.rel(results.path(*STAGE4, pair=pair))),
+            "lookup_pitch_counts": res["lookup_pitch_counts"]["value"],
+            "end_lines_counts_per_deg": [lk.lo_slope, lk.hi_slope],
+            "stops": {"raw_min": raw_min, "raw_max": raw_max,
+                      "from": "the command line; the install plan reads "
+                              "them off the servo first"},
+        },
+        "target": {
+            "theta_at_stops_deg": [t.theta_min, t.theta_max],
+            "counts_per_deg": t.scale,
+            "line": "L(theta) = raw_min + (theta - theta(raw_min)) * "
+                    "counts_per_deg, both stops map to themselves",
+        },
+        "extrapolated_counts": [[raw_min, float(lk.c[0])],
+                                [float(lk.c[-1]), raw_max]],
+        "local_gain": [float(d[inside].min()) / GRID, float(d[inside].max()) / GRID],
+        "stage4_quoted": {k: res[k]["value"] for k in quoted},
+        "points_by_page": [[int(x) for x in t.points[p * PAGE_POINTS:(p + 1) * PAGE_POINTS]]
+                           for p in range(PAGES)],
+    }
+    text = re.sub(r"\[([-\d.,\s]+)\]", lambda m: "[" + " ".join(m.group(1).split()) + "]",
+                  json.dumps(doc, indent=1))
+    path = out_path(pair)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text + "\n")
+    return t, path
+
+
+def load(pair):
+    """(Table, its document) of a pair's built table, refused where the
+    servo would refuse it."""
+    doc = json.loads(out_path(pair).read_text())
+    s = doc["inputs"]["stops"]
+    th = doc["target"]["theta_at_stops_deg"]
+    points = np.concatenate(doc["points_by_page"]).astype(np.int64)
+    t = Table(points, s["raw_min"], s["raw_max"], *th)
+    why = validate(t.points, t.raw_min, t.raw_max)
+    if why:
+        raise ValueError(f"{results.rel(out_path(pair))}: the servo would refuse it: {why}")
+    return t, doc
+
+
+def rms(x):
+    x = np.asarray(x, float)
+    return float(np.sqrt(np.mean(x ** 2))) if len(x) else float("nan")
+
+
+def format_cost(t, lk):
+    """How far the table reads from the lookup it came from, every raw
+    code: (deg rms, deg max, counts rms, counts max) inside the lookup's
+    knots, then the same from stop to stop."""
+    out = []
+    for a, b in ((lk.c[0], lk.c[-1]), (t.raw_min, t.raw_max)):
+        r = np.arange(int(np.ceil(a)), int(b) + 1)
+        e = t.angle(r) - lk.angle(r)
+        out += [rms(e), float(np.abs(e).max()), rms(e * t.scale),
+                float(np.abs(e * t.scale).max())]
+    return out
+
+
+def tag_speed(host, deg):
+    """deg/s per frame: a line through SPEED_FRAMES frames either side."""
+    n = len(host)
+    v = np.full(n, np.nan)
+    for i in range(n):
+        a, b = max(0, i - SPEED_FRAMES), min(n, i + SPEED_FRAMES + 1)
+        if b - a >= 4:
+            v[i] = np.polyfit(host[a:b] - host[i], deg[a:b], 1)[0]
+    return v
+
+
+def stage4_sets(pf):
+    """(moving, rest, scored) of stage 3's frames the way stage 4 split and
+    scored them: a fold per chain by the parity of its rank in its clip
+    kind; scored = the frames inside the moving span with tag speed over
+    MOVE_DEG_S, the pot re-read on the camera's clock (pos_cam)."""
+    from .potframes import kind_of
+    fold, seen = {}, {}
+    for clip, k in zip(pf.chains["clip"], pf.chains["k"]):
+        kind = kind_of(clip)
+        fold[(clip, k)] = seen.get(kind, 0) % 2
+        seen[kind] = seen.get(kind, 0) + 1
+
+    def folded(t):
+        return t.assign(fold=[fold[x] for x in zip(t["clip"], t["k"])])
+
+    fc = folded(pf.frames)
+    fc["sid"] = fc["clip"] + "/" + fc["k"].astype(str) + "/" + fc["seg"].astype(str)
+    fc["pos_cam"] = np.nan
+    fc["tag_speed"] = np.nan
+    for (clip, k), g in fc.groupby(["clip", "k"]):
+        rows = pf.rows(clip, k)[0]
+        dt = float(np.median(np.diff(rows["host"].to_numpy()[:2000])))
+        w = max(1, int(round(BOX_S / dt)))
+        for seg, gs in g.groupby("seg"):
+            rs = rows[rows["seg"] == seg]
+            box = rs["pos"].rolling(w, center=True, min_periods=1).mean()
+            cam = rs["host_cam"].to_numpy()
+            if np.isfinite(cam).all():
+                fc.loc[gs.index, "pos_cam"] = np.interp(gs["host"], cam, box.to_numpy())
+            fc.loc[gs.index, "tag_speed"] = tag_speed(gs["host"].to_numpy(),
+                                                      gs["image_deg"].to_numpy())
+    inside = (fc["image_deg"] > pf.lo_deg) & (fc["image_deg"] < pf.hi_deg)
+    scored = fc[(fc["tag_speed"].abs() > MOVE_DEG_S) & inside & fc["pos_cam"].notna()]
+    return folded(pf.moving), folded(pf.rest), scored
+
+
+def heldout(moving, rest, scored, raw_min, raw_max, pitch):
+    """Stage 4's two-fold grade through the lookup and through the table
+    built from it: per fold the lookup is fitted on the other fold, its
+    table built against the stops, and the fold's scored frames inside the
+    knots read through both. Returns {source: (deg rms, counts rms) with
+    each segment's offset out, then (deg rms, counts rms) with nothing
+    out}, pooled over both folds."""
+    errs = {"lookup": [], "table": []}
+    for q in (0, 1):
+        lk, _ = pe.build(moving[moving["fold"] != q], rest[rest["fold"] != q], pitch)
+        t = from_lookup(lk, raw_min, raw_max)
+        s = scored[scored["fold"] == q]
+        s = s[s["pos_cam"].between(lk.c[0], lk.c[-1]) & s["pos"].between(lk.c[0], lk.c[-1])]
+        for name, src in (("lookup", lk), ("table", t)):
+            ed, ec = (pe.errors(src, s["pos_cam"], s["image_deg"]) if name == "lookup"
+                      else src.errors(s["pos_cam"], s["image_deg"]))
+            errs[name].append(pd.DataFrame({"sid": s["sid"].to_numpy(),
+                                            "deg": ed, "counts": ec}))
+    out = {}
+    for name, parts in errs.items():
+        e = pd.concat(parts, ignore_index=True)
+        seg = e.groupby("sid")[["deg", "counts"]].transform("mean")
+        out[name] = (rms(e["deg"] - seg["deg"]), rms(e["counts"] - seg["counts"]),
+                     rms(e["deg"]), rms(e["counts"]))
+    return out
+
+
+def check(pair):
+    """Print the table's verdict, its format cost against the lookup of
+    record and stage 4's held-out grade read through it."""
+    from .potframes import load as load_frames
+    t, doc = load(pair)
+    lk, _, res = lookup_of_record(pair)
+    print(f"{results.rel(out_path(pair))}: LIVE against stops {t.raw_min} "
+          f"and {t.raw_max}; {t.scale:.3f} linearized counts/deg, local gain "
+          f"{doc['local_gain'][0]:.2f} to {doc['local_gain'][1]:.2f}")
+    fc = format_cost(t, lk)
+    print(f"against the lookup of record, every raw code inside its knots: "
+          f"{fc[0]:.4f} deg rms, {fc[1]:.4f} max ({fc[2]:.3f} / {fc[3]:.3f} "
+          f"counts); stop to stop {fc[4]:.4f} deg rms, {fc[5]:.4f} max")
+    for (a, b), (da, db) in zip(doc["extrapolated_counts"],
+                                ((t.theta_min, lk.a[0]), (lk.a[-1], t.theta_max))):
+        print(f"on an end line, no knot: {a:g} to {b:g} counts, {db - da:.2f} deg")
+    pf = load_frames(results.ROOT / "telemetry" / pair)
+    moving, rest, scored = stage4_sets(pf)
+    g = heldout(moving, rest, scored, t.raw_min, t.raw_max,
+                res["lookup_pitch_counts"]["value"])
+    q = {k: res[k]["value"] for k in ("table_term_heldout_deg_rms",
+                                      "table_term_heldout_counts_rms",
+                                      "heldout_lead_applied_deg_rms")}
+    print(f"held out, two folds, {len(scored)} scored frames, each fold's "
+          "table built against the same stops:")
+    print(f"  stage 4 quotes {q['table_term_heldout_deg_rms']:.4f} deg / "
+          f"{q['table_term_heldout_counts_rms']:.3f} counts, segment offsets "
+          f"out; {q['heldout_lead_applied_deg_rms']:.4f} deg nothing out")
+    for name in ("lookup", "table"):
+        a = g[name]
+        print(f"  through the {name:6s} {a[0]:.4f} deg / {a[1]:.3f} counts, "
+              f"segment offsets out; {a[2]:.4f} deg / {a[3]:.3f} counts "
+              "nothing out")
+    return g
+
+
+def page_bytes(points, page):
+    k = np.asarray(points[page * PAGE_POINTS:(page + 1) * PAGE_POINTS], "<i2")
+    return k.tobytes()
+
+
+def plan(pair):
+    """The install's wire steps as `osc` commands, one string; runs none."""
+    t, doc = load(pair)
+    o = f"osc -i {osc.ID}"
+    states = ", ".join(f"{i} {s}" for i, s in enumerate(STATES))
+    lines = [
+        f"# install {results.rel(out_path(pair))} (protocol sec 5.7); nothing here has run",
+        "# 1. preconditions, each read before anything is written",
+        f"{o} get torque_enable    # off; STORE and COMMIT are refused under torque",
+        f"{o} get raw_min          # {t.raw_min}, the stop the table was built against; else rebuild",
+        f"{o} get raw_max          # {t.raw_max}",
+        f"{o} get pos_lut_page     # addr 0x{WINDOW_ADDR:04x}: page, cmd, points, state in a row",
+        f"{o} get pos_lut_state    # the state before: {states}",
+        "# 2. STORE, one 66 B write a page: page, cmd 1, 32 points i16 LE",
+    ]
+    for p in range(PAGES):
+        payload = bytes([p, STORE]) + page_bytes(t.points, p)
+        lines.append(f"{o} write 0x{WINDOW_ADDR:x} {payload.hex()}")
+    lines += [
+        f"{o} get pos_lut_state    # 1 LOADING",
+        "# 3. COMMIT: page 0 and cmd 3, the write covers the command",
+        f"{o} write 0x{WINDOW_ADDR:x} {bytes([0, COMMIT]).hex()}",
+        f"{o} get pos_lut_state    # again while 1 LOADING; 2 LIVE goes on, any REJECT stops here",
+        "# 4. read back: FETCH a page into the window, read its 64 B, compare with its STORE above",
+    ]
+    for p in range(PAGES):
+        lines.append(f"{o} write 0x{WINDOW_ADDR:x} {bytes([p, FETCH]).hex()} && "
+                     f"{o} read 0x{POINTS_ADDR:x} {2 * PAGE_POINTS}")
+    lines += [
+        "# 5. stamp the live set, the LIVE points in it; no --save",
+        f"{o} stamp                # 'data state clean: closed loop allowed'",
+        f"{o} status               # 'data  clean' and 'stamp 0x.... = live set'",
+        "# 6. no SAVE: the table and the stamp stay volatile, and osc reboot returns",
+        "#    the saved identity table and the saved stamp. A SAVE (osc save, or",
+        "#    osc stamp --save) would persist them, and with them every volatile",
+        "#    CONFIG write standing at the time (oscnb.settings apply).",
+    ]
+    return "\n".join(lines)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="python -m oscnb.postable",
+                                 description="the pot's position table in the servo's format, offline")
+    ap.add_argument("--pair", default=default_pair(), help="servo__board, the default pair if omitted")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    b = sub.add_parser("build", help="the table from stage 4's lookup, against the servo's stops")
+    b.add_argument("--stops", type=int, nargs=2, required=True, metavar=("RAW_MIN", "RAW_MAX"),
+                   help="the servo's raw_min and raw_max")
+    sub.add_parser("check", help="the verdict and the held-out grade through the table")
+    sub.add_parser("plan", help="print the install's osc commands without running them")
+    a = ap.parse_args(argv)
+    try:
+        if a.cmd == "build":
+            t, path = build(a.pair, *a.stops)
+            print(f"wrote {results.rel(path)}: stops {t.raw_min} and {t.raw_max}, "
+                  f"{int(np.count_nonzero(t.points))} nonzero points, "
+                  f"{t.scale:.3f} counts/deg")
+        elif a.cmd == "check":
+            check(a.pair)
+        else:
+            print(plan(a.pair))
+    except ValueError as e:
+        raise SystemExit(f"refused: {e}")
+
+
+if __name__ == "__main__":
+    main()
