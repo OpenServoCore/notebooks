@@ -512,6 +512,21 @@ def got(s):
     return state_name(v) if s.field == "pos_lut_state" else v
 
 
+def fetch(page, n=2 * PAGE_POINTS):
+    """The first `n` bytes of page `page` of the array the servo holds:
+    a FETCH brings the page into the window, which is read."""
+    osc.write(WINDOW_ADDR, bytes([page, FETCH]))
+    return osc.read(POINTS_ADDR, n)
+
+
+def on_servo():
+    """(state, points) as the servo holds them: `pos_lut_state` by name
+    and every page fetched, the 256 points i16 LE in a row. A FETCH is
+    never gated and moves neither the state nor the stamp (protocol sec
+    5.7)."""
+    return state_name(osc.get("pos_lut_state")), b"".join(fetch(p) for p in range(PAGES))
+
+
 def install(pair):
     """Run `plan`'s steps 1 to 4 on the servo: the preconditions, STORE of
     every page, COMMIT, LIVE, every page read back the same. No stamp and
@@ -539,8 +554,7 @@ def install(pair):
             if v != s.want:
                 raise settings.Refused(f"the COMMIT landed {v}, not {s.want}")
         else:
-            osc.write(WINDOW_ADDR, bytes([s.page, FETCH]))
-            back = osc.read(POINTS_ADDR, len(s.data))
+            back = fetch(s.page, len(s.data))
             if back != s.data:
                 raise settings.Refused(f"page {s.page} reads back {back.hex()}, it was stored as {s.data.hex()}")
     return t

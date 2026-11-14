@@ -2,8 +2,8 @@
 carries, at the range's edges and too wide for a byte, and a thin sweep
 refused; the slots; the step on a recording's readings and its load; the
 bench sweep's code histogram; the sweep's schedule and its capture with
-`osc` stubbed; the install against a fake bus; and the scorecard's
-`--wide-codes` rung."""
+`osc` stubbed; the install against a fake bus and the slots read back
+off it; and the scorecard's `--wide-codes` rung."""
 import hashlib
 import json
 import math
@@ -378,6 +378,15 @@ def test_install_refuses_a_result_without_sixteen_slots(wide_bus, doc, match):
     assert b.log == []
 
 
+def test_the_slots_read_back_off_the_servos_own_descriptor(wide_bus):
+    b = wide_bus()
+    b.table[ADDR:ADDR + 16] = SLOTS_OF_RECORD
+    assert wc.on_servo() == SLOTS_OF_RECORD
+    assert b.log == [("run", "get", wc.FIELD)]
+    wide_bus(has_field=False)
+    assert wc.on_servo() is None
+
+
 def test_osc_field_reads_the_descriptors_place_off_get(monkeypatch):
     seen = []
     line = "adc_wide_mid_q4 = 0000  (addr 0x01f0, 2 B, raw 00 58)\n"
@@ -396,8 +405,8 @@ def rung_bench(monkeypatch, tmp_path):
     and every settings, table, slots and reboot call logged in order."""
     state = {"shaft": 1950.0, "log": [], "calls": []}
     monkeypatch.setattr(sc.osc, "bus_baud", lambda: 3_000_000)
-    monkeypatch.setattr(sc.osc, "get", lambda f: {"torque_enable": "off", "pos_min_soft_counts": 314,
-                                                   "pos_max_soft_counts": 3560}[f])
+    synth.Servo().stub(monkeypatch, lambda: {"torque_enable": "off", "pos_min_soft_counts": 314,
+                                             "pos_max_soft_counts": 3560})
     monkeypatch.setattr(sc.bench, "read_vsys", lambda board=None: 5.05)
 
     def track(out, mode, schedule, **kw):

@@ -23,7 +23,14 @@ at the table's scale, centered on the raw center read through it
 (testset.py). With `--wide-codes` it runs on the
 board's ADC wide-code slots (oscnb.widecodes) written volatile after the
 rest, outside the stamp, the board's result file and its sha1 kept in
-`rung.json` and the same reboot dropping them. `ab` records two such rungs at once, one
+`rung.json` and the same reboot dropping them. Before a run's first
+capture, the settings, the table and the slots on, the servo's constant
+state is read into `run-K/servo.json`: the bytes of CONFIG and CALIB with
+every field there by name, the position table's state and the sha1 of
+its points as fetched back, the wide-code slots, the stamp and the data
+state. `rung.json` keeps the hash of the first run's, and a later run
+that reads another state is refused, what differs named.
+`ab` records two such rungs at once, one
 run of each per round, A then B, flashing a side's image (and verifying
 the stamp) whenever the servo holds the other's, so the two share the
 servo's drift through the session. `score` writes the rung's scores, the median
@@ -699,6 +706,74 @@ def config_hash(config):
     return hashlib.sha256(json.dumps(config, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+# The first field of CONTROL: CONFIG and CALIB, the regions a SAVE keeps,
+# are the table from its first field up to this one's address.
+CONTROL_FIRST = "torque_enable"
+HASHED = ("addr", "raw", "pos_table", "wide_codes", "stamp", "data_state")
+
+
+def servo_state():
+    """The servo's constant state as it holds it now. `raw` is the bytes
+    of CONFIG and CALIB from `addr`, the span taken off the servo's own
+    descriptor (`osc dump`): the table's first field to the first field
+    of CONTROL. `fields` is every field there by name, as `osc dump`
+    decodes it. With them the position table's state and the sha1 of its
+    256 points as fetched back, i16 LE in a row, the ADC wide-code slots,
+    and the stamp and the data state of `osc status`. `hash` covers all
+    of it but `fields`, which `raw` holds."""
+    rows = osc.dump()
+    lo = min(addr for addr, _, _, _ in rows)
+    end = next((addr for addr, name, _, _ in rows if name == CONTROL_FIRST), None)
+    if end is None:
+        raise SystemExit(f"osc dump names no {CONTROL_FIRST}: where CONFIG and CALIB end is unknown")
+    raw = osc.read(lo, end - lo)
+    lut_state, points = postable.on_servo()
+    slots = widecodes.on_servo()
+    status = osc.status()
+    doc = {
+        "addr": lo, "raw": raw.hex(),
+        "fields": {name: v for addr, name, _, v in rows if addr < end},
+        "pos_table": {"state": lut_state, "points_sha1": hashlib.sha1(points).hexdigest()},
+        "wide_codes": None if slots is None else slots.hex(),
+        "stamp": settings.plant_stamp(status), "data_state": settings.data_state(status),
+    }
+    return {**doc, "hash": config_hash({k: doc[k] for k in HASHED})}
+
+
+def differing(first, now):
+    """What constant state `now` holds other than `first`, each as
+    `name: old -> new`: the fields by name, the table, the slots, the
+    stamp and the data state, and failing those the bytes no field
+    names."""
+    def items(doc):
+        return {**doc["fields"], "position table state": doc["pos_table"]["state"],
+                "position table points sha1": doc["pos_table"]["points_sha1"],
+                "wide-code slots": doc["wide_codes"], "stamp": doc["stamp"], "data state": doc["data_state"]}
+
+    a, b = items(first), items(now)
+    named = [f"{n}: {a.get(n)} -> {b.get(n)}" for n in dict.fromkeys([*a, *b]) if a.get(n) != b.get(n)]
+    if named:
+        return named
+    x, y = bytes.fromhex(first["raw"]), bytes.fromhex(now["raw"])
+    return ([f"byte 0x{first['addr'] + i:04x}: {p:02x} -> {q:02x}" for i, (p, q) in enumerate(zip(x, y)) if p != q]
+            or [f"span: {len(x)} B at 0x{first['addr']:04x} -> {len(y)} B at 0x{now['addr']:04x}"])
+
+
+def record_constants(r, k):
+    """The servo's constant state before run `k` of rung `r`, into the
+    run's `servo.json`. The rung's first is kept on `r`, for `rung.json`'s
+    hash; a later run that reads another is refused before it records or
+    drives anything, what differs named."""
+    now = servo_state()
+    first = r.setdefault("constants", now)
+    if now["hash"] != first["hash"]:
+        raise SystemExit(f"{shown(r['dir'])}: run-{k} reads a constant state other than the one the rung's "
+                         f"first run recorded: {'; '.join(differing(first, now))}")
+    out = r["dir"] / f"run-{k}"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "servo.json").write_text(json.dumps(now, indent=2) + "\n")
+
+
 def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     """One capture: its plan.json, then `osc-lab track`, then the check
     that the servo ran the range the plan was built for: the guard and
@@ -780,10 +855,12 @@ def applied(r, pair):
 
 
 def record_run(r, k, s):
-    """Run `k` of rung `r` on bench set `s`: the captures the set built,
-    in the test set's order, and `rung.json` once the rung's first capture
-    lands, the wide holds' goals in it."""
+    """Run `k` of rung `r` on bench set `s`: the servo's constant state
+    (`record_constants`), then the captures the set built, in the test
+    set's order, and `rung.json` once the rung's first capture lands, the
+    wide holds' goals in it."""
     rung, ts = r["dir"], s["ts"]
+    record_constants(r, k)
     wide = [{"stuck_code": g["stuck_code"], "side": g["side"], "goal_counts": g["goal_counts"],
              **({"raw_counts": g["raw_counts"]} if "raw_counts" in g else {})}
             for g in s["sets"].get("wide", []) if g["test"] == "wide-hold"]
@@ -794,7 +871,8 @@ def record_run(r, k, s):
             (rung / "rung.json").write_text(json.dumps({
                 "label": r["label"], "fw": r["fw"], "image_sha": r["image_sha"], "note": r["note"],
                 "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                "config_hash": config_hash(meta["config"]), "runs_asked": r["runs"],
+                "config_hash": config_hash(meta["config"]), "constants_hash": r["constants"]["hash"],
+                "runs_asked": r["runs"],
                 "settings": r["fields"], "pos_table": r["table"], "wide_codes": r["wide"],
                 "wide_goals": wide or None,
             }, indent=2) + "\n")

@@ -364,6 +364,13 @@ def write_result(board, folder, f):
     )
 
 
+def on_servo():
+    """The slots as the servo holds them, off its own descriptor's
+    `adc_wide_mid_q4`; None when the descriptor names no such field."""
+    found = osc.field(FIELD)
+    return found[2] if found else None
+
+
 def install(board):
     """Write the board's slots of record to the servo volatile, at the
     address its own descriptor gives, and read them back; returns (the

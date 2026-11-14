@@ -38,7 +38,15 @@ every capture's `meta.json` carries.
 - **The runs**, under `telemetry/<servo>__<board>/scorecard/<label>/`. A
   rung is one build at one label, `run-1` to `run-K` inside it, and
   `rung.json` with the label, the commit, the image sha, a note, the time,
-  a hash of the CONFIG it ran on and the goals of the wide holds.
+  a hash of the CONFIG it ran on and the goals of the wide holds. Each
+  run holds a `servo.json` beside its captures, the servo's constant
+  state read off it before the run's first capture, with the rung's
+  settings, table and slots on: the bytes of CONFIG and CALIB with every
+  field there by name, the position table's state and the sha1 of its
+  points as the servo holds them, the ADC wide-code slots, the plant
+  stamp and the data state. `rung.json` keeps the hash of the first
+  run's, and a later run that reads another state is refused, the fields
+  that differ named.
 - **The results**, one file per rung,
   `scorecard/results/<servo>__<board>/<label>.json`: every score as the
   median over the rung's runs with their range as the bounds.
