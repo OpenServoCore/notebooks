@@ -60,6 +60,15 @@
     }
   ],
   "capture": "telemetry/mg90-d__dev-v006-2A-D/scorecard/zz-ab-first-reading-2",
+  "current_scale": {
+    "counts_per_a": 1135.013429521035,
+    "from": "1-board/current-scale",
+    "carried": {
+      "counts_per_a": 1108.4520727272727,
+      "from": "the board's nominal parts",
+      "how": "the mA rows times nominal over measured counts per A, not scored again: the rung's rows were not kept"
+    }
+  },
   "scores": {
     "overshoot_deg_2deg": {
       "value": 0.5287353359047327,
@@ -74,9 +83,9 @@
       "unit": "ms"
     },
     "move_current_rms_ma_2deg": {
-      "value": 142.9196223786021,
-      "lo": 134.34545955325305,
-      "hi": 152.62588629454717,
+      "value": 139.57504602021507,
+      "lo": 131.20153403483718,
+      "hi": 149.05416589336707,
       "unit": "mA"
     },
     "move_reversals_per_s_2deg": {
@@ -104,9 +113,9 @@
       "unit": "ms"
     },
     "move_current_rms_ma_20deg": {
-      "value": 188.84811576301348,
-      "lo": 177.24242221116978,
-      "hi": 190.42274537142436,
+      "value": 184.4287300076151,
+      "lo": 173.09463057021256,
+      "hi": 185.96651044952344,
       "unit": "mA"
     },
     "move_reversals_per_s_20deg": {
@@ -134,9 +143,9 @@
       "unit": "ms"
     },
     "move_current_rms_ma_60deg": {
-      "value": 131.76785219164069,
-      "lo": 131.58302397416307,
-      "hi": 133.00815624033578,
+      "value": 128.68424732408698,
+      "lo": 128.50374441951075,
+      "hi": 129.89552602602114,
       "unit": "mA"
     },
     "move_reversals_per_s_60deg": {
@@ -244,7 +253,7 @@
     "wide_hold_current_rms_ma": {
       "value": 0.0,
       "lo": 0.0,
-      "hi": 66.41977268464795,
+      "hi": 64.86543047639584,
       "unit": "mA"
     },
     "lag_deg_1pct": {
@@ -260,9 +269,9 @@
       "unit": "deg"
     },
     "follow_current_rms_ma_1pct": {
-      "value": 72.90735405914823,
-      "lo": 72.74240954587513,
-      "hi": 75.39163743492134,
+      "value": 71.20119077183683,
+      "lo": 71.04010625700452,
+      "hi": 73.62733744596001,
       "unit": "mA"
     },
     "follow_reversals_per_s_1pct": {
@@ -314,9 +323,9 @@
       "unit": "deg"
     },
     "follow_current_rms_ma_3pct": {
-      "value": 87.65848466773137,
-      "lo": 86.64016180940308,
-      "hi": 88.07309147106152,
+      "value": 85.60711837839796,
+      "lo": 84.61262610750397,
+      "hi": 86.01202263641372,
       "unit": "mA"
     },
     "follow_reversals_per_s_3pct": {
@@ -356,9 +365,9 @@
       "unit": "deg"
     },
     "follow_current_rms_ma_10pct": {
-      "value": 149.73749034591452,
-      "lo": 142.44102023586586,
-      "hi": 150.76285101447505,
+      "value": 146.23336360782056,
+      "lo": 139.1076440288998,
+      "hi": 147.2347289915223,
       "unit": "mA"
     },
     "follow_reversals_per_s_10pct": {

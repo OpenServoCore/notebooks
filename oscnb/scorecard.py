@@ -5,6 +5,7 @@ numbers.
   uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...]
   uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-set PATH] [--b-deviation FILE] [--b-protection NAME ...] [--b-loosen NAME ...] [--b-note TEXT] [--rounds 3]
   uv run python -m oscnb.scorecard score <label>
+  uv run python -m oscnb.scorecard carry
   uv run python -m oscnb.scorecard table
 
 `run` records a rung: `--runs` runs of the captures of the test set
@@ -45,7 +46,10 @@ servo's drift through the session. Each side names its own set and
 deviation, installed on its own image around its own runs: an A/B is
 the set against the set with one thing changed, the one thing named. `score` writes the rung's scores, the median
 over its runs and their range, to
-`stages/5-closed-loop/scorecard/results/<pair>/<label>.json`. `table`
+`stages/5-closed-loop/scorecard/results/<pair>/<label>.json`, with the
+scale its current rows are at, `current_scale`. `carry` brings the
+results that name no such scale, scored at the board's nominal parts
+from rows that were not kept, to the board's measured one. `table`
 prints the ladder, one column per rung.
 
 Every score reads the pot, `pos` in counts against the goal in counts,
@@ -62,7 +66,11 @@ and names the table file and the wide-code result it ran on there, each
 by its sha1; it is read through those files as it always was. The rows' `pos`
 carries spikes while the bridge drives, so every peak, slope and settle read goes
 through a centered rolling median of MEDIAN_ROWS rows, taken within one
-segment; the hold's jitter alone reads the raw pot. A capture's rows go on
+segment; the hold's jitter alone reads the pot unfiltered. A current row
+reads the shunt over the capture's own zero through the board's measured
+counts per A: the scale of the rung's set, or on a rung recorded before
+rungs named one the board's stage 1 current-scale result, never the
+registry's nominal parts. A capture's rows go on
 one time axis from the servo's own tick: each segment's `tick0` is the
 tick counter's low 16 bits, unwrapped against the end of the segment
 before, which holds while no gap between segments reaches 65536 ticks
@@ -81,10 +89,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import bench, boards, osc, postable, results, servos, settings, widecodes
+from . import bench, boards, osc, postable, results, scales, servos, settings, widecodes
 
 STAGE = "5-closed-loop"
 SET_COPY = "constants.json"     # the set a rung ran on, beside its rung.json
+BOARD_SCALE = "1-board/current-scale"   # where a rung that names no set has its current scale from
 TESTSET = results.ROOT / "stages" / STAGE / "scorecard" / "testset.py"
 TICK_WRAP = 1 << 16
 MEDIAN_ROWS = 41          # about 2 ms: wider than a pot spike, far under a move
@@ -118,7 +127,9 @@ UNITS = {
     "follow_duty_rms_pct": "% of the rail", "speed_ripple_pct": "%", "rest_error_deg": "deg",
     "two_sided_deg": "deg", "landing_buzz_share": "share", "landing_tail_driven": "landings",
     "landing_drive_ms": "ms", "landing_drive_ms_worst": "ms",
-    "hold_jitter_counts": "counts", "hold_buzz_share": "share",
+    "hold_jitter_deg": "deg", "hold_buzz_share": "share",
+    # the hold's jitter as a result scored before the row was in degrees holds it, for the ladder
+    "hold_jitter_counts": "counts",
     "hold_current_rms_ma": "mA", "wide_hold_hunting": "holds", "wide_hold_driven_share": "share",
     "wide_hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
@@ -236,6 +247,25 @@ def rung_wide_slots(folder):
     return widecodes.slots_of_file(path)
 
 
+def rung_current_scale(folder, board):
+    """The scale a capture's current is read at, the shunt's counts per
+    A and where it is from. On a rung that names its constant set it is
+    the set's own scale, the copy in the rung's folder, named by the
+    set's scales hash and refused when that set holds none. On a rung
+    recorded before, the board's stage 1 current-scale result
+    (`scales.load`): the board is the one the rung ran on, and no rung
+    is read at the registry's nominal parts."""
+    doc = rung_set(folder)
+    if doc is None:
+        return {"counts_per_a": scales.load(board).counts_per_a, "from": BOARD_SCALE}
+    cn = constants()
+    entry = (doc.get("scales") or {}).get(cn.CURRENT)
+    if entry is None:
+        raise ValueError(f"{folder}: the rung's set holds no {cn.CURRENT}: its current has no scale to be read "
+                         f"at, the board's stage 1 current-scale result was not there when the set was built")
+    return {"counts_per_a": entry["value"], "from": "set", "hash": doc["hash"]["scales"]}
+
+
 def load(folder):
     """A capture's rows on its time axis, with its plan, meta and board.
     On a rung that names wide-code slots `pos` is the raw pot with each
@@ -244,7 +274,11 @@ def load(folder):
     the raw pot on a rung without slots, read through the rung's table.
     Either way the raw code is kept as `pos_raw`. Rows gain `t` (s from
     the first row), `pos_f` (the median pot) and `i_ma` (the shunt's read
-    current, NaN where the drive window was not read). `polls` is
+    current, NaN where the drive window was not read): the raw reading
+    over the capture's own zero (`current_zero`), which is taken with the
+    driver awake as the readings are, so the in-drive offset stage 1 found
+    over the torque-off zero is not taken off again, through the board's
+    measured counts per A (`rung_current_scale`). `polls` is
     segments.csv by item, each line the poll taken before its item."""
     folder = Path(folder)
     meta = json.loads((folder / "meta.json").read_text())
@@ -282,9 +316,11 @@ def load(folder):
     rows["t"] = (abs_tick - abs_tick.min()) / tick_hz
     rows["pos_f"] = rows.groupby("seg")["pos"].transform(median_pos)
     read = rows["window_valid"] == 1
-    rows["i_ma"] = np.where(read, (rows["current_raw"] - current_zero(rows)) * board.a_per_count * 1e3, np.nan)
-    return {"rows": rows, "plan": plan, "meta": meta, "cpd": plan["counts_per_deg"],
-            "tick_hz": tick_hz, "folder": folder, "polls": polls.set_index("seg"), "table": table}
+    scale = rung_current_scale(folder, board)
+    rows["i_ma"] = np.where(read, (rows["current_raw"] - current_zero(rows)) / scale["counts_per_a"] * 1e3, np.nan)
+    return {"rows": rows, "plan": plan, "meta": meta, "cpd": plan["counts_per_deg"], "current_scale": scale,
+            "counts_per_a": scale["counts_per_a"], "tick_hz": tick_hz, "folder": folder,
+            "polls": polls.set_index("seg"), "table": table}
 
 
 def plan_segs(cap, test):
@@ -531,13 +567,16 @@ def position_report_error_deg(cap):
 # --- the hold capture ---
 
 def hold_scores(cap):
-    """Over each hold, the worst of the two: the raw pot's sd, the share of
-    rows driven, the current rms. The first hold starts at torque-on, so
-    its first HOLD_HEAD_MS is cut off; the other is read whole."""
+    """Over each hold, the worst of the two: the pot's sd, unfiltered,
+    in degrees through the plan's counts per degree as every degree row,
+    so it reads alike on a rung in raw counts and on one in a table's;
+    the share of rows driven; the current rms. The first hold starts at
+    torque-on, so its first HOLD_HEAD_MS is cut off; the other is read
+    whole."""
     holds = [seg_rows(cap, s["seg"]) for s in plan_segs(cap, "hold")]
     holds[0] = holds[0][holds[0]["t"] >= holds[0]["t"].iloc[0] + HOLD_HEAD_MS / 1000]
     return {
-        "hold_jitter_counts": max(float(g["pos"].std()) for g in holds),
+        "hold_jitter_deg": max(float(g["pos"].std()) for g in holds) / cap["cpd"],
         "hold_buzz_share": max(float((g["duty_counts"] != 0).mean()) for g in holds),
         "hold_current_rms_ma": max(current_rms(g["i_ma"]) for g in holds),
     }
@@ -701,17 +740,25 @@ def score_run(run_dir):
     return out
 
 
+def run_current_scale(run_dir):
+    """The scale a run's current rows are at (`rung_current_scale`), the
+    one every capture of a rung is read at."""
+    folder = Path(run_dir) / "steps"
+    return rung_current_scale(folder, boards.from_meta(json.loads((folder / "meta.json").read_text())))
+
+
 def score_rung(rung_dir):
     """The rung's scores, the median over its complete runs with their
-    range, and the runs scored and skipped."""
+    range, the scale its current rows are at, and the runs scored and
+    skipped."""
     rung_dir = Path(rung_dir)
     runs = sorted(p for p in rung_dir.glob("run-*") if p.is_dir())
     done = [p for p in runs if run_complete(p)]
     per = [score_run(p) for p in done]
     keys = list(dict.fromkeys(k for s in per for k in s))
     scores = {k: results.median_range([s.get(k, np.nan) for s in per], UNITS[base_of(k)]) for k in keys}
-    return {"scores": scores, "runs": [p.name for p in done],
-            "skipped": [p.name for p in runs if p not in done]}
+    return {"current_scale": run_current_scale(done[0]) if done else None, "scores": scores,
+            "runs": [p.name for p in done], "skipped": [p.name for p in runs if p not in done]}
 
 
 # --- the runner ---
@@ -1063,6 +1110,44 @@ def score(label, servo=None, board=None):
     return shown(p)
 
 
+def carry(servo=None, board=None):
+    """Carry the pair's results that record no current scale to the
+    board's measured one, and return the files carried. Such a result
+    was scored at the board's nominal parts, and its rung's rows were
+    not kept, so it cannot be scored again: its mA rows, value and
+    range, are multiplied by nominal over measured counts per A, which
+    is what scoring the same rows at the measured scale gives, and the
+    file then records the measured scale and that its rows were carried
+    there. No other row is touched, and a file that records a scale is
+    left as it is. Refused where a rung's rows are kept: `score` reads
+    those."""
+    servo = servo or servos.selected()
+    board = board or boards.BOARDS[boards.DEFAULT]
+    pair = pair_of(servo, board)
+    files = sorted(result_path(pair, "x").parent.glob("*.json"))
+    todo = [(p, doc) for p, doc in ((p, json.loads(p.read_text())) for p in files) if "current_scale" not in doc]
+    kept = [doc["label"] for _, doc in todo if (rung_dir(pair, doc["label"]) / "rung.json").exists()]
+    if kept:
+        raise SystemExit(f"the rows of {', '.join(kept)} are kept: score a rung whose rows are there, "
+                         f"only a result with no rows is carried")
+    if not todo:
+        return []
+    nominal, measured = board.counts_per_a, scales.load(board).counts_per_a
+    scale = {"counts_per_a": measured, "from": BOARD_SCALE,
+             "carried": {"counts_per_a": nominal, "from": "the board's nominal parts",
+                         "how": "the mA rows times nominal over measured counts per A, not scored again: "
+                                "the rung's rows were not kept"}}
+    for p, doc in todo:
+        for q in doc["scores"].values():
+            if q["unit"] == "mA":
+                q.update({k: q[k] * nominal / measured for k in ("value", "lo", "hi") if q[k] is not None})
+        items = list(doc.items())
+        at = list(doc).index("scores")
+        p.write_text(json.dumps(results._plain(dict([*items[:at], ("current_scale", scale), *items[at:]])),
+                                indent=2) + "\n")
+    return [shown(p) for p, _ in todo]
+
+
 def cell(q):
     if q["value"] is None:
         return "-"
@@ -1126,6 +1211,7 @@ def main(argv=None):
     x.add_argument("--rounds", type=int, default=3)
     s = sub.add_parser("score", help="score a recorded rung")
     s.add_argument("label")
+    sub.add_parser("carry", help="carry the results of rungs whose rows were not kept to the measured current scale")
     sub.add_parser("table", help="print the ladder")
     a = ap.parse_args(argv)
     if a.cmd == "run":
@@ -1140,6 +1226,9 @@ def main(argv=None):
             print(shown(rung))
     elif a.cmd == "score":
         print(score(a.label))
+    elif a.cmd == "carry":
+        for p in carry():
+            print(p)
     else:
         table()
 

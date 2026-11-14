@@ -43,6 +43,19 @@ GUARD = (300, 3700)
 SERVO = servos.SERVOS["mg90-d"]
 BOARD = boards.BOARDS[boards.DEFAULT]
 TS = sc.testset()
+STAGE1 = [results.path("1-board", name, BOARD.key) for name in ("current-scale", "terminal-chain")]
+CPA = sc.scales.load(BOARD).counts_per_a      # the board's measured counts per A, stage 1 current-scale
+A_PER_COUNT = 1 / CPA
+
+
+def repo(monkeypatch, root):
+    """The repo at `root`, the board's stage 1 conversions in it."""
+    real = results.ROOT
+    monkeypatch.setattr(results, "ROOT", root)
+    for src in STAGE1:
+        dst = root / src.relative_to(real)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src, dst)
 
 
 def plan(segs):
@@ -80,7 +93,7 @@ def test_a_step_reads_its_overshoot_and_settle_through_spikes(tmp_path):
     assert s["overshoot_deg_20deg"] == pytest.approx(2.0)
     assert s["settle_ms_20deg"] == pytest.approx(135.0)
     assert s["move_reversals_per_s_20deg"] == pytest.approx(1 / 0.135)
-    i_ma = 600 * synth.I_PER_DUTY * BOARD.a_per_count * 1e3
+    i_ma = 600 * synth.I_PER_DUTY * A_PER_COUNT * 1e3
     assert s["move_current_rms_ma_20deg"] == pytest.approx(i_ma * np.sqrt(2500 / 2700))
 
 
@@ -141,9 +154,28 @@ def test_a_hold_driven_after_the_head_shows_in_the_hold_rows(tmp_path, hold, a, 
     cap = holds(tmp_path, [(hold, a, b)])
     s = sc.hold_scores(cap)
     assert s["hold_buzz_share"] == pytest.approx((b - a) / scored)
-    i_ma = 600 * synth.I_PER_DUTY * BOARD.a_per_count * 1e3
+    i_ma = 600 * synth.I_PER_DUTY * A_PER_COUNT * 1e3
     assert s["hold_current_rms_ma"] == pytest.approx(i_ma * np.sqrt((b - a) / scored), rel=0.01)
     assert sc.enable_drive_ms(cap, "hold") == 0
+
+
+def test_a_capture_recorded_before_rungs_named_a_set_is_read_at_the_boards_stage_1_scale(tmp_path):
+    # the board's measured counts per A, not the registry's nominal parts, with or without a rung.json
+    assert CPA == results.read("1-board", "current-scale", BOARD.key)["counts_per_a"]["value"]
+    assert CPA != pytest.approx(BOARD.counts_per_a, rel=0.01)
+    cap = holds(tmp_path / "rung" / "run-1" / "hold", [(1, 10_000, 20_000)])
+    assert cap["counts_per_a"] == CPA and cap["current_scale"] == {"counts_per_a": CPA, "from": sc.BOARD_SCALE}
+    assert sc.hold_scores(cap)["hold_current_rms_ma"] == pytest.approx(
+        600 * synth.I_PER_DUTY / CPA * 1e3 * np.sqrt(1 / 3), rel=0.01)
+    (tmp_path / "rung" / "rung.json").write_text(json.dumps({"label": "old", "settings": {"p_kp_q88": 5026}}))
+    assert sc.load(tmp_path / "rung" / "run-1" / "hold")["counts_per_a"] == CPA
+
+
+def test_the_hold_jitter_is_in_degrees_through_the_plans_counts_per_degree(tmp_path):
+    # a count of jitter either side of the center, on a plan at 20 counts per degree
+    s = sc.hold_scores(holds(tmp_path, []))
+    assert s["hold_jitter_deg"] == pytest.approx(np.sqrt(2 / 3) / CPD, rel=1e-3) and "hold_jitter_counts" not in s
+    assert sc.UNITS["hold_jitter_deg"] == "deg"
 
 
 def goal_seg(goal):
@@ -415,9 +447,10 @@ PAIR = sc.pair_of(SERVO, BOARD)
 def bus(monkeypatch, tmp_path):
     """A servo at rest on a 3 Mbps bus at 5 V, every call logged; osc-lab
     track answered by the fake servo, and `osc` by `servo`, which takes
-    an install. The repo is `tmp_path`: the pair's stage 3 results, a
-    wide-code result of the board that gives the fake servo's own slots,
-    and the pair's constant set of record, the fake servo's stored state
+    an install. The repo is `tmp_path`: the board's stage 1 conversions,
+    the pair's stage 3 results, a wide-code result of the board that
+    gives the fake servo's own slots, and the pair's constant set of
+    record, the fake servo's stored state
     adopted and built, so a rung on it writes nothing."""
     state = {"baud": 3_000_000, "torque": "off", "vsys": 5.05, "shaft": 1950.0, "log": []}
 
@@ -427,7 +460,7 @@ def bus(monkeypatch, tmp_path):
         return out
 
     real = [results.path("3-servo", name, PAIR) for name in ("pot-table", "run-up")]
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     for src, name in zip(real, ("pot-table", "run-up")):
         dst = results.path("3-servo", name, PAIR)
         dst.parent.mkdir(parents=True)
@@ -514,7 +547,7 @@ def test_a_rung_end_to_end(bus):
     expected |= {"speed_ripple_pct", "rest_error_deg", "two_sided_deg", "enable_kick_deg", "enable_drive_ms",
                  "position_report_error_deg",
                  "landing_buzz_share", "landing_tail_driven", "landing_drive_ms", "landing_drive_ms_worst",
-                 "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct",
+                 "hold_jitter_deg", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct",
                  "crawl_swing_deg", "wide_hold_hunting", "wide_hold_driven_share", "wide_hold_current_rms_ma"}
     assert set(s) == expected
     assert all(set(q) == {"value", "lo", "hi", "unit"} for q in s.values())
@@ -577,6 +610,91 @@ def test_a_rung_records_its_set_and_its_deviation(bus, monkeypatch, tmp_path):
     sc.score("01-soft", servo=SERVO, board=BOARD)
     out = json.loads(sc.result_path(PAIR, "01-soft").read_text())
     assert out["runs"] == ["run-1", "run-2"] and out["deviation"] == doc["deviation"]
+
+
+def test_a_rung_is_scored_at_the_current_scale_of_its_own_set(bus, tmp_path):
+    scale = bus["set"]["scales"][cn.CURRENT]
+    assert scale["value"] == CPA and scale["class"] == "measured"
+    rung = sc.run("00-scale", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
+    assert rung_json(rung)["set"]["hash"]["scales"] == bus["set"]["hash"]["scales"]
+    assert sc.load(rung / "run-1" / "steps")["counts_per_a"] == CPA
+    at_the_boards = sc.score_run(rung / "run-1")
+
+    def rescored(doc):
+        cn.write(doc, rung / sc.SET_COPY)
+        named = rung_json(rung)
+        (rung / "rung.json").write_text(json.dumps({**named, "set": {**named["set"], "hash": doc["hash"]}}))
+        return sc.score_run(rung / "run-1")
+
+    # the same rows under a set with twice the counts per A: every mA row at half, and no other row moves
+    other = copy.deepcopy(bus["set"])
+    other["scales"][cn.CURRENT]["value"] = 2 * CPA
+    halved = rescored({**other, "hash": cn.hashes(other)})
+    ma = [k for k in at_the_boards if sc.UNITS[sc.base_of(k)] == "mA"]
+    assert len(ma) == 8 and all(at_the_boards[k] > 0 for k in ma if not k.startswith(("hold_", "wide_")))
+    for k, v in at_the_boards.items():
+        assert halved[k] == pytest.approx(v / 2 if k in ma else v, rel=1e-12, nan_ok=True), k
+    # the scale is the one hash that tells the two sets apart
+    assert [k for k in other["hash"] if cn.hashes(other)[k] != bus["set"]["hash"][k]] == ["scales"]
+    # a set that holds no scale gives its rung's current nothing to be read at
+    bare = {k: v for k, v in bus["set"].items() if k != "scales"}
+    with pytest.raises(ValueError, match="the rung's set holds no current_counts_per_a"):
+        rescored({**bare, "hash": cn.hashes(bare)})
+
+
+def test_a_result_names_its_current_scale_and_one_whose_rows_were_not_kept_is_carried_to_it_once(bus, tmp_path):
+    sc.run("00-kept", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
+    sc.score("00-kept", servo=SERVO, board=BOARD)
+    kept = sc.result_path(PAIR, "00-kept")
+    scored = json.loads(kept.read_text())
+    assert scored["current_scale"] == {"counts_per_a": CPA, "from": "set", "hash": bus["set"]["hash"]["scales"]}
+    # the same rung as a result scored at the board's nominal parts, before a result named its scale
+    old = {k: v for k, v in copy.deepcopy(scored).items() if k != "current_scale"} | {"label": "00-gone"}
+    ma = [k for k, q in old["scores"].items() if q["unit"] == "mA"]
+    for k in ma:
+        old["scores"][k].update({b: old["scores"][k][b] * CPA / BOARD.counts_per_a for b in ("value", "lo", "hi")})
+    old["scores"]["hold_jitter_counts"] = {"value": 1.4, "lo": 1.3, "hi": 1.5, "unit": "counts"}
+    gone = sc.result_path(PAIR, "00-gone")
+    gone.write_text(json.dumps(old, indent=2) + "\n")
+
+    assert sc.carry(servo=SERVO, board=BOARD) == [sc.shown(gone)]
+    carried = json.loads(gone.read_text())
+    assert carried["current_scale"] == {
+        "counts_per_a": CPA, "from": sc.BOARD_SCALE,
+        "carried": {"counts_per_a": BOARD.counts_per_a, "from": "the board's nominal parts",
+                    "how": "the mA rows times nominal over measured counts per A, not scored again: "
+                           "the rung's rows were not kept"}}
+    assert list(carried) == list(scored)
+    assert {k: v for k, v in carried.items() if k not in ("current_scale", "scores")} == {
+        k: v for k, v in old.items() if k != "scores"}
+    # the mA rows are where scoring the rows at the measured scale puts them, and no other row moved
+    assert len(ma) == 8 and any(scored["scores"][k]["value"] > 0 for k in ma)
+    for k, q in carried["scores"].items():
+        if k in ma:
+            assert q == pytest.approx(scored["scores"][k], rel=1e-12), k
+        else:
+            assert q == old["scores"][k], k
+    # a second pass finds every result at a scale it names, and changes nothing
+    texts = (gone.read_text(), kept.read_text())
+    assert sc.carry(servo=SERVO, board=BOARD) == []
+    assert (gone.read_text(), kept.read_text()) == texts
+    # a result that names no scale and has its rung's rows is scored, never carried
+    kept.write_text(json.dumps({k: v for k, v in scored.items() if k != "current_scale"}))
+    unnamed = kept.read_text()
+    with pytest.raises(SystemExit, match="the rows of 00-kept are kept: score a rung whose rows are there"):
+        sc.carry(servo=SERVO, board=BOARD)
+    assert kept.read_text() == unnamed
+
+
+def test_every_result_of_record_names_the_one_current_scale_its_rows_are_at():
+    pair = sc.pair_of(SERVO, BOARD)
+    docs = [json.loads(p.read_text()) for p in sorted(sc.result_path(pair, "x").parent.glob("*.json"))]
+    assert docs and {d["current_scale"]["counts_per_a"] for d in docs} == {CPA}
+    for d in docs:
+        rows = (results.ROOT / d["capture"] / "rung.json").exists()
+        # scored from its rows where they are kept, carried from the nominal figure where they are not
+        assert ("carried" in d["current_scale"]) == (not rows), d["label"]
+        assert ("hold_jitter_deg" in d["scores"]) == rows and ("hold_jitter_counts" in d["scores"]) != rows, d["label"]
 
 
 def test_a_protection_deviation_moves_nothing_else_and_is_named_at_the_install(bus, tmp_path):
@@ -768,6 +886,12 @@ def test_a_rung_on_a_set_with_a_live_table_installs_it_and_is_planned_and_read_t
     (cap_dir / "meta.json").write_text(json.dumps({**meta, "plant": {"lut_state": "LIVE"}}))
     cap = sc.load(cap_dir)
     np.testing.assert_array_equal(cap["rows"]["pos"], t.lin(wc.compensated(cap["rows"]["pos_raw"], slots)))
+    # the hold's jitter is the sd of that reading in degrees at the table's scale, as on an identity rung
+    # it is the sd of the raw pot at the pot's
+    held = [cap["rows"][cap["rows"]["seg"] == k] for k in (0, 1)]
+    held[0] = held[0][held[0]["t"] >= held[0]["t"].iloc[0] + sc.HOLD_HEAD_MS / 1000]
+    assert cap["cpd"] == t.scale
+    assert sc.hold_scores(cap)["hold_jitter_deg"] == max(float(g["pos"].std()) for g in held) / t.scale
     # a copy that is not the set the rung names, and points that are not the set's, are refused
     state = constants(rung, 1)
     state["pos_table"]["points"] = bytes(512).hex()
@@ -1273,7 +1397,7 @@ def resting_on(goal, points):
 
 
 def test_a_live_rung_reads_the_raw_pot_through_its_table(tmp_path, monkeypatch):
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     points = bump_points(40)
     goal = CENTER + 400
     r, segs, plan_doc = resting_on(goal, points)
@@ -1292,7 +1416,7 @@ def test_a_live_rungs_speed_report_reads_against_the_pot_through_its_table(tmp_p
     """A table whose points fall a count a node from 640 to 2816 raw, a
     linearized 15/16 count a raw count there, and a shaft at a steady
     5000 raw counts/s inside it: the servo's report is 4687.5."""
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     k = np.arange(postable.INTERVALS)
     points = np.clip(np.minimum(4 * (k - 6), 176 - k), 0, None)
     segs, rows = ramp_paths(steady, n=6)
@@ -1307,7 +1431,7 @@ def test_a_live_rungs_speed_report_reads_against_the_pot_through_its_table(tmp_p
 
 @pytest.mark.parametrize("rung_json", ["null", "absent"])
 def test_a_live_capture_without_a_named_table_is_refused(tmp_path, monkeypatch, rung_json):
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     _, segs, plan_doc = resting_on(CENTER, bump_points(40))
     cap_dir, _ = table_rung(tmp_path, bump_points(40), "LIVE", segs, plan_doc, named=False)
     if rung_json == "absent":
@@ -1317,7 +1441,7 @@ def test_a_live_capture_without_a_named_table_is_refused(tmp_path, monkeypatch, 
 
 
 def test_a_live_rung_whose_table_changed_since_is_refused(tmp_path, monkeypatch):
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     _, segs, plan_doc = resting_on(CENTER, bump_points(40))
     cap_dir, path = table_rung(tmp_path, bump_points(40), "LIVE", segs, plan_doc)
     path.write_text(path.read_text().replace("[-90.0, 90.0]", "[-91.0, 90.0]"))
@@ -1328,7 +1452,7 @@ def test_a_live_rung_whose_table_changed_since_is_refused(tmp_path, monkeypatch)
 def test_identity_rows_score_bit_for_bit_as_before(tmp_path, monkeypatch):
     """An IDENTITY capture's rows are the file's raw pot untouched, and the
     same rows under a LIVE all-zero table score exactly the same."""
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     goal, pos, duty = step_rows()
     segs = [{"item": f"goal:{goal}@1500", "test": "step", "size_deg": 20, "direction": 1,
              "leg": "out", "goal_counts": goal, "goal_deg": 20.0}]
@@ -1463,8 +1587,10 @@ def test_a_table_rung_planned_at_the_pots_scale_scores_as_its_result_holds():
     rung = results.ROOT / "telemetry" / pair / "scorecard" / "12a-pos-table-live"
     planned = json.loads((rung / "run-1" / "steps" / "plan.json").read_text())
     assert planned["counts_per_deg"] == TS.inputs(SERVO, pair)["counts_per_deg"]
-    want = json.loads(sc.result_path(pair, "12a-pos-table-live").read_text())["scores"]
-    got = results._plain(sc.score_rung(rung))["scores"]
+    held = json.loads(sc.result_path(pair, "12a-pos-table-live").read_text())
+    scored = results._plain(sc.score_rung(rung))
+    assert held["current_scale"] == scored["current_scale"] == {"counts_per_a": CPA, "from": sc.BOARD_SCALE}
+    want, got = held["scores"], scored["scores"]
     assert got.keys() == want.keys()
     for row, w in want.items():
         assert got[row]["unit"] == w["unit"], row
@@ -1491,7 +1617,7 @@ def test_a_table_rungs_position_report_is_gated_on_the_servos_band_there(tmp_pat
     the servo's band of 6 there), one swinging 6 where it is 0.5 (3
     linearized, outside its band of 2); the reports read 1, 3 and 10
     counts off the pot."""
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     raws = [np.full(30_000, 1000), square(1199, 1202), square(2800, 2806)]
     pots = [1340.0, 1.5 * 1200.5 - 160, 0.5 * 2803 + 1760]
     segs = [goal_seg(round(p)) for p in pots] + [hold_seg(500)]
@@ -1677,7 +1803,7 @@ def test_the_wide_rows_read_the_holds_that_hunt_to_the_end(tmp_path, hunting):
     share = (8000 * hunting + 100) / 40_000
     # a tail is the rows within 500 ms of the last, 10000 or one more
     assert s["wide_hold_driven_share"] == pytest.approx(share, rel=2e-4)
-    i_ma = 300 * synth.I_PER_DUTY * BOARD.a_per_count * 1e3
+    i_ma = 300 * synth.I_PER_DUTY * A_PER_COUNT * 1e3
     assert s["wide_hold_current_rms_ma"] == pytest.approx(i_ma * np.sqrt(share), rel=2e-4)
 
 
@@ -1775,7 +1901,7 @@ def stuck_rows():
 
 
 def test_a_wide_codes_rung_reads_a_stuck_code_as_the_middle_of_its_span(tmp_path, monkeypatch):
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     codes, rows, plan_doc = stuck_rows()
     # the servo's report is the reading it used, 1023 + 5
     polls = {"theta_hat_q16": [0, 1028 * sc.Q16]}
@@ -1800,7 +1926,7 @@ def test_a_wide_codes_rung_reads_a_stuck_code_as_the_middle_of_its_span(tmp_path
 
 
 def test_a_wide_codes_rung_on_a_live_table_takes_the_step_ahead_of_the_table(tmp_path, monkeypatch):
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     codes, rows, plan_doc = stuck_rows()
     points = bump_points(40)
     cap_dir, path = wide_rung(tmp_path, [(1023, 10), (2047, 11)], rows, plan_doc, points=points)
@@ -1816,7 +1942,7 @@ def test_a_wide_codes_rung_on_a_live_table_takes_the_step_ahead_of_the_table(tmp
 
 
 def test_a_wide_codes_rung_whose_result_changed_since_is_refused(tmp_path, monkeypatch):
-    monkeypatch.setattr(results, "ROOT", tmp_path)
+    repo(monkeypatch, tmp_path)
     _, rows, plan_doc = stuck_rows()
     cap_dir, path = wide_rung(tmp_path, [(1023, 10)], rows, plan_doc)
     sc.load(cap_dir)
