@@ -219,7 +219,9 @@ difference and refuses a servo whose data state is not clean.
 
 On mg90-d with board dev-v006-2A-D, a free horn. From
 `12a-pos-table-live` on, the rungs run on the pair's position table,
-passed `--pos-table`. A rung is kept when the
+passed `--pos-table`. From `13a-wide-step-on-table` on, the rows of a
+rung on the table are in degrees of the table's own scale. A rung is
+kept when the
 rows it aims at gain by more than the baseline's own spread over its three
 runs and no other row loses. A rung that is not kept leaves its result
 file, its settings file and one line here, not its rows.
@@ -425,6 +427,58 @@ Kept:
   reference. Open on it: the follow error sd at 1 %, the one-set losses
   on the 2 degree move, the 1 % follow and the enable kick, the landing
   rows.
+- `13a-wide-step-on-table`: `01b`'s settings on firmware f933a4a7, on
+  the pair's position table and the board's slots. Under a live table
+  f933a4a7 reads a pot sample at a stuck code at the middle of the span
+  the code stands for, in the table interval that holds that middle,
+  where 7ef0554f scaled the step by the stuck code's own interval. The
+  rung is also the first planned at the table's own scale on the raw
+  center read through the table, as the test set is described above,
+  and the first that records the servo's constant state beside each run
+  (`servo.json`). A later rung on the table compares with this one and
+  not with `12a`, and the rung is kept as that reference, not on its
+  rows. Alternated with firmware 7ef0554f on the same settings, table
+  and slots in two sets of three rounds with the order of the sides
+  swapped (this rung against `zz-ab-before-wide-step`,
+  `zz-ab-wide-step-2` against `zz-ab-before-wide-step-2`), no row moves
+  the same way beyond the spread in both sets.
+  Counted on the follow captures' rows, outside the scorecard's rows:
+  the current of the 1 % ramps over the rows whose raw pot reads 2047
+  to 2079, stuck code 2047 and the 32 codes above it, against the rows
+  at raw 1960 to 2160 outside that stretch, each the rms of the rows
+  where the shunt was read, per run, as the mean of three runs and
+  their range. The stretch reads 112 [103, 126] mA against 87 on this
+  rung and 120 [96, 146] against 94 on `zz-ab-wide-step-2`, and 122
+  [114, 134] against 87 and 137 [126, 153] against 90 on the two
+  control sides. Its excess over the neighbors is lower on f933a4a7 in
+  both sets, 25 and 26 mA against 35 and 47, with the ranges of the
+  stretch's current overlapping in both.
+  The `wide` capture of these sets holds at the table's reading of the
+  raw goals, and `rung.json` keeps both, so its holds sit on the codes
+  they name, which `12a`'s did not. As the median of three runs and
+  their range, 0 [0, 1] and 2 [1, 2] holds of 8 hunt on f933a4a7
+  against 0 [0, 1] and 1 [1, 1]. Every hold that hunts, on either
+  firmware, is at code 2559: ten holds over the twelve runs, six on
+  f933a4a7 in four runs and four on 7ef0554f in four runs, eight of the
+  ten approached from above. One of the ten is driven on 0.05 of its
+  tail's rows, the other nine on 0.69 to 0.75.
+  Open on it, about one place and not a result of the change: the 20
+  degree landing above the center. Its goal, 2319 in the table's
+  counts, lies between raw 2308 and 2309, above ADC code 2303, which
+  the board's result lists as holding through two skipped codes, 2304
+  and 2305, without a slot, so both firmwares read it the same way. The
+  landing settles in all three runs of `zz-ab-before-wide-step` and
+  hunts in the nine other runs of the four sides, this rung's among
+  them. As the median of three runs, the 20 degree overshoot reads 0.121
+  deg and the settle 301 ms on that control side, against 0.745, 0.795
+  and 0.795 deg and 1271, 1497 and 1492 ms on this rung,
+  `zz-ab-wide-step-2` and `zz-ab-before-wide-step-2`. No landing of 13
+  is driven in its tail there against 1, 1 and 1, and the worst drive
+  after an arrival is 231 ms against 1204, 1204 and 1206. In the nine
+  runs that landing is driven on 0.38 to 0.77 of its last 500 ms, the
+  raw pot spanning 2285 to 2329 there. One run of this rung has a
+  second landing driven in its tail, the 60 degree return to the center
+  from above.
 
 Tried, not kept:
 
@@ -649,3 +703,23 @@ The controls, and what they say about reading the ladder:
   -2.70 on the table sides, read under the row's earlier definition, the
   ramp's mean speed as the reference. This is an observation next to
   `12a`'s rows, not explained here.
+- `zz-ab-before-wide-step`, `zz-ab-wide-step-2` and
+  `zz-ab-before-wide-step-2` are the other three sides of `13a`'s two
+  sets. Every row but one whose ranges of three runs come apart does so
+  in one set only and overlaps in the other. In the first set f933a4a7
+  reads higher on the 20 degree move's overshoot, settle, current and
+  duty (0.745 against 0.121 deg, 1271 against 301 ms, 197 against 124
+  mA, 25.3 against 21.5 %) and on the landing rows (the landing buzz
+  share 0.055 against 0, the landings driven in their tail 1 of 13
+  against 0, the worst drive after an arrival 1204 against 231 ms).
+  Each of those rows takes in the landing described under `13a`, which
+  hunts on both sides of the second set, where the same rows read 0.795
+  against 0.795 deg, 1497 against 1492 ms, 243 against 240 mA, 29.0
+  against 28.6 %, 0.058 against 0.057, 1 against 1 and 1204 against
+  1206 ms. In the second set, the order of the sides swapped, f933a4a7
+  reads lower on the 2 degree move's reversals (270 against 362 per
+  second) and on the speed report of the 3 % ramp (-1.83 against -0.61
+  deg/s), and higher on the 60 degree settle (906 against 900 ms). The
+  one row whose ranges come apart in both sets does so in opposite
+  directions: the 20 degree move's reversals read 421 against 610 per
+  second in the first set and 459 against 406 in the second.
