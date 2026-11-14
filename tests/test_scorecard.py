@@ -8,7 +8,9 @@ reports against the pot, and the runner's refusals with
 `osc` stubbed, then one rung end to end on a fake servo; a rung on a
 position table, its install's place in the runner and its rows read
 through the table; an A/B of two rungs, its flashes, settings and
-refusals, and the flash's command line."""
+refusals, and the flash's command line; the wide capture the set builds
+from a board's wide-code result, its three rows, a rung with and without
+it, and a wide-codes rung's rows read through the board's slots."""
 import hashlib
 import io
 import json
@@ -21,6 +23,7 @@ import pandas as pd
 import pytest
 
 from oscnb import boards, postable, results, scorecard as sc, servos
+from oscnb import widecodes as wc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scorecard_synth as synth  # noqa: E402
@@ -401,7 +404,7 @@ def test_the_runner_refuses_an_existing_rung(bus):
 def test_a_rung_end_to_end(bus):
     rung = sc.run("00-baseline", "abc123", "f" * 40, runs=2, note="fake", servo=SERVO, board=BOARD)
     assert [(name, kw["deadman_check"]) for name, _, kw in bus["log"]] == [
-        ("steps", True), ("follow", False), ("hold", False)] * 2
+        ("steps", True), ("follow", False), ("hold", False), ("wide", False)] * 2
     assert all(mode == "position" and kw["current_cap_ma"] == pytest.approx(850) and kw["current_cap_ms"] == 100
                for _, mode, kw in bus["log"])
     doc = json.loads((rung / "rung.json").read_text())
@@ -425,7 +428,7 @@ def test_a_rung_end_to_end(bus):
                  "position_report_error_deg",
                  "landing_buzz_share", "landing_tail_driven", "landing_drive_ms", "landing_drive_ms_worst",
                  "hold_jitter_counts", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct",
-                 "crawl_swing_deg"}
+                 "crawl_swing_deg", "wide_hold_hunting", "wide_hold_driven_share", "wide_hold_current_rms_ma"}
     assert set(s) == expected
     assert all(set(q) == {"value", "lo", "hi", "unit"} for q in s.values())
     # the fake servo is first order: no overshoot, and it rests inside its deadband
@@ -451,7 +454,7 @@ def test_a_settings_rung_applies_the_file_and_reboots_it_away(bus, monkeypatch, 
     f = tmp_path / "gains.json"
     f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}, "note": "softer"}))
     rung = sc.run("01-gains", "abc123", "f" * 40, runs=1, settings_file=f, servo=SERVO, board=BOARD)
-    assert calls == [("apply", {"p_kp_q88": 5026}), ("restore", 3)]
+    assert calls == [("apply", {"p_kp_q88": 5026}), ("restore", 4)]
     assert json.loads((rung / "rung.json").read_text())["settings"] == {"p_kp_q88": 5026}
 
 
@@ -495,7 +498,7 @@ def test_a_pos_table_rung_installs_after_the_settings_and_before_the_one_stamp(b
     rung = sc.run("03-table", "abc123", "f" * 40, runs=1, settings_file=f, pos_table=True,
                   servo=SERVO, board=BOARD)
     pair = sc.pair_of(SERVO, BOARD)
-    assert calls == [("apply", {"p_kp_q88": 5026}, False), ("install", pair), ("stamp",), ("restore", 3)]
+    assert calls == [("apply", {"p_kp_q88": 5026}, False), ("install", pair), ("stamp",), ("restore", 4)]
     doc = json.loads((rung / "rung.json").read_text())
     assert doc["pos_table"] == table_of_record()
     assert doc["pos_table"]["file"] == f"stages/5-closed-loop/calibration/{pair}.pos_lut.json"
@@ -504,7 +507,7 @@ def test_a_pos_table_rung_installs_after_the_settings_and_before_the_one_stamp(b
 def test_a_pos_table_rung_without_settings_still_installs_and_stamps(bus, monkeypatch):
     calls = pos_table_stubs(bus, monkeypatch)
     rung = sc.run("03-table", "abc123", "f" * 40, runs=1, pos_table=True, servo=SERVO, board=BOARD)
-    assert calls == [("install", sc.pair_of(SERVO, BOARD)), ("stamp",), ("restore", 3)]
+    assert calls == [("install", sc.pair_of(SERVO, BOARD)), ("stamp",), ("restore", 4)]
     doc = json.loads((rung / "rung.json").read_text())
     assert doc["settings"] is None and doc["pos_table"] == table_of_record()
 
@@ -514,7 +517,7 @@ def test_a_rung_without_a_table_names_none_and_stamps_with_its_settings(bus, mon
     f = tmp_path / "gains.json"
     f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}}))
     rung = sc.run("01-gains", "abc123", "f" * 40, runs=1, settings_file=f, servo=SERVO, board=BOARD)
-    assert calls == [("apply", {"p_kp_q88": 5026}, True), ("restore", 3)]
+    assert calls == [("apply", {"p_kp_q88": 5026}, True), ("restore", 4)]
     assert json.loads((rung / "rung.json").read_text())["pos_table"] is None
 
 
@@ -793,3 +796,327 @@ def test_identity_rows_score_bit_for_bit_as_before(tmp_path, monkeypatch):
     for f in (sc.step_scores, sc.rest_error_deg, sc.landing_buzz_share):
         assert f(live) == f(ident)
     assert float(live["rows"]["pos"].std()) == float(ident["rows"]["pos"].std())
+
+
+# --- the wide capture: the set ---
+
+WIDE_CODES = [{"stuck_code": 1023, "skipped": 10}, {"stuck_code": 2047, "skipped": 11}]
+
+
+def no_board_result(monkeypatch, tmp_path):
+    monkeypatch.setattr(wc, "result_file", lambda board: tmp_path / "none" / f"{board}.json")
+
+
+def board_result(monkeypatch, tmp_path, codes):
+    """The board's wide-code result of record replaced by one of `codes`."""
+    path = tmp_path / "wide" / f"{BOARD.key}.json"
+    synth.wide_result(path, codes)
+    monkeypatch.setattr(wc, "result_file", lambda board: path)
+    return path
+
+
+def test_the_wide_capture_holds_each_code_from_above_then_below_lowest_first():
+    center, sets = TS.build(GUARD, {**INP, "wide_codes": WIDE_CODES[::-1]})
+    assert list(sets) == ["steps", "follow", "hold", "wide"] == list(TS.CAPTURES)
+    segs = sets["wide"]
+    # 1023 stands for 1023..1033 and 2047 for 2047..2058: 30 counts off each span, then the skipped codes' middle;
+    # the approaches travel 46.9, 1.8, 53.0 and 1.8 deg at 20 counts a degree
+    assert [s["item"] for s in segs] == [
+        "goal:1063@2000", "goal:1029@2000", "goal:993@1200", "goal:1029@2000",
+        "goal:2088@2000", "goal:2053@2000", "goal:2017@1200", "goal:2053@2000"]
+    assert [s["test"] for s in segs] == ["wide-approach", "wide-hold"] * 4
+    assert [(s["stuck_code"], s["side"]) for s in segs] == [
+        (1023, "above"), (1023, "above"), (1023, "below"), (1023, "below"),
+        (2047, "above"), (2047, "above"), (2047, "below"), (2047, "below")]
+    assert segs[1]["goal_deg"] == pytest.approx((1029 - center) / CPD)
+    TS.check_fits(segs, GUARD, CPD)
+
+
+@pytest.mark.parametrize("codes", [None, [], [{"stuck_code": 255, "skipped": 5}, {"stuck_code": 3839, "skipped": 4}]])
+def test_a_set_with_no_wide_code_in_reach_has_no_wide_capture(codes):
+    inp = INP if codes is None else {**INP, "wide_codes": codes}
+    assert list(TS.build(GUARD, inp)[1]) == ["steps", "follow", "hold"]
+
+
+def test_a_wide_code_is_held_only_when_both_its_approaches_fit_the_soft_range():
+    # GUARD less the 100-count fit margin reaches 400..3600
+    codes = [{"stuck_code": 255, "skipped": 5}, {"stuck_code": 511, "skipped": 6},
+             {"stuck_code": 3327, "skipped": 6}, {"stuck_code": 3583, "skipped": 5},
+             {"stuck_code": 3839, "skipped": 4}]
+    segs = TS.build(GUARD, {**INP, "wide_codes": codes})[1]["wide"]
+    # 3583 stands for 3583..3588, inside the reach, and its approach from above, 3618, is not
+    assert sorted({s["stuck_code"] for s in segs}) == [511, 3327]
+    TS.check_fits(segs, GUARD, CPD)
+
+
+@pytest.mark.parametrize("guard, held", [
+    ((381, 3700), True),     # the approach below 511 is 481, on the edge of the reach
+    ((382, 3700), False),
+    ((300, 3463), True),     # the approach above 3327..3333 is 3363, on the edge of the reach
+    ((300, 3462), False),
+])
+def test_a_wide_code_whose_approach_is_on_the_edge_of_the_reach_is_held_and_one_count_past_is_not(guard, held):
+    code = {"stuck_code": 511 if guard[0] != 300 else 3327, "skipped": 6}
+    sets = TS.build(guard, {**INP, "wide_codes": [code]})[1]
+    assert ("wide" in sets) == held
+    if held:
+        assert len(sets["wide"]) == 4
+        TS.check_fits(sets["wide"], guard, CPD)
+
+
+def test_an_approach_is_held_as_long_as_a_step_of_its_travel():
+    assert [TS.approach_ms(deg) for deg in (0, 1.8, 2, 2.1, 20, 20.1, 60, 60.1, 170)] == [
+        1200, 1200, 1200, 1500, 1500, 2000, 2000, 2000, 2000]
+    assert [TS.approach_ms(size) for size in TS.STEP_SIZES_DEG] == list(TS.STEP_HOLD_MS)
+    # from the center at 2000: 72.7 deg down to 511, then 1023 a 27.4 deg travel away, 2047 53 deg, 2303 14.2 deg
+    codes = [{"stuck_code": 511, "skipped": 6}, *WIDE_CODES, {"stuck_code": 2303, "skipped": 4}]
+    segs = TS.wide(CENTER, CPD, GUARD, codes)
+    approaches = [(s["stuck_code"], s["side"], s["item"]) for s in segs if s["test"] == "wide-approach"]
+    assert approaches == [
+        (511, "above", "goal:547@2000"), (511, "below", "goal:481@1200"),
+        (1023, "above", "goal:1063@2000"), (1023, "below", "goal:993@1200"),
+        (2047, "above", "goal:2088@2000"), (2047, "below", "goal:2017@1200"),
+        (2303, "above", "goal:2337@1500"), (2303, "below", "goal:2273@1200")]
+    assert {s["item"].split("@")[1] for s in segs if s["test"] == "wide-hold"} == {"2000"}
+    # a code left out for its reach is not travelled from
+    far = TS.wide(CENTER, CPD, GUARD, [{"stuck_code": 255, "skipped": 5}, WIDE_CODES[1]])
+    assert [s["item"] for s in far[:1]] == ["goal:2088@1500"]
+
+
+# Over every run of the five kept rungs of mg90-d on dev-v006-2A-D, 60 moves a
+# step size: the longest a step took from its commit until the median pot was
+# within WIDE_APPROACH_COUNTS of its goal, ms. The slowest are the stored
+# settings' (00-baseline); the 60 degree one is a mean pace of 1301 counts/s.
+SLOWEST_NEAR_MS = {2: 30, 20: 305, 60: 873}
+
+
+def test_every_wide_hold_is_reached_from_its_side_at_the_slowest_kept_pace():
+    """On the pair the pace was measured on, with its recorded soft range:
+    an approach is within WIDE_APPROACH_COUNTS of its goal, so off the
+    span on the side its hold names, before its time is up. One no longer
+    than a step size is there no later than that step; one beyond the
+    largest goes on at that step's mean pace."""
+    inp = TS.inputs(SERVO, sc.pair_of(SERVO, BOARD), BOARD.key)
+    cpd = inp["counts_per_deg"]
+    center, sets = TS.build((314, 3560), inp)
+    segs = sets["wide"]
+    at, need = center, {}
+    for approach, hold in zip(segs[::2], segs[1::2]):
+        travel = abs(approach["goal_counts"] - at) / cpd
+        size = next((s for s in TS.STEP_SIZES_DEG if travel <= s), None)
+        need_ms = SLOWEST_NEAR_MS[size] if size else SLOWEST_NEAR_MS[60] * travel / 60
+        ms = int(approach["item"].split("@")[1])
+        assert need_ms < ms
+        side = 1 if hold["side"] == "above" else -1
+        assert side * (approach["goal_counts"] - hold["goal_counts"]) > TS.WIDE_APPROACH_COUNTS
+        need[at, approach["goal_counts"]] = (need_ms, ms)
+        at = hold["goal_counts"]
+    # the long move between two codes, 56 deg: 873 ms of its 2000
+    assert need[1029, 2088] == (873, 2000)
+    # the first approach, 73.5 deg from the center, and a short one back across a span
+    assert need[center, 547] == (pytest.approx(1070, abs=1), 2000)
+    assert need[515, 481] == (30, 1200)
+    assert len(need) == 8
+
+
+def test_the_wide_codes_come_from_the_boards_result_the_ones_that_take_a_slot(monkeypatch, tmp_path):
+    pair = sc.pair_of(SERVO, BOARD)
+    # the board's result of record, through the rule a band takes a slot by
+    inp = TS.inputs(SERVO, pair, BOARD.key)
+    slotted = [b for b in wc.bands_of_record(BOARD.key) if b.slot is not None]
+    assert inp["wide_codes"] == [{"stuck_code": b.stuck, "skipped": b.skipped} for b in slotted] != []
+    assert not any(str(v).startswith("/") for v in inp["sources"].values())
+    assert inp["sources"]["wide_codes"].startswith(f"stages/1-board/wide-codes/results/{BOARD.key}.json ")
+    # no board asked for, and a board with no result
+    assert TS.inputs(SERVO, pair)["wide_codes"] == []
+    no_board_result(monkeypatch, tmp_path)
+    inp = TS.inputs(SERVO, pair, BOARD.key)
+    assert inp["wide_codes"] == [] and "wide_codes" not in inp["sources"]
+    # a result whose bands take no slot: too short, off a carry, a thin stretch
+    board_result(monkeypatch, tmp_path, [(1279, 2), (1500, 5), (1791, 4, 0.5)])
+    assert TS.inputs(SERVO, pair, BOARD.key)["wide_codes"] == []
+    board_result(monkeypatch, tmp_path, [(2047, 11), (1279, 2), (1023, 10)])
+    assert TS.inputs(SERVO, pair, BOARD.key)["wide_codes"] == WIDE_CODES
+
+
+# --- the wide capture: the rows ---
+
+HUNT = np.tile(np.r_[np.full(400, 300), np.full(400, -300), np.zeros(200, int)], 10)
+WAKE = np.r_[np.zeros(5000, int), np.full(100, 300), np.zeros(4900, int)]
+REST = np.zeros(10_000, int)
+
+
+def wide_capture(tmp_path, tails):
+    """The wide capture of WIDE_CODES, the reading stuck at each code: every
+    approach driven throughout, every hold driven over its first 100 ms and
+    then at rest, but for its last 10000 rows, which carry the duty `tails`
+    gives it."""
+    segs = TS.wide(CENTER, CPD, GUARD, WIDE_CODES)
+    rows, tails = [], iter(tails)
+    for s in segs:
+        duty = np.full(int(s["item"].split("@")[1]) * 20, 300)
+        if s["test"] == "wide-hold":
+            duty[2000:] = 0
+            duty[-10_000:] = next(tails)
+        rows.append((s["item"], s["goal_counts"], np.full(len(duty), s["stuck_code"]), duty))
+    return sc.load(synth.write(tmp_path, rows, CENTER, GUARD, plan=plan(segs)))
+
+
+@pytest.mark.parametrize("hunting", [0, 1, 2])
+def test_the_wide_rows_read_the_holds_that_hunt_to_the_end(tmp_path, hunting):
+    """Four holds, their tails the last 10000 rows: `hunting` of them
+    driven on 80 % of the tail, the last one woken once for 1 % of it."""
+    s = sc.wide_scores(wide_capture(tmp_path, [HUNT] * hunting + [REST] * (3 - hunting) + [WAKE]))
+    assert s["wide_hold_hunting"] == hunting
+    share = (8000 * hunting + 100) / 40_000
+    # a tail is the rows within 500 ms of the last, 10000 or one more
+    assert s["wide_hold_driven_share"] == pytest.approx(share, rel=2e-4)
+    i_ma = 300 * synth.I_PER_DUTY * BOARD.a_per_count * 1e3
+    assert s["wide_hold_current_rms_ma"] == pytest.approx(i_ma * np.sqrt(share), rel=2e-4)
+
+
+def test_wide_holds_that_rest_score_zero_whatever_their_approaches_drove(tmp_path):
+    assert sc.wide_scores(wide_capture(tmp_path, [REST] * 4)) == {
+        "wide_hold_hunting": 0, "wide_hold_driven_share": 0.0, "wide_hold_current_rms_ma": 0.0}
+    assert [sc.UNITS[sc.base_of(k)] for k in ("wide_hold_hunting", "wide_hold_driven_share",
+                                              "wide_hold_current_rms_ma")] == ["holds", "share", "mA"]
+
+
+# --- the wide capture: a rung with and without it ---
+
+def test_a_rung_runs_the_wide_capture_last_and_names_its_goals(bus, monkeypatch, tmp_path):
+    # 1279 takes no slot, and the approach above 3583..3589 is out of the reach of the soft range
+    board_result(monkeypatch, tmp_path, [(1023, 10), (1279, 2), (2047, 11), (3583, 6)])
+    rung = sc.run("10-wide", "abc123", "f" * 40, runs=2, servo=SERVO, board=BOARD)
+    assert [(name, kw["deadman_check"]) for name, _, kw in bus["log"]] == [
+        ("steps", True), ("follow", False), ("hold", False), ("wide", False)] * 2
+    planned = json.loads((rung / "run-1" / "wide" / "plan.json").read_text())
+    assert planned["capture"] == "wide"
+    holds = [s for s in planned["segments"] if s["test"] == "wide-hold"]
+    assert [(s["seg"], s["stuck_code"], s["side"], s["goal_counts"]) for s in holds] == [
+        (1, 1023, "above", 1029), (3, 1023, "below", 1029), (5, 2047, "above", 2053), (7, 2047, "below", 2053)]
+    goals = [{"stuck_code": s["stuck_code"], "side": s["side"], "goal_counts": s["goal_counts"]} for s in holds]
+    assert json.loads((rung / "rung.json").read_text())["wide_goals"] == goals
+
+    sc.score("10-wide", servo=SERVO, board=BOARD)
+    out = json.loads(sc.result_path(sc.pair_of(SERVO, BOARD), "10-wide").read_text())
+    assert out["wide_goals"] == goals and out["runs"] == ["run-1", "run-2"]
+    # the fake servo rests inside its deadband
+    assert out["scores"]["wide_hold_hunting"] == {"value": 0.0, "lo": 0.0, "hi": 0.0, "unit": "holds"}
+    assert out["scores"]["wide_hold_driven_share"] == {"value": 0.0, "lo": 0.0, "hi": 0.0, "unit": "share"}
+    assert out["scores"]["wide_hold_current_rms_ma"] == {"value": 0.0, "lo": 0.0, "hi": 0.0, "unit": "mA"}
+
+    # a run whose wide capture did not end is not scored
+    meta = rung / "run-2" / "wide" / "meta.json"
+    meta.write_text(json.dumps({**json.loads(meta.read_text()), "ended": "aborted"}))
+    assert not sc.run_complete(rung / "run-2")
+    assert sc.score_rung(rung)["skipped"] == ["run-2"]
+
+
+def test_a_board_without_a_result_runs_no_wide_capture_and_its_rows_are_absent(bus, monkeypatch, tmp_path):
+    no_board_result(monkeypatch, tmp_path)
+    rung = sc.run("00-plain", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
+    assert [name for name, _, _ in bus["log"]] == ["steps", "follow", "hold"]
+    assert json.loads((rung / "rung.json").read_text())["wide_goals"] is None
+    assert not (rung / "run-1" / "wide").exists()
+    sc.score("00-plain", servo=SERVO, board=BOARD)
+    pair = sc.pair_of(SERVO, BOARD)
+    plain = json.loads(sc.result_path(pair, "00-plain").read_text())
+    assert plain["runs"] == ["run-1"] and not any(k.startswith("wide_") for k in plain["scores"])
+
+    # beside a rung that has the rows, the ladder leaves this one's cells empty
+    board_result(monkeypatch, tmp_path, [(1023, 10)])
+    sc.run("10-wide", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
+    sc.score("10-wide", servo=SERVO, board=BOARD)
+    buf = io.StringIO()
+    sc.table(servo=SERVO, board=BOARD, file=buf)
+    lines = buf.getvalue().splitlines()
+    assert lines[0].split()[:4] == ["score", "unit", "00-plain", "10-wide"]
+    wide = {r.split()[0]: r.split()[1:] for r in lines if r.startswith("wide_hold_")}
+    assert wide == {"wide_hold_hunting": ["holds", "-", "0"], "wide_hold_driven_share": ["share", "-", "0"],
+                    "wide_hold_current_rms_ma": ["mA", "-", "0"]}
+    assert lines[1].startswith("overshoot_deg_2deg")
+
+
+# --- a wide-codes rung's rows through the board's slots ---
+
+def wide_rung(root, codes, segs, plan_doc, points=None, polls=None):
+    """A rung under the repo root `root` with one capture, steps, the
+    board's wide-code result file under `root` and `rung.json` naming it;
+    with `points`, a LIVE table of them named too."""
+    named = synth.wide_result(root / "stages" / "1-board" / "wide-codes" / "results" / "synth.json", codes, root)
+    if points is None:
+        rung = root / "telemetry" / "synth" / "scorecard" / "09-wide"
+        cap = synth.write(rung / "run-1" / "steps", segs, CENTER, GUARD, plan=plan_doc, polls=polls)
+        doc = {"label": "09-wide"}
+    else:
+        cap, _ = table_rung(root, points, "LIVE", segs, plan_doc)
+        doc = json.loads((cap.parent.parent / "rung.json").read_text())
+    (cap.parent.parent / "rung.json").write_text(json.dumps({**doc, "wide_codes": named}))
+    return cap, root / named["file"]
+
+
+def stuck_rows():
+    """A goal at the middle of the codes 1023 skips, the reading stuck at
+    1023 but for a few rows on other codes at the start, then a hold: the
+    codes, the rows and the plan."""
+    codes = np.r_[[1022, 1024, 511, 2047, 2048], np.full(11_995, 1023)]
+    goal = 1029
+    segs = [{**goal_seg(goal), "item": f"goal:{goal}@600"}, hold_seg(500)]
+    rows = [(segs[0]["item"], goal, codes, np.zeros(len(codes), int)),
+            ("hold@500", goal, np.full(10_000, 1023), np.zeros(10_000, int))]
+    return codes, rows, plan(segs)
+
+
+def test_a_wide_codes_rung_reads_a_stuck_code_as_the_middle_of_its_span(tmp_path, monkeypatch):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    codes, rows, plan_doc = stuck_rows()
+    # the servo's report is the reading it used, 1023 + 5
+    polls = {"theta_hat_q16": [0, 1028 * sc.Q16]}
+    cap_dir, path = wide_rung(tmp_path, [(1023, 10), (2047, 11)], rows, plan_doc, polls=polls)
+    cap = sc.load(cap_dir)
+    first = cap["rows"][cap["rows"]["seg"] == 0]
+    np.testing.assert_array_equal(first["pos_raw"], codes)
+    np.testing.assert_array_equal(first["pos"], wc.compensated(codes, wc.slots_of_file(path)))
+    assert first["pos"].iloc[:6].tolist() == [1022, 1024, 511, 2047 + 5.5, 2048, 1023 + 5]
+    assert sc.rest_error_deg(cap) == pytest.approx(1 / CPD)
+    assert sc.position_report_error_deg(cap) == pytest.approx(0)
+
+    # the same rows on a rung that names no slots load as the file holds them
+    plain_dir = synth.write(tmp_path / "telemetry" / "synth" / "scorecard" / "08-plain" / "run-1" / "steps",
+                            rows, CENTER, GUARD, plan=plan_doc, polls=polls)
+    (plain_dir.parent.parent / "rung.json").write_text(json.dumps({"label": "08-plain", "wide_codes": None}))
+    plain = sc.load(plain_dir)
+    assert "pos_raw" not in plain["rows"] and plain["rows"]["pos"].dtype.kind == "i"
+    np.testing.assert_array_equal(plain["rows"]["pos"][plain["rows"]["seg"] == 0], codes)
+    assert sc.rest_error_deg(plain) == pytest.approx(6 / CPD)
+    assert sc.position_report_error_deg(plain) == pytest.approx(5 / CPD)
+
+
+def test_a_wide_codes_rung_on_a_live_table_takes_the_step_ahead_of_the_table(tmp_path, monkeypatch):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    codes, rows, plan_doc = stuck_rows()
+    points = bump_points(40)
+    cap_dir, path = wide_rung(tmp_path, [(1023, 10), (2047, 11)], rows, plan_doc, points=points)
+    cap = sc.load(cap_dir)
+    first = cap["rows"][cap["rows"]["seg"] == 0]
+    np.testing.assert_array_equal(first["pos_raw"], codes)
+    middle = wc.compensated(codes, wc.slots_of_file(path))
+    np.testing.assert_array_equal(first["pos"], cap["table"].lin(middle))
+    # off a stuck code the reading is the table's own, and on one it is the table read 5 counts up
+    assert first["pos"].iloc[0] == postable.interp_q4(1022, points) / 16
+    assert first["pos"].iloc[5] == pytest.approx(postable.interp_q4(1028, points) / 16)
+    assert first["pos"].iloc[5] != postable.interp_q4(1023, points) / 16
+
+
+def test_a_wide_codes_rung_whose_result_changed_since_is_refused(tmp_path, monkeypatch):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    _, rows, plan_doc = stuck_rows()
+    cap_dir, path = wide_rung(tmp_path, [(1023, 10)], rows, plan_doc)
+    sc.load(cap_dir)
+    synth.wide_result(path, [(1023, 11)])
+    with pytest.raises(ValueError, match="not the wide-code result the rung ran on"):
+        sc.load(cap_dir)
+    path.unlink()
+    with pytest.raises(ValueError, match="not the wide-code result the rung ran on"):
+        sc.load(cap_dir)

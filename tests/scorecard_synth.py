@@ -1,19 +1,20 @@
 """Synthetic `osc-lab track` captures for the scorecard's tests: the files
 the tool writes (track.csv, segments.csv, meta.json) and the plan.json the
 runner puts beside them, from rows a test chooses or from a fake servo
-that answers a schedule.
+that answers a schedule, and a board's wide-code result file.
 
 A test fixture, not a model of record. `fake_track` runs each goal as a
 first-order approach at a speed cap, its duty the error's sign at a fixed
 share of the period, its current a fixed count per duty.
 """
+import hashlib
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from oscnb import boards, scorecard
+from oscnb import boards, scorecard, widecodes
 
 HEADER = ("seg,goal,tick,window_valid,pos,current,current_trough,duty_counts,vdiff,vbus,"
           "current_raw,vmotor_a,vmotor_b,vbus_raw,ntc_raw,vref_raw").split(",")
@@ -100,3 +101,20 @@ def fake_track(out, schedule, start, tick_hz=2_000, tau_s=0.03, max_cps=1500.0,
     gap = round((GOAL_PERIOD_S - 0.020) * tick_hz)
     write(out, segs, center, guard, tick_hz=tick_hz, gap_ticks=gap, plan=plan)
     return pos
+
+
+def wide_result(path, codes, root=None):
+    """A board's wide-code result file at `path`, the bands and the slots
+    as `widecodes find` writes them. `codes` are (stuck, skipped) or
+    (stuck, skipped, ratio), the ratio that of a code reading its own rows
+    and the skipped codes' when left out. Returns what a rung names: the
+    file, from `root` when given, and its sha1."""
+    bands = [widecodes.Band(c[0], c[1], float(c[2] if len(c) > 2 else 1 + c[1])) for c in codes]
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "wide_codes": [{"stuck_code": b.stuck, "skipped": b.skipped, "ratio": b.ratio, "wide": b.wide,
+                        "representable": b.representable, "slot": b.slot, "value_q4": b.value} for b in bands],
+        widecodes.FIELD: list(widecodes.slots(bands))}))
+    return {"file": str(path.relative_to(root) if root else path),
+            "sha1": hashlib.sha1(path.read_bytes()).hexdigest()}

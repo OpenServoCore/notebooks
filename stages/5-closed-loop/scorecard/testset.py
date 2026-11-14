@@ -2,7 +2,7 @@
 runs, written in the servo's own terms so another servo class runs the
 same plan.
 
-Three captures per run, each one `osc-lab track` in Position mode:
+Up to four captures per run, each one `osc-lab track` in Position mode:
 
 - `steps`: the first rows after torque-on held, a move to the center, then
   for each size center -> +size -> center -> -size -> center, each goal
@@ -11,20 +11,30 @@ Three captures per run, each one `osc-lab track` in Position mode:
   period, at shares of the no-load speed, up from the center and back
   down, a pause between ramps.
 - `hold`: two holds at the center.
+- `wide`: for each ADC wide code of the board that takes a slot, lowest
+  first, two holds at the middle of the codes it skips, the first after a
+  goal WIDE_APPROACH_COUNTS above the span the code stands for (itself
+  and the codes it skips), the second after one as far below it. Such an
+  approach goal is held as long as a step of its travel from the goal
+  before it. A code is held when both of those goals fit the soft range
+  as every goal of the set must. A board with no wide-code result, or
+  with no such code, has no `wide` capture.
 
 The inputs come through the chain, none typed: counts per degree from the
 stage 3 pot-table result, the no-load speed from the stage 3 run-up result
-through the registry's gear ratio, the soft range from the servo, the
-center the middle of it as `osc-lab track` takes it. Each capture's
-`plan.json` names every segment: its test, size or speed share,
-direction and goal in counts and in degrees from the center.
+through the registry's gear ratio, the wide codes from the board's stage 1
+wide-codes result, the soft range from the servo, the center the middle of
+it as `osc-lab track` takes it. Each capture's `plan.json` names every
+segment: its test, size or speed share, direction and goal in counts and
+in degrees from the center, and for a hold at a wide code its stuck code
+and the side it is approached from.
 
 The file is not a `plan.py`: it runs under `python -m oscnb.scorecard`,
 never in a sitting.
 """
 import math
 
-from oscnb import results
+from oscnb import results, scorecard, widecodes
 
 STEP_SIZES_DEG = (2, 20, 60)
 STEP_HOLD_MS = (1200, 1500, 2000)   # per size, the settle and the 500 ms rest window
@@ -40,23 +50,29 @@ GOAL_PERIOD_S = 0.0256
 PAUSE_MS = 500
 HOLD_MS = 3000
 HOLDS = 2
+WIDE_HOLD_MS = 2000
+WIDE_APPROACH_COUNTS = 30           # from the span to the goal held before each hold
 # Clear room between a goal and the guard, which aborts the run: an
 # overshoot past the far goal must not reach it.
 FIT_MARGIN_DEG = 5
 CAP_MS = 100                        # the watchdog's current cap holds this long
-CAPTURES = ("steps", "follow", "hold")
+CAPTURES = ("steps", "follow", "hold", "wide")   # in run order; `wide` only where the set built one
 
 
-def inputs(servo, pair):
-    """The constants the set is built from, with where each came from."""
+def inputs(servo, pair, board=None):
+    """The constants the set is built from, with where each came from.
+    `board` is the registry key of the board whose ADC wide codes the
+    `wide` capture holds at: the ones its result of record gives a slot.
+    Without a board, or for one with no result, there are none."""
     pot = results.read("3-servo", "pot-table", pair)
     runup = results.read("3-servo", "run-up", pair)
     rev_s = runup["no_load_speed_rev_s"]["value"]
-    return {
+    inp = {
         "counts_per_deg": pot["pot_scale_counts_per_deg"]["value"],
         "no_load_deg_s": rev_s / servo.gear_ratio * 360,
         "current_cap_ma": servo.lock_hold_a * 1000,
         "current_cap_ms": CAP_MS,
+        "wide_codes": [],
         "sources": {
             "counts_per_deg": f"{results.rel(results.path('3-servo', 'pot-table', pair))} pot_scale_counts_per_deg",
             "no_load_deg_s": f"{results.rel(results.path('3-servo', 'run-up', pair))} no_load_speed_rev_s "
@@ -64,6 +80,13 @@ def inputs(servo, pair):
             "current_cap_ma": f"servos {servo.key} lock_hold_a",
         },
     }
+    if board is not None and widecodes.result_file(board).exists():
+        slotted = [b for b in widecodes.bands_of_record(board) if b.slot is not None]
+        inp["wide_codes"] = [{"stuck_code": b.stuck, "skipped": b.skipped}
+                             for b in sorted(slotted, key=lambda b: b.stuck)]
+        inp["sources"]["wide_codes"] = (f"{scorecard.shown(widecodes.result_file(board))} wide_codes, "
+                                        f"the codes that take a slot")
+    return inp
 
 
 def center_of(guard):
@@ -124,6 +147,48 @@ def hold():
     return [_hold(HOLD_MS, "hold") for _ in range(HOLDS)]
 
 
+def fits(goals, guard, cpd):
+    """Whether every goal lies FIT_MARGIN_DEG clear of the guard."""
+    lo, hi = guard
+    margin = FIT_MARGIN_DEG * cpd
+    return min(goals) - margin >= lo and max(goals) + margin <= hi
+
+
+def wide_goals(code):
+    """A wide code's goals: the approach above the span it stands for, the
+    middle of the codes it skips, the approach below the span."""
+    stuck, skipped = code["stuck_code"], code["skipped"]
+    return stuck + skipped + WIDE_APPROACH_COUNTS, stuck + 1 + skipped // 2, stuck - WIDE_APPROACH_COUNTS
+
+
+def approach_ms(travel_deg):
+    """How long a goal `travel_deg` from the one before it is held so the
+    shaft is there: the hold of the smallest step size at or above the
+    travel, the largest size's when the travel is beyond it."""
+    return next((ms for size, ms in zip(STEP_SIZES_DEG, STEP_HOLD_MS) if travel_deg <= size), STEP_HOLD_MS[-1])
+
+
+def wide(center, cpd, guard, codes):
+    """The wide capture's segments, in order: per wide code whose goals
+    fit the soft range, lowest first, its middle held after the approach
+    from above, then after the one from below, each approach held for
+    its travel from the goal before it, the first from the center. Empty
+    when no code fits."""
+    segs = []
+    at = center
+    for code in sorted(codes, key=lambda c: c["stuck_code"]):
+        above, middle, below = wide_goals(code)
+        if not fits((above, below), guard, cpd):
+            continue
+        for approach, side in ((above, "above"), (below, "below")):
+            fields = {"stuck_code": code["stuck_code"], "side": side}
+            ms = approach_ms(abs(approach - at) / cpd)
+            segs.append(_goal(center, cpd, approach, ms, "wide-approach", **fields))
+            segs.append(_goal(center, cpd, middle, WIDE_HOLD_MS, "wide-hold", **fields))
+            at = middle
+    return segs
+
+
 def check_fits(segs, guard, cpd):
     """Refuse a servo whose soft range cannot fit the set, before anything
     moves."""
@@ -131,7 +196,7 @@ def check_fits(segs, guard, cpd):
     margin = FIT_MARGIN_DEG * cpd
     goals = [s["goal_counts"] for s in segs if s["goal_counts"] is not None]
     low, high = min(goals), max(goals)
-    if low - margin < lo or high + margin > hi:
+    if not fits(goals, guard, cpd):
         raise SystemExit(
             f"the soft range {lo}..{hi} counts cannot fit the scorecard: its goals run "
             f"{low}..{high} counts and each needs {FIT_MARGIN_DEG} deg ({margin:.0f} counts) "
@@ -140,12 +205,16 @@ def check_fits(segs, guard, cpd):
 
 def build(guard, inp):
     """Every capture's segments for a servo with soft range `guard`,
-    refused when one does not fit."""
+    refused when one does not fit; `wide` is among them only when a wide
+    code of the inputs is in reach."""
     cpd = inp["counts_per_deg"]
     center = center_of(guard)
     sets = {"steps": steps(center, cpd),
             "follow": follow(center, cpd, inp["no_load_deg_s"]),
             "hold": hold()}
+    wide_segs = wide(center, cpd, guard, inp.get("wide_codes", ()))
+    if wide_segs:
+        sets["wide"] = wide_segs
     for segs in sets.values():
         if any(s["goal_counts"] is not None for s in segs):
             check_fits(segs, guard, cpd)
