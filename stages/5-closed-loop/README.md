@@ -597,10 +597,10 @@ itself, 2 of 6 of the first half and 1 of 6 of the second: it lands on
 a stuck code's gap and flips from run to run on the set of record
 alone.
 
-Two groups of protection fields and the thermal limit have rules. The
-NTC curve's is held, so the set shows what the record gives beside what
-protects the servo now; the current limits' and the thermal limit's
-are bound.
+Three groups of protection fields and the thermal limit have rules. The
+NTC curve's and the winding model's are held, so the set shows what the
+record gives beside what protects the servo now; the current limits'
+and the thermal limit's are bound.
 
 The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
@@ -653,6 +653,31 @@ rung of record ran on, still loads as it was written. A build carries a
 retired field until one names it with `--protection`, which leaves it
 out and moves the protection hash alone.
 
+The winding estimate's four fields, `thermal_tau_s`, `th_rise_q016`,
+`thermal_tau2_s` and `th_rise2_q016`, are one model of the winding's
+heat, a leak and a rise for each of two nodes, and one protection step.
+Their rules read the stage 4 result
+([stage 4, winding-temperature](../4-estimators/README.md#winding-temperature)):
+the fast node is this pair's own, of class `measured`, and the slow
+node the family's, of class `policy` until a lock hold measures this
+motor's. The policy's `winding_plateau_reading` names the reading of
+the plateau the two rises take, and it is `high`, the owner's decision:
+of the two readings it alone reads at least as hot as what the servo
+holds in every case computed. The rules give 2 / 434 / 129 / 1274, and
+the kernel runs the two leaks at 2.048 and 131.072 s (the rounding as
+firmware 08c7beaf has it, mirrored in `oscnb.winding`). The four are
+held, so the set keeps the servo's one node on the slow leak, 115 /
+1143 / 0 / 0, until a bench session installs
+[protection-winding-model.json](scorecard/deviations/protection-winding-model.json).
+No direction field by field says what that step does, so its build and
+its install print what the estimate reads over the board NTC under the
+four held and under the four wanted, by the kernel's integers: a hold
+from rest at the continuous current and at the limit, the rest after
+it, four duty cycles, and whether the wanted four read at least as hot
+in every case. The install still names all four as `--protection`, and
+the two leaks, which are judged, and the fast rise, which falls, as
+`--loosen` too.
+
 The current limits are each a policy entry in mA, taken to shunt
 counts by the board's measured counts per amp, the scale the set
 carries. The kernel compares its own current reading against them,
@@ -690,10 +715,11 @@ the policy's `collision_trip` is `off`, and the rule of
 disturbance estimate passes. A level in counts has no rule yet.
 
 A deviation moves the protection fields of one step: the words of the
-NTC curve are one step and the four current limits another, a
-protection field in neither is a step alone, and a release of one
-field of a step releases every held field of it, so no curve of two
-fits and no limits at two scales are built. The step of record is
+NTC curve are one step, the four current limits another and the winding
+model's four a third, a protection field in none is a step alone, and a
+release of one field of a step releases every held field of it, so no
+curve of two fits, no limits at two scales and no model of two halves
+are built. The NTC curve's step of record is
 [protection-ntc-curve.json](scorecard/deviations/protection-ntc-curve.json).
 Its install names every field it moves as `--protection` and again as
 `--loosen`: the curve's words are judged. The current limits' step
