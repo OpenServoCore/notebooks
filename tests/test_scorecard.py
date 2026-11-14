@@ -959,7 +959,13 @@ def test_a_table_rung_planned_at_the_pots_scale_scores_as_its_result_holds():
     planned = json.loads((rung / "run-1" / "steps" / "plan.json").read_text())
     assert planned["counts_per_deg"] == TS.inputs(SERVO, pair)["counts_per_deg"]
     want = json.loads(sc.result_path(pair, "12a-pos-table-live").read_text())["scores"]
-    assert results._plain(sc.score_rung(rung))["scores"] == want
+    got = results._plain(sc.score_rung(rung))["scores"]
+    assert got.keys() == want.keys()
+    for row, w in want.items():
+        assert got[row]["unit"] == w["unit"], row
+        for k in ("value", "lo", "hi"):
+            # to the float's last digits, which differ between platforms
+            assert got[row][k] == pytest.approx(w[k], rel=1e-9, abs=1e-9, nan_ok=True), (row, k)
     assert want["position_report_error_deg"]["value"] is not None
 
 
