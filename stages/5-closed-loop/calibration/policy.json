@@ -1,6 +1,10 @@
 {
  "angle_cw_stop_deg": 0.0,
  "observer_hz": 15.0,
+ "current_limit_ma": 500.0,
+ "i_cont_ma": 250.0,
+ "stall_release_ma": 90.0,
+ "oc_trip_ma": 2200.0,
  "rule": {
   "r_q12": "r.rails_fit",
   "r_bemf_q12": "r_bemf.small_step"
@@ -14,6 +18,13 @@
   "ke_vpc_q": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term",
   "j_ff_q88": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term",
   "l3_q88": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term",
-  "r_bemf_q12": "the servo's image has no such field yet"
+  "r_bemf_q12": "the servo's image has no such field yet",
+  "ntc_t_ref_cc": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C",
+  "ntc_k1_q88": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C",
+  "ntc_k2_q24": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C",
+  "current_limit_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds",
+  "i_cont_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds",
+  "stall_release_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds",
+  "oc_trip_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds"
  }
 }
