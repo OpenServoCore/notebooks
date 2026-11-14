@@ -21,8 +21,8 @@ from oscnb import boards, postable, scorecard, settings, widecodes
 
 HEADER = ("seg,goal,tick,window_valid,pos,current,current_trough,duty_counts,vdiff,vbus,"
           "current_raw,vmotor_a,vmotor_b,vbus_raw,ntc_raw,vref_raw").split(",")
-SEG_HEADER = ("seg,kind,field,value,ms,tick0,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,"
-              "theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,"
+SEG_HEADER = ("seg,kind,field,value,ms,tick0,slot_wait_ms,slot_late_ms,slots_missed,rows,rows_dropped,t_start,t_end,"
+              "vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,"
               "i_tick_counts,current_bias_counts,fault_code,omega_hat_src").split(",")
 ZERO = 1210           # the shunt's raw zero
 I_PER_DUTY = 0.2      # raw current counts per duty count
@@ -39,12 +39,16 @@ def meta(center, guard, tick_hz, config=None, lut_state="IDENTITY"):
 
 
 def write(out, segs, center, guard, tick_hz=20_000, tick0=60_000, gap_ticks=500,
-          plan=None, config=None, lut_state="IDENTITY", polls=None):
+          plan=None, config=None, lut_state="IDENTITY", polls=None, goal_period_ms=None):
     """One capture into `out`. `segs` are (item, goal, pos, duty) per
     schedule item, the arrays one value a row; tick0 starts at `tick0` and
     each segment opens `gap_ticks` after the last, wrapping at 2^16, its
     t_start the host's clock on the same axis. `polls` are a column of
-    segments.csv each, one value an item; the rest are left empty."""
+    segments.csv each, one value an item; the rest are left empty. With
+    `goal_period_ms` the meta says the run held its goals to that period,
+    as `osc-lab track --goal-period-ms` writes it, the goals held and late
+    counted off the `slot_late_ms` column of `polls` as the tool counts
+    them: late is more than a tick."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     frames, seg_rows = [], []
@@ -67,7 +71,12 @@ def write(out, segs, center, guard, tick_hz=20_000, tick0=60_000, gap_ticks=500,
         t += n + gap_ticks
     pd.concat(frames).reindex(columns=HEADER).to_csv(out / "track.csv", index=False)
     pd.DataFrame(seg_rows).reindex(columns=SEG_HEADER).to_csv(out / "segments.csv", index=False)
-    (out / "meta.json").write_text(json.dumps(meta(center, guard, tick_hz, config, lut_state)))
+    doc = meta(center, guard, tick_hz, config, lut_state)
+    if goal_period_ms is not None:
+        late = [ms for ms in (polls or {}).get("slot_late_ms", ()) if ms is not None]
+        doc["goal_period"] = {"ms": goal_period_ms, "held": len(late),
+                              "late": sum(ms * tick_hz / 1000 > 1 for ms in late)}
+    (out / "meta.json").write_text(json.dumps(doc))
     if plan is not None:
         (out / "plan.json").write_text(json.dumps(plan))
     return out
@@ -78,10 +87,12 @@ def rows_of(ms, tick_hz):
 
 
 def fake_track(out, schedule, start, tick_hz=2_000, tau_s=0.03, max_cps=1500.0,
-               duty_counts=600, deadband=4):
+               duty_counts=600, deadband=4, goal_period_ms=None):
     """A servo that answers `schedule` from `start` counts; writes the
     capture (no plan) and returns where the shaft ended. Its meta names
-    the middle of the guard as the center, as `osc-lab track` does."""
+    the middle of the guard as the center, as `osc-lab track` does. With
+    `goal_period_ms` every goal right after a goal shorter than the period
+    is held to it and on time."""
     plan = json.loads((Path(out) / "plan.json").read_text())
     guard = plan["guard_counts"]
     center = guard[0] + (guard[1] - guard[0]) // 2
@@ -104,7 +115,14 @@ def fake_track(out, schedule, start, tick_hz=2_000, tau_s=0.03, max_cps=1500.0,
         segs.append((item, goal, p, d))
     # the burst and the host's overhead, as a 20 ms goal item really runs
     gap = round((GOAL_PERIOD_S - 0.020) * tick_hz)
-    write(out, segs, center, guard, tick_hz=tick_hz, gap_ticks=gap, plan=plan)
+    polls = None
+    if goal_period_ms is not None:
+        short = [item.startswith("goal:") and int(item.split("@")[1]) < goal_period_ms for item in schedule]
+        held = [k > 0 and short[k - 1] and item.startswith("goal:") for k, item in enumerate(schedule)]
+        polls = {"slot_late_ms": [0.0 if h else None for h in held],
+                 "slots_missed": [0 if h else None for h in held]}
+    write(out, segs, center, guard, tick_hz=tick_hz, gap_ticks=gap, plan=plan, polls=polls,
+          goal_period_ms=goal_period_ms)
     return pos
 
 

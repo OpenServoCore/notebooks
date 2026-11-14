@@ -159,7 +159,8 @@ UNITS = {
     "hold_current_rms_ma": "mA", "wide_hold_hunting": "holds", "wide_hold_driven_share": "share",
     "wide_hold_current_rms_ma": "mA", "lag_deg": "deg", "lag_ms": "ms", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
-    "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "crawl_swing_deg": "deg",
+    "ramp_speed_deg_s": "deg/s", "follow_late_items": "items",
+    "crawl_speed_ripple_pct": "%", "crawl_swing_deg": "deg",
     "enable_kick_deg": "deg",
     "enable_drive_ms": "ms", "speed_report_error_deg_s": "deg/s", "position_report_error_deg": "deg",
 }
@@ -703,7 +704,10 @@ def follow_scores(cap):
     (speed_report_error_deg_s), the median ramp; and on the slowest speed
     the crawl ripple over CRAWL_WINDOW_MS windows, the worse ramp, and the
     crawl swing, the CRAWL_SWING_PCTL-th percentile of item_swings over
-    every goal item of its ramps."""
+    every goal item of its ramps. On a capture that held its goals to a
+    period (`goal_period` in its meta), follow_late_items: the ramp goals
+    whose commit went out more than a tick after its grid point, as the
+    tool counts them; a run that kept its period reads 0."""
     by_pct = {}
     for segs, g in ramps(cap).values():
         by_pct.setdefault(segs[0]["speed_pct"], []).append((segs, g))
@@ -731,6 +735,9 @@ def follow_scores(cap):
                 for t in tails)
             out["crawl_swing_deg"] = float(np.percentile(
                 np.concatenate([item_swings(g) for _, g in rs]), CRAWL_SWING_PCTL)) / cap["cpd"]
+    if (cap["meta"].get("goal_period") or {}).get("ms") is not None:
+        late_ms = cap["polls"].loc[[s["seg"] for s in plan_segs(cap, "ramp")], "slot_late_ms"]
+        out["follow_late_items"] = int((late_ms * cap["tick_hz"] / 1000 > 1).sum())
     return out
 
 
@@ -965,7 +972,7 @@ def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     try:
         osc.track(out, "position", [s["item"] for s in segs],
                   current_cap_ma=inp["current_cap_ma"], current_cap_ms=inp["current_cap_ms"],
-                  deadman_check=deadman_check)
+                  deadman_check=deadman_check, goal_period_ms=1000 * ts.GOAL_PERIOD_S)
     except subprocess.CalledProcessError:
         reason = short_burst(out)
         if reason is None:

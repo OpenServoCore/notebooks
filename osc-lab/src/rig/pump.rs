@@ -204,6 +204,11 @@ pub(crate) struct BurstStats {
     pub(crate) rows_dropped: u16,
     /// The first row's `sample_tick`, low 16 bits.
     pub(crate) stamp0: Option<u16>,
+    /// When the writes ahead of the stream's carrier were staged and when
+    /// the carrier went out, ms on the servo's clock: [`Servo::burst`] sets
+    /// both.
+    pub(crate) staged_ms: f64,
+    pub(crate) sent_ms: f64,
 }
 
 /// Chunks a burst can stream, or why not in words: the servo's own arm
@@ -258,11 +263,33 @@ impl Identity {
     }
 }
 
-/// The servo's TEL admission ([`identity`]): the line's rate and the
-/// longest row a burst arms with.
-pub(crate) fn tel_row_limit<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<(BaudRate, usize)> {
-    let i = identity(c, id)?;
-    Ok((i.baud, i.row_bytes_max))
+/// What a burst needs of the servo ahead of its arm, read once a run
+/// ([`Servo::tel_line`]): the line's rate and the longest row a burst arms
+/// with ([`identity`]), and the floor its rows' windows are judged
+/// against, `i_window_min_ticks`. None moves under a drive: the row limit
+/// is the image's, the floor is read-only board data, and a servo whose
+/// line changed rate answers this client no more.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) struct TelLine {
+    pub(crate) baud: BaudRate,
+    pub(crate) row_bytes_max: usize,
+    pub(crate) floor: u16,
+}
+
+impl TelLine {
+    pub(crate) fn read<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<Self> {
+        let i = identity(c, id)?;
+        Ok(Self {
+            baud: i.baud,
+            row_bytes_max: i.row_bytes_max,
+            floor: read_u16(c, id, calib::I_WINDOW_MIN_TICKS)?,
+        })
+    }
+
+    /// Chunks the servo streams on this line ([`admit_tel_chunks`]).
+    pub(crate) fn admit(&self, chunks: Chunks) -> Result<Chunks> {
+        admit_tel_chunks(chunks, self.baud, self.row_bytes_max)
+    }
 }
 
 pub(crate) fn identity<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<Identity> {
@@ -325,38 +352,28 @@ fn tel_arm(chunks: &Chunks, samples: u16) -> [u8; 4 * tel::CHUNKS_MAX + 2] {
 const _: () =
     assert!(control::CHUNK0_ADDR.addr + 4 * tel::CHUNKS_MAX as u16 == control::TEL_COUNT.addr);
 
-/// One TEL burst on the main bus, refused before anything is sent unless
-/// the servo would stream `chunks` at the line's rate
-/// ([`stream_tel_burst`]).
+/// One TEL burst on the main bus of `chunks` rows, refused before anything
+/// is sent unless the servo would stream them on `line`. With `goal` Some
+/// the goal write and the arm are staged under HOLD and a broadcast COMMIT
+/// (the stream carrier) applies both in the same instant; with None the
+/// acked arm write itself carries the stream. `at_carrier` runs right
+/// before the carrier goes out, the staged writes behind it: the servo
+/// keeps them until the COMMIT, however long that takes. Frames decode
+/// through [`StreamAssembler`], the window judged against the line's
+/// floor; corrupt frames never appear (the adapter drops them into garble
+/// + a seq hole).
 pub(crate) fn exchange_tel_burst<P: Pipe>(
     c: &mut Client<P>,
     id: Id,
+    line: TelLine,
     samples: u16,
     goal: Option<(Reg, i32)>,
     chunks: Chunks,
+    at_carrier: impl FnOnce(),
 ) -> Result<(Vec<TelFrame>, BurstStats)> {
-    let (baud, max) = tel_row_limit(c, id)?;
-    admit_tel_chunks(chunks, baud, max)?;
-    let floor = read_u16(c, id, calib::I_WINDOW_MIN_TICKS)?;
-    stream_tel_burst(c, id, samples, goal, chunks, floor)
-}
-
-/// One TEL burst on the main bus of `chunks` rows. With `goal` Some the
-/// goal write and the arm are staged under HOLD and a broadcast COMMIT (the
-/// stream carrier) applies both in the same instant; with None the acked
-/// arm write itself carries the stream. Frames decode through
-/// [`StreamAssembler`], the window judged against `floor`, the servo's
-/// `i_window_min_ticks`; corrupt frames never appear (the adapter drops
-/// them into garble + a seq hole).
-pub(crate) fn stream_tel_burst<P: Pipe>(
-    c: &mut Client<P>,
-    id: Id,
-    samples: u16,
-    goal: Option<(Reg, i32)>,
-    chunks: Chunks,
-    floor: u16,
-) -> Result<(Vec<TelFrame>, BurstStats)> {
-    let mut asm = StreamAssembler::new(chunks, floor).context("tel chunks invalid for an arm")?;
+    line.admit(chunks)?;
+    let mut asm =
+        StreamAssembler::new(chunks, line.floor).context("tel chunks invalid for an arm")?;
     let arm = tel_arm(&chunks, samples);
     let window = stream_window(samples);
     c.set_guard(window + Duration::from_secs(1));
@@ -368,6 +385,7 @@ pub(crate) fn stream_tel_burst<P: Pipe>(
             c.write_hold(id, control::CHUNK0_ADDR.addr, &arm)
                 .context("hold tel arm")?;
             let inst = Inst::instruction(Opcode::Commit, 0);
+            at_carrier();
             c.exchange_stream(Id::BROADCAST, inst, &[], window)
         }
         None => {
@@ -375,6 +393,7 @@ pub(crate) fn stream_tel_burst<P: Pipe>(
             let n =
                 build::write(&mut p, control::CHUNK0_ADDR.addr, &arm).context("tel arm payload")?;
             let inst = Inst::instruction(Opcode::Write, 0);
+            at_carrier();
             c.exchange_stream(id, inst, &p[..n], window)
         }
     };
@@ -399,8 +418,8 @@ pub(crate) fn stream_tel_burst<P: Pipe>(
         holes: asm.holes() + asm.skipped(),
         garble: reply.garble,
         laps: reply.laps,
-        rows_dropped: 0,
         stamp0: asm.first_stamp(),
+        ..BurstStats::default()
     };
     if matches!(reply.outcome, Outcome::Timeout { .. }) {
         bail!(
@@ -533,6 +552,18 @@ mod tests {
         (Client::connect(pipe).unwrap(), Id::new(1))
     }
 
+    /// One burst on the line as the servo reads it now.
+    fn burst(
+        c: &mut Client<FakePipe>,
+        id: Id,
+        samples: u16,
+        goal: Option<(Reg, i32)>,
+        chunks: Chunks,
+    ) -> Result<(Vec<TelFrame>, BurstStats)> {
+        let line = TelLine::read(c, id)?;
+        exchange_tel_burst(c, id, line, samples, goal, chunks, || ())
+    }
+
     /// Admission refuses a line under 3 M before anything else, then the
     /// arm rules, then the servo's row limit.
     #[test]
@@ -566,9 +597,10 @@ mod tests {
     #[test]
     fn a_burst_under_three_megabaud_is_refused_before_the_arm() {
         let (mut c, id) = fake(BaudRate::B1000000);
-        assert_eq!(tel_row_limit(&mut c, id).unwrap(), (BaudRate::B1000000, 12));
+        let line = TelLine::read(&mut c, id).unwrap();
+        assert_eq!((line.baud, line.row_bytes_max), (BaudRate::B1000000, 12));
         assert!(!identity(&mut c, id).unwrap().experiment());
-        let Err(refused) = exchange_tel_burst(&mut c, id, 16, None, TEL_RAW) else {
+        let Err(refused) = burst(&mut c, id, 16, None, TEL_RAW) else {
             panic!("a burst armed at 1 M");
         };
         assert!(
@@ -599,7 +631,7 @@ mod tests {
         ] {
             let (mut c, id) = fake(BaudRate::B3000000);
             let floor = read_u16(&mut c, id, calib::I_WINDOW_MIN_TICKS).unwrap();
-            let (frames, st) = exchange_tel_burst(&mut c, id, 40, None, chunks).unwrap();
+            let (frames, st) = burst(&mut c, id, 40, None, chunks).unwrap();
             assert_eq!((frames.len(), st.holes), (40, 0), "{chunks:?}");
             let sel = |r: Reg| chunks.offset(r.addr, r.width as u16).is_some();
             for f in &frames {
@@ -640,7 +672,7 @@ mod tests {
     fn a_goal_lands_with_the_arm() {
         let (mut c, id) = fake(BaudRate::B3000000);
         let goal = Some((control::GOAL_DUTY, -6553));
-        let (frames, _) = exchange_tel_burst(&mut c, id, 32, goal, TEL_RAW).unwrap();
+        let (frames, _) = burst(&mut c, id, 32, goal, TEL_RAW).unwrap();
         assert_eq!(frames.len(), 32);
         let duty = read_u16(&mut c, id, control::GOAL_DUTY).unwrap() as i16;
         assert_eq!(duty, -6553);
@@ -673,7 +705,7 @@ mod tests {
     #[test]
     fn a_burst_arm_after_a_stream_finds_tel_disarmed() {
         let (mut c, id) = fake(BaudRate::B3000000);
-        let (frames, _) = exchange_tel_burst(&mut c, id, 48, None, TEL_RAW).unwrap();
+        let (frames, _) = burst(&mut c, id, 48, None, TEL_RAW).unwrap();
         assert_eq!(frames.len(), 48);
         assert_eq!(read_u16(&mut c, id, control::TEL_COUNT).unwrap(), 0);
         WireBurstIo { c: &mut c, id }

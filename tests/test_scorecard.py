@@ -257,6 +257,27 @@ def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
     assert f["crawl_swing_deg"] == pytest.approx(0.0, abs=1e-9)
 
 
+def test_a_ramp_held_to_a_period_says_how_many_of_its_goals_were_late(tmp_path):
+    """A capture that held its goals to a period counts the ramp goals
+    whose commit went out more than a tick after its grid point, the
+    first goal of a ramp and the pauses on no grid; one that held none has
+    no such row, as every capture before the period was held."""
+    segs, rows = ramp_rows(n=10)
+    late = [None if s["test"] == "pause" or k % 11 == 0 else 0.0 for k, s in enumerate(segs)]
+    # one late by a stall, two making one up, and one a wait ran 40 us over: under a tick at 20 kHz
+    late[3], late[15], late[16], late[18] = 7.8, 61.3, 3.2, 0.04
+    synth.write(tmp_path / "held", rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
+                polls={"slot_late_ms": late}, goal_period_ms=25.6)
+    cap = sc.load(tmp_path / "held")
+    assert sc.follow_scores(cap)["follow_late_items"] == 3 == cap["meta"]["goal_period"]["late"]
+    on_time = [ms and 0.0 for ms in late]
+    synth.write(tmp_path / "kept", rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
+                polls={"slot_late_ms": on_time}, goal_period_ms=25.6)
+    assert sc.follow_scores(sc.load(tmp_path / "kept"))["follow_late_items"] == 0
+    synth.write(tmp_path / "free", rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs))
+    assert "follow_late_items" not in sc.follow_scores(sc.load(tmp_path / "free"))
+
+
 def trailing(lag_s, period_ticks, n=50, tick_hz=20_000):
     """ramp_rows' goals sent a goal every `period_ticks`, the shaft on
     the goals' own line `lag_s` behind it, as a servo that follows a
@@ -497,7 +518,7 @@ def bus(monkeypatch, tmp_path):
 
     def track(out, mode, schedule, **kw):
         state["log"].append((Path(out).name, mode, kw))
-        state["shaft"] = synth.fake_track(out, schedule, state["shaft"])
+        state["shaft"] = synth.fake_track(out, schedule, state["shaft"], goal_period_ms=kw.get("goal_period_ms"))
         return out
 
     real = [results.path("3-servo", name, PAIR) for name in ("pot-table", "run-up")]
@@ -560,6 +581,8 @@ def test_a_rung_end_to_end(bus):
         ("steps", True), ("follow", False), ("hold", False), ("wide", False)] * 2
     assert all(mode == "position" and kw["current_cap_ma"] == pytest.approx(850) and kw["current_cap_ms"] == 100
                for _, mode, kw in bus["log"])
+    # every capture is asked to hold its goals to the period the plan sizes a ramp's steps for
+    assert all(kw["goal_period_ms"] == pytest.approx(1000 * TS.GOAL_PERIOD_S) for _, _, kw in bus["log"])
     doc = json.loads((rung / "rung.json").read_text())
     assert (doc["label"], doc["fw"], doc["note"]) == ("00-baseline", "abc123", "fake")
     # the rung names the set it ran on, the pair's set of record: its file, its hashes, its fields by class
@@ -590,7 +613,8 @@ def test_a_rung_end_to_end(bus):
                  "position_report_error_deg",
                  "landing_buzz_share", "landing_tail_driven", "landing_drive_ms", "landing_drive_ms_worst",
                  "hold_jitter_deg", "hold_buzz_share", "hold_current_rms_ma", "crawl_speed_ripple_pct",
-                 "crawl_swing_deg", "wide_hold_hunting", "wide_hold_driven_share", "wide_hold_current_rms_ma"}
+                 "crawl_swing_deg", "wide_hold_hunting", "wide_hold_driven_share", "wide_hold_current_rms_ma",
+                 "follow_late_items"}
     assert set(s) == expected
     assert all(set(q) == {"value", "lo", "hi", "unit"} for q in s.values())
     # the fake servo is first order: no overshoot, and it rests inside its deadband
@@ -599,6 +623,8 @@ def test_a_rung_end_to_end(bus):
     assert s["lag_deg_1pct"]["value"] > 0
     assert s["ramp_speed_deg_s_10pct"]["value"] == pytest.approx(
         0.1 * planned["no_load_deg_s"], rel=0.1)
+    # the fake servo held every ramp goal to the period
+    assert s["follow_late_items"] == {"value": 0.0, "lo": 0, "hi": 0, "unit": "items"}
 
     buf = io.StringIO()
     sc.table(servo=SERVO, board=BOARD, file=buf)
