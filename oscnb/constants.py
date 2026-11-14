@@ -30,6 +30,8 @@ value moves to protect less for a protection field, as LOOSER has it.
     uv run python -m oscnb.constants status
     uv run python -m oscnb.constants check
     uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
+    uv run python -m oscnb.constants save [--protection NAME ...] [--loosen NAME ...]
+    uv run python -m oscnb.constants restore --from STATE_JSON [--protection NAME ...] [--loosen NAME ...]
 
 `status`, `check` and `install` read the pair's set of record, or the
 derived set named with `--set PATH` ahead of the verb.
@@ -91,6 +93,33 @@ after the rest. The whole state is then read back, and only when it is
 the set does `osc stamp` bless it, no save, after which the data state
 must read clean. A refusal after the first write reboots the servo,
 which returns its saved state.
+
+`save` is a verb of its own, never a flag of `install`, and saves the
+pair's set of record alone. Before the bus is touched it refuses a
+derived set, a set with a moved input and a set file that is not
+committed as it stands (a read only `git status` of that file); then
+torque must be off. It reboots the servo, waits for the bus and writes
+the state the servo has stored, its table's points in it, to
+`telemetry/<pair>/constants/<set hash, 12 characters>/stored.json`
+(a save of the same set after the first keeps its files in a numbered
+folder inside that one). It installs the set from there, the same
+install behind the same gate, `--protection` and `--loosen` passed
+through, and the `check` after it must be clean. Then MGMT SAVE (`osc
+save`, protocol sec 9.4), a reboot, the wait, the state to `after.json`
+and its comparison with the set. A SAVE keeps CONFIG and CALIB whole,
+the slots, the stamp and the table's points with them, so it also keeps
+what the set does not hold of those regions, the bus id and rate among
+it. A refusal before the SAVE leaves flash as it was. A servo that does
+not come back as the set is reported as that: flash then holds the new
+state, `restore --from stored.json` installs the old one, volatile, and
+the old one is made permanent again by adopting that record as the
+pair's set of record and saving it. `restore` puts a recorded state
+back, volatile: the install of the set adopted from the record, the
+table from the record's own points, behind the same protection gate. No
+write returns a LIVE table to IDENTITY short of a boot (a COMMIT of
+all-zero points lands LIVE), so a record with an identity table cannot
+be put back on a servo that holds a LIVE one, and `save` refuses,
+before it installs anything, to put a LIVE table over a stored identity.
 """
 import argparse
 import copy
@@ -245,8 +274,9 @@ def load(path):
         raise ValueError(f"{where}: its scale is that of the table of points sha1 {scale['points_sha1']}, its "
                          f"table is {table}")
     for name, e in doc["fields"].items():
-        if "protection" in e and e["protection"] != protection_of(name):
-            raise ValueError(f"{where}: {name} says {e['protection']} of protection, the tool {protection_of(name)}")
+        if "protection" not in e or e["protection"] != protection_of(name):
+            raise ValueError(f"{where}: {name} says {e.get('protection', 'nothing')} of protection, the tool "
+                             f"{protection_of(name)}")
         if e["class"] in ("measured", "policy") and e.get("pos_unit") \
                 and e.get("scale_points_sha1") != scale.get("points_sha1"):
             raise ValueError(f"{where}: {name} was computed for the table of points sha1 "
@@ -941,9 +971,10 @@ def points_sha1(points):
     return hashlib.sha1(b"".join(postable.page_bytes(points, p) for p in range(postable.PAGES))).hexdigest()
 
 
-def table_to_write(doc, state, root=results.ROOT):
+def table_to_write(doc, state, root=results.ROOT, table=None):
     """The Table an install has to write, None when the servo holds the
-    set's. Only a LIVE table can be written, from the pair's table file,
+    set's. Only a LIVE table can be written: `table` when it is given
+    and holds the set's points, else the one of the pair's table file,
     which must hold the set's points, be built against the set's stops,
     and name no other slots than the set's as the ones its lookup was
     fitted on; a file that records none is said and taken."""
@@ -954,6 +985,11 @@ def table_to_write(doc, state, root=results.ROOT):
         raise settings.Refused(f"the set's table is {want['state']} (points sha1 {want['points_sha1']}) and the "
                                f"servo's {have['state']} ({have['points_sha1']}): an install writes a LIVE table "
                                f"only")
+    if table is not None:
+        if points_sha1(table.points) != want["points_sha1"]:
+            raise settings.Refused(f"the table at hand holds points of sha1 {points_sha1(table.points)}, the "
+                                   f"set's table is {want['points_sha1']}")
+        return table
     path = set_path(doc["pair"], root).with_name(postable.out_path(doc["pair"]).name)
     if not path.exists():
         raise settings.Refused(f"the set's table is LIVE and the pair has no table file ({sc.shown(path)})")
@@ -975,7 +1011,7 @@ def table_to_write(doc, state, root=results.ROOT):
     return t
 
 
-def install(doc, protection=(), loosen=(), root=results.ROOT):
+def install(doc, protection=(), loosen=(), root=results.ROOT, table=None):
     """Make the servo equal the set, volatile; prints each write as it
     lands and returns what was written, by name, in order. Nothing is
     written unless torque is off, no input file of the set moved, the
@@ -1004,7 +1040,7 @@ def install(doc, protection=(), loosen=(), root=results.ROOT):
     refused = gate(doc, state, protection, loosen)
     if refused:
         raise settings.Refused("the protection gate:\n  " + "\n  ".join(refused))
-    table = table_to_write(doc, state, root)
+    table = table_to_write(doc, state, root, table)
     differ = [n for n in state["writable"] if n in doc["fields"] and state["fields"][n] != doc["fields"][n]["value"]]
     wrote = []
 
@@ -1069,6 +1105,124 @@ def rebooted():
     return "rebooted: the servo is back on its saved state"
 
 
+# --- save and restore ---
+
+def uncommitted(path):
+    """What `git status` says of one file, read only: empty when the
+    file is committed as it stands."""
+    r = subprocess.run(["git", "--no-optional-locks", "-C", str(Path(path).parent), "status", "--porcelain",
+                        "--ignored", "--", Path(path).name], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise settings.Refused(f"git cannot say whether {sc.shown(path)} is committed: {r.stderr.strip()}")
+    return r.stdout.strip()
+
+
+def backup_dir(doc, root=results.ROOT):
+    """Where a save of the set keeps the state the servo had stored and
+    the state after it: a folder by the set's hash, and for each save of
+    the same set after the first a numbered folder inside it, so no
+    record of a stored state is written over."""
+    base = Path(root) / "telemetry" / doc["pair"] / "constants" / doc["hash"]["set"][:12]
+    folder, n = base, 2
+    while (folder / "stored.json").exists():
+        folder, n = base / str(n), n + 1
+    return folder
+
+
+def puts_back(stored):
+    return (f"`uv run python -m oscnb.constants restore --from {sc.shown(stored)}` installs, volatile, the state "
+            f"the servo had stored")
+
+
+def save(pair, protection=(), loosen=(), root=results.ROOT):
+    """Persist the pair's set of record on the servo, from the state it
+    has stored. Refused with the bus untouched when an input of the set
+    moved or the set's file is not committed as it stands, then unless
+    torque is off. The servo is rebooted and the state it boots with
+    written to `stored.json` under `backup_dir`, the record a `restore`
+    puts back. The set is installed from there (`install`, its gate,
+    `protection` and `loosen` passed through) and checked, then MGMT
+    SAVE (`osc save`, protocol sec 9.4) programs CONFIG and CALIB with
+    the slots, the stamp and the table's points into flash, and with
+    them whatever else of those regions the servo holds. After a reboot
+    the state is written to `after.json` and must be the set. A save
+    that would put a LIVE table over a stored table that is not LIVE is
+    refused before the install: no write takes a LIVE table back short
+    of a boot, so `stored.json` could not be put back. Returns the two
+    paths."""
+    path = set_path(pair, root)
+    doc = of_record(pair, root)
+    lines, stale = status(doc, root)
+    if stale:
+        raise settings.Refused(f"the set is stale: {'; '.join(s for s in lines if s.startswith('stale: '))}")
+    dirty = uncommitted(path)
+    if dirty:
+        raise settings.Refused(f"{sc.shown(path)} is not committed as it stands ({dirty}): what is saved to "
+                               f"flash is a set of record, commit it first")
+    torque = osc.get("torque_enable")
+    if not settings.same("off", torque):
+        raise settings.Refused(f"torque_enable reads {torque}: a save reboots the servo and needs torque off")
+    osc.run("reboot")
+    settings.await_boot()
+    state = sc.servo_state()
+    folder = backup_dir(doc, root)
+    folder.mkdir(parents=True, exist_ok=True)
+    stored, after = folder / "stored.json", folder / "after.json"
+    stored.write_text(json.dumps(state, indent=2) + "\n")
+    have, want = state["pos_table"], doc["pos_table"]
+    if have["state"] != "LIVE" and any(have[k] != want[k] for k in ("state", "points_sha1")):
+        raise settings.Refused(
+            f"the servo's stored table is {have['state']} and the set's {want['state']}: no write returns a LIVE "
+            f"table to {have['state']} short of a boot, so `restore` could not put {sc.shown(stored)} back and "
+            f"this save could not be undone from its own record. Nothing was written to the servo")
+    try:
+        install(doc, protection, loosen, root)
+        left = check(doc)
+        if left:
+            raise settings.Refused(f"after the install the servo is not the set: {'; '.join(left)}")
+    except settings.Refused as e:
+        raise settings.Refused(f"{e}\nnothing was saved: a reboot returns the state the servo has stored, which "
+                               f"{sc.shown(stored)} records ({puts_back(stored)})") from None
+    try:
+        osc.run("save")
+    except subprocess.CalledProcessError:
+        raise settings.Refused(f"the servo refused the SAVE: nothing was saved, and it holds the set, volatile. "
+                               f"A reboot returns the state it has stored, which {sc.shown(stored)} "
+                               f"records") from None
+    osc.run("reboot")
+    settings.await_boot()
+    state = sc.servo_state()
+    after.write_text(json.dumps(state, indent=2) + "\n")
+    differ = differences(doc, state)
+    if differ or state["data_state"] != "clean":
+        raise settings.Refused(
+            f"after the SAVE and a reboot the servo is not the set (data state {state['data_state']}"
+            f"{''.join('; ' + d for d in differ)}): the save did not land as verified. Flash now holds the new "
+            f"state, the one {sc.shown(after)} records, and no longer the old one. {puts_back(stored)}; to make "
+            f"that permanent again, adopt that record as the pair's set of record (`adopt --from`, which writes "
+            f"a pair's first set only: the present set's file out of the way first), commit it and `save` it")
+    return stored, after
+
+
+def restore(record_path, pair, protection=(), loosen=(), root=results.ROOT):
+    """Put back, volatile, the state a record holds (`save`'s
+    `stored.json`, any `servo.json`): the install of the set adopted
+    from the record, its table written from the record's own points and
+    not from a file. The protection gate stands as for any install.
+    Returns what was written."""
+    record = json.loads(Path(record_path).read_text())
+    doc = adopted(record, pair, {"from": "a record restored", "sha1": sc.file_sha1(record_path),
+                                 "state_hash": record.get("hash")})
+    table = None
+    if doc["pos_table"]["state"] == "LIVE":
+        if "points" not in record["pos_table"]:
+            raise ValueError("the record holds the sha1 of its table's points and not the points: its table "
+                             "cannot be put back from it")
+        stops = [record["fields"].get(n) for n in STOPS]
+        table = postable.from_points(bytes.fromhex(record["pos_table"]["points"]), *stops)
+    return install(doc, protection, loosen, root, table)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m oscnb.constants", description=__doc__.split("\n\n")[0])
     ap.add_argument("--pair", default=postable.default_pair(), help="servo__board, the default pair if omitted")
@@ -1089,6 +1243,19 @@ def main(argv=None):
     ins.add_argument("--protection", nargs="+", default=[], metavar="NAME",
                      help="the protection fields the install may change")
     ins.add_argument("--loosen", nargs="+", default=[], metavar="NAME",
+                     help="of those, the ones it may set to protect less than the servo's value")
+    sv = sub.add_parser("save", help="persist the set of record on the servo: the stored state recorded, the "
+                                     "set installed, SAVE, reboot, read back")
+    sv.add_argument("--protection", nargs="+", default=[], metavar="NAME",
+                    help="the protection fields the save may change from the stored state")
+    sv.add_argument("--loosen", nargs="+", default=[], metavar="NAME",
+                    help="of those, the ones it may set to protect less than the stored value")
+    res = sub.add_parser("restore", help="put back, volatile, the state a record holds")
+    res.add_argument("--from", dest="record", type=Path, required=True,
+                     help="a record of the servo's state, a save's stored.json")
+    res.add_argument("--protection", nargs="+", default=[], metavar="NAME",
+                     help="the protection fields the restore may change")
+    res.add_argument("--loosen", nargs="+", default=[], metavar="NAME",
                      help="of those, the ones it may set to protect less than the servo's value")
     a = ap.parse_args(argv)
     root = results.ROOT
@@ -1115,6 +1282,16 @@ def main(argv=None):
         elif a.cmd == "check":
             if check(the_set()):
                 raise SystemExit(1)
+        elif a.cmd == "save":
+            if a.derived:
+                raise ValueError(f"{sc.shown(a.derived)} is a derived set: only the pair's set of record is saved")
+            stored, after = save(a.pair, a.protection, a.loosen, root)
+            print(f"saved: after a reboot the servo reads as the set, data state clean; {sc.shown(stored)} holds "
+                  f"the state it had stored before, {sc.shown(after)} the state it boots with now")
+        elif a.cmd == "restore":
+            wrote = restore(a.record, a.pair, a.protection, a.loosen, root)
+            print("the servo holds the record's state: nothing written" if not wrote
+                  else "volatile, not saved: `osc reboot` returns the saved state")
         else:
             doc = the_set()
             wrote = install(doc, a.protection, a.loosen, root)

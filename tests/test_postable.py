@@ -464,6 +464,15 @@ def test_install_refuses_before_anything_is_written(window, kw, match):
     assert w.writes() == [] and w.pages == {}
 
 
+def test_a_table_is_read_from_the_points_the_servo_holds():
+    data = b"".join(pt.page_bytes(step(40), p) for p in range(pt.PAGES))
+    back = pt.from_points(data, *STOPS)
+    assert np.array_equal(back.points, step(40)) and (back.raw_min, back.raw_max) == STOPS
+    # against a stop past the rise the servo would refuse the same points, and so does this
+    with pytest.raises(ValueError, match="the servo would refuse these points: REJECT_ENDS: points 101, 102 "):
+        pt.from_points(data, 102 * pt.GRID, STOPS[1])
+
+
 def test_install_refuses_a_state_it_cannot_name(window):
     w = window()
     w.regs["pos_lut_state"] = 9

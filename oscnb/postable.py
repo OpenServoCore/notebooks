@@ -165,6 +165,17 @@ class Table:
                 np.asarray(pos, float) - self.counts(theta))
 
 
+def from_points(data, raw_min, raw_max):
+    """The Table of 256 points as the servo holds them, i16 LE in a row,
+    against the stops; its line to the tag angle is not known. Refused
+    where the servo would refuse it."""
+    t = Table(np.frombuffer(data, "<i2").astype(np.int64), raw_min, raw_max, np.nan, np.nan)
+    why = validate(t.points, raw_min, raw_max)
+    if why:
+        raise ValueError(f"the servo would refuse these points: {why}")
+    return t
+
+
 def from_lookup(lk, raw_min, raw_max):
     """The Table linearizing lookup `lk` between the stops; raises where
     the servo would refuse it."""
