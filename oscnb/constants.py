@@ -93,6 +93,9 @@ derived set names the file among its inputs and, under `deviation`,
 every field it moved as [of record, deviated]. It is refused when the
 set of record is not what a build of its inputs gives now, when it
 moves nothing, and when it moves a protection field and anything else.
+The protection fields a deviation moves are of one step (GROUPS: the
+words of the NTC curve, the current limits, any other field alone),
+and a release of one held field of a step releases them all.
 A derived set is never a set of record and is never saved.
 
 `status` is offline: the sha1 of every input file against the file now,
@@ -195,6 +198,16 @@ LOOSER = {
 }
 PROTECTION = frozenset(LOOSER)
 
+# The protection fields that are one step together: the four words of
+# the NTC curve, which are one curve, and the current limits, which one
+# shunt scale takes from amps to counts. A deviation moves the
+# protection fields of one group, a field in none being a group of its
+# own, and it releases a group's holds together or not at all.
+GROUPS = {
+    "ntc curve": ("ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24"),
+    "current scale": ("current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_trip_counts"),
+}
+
 # The fields whose value is per position count, or a position in counts:
 # a table that changes what a count means changes what they mean.
 PER_COUNT = frozenset((
@@ -229,6 +242,12 @@ def hashed(doc):
              "pos_table": {k: doc["pos_table"][k] for k in ("state", "points_sha1")},
              "wide_codes": None if slots is None else slots["slots"]}
     return plant, {n: e["value"] for n, e in fields.items() if n in PROTECTION}
+
+
+def group_of(name):
+    """(the group protection field `name` moves in, its fields): one of
+    GROUPS, or the field alone."""
+    return next(((g, fields) for g, fields in GROUPS.items() if name in fields), (name, (name,)))
 
 
 def protection_of(name):
@@ -834,6 +853,53 @@ def l3(c):
     return (1 - observer_pole(c)) ** 3 * medium_hz(c) / (2 * b_gain(c))
 
 
+# --- the protection rules ---
+#
+# The board NTC's curve is the design quadratic of the board's stage 1
+# ntc-curve result, the fixed-point form the kernel carries (core
+# estimator/thermal.rs ntc_cc): the centi-C at the reference count, the
+# slope there and the curvature, as that result holds them. The
+# reference count itself has no rule: the result names none for its
+# design curve.
+NTC = "1-board/ntc-curve"
+
+
+@rule("ntc_t_ref_cc", "ntc_t_ref.design", kind="i16", unit="cC", mirrors="core estimator/thermal.rs ntc_cc")
+def ntc_t_ref(c):
+    return c.q(NTC, "design_t_ref_cc")
+
+
+@rule("ntc_k1_q88", "ntc_k1.design", kind="i16", unit="cC/count", q=8, mirrors="core estimator/thermal.rs ntc_cc")
+def ntc_k1(c):
+    return c.q(NTC, "design_k1_q88") / (1 << 8)
+
+
+@rule("ntc_k2_q24", "ntc_k2.design", kind="u16", unit="cC/count^2", q=24,
+      mirrors="core estimator/thermal.rs ntc_cc")
+def ntc_k2(c):
+    return c.q(NTC, "design_k2_q24") / (1 << 24)
+
+
+def limit_counts(key):
+    """A current the policy states in mA, in shunt counts over the
+    awake zero the kernel's reading subtracts (core estimator/bias.rs),
+    through the board's measured counts per A."""
+    def counts(c):
+        return c.policy(key) / 1000 * shunt_counts_per_a(c)
+    return counts
+
+
+# The current-denominated limits: each a policy entry in mA, the kernel
+# comparing its own reading in shunt counts against the field.
+for _field, _key, _mirrors in (
+        ("current_limit_counts", "current_limit_ma", "core kernel/phases/loops/limits.rs ceiling"),
+        ("i_cont_counts", "i_cont_ma", "core kernel/phases/loops/limits.rs fold, i_cont_or_cap"),
+        ("stall_release_counts", "stall_release_ma", "core kernel/phases/loops/limits.rs fold"),
+        ("oc_trip_counts", "oc_trip_ma", "core kernel/phases/fast.rs measure")):
+    rule(_field, f"{_field.removesuffix('_counts')}.policy", kind="u16", unit="ccounts", cls="policy",
+         mirrors=_mirrors)(limit_counts(_key))
+
+
 # --- build ---
 
 def held(what, rule_name, carried, why, previous, would_be=None):
@@ -980,7 +1046,8 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
 
     One build moves one hash. Without `protection` it moves the plant:
     every protection field is carried, with `would_be` where its rule
-    or pin gives another value. With `protection` it moves the fields
+    or pin gives another value. A held field stands as held on either
+    side, its value the one that stood. With `protection` it moves the fields
     named there and carries everything else, the slots, the table and
     the scale with it. A set with nothing before it is built whole.
     `deviation` is a deviation file the build reads over the policy and
@@ -1012,7 +1079,9 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     for name in dict.fromkeys([*before, *RULES, *c.pins]):
         e = bound(c, name, before.get(name), previous)
         moves = (name in protection) if name in PROTECTION else not protection
-        if previous is not None and not moves:
+        # a held entry stands on either side: its value is the one that stood, so it moves no hash
+        stands = e is not None and e["class"] == "held" and name in before
+        if previous is not None and not moves and not stands:
             # the side this build does not move: as it stood, with what it would be beside it
             would = None
             if e is not None and name in before:
@@ -1131,7 +1200,9 @@ def derive(base, deviation, root=results.ROOT, registry=None):
     nothing, when it releases a field that is not held or whose rule
     has no value, and when it pins or releases a protection field and
     anything else: a deviation that moves a protection field may move
-    nothing else."""
+    nothing else, moves the protection fields of one step (GROUPS, a
+    field in no group being a step alone), and releases the holds of
+    that step together."""
     where = sc.shown(deviation)
     if base.get("deviation"):
         raise ValueError(f"the set already holds the deviation {base['deviation']['file']}: a rung runs on a set "
@@ -1142,11 +1213,21 @@ def derive(base, deviation, root=results.ROOT, registry=None):
     if named and (len(named) < len(moves) or dev.get("policy")):
         raise ValueError(f"{where}: a deviation that moves a protection field ({', '.join(named)}) may move "
                          f"nothing else")
+    steps = list(dict.fromkeys(group_of(n)[0] for n in named))
+    if len(steps) > 1:
+        raise ValueError(f"{where}: a deviation moves the protection fields of one step, and these are of "
+                         f"{len(steps)}: {', '.join(steps)}")
     plain, _ = build(base["pair"], base, named, root, registry)
     if plain["hash"] != base["hash"] or plain.get("scale") != base.get("scale"):
         raise ValueError("the set is not what a build of its inputs gives now ("
                          + "; ".join(changes(base, plain)[:-1]) + "): `build` it first, a deviation is one change")
     doc, notes = build(base["pair"], base, named, root, registry, deviation)
+    released = [n for n in named if n in dev.get("release", [])]
+    left = [n for n in (group_of(released[0])[1] if released else ())
+            if doc["fields"].get(n, {}).get("class") == "held" and "would_be" in doc["fields"][n]]
+    if left:
+        raise ValueError(f"{where}: the holds of the {steps[0]} are released together, and {', '.join(left)} "
+                         f"would stay held")
     fields = {n: [base["fields"].get(n, {}).get("value"), e["value"]] for n, e in doc["fields"].items()
               if n not in base["fields"] or base["fields"][n]["value"] != e["value"]}
     if not fields or doc.get("scale") != base.get("scale") \

@@ -6,7 +6,9 @@ writes, the protection gate, the read-back ahead of the stamp and the
 reboot after a refusal), and the set built by its rules: what a rule
 reads recorded, the encoder, the bands, the fields held, and the one
 hash a build moves; the rules of the motor block, the feedforwards and
-the observer gains, a hold and its release by a deviation."""
+the observer gains, a hold and its release by a deviation; the rules
+of the NTC curve and the current limits, the protection steps a
+deviation may move, and what each curve reads on the bench board."""
 import copy
 import dataclasses
 import hashlib
@@ -19,7 +21,7 @@ from pathlib import Path
 import pytest
 
 from oscnb import constants as cn
-from oscnb import postable, results, scorecard as sc, settings
+from oscnb import boards, ntc, postable, results, scorecard as sc, settings
 from oscnb import widecodes as wc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -796,18 +798,32 @@ NO_SCALE = "current_counts_per_a: left out, 1-board/current-scale has no result 
 WAYS = ("rails_fit", "locked_laps", "small_step", "take_back")
 NO_RULE = "policy.json names no rule for {} of " + ", ".join(f"{{}}.{w}" for w in WAYS)
 NO_LADDER = "3-servo/ladder has no result for synth__board"
-HELD_BLOCK = [f"r_q12: held, {NO_RULE.format('r_q12', *['r'] * 4)}", f"recip_ke_q: held, {NO_LADDER}"]
+NO_LIMIT = "current_limit_counts: held, policy.json has no current_limit_ma"
+HELD_BLOCK = [NO_LIMIT, f"r_q12: held, {NO_RULE.format('r_q12', *['r'] * 4)}", f"recip_ke_q: held, {NO_LADDER}"]
 NO_BLOCK = [
     f"r_bemf_q12: left out, {NO_RULE.format('r_bemf_q12', *['r_bemf'] * 4)}",
     f"b_i_q313: left out, {NO_LADDER}",
     *(f"{n}: left out, 3-servo/friction has no result for synth__board" for n in ("fric_fc_counts", "fric_fv_q016")),
     *(f"{n}: left out, {NO_LADDER}" for n in ("ke_vpc_q", "j_ff_q88")),
-    *(f"{n}: left out, policy.json has no observer_hz" for n in ("l1_q016", "l2_q88", "l3_q88"))]
-# the registry with the board's tick rate, and the policy entries the motor block's rules read
+    *(f"{n}: left out, policy.json has no observer_hz" for n in ("l1_q016", "l2_q88", "l3_q88")),
+    *(f"{n}: left out, 1-board/ntc-curve has no result for board" for n in ("ntc_t_ref_cc", "ntc_k1_q88",
+                                                                           "ntc_k2_q24")),
+    *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("i_cont", "stall_release", "oc_trip"))]
+# the registry with the board's tick rate, and the policy entries the rules of the motor block and of the
+# protection fields read
 BOARD_REG = {**REG, "board": {"tick_hz": 20_000}}
-BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_q12": "r.rails_fit", "r_bemf_q12": "r_bemf.small_step"}}
+LIMITS_MA = {"current_limit_ma": 500.0, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
+BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_q12": "r.rails_fit", "r_bemf_q12": "r_bemf.small_step"},
+                **LIMITS_MA}
+# what a build of the plant says of the protection fields those inputs give a value: the one the fake servo
+# holds carried with what it would be, the rest, which nothing carries, left to a build that names them
+PROTECTION_SIDE = [
+    "current_limit_counts: carried at 554, it would be 500: name it with --protection",
+    *(f"{n}: left out, name it with --protection" for n in (
+        "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts", "oc_trip_counts"))]
 PLANT = {
     "1-board/current-scale": {"counts_per_a": (1000.0, 990.0, 1010.0)},
+    "1-board/ntc-curve": {"design_t_ref_cc": (2600.0,), "design_k1_q88": (200.0,), "design_k2_q24": (30000.0,)},
     "1-board/terminal-chain": {"terminal_counts_per_v": (250.0,)},
     "3-servo/resistance": {"r_rails_at_measured_e_ohm": (4.0, 3.9, 4.2), "r_term_ohm": (4.1,)},
     "3-servo/steps": {"r_step_a_ohm": (5.0, 4.0, 6.0), "r_takeback_ohm": (4.8,)},
@@ -924,6 +940,10 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
     assert f["recip_ke_q"] == {"value": 11817, "class": "held", "rule": "recip_ke.ladder", "held": NO_LADDER,
                                "carried_from": first["hash"]["set"], "scale": "unknown", "protection": None}
     # the plant moved and the protection fields did not; the same inputs give the same bytes; the file loads
+    # a protection field whose rule has nothing to read is held where it stood too: no value of it moves
+    assert f["current_limit_counts"] == {"value": 554, "class": "held", "rule": "current_limit.policy",
+                                         "held": "policy.json has no current_limit_ma",
+                                         "carried_from": first["hash"]["set"], "protection": {"looser": "up"}}
     assert moved_hashes(first, doc) == ["plant"]
     assert cn.render(built_on(first, tmp_path)[0]) == cn.render(doc)
     path = cn.write(doc, tmp_path / "derived" / "x.constants.json")
@@ -938,6 +958,7 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
         "position table state: IDENTITY -> LIVE [measured, table.pos_lut]",
         f"position table points sha1: {NO_POINTS} -> {sha} [measured, table.pos_lut]",
         f"scale: none -> {SCALE:.4f} counts/deg, the table one",
+        "current_limit_counts: 554 [adopted -> held, current_limit.policy]",
         "r_q12: 17100 [adopted -> held]",
         "recip_ke_q: 11817 [adopted -> held, recip_ke.ladder]",
         "angle_min_cdeg: 0 [adopted -> measured, angle_min.table]",
@@ -1040,7 +1061,7 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
         "wide-code slots: held, 1-board/wide-codes has no result for board",
         "scale: none, 3-servo/pot-table has no result for synth__board", NO_SCALE, *HELD_BLOCK,
         f"angle_min_cdeg: held, {no_table}", f"angle_max_cdeg: held, {no_table}", *NO_BLOCK]
-    assert cn.described(doc)[0].startswith("16 fields: 2 measured, 0 policy, 0 pinned, 4 held, 10 adopted")
+    assert cn.described(doc)[0].startswith("16 fields: 2 measured, 0 policy, 0 pinned, 5 held, 9 adopted")
     assert moved_hashes(first, doc) == [] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
     # held again on top of that set, the value still names the set it first came from
     again, _ = built_on(doc, tmp_path)
@@ -1136,7 +1157,7 @@ def test_one_build_moves_one_hash(first, limited, tmp_path):
     # a field its rule leaves out is said once, by the rule
     assert moved_hashes(doc, named) == ["protection"] and notes == [
         "1-board/wide-codes: the results it read are not recorded",
-        "current_counts_per_a: left out, 1-board/current-scale has no counts_per_a", *HELD_BLOCK, *NO_BLOCK]
+        "current_counts_per_a: left out, 1-board/current-scale has no counts_per_a", *HELD_BLOCK[1:], *NO_BLOCK]
     assert named["fields"]["current_limit_counts"] == {
         "value": 500, "class": "policy", "rule": "current_limit.class", "rule_rev": 1, "unit": "ccounts", "q": 0,
         "pos_unit": 0, "inputs": ["1-board/current-scale:half_limit_counts"], "band": [490, 520],
@@ -1192,7 +1213,7 @@ def test_a_pin_binds_its_field_and_shows_as_pinned(first, tmp_path):
     assert doc["fields"]["angle_max_cdeg"]["class"] == "pinned" and doc["fields"]["angle_max_cdeg"]["value"] == 18433
     assert doc["inputs"]["pins"] == {"file": f"stages/5-closed-loop/calibration/{PAIR}.pins.json",
                                      "sha1": sc.file_sha1(pins)}
-    assert cn.described(doc)[0].startswith("16 fields: 3 measured, 0 policy, 2 pinned, 2 held, 9 adopted")
+    assert cn.described(doc)[0].startswith("16 fields: 3 measured, 0 policy, 2 pinned, 3 held, 8 adopted")
     pins.write_text(json.dumps({"p_kp_q88": {"value": 5026}}))
     with pytest.raises(ValueError, match="p_kp_q88 lacks its value, its why or its rung"):
         built_on(first, tmp_path)
@@ -1263,7 +1284,7 @@ def test_a_set_carries_the_current_scale_it_is_scored_with_under_a_hash_of_its_o
         "value": 1135.0, "lo": 1133.8, "hi": 1136.2, "unit": "counts/A", "class": "measured",
         "rule": "scales.current", "inputs": ["1-board/current-scale:counts_per_a"]}}
     assert doc["inputs"]["1-board/current-scale"] == {"file": CURRENT, "sha1": sc.file_sha1(path)}
-    assert not any("current" in n for n in notes)
+    assert not any("current_counts_per_a" in n for n in notes)
     # it is on no servo: the plant, the protection and the set hash stand, and a hash of its own says it
     assert {k: doc["hash"][k] for k in bare["hash"]} == bare["hash"]
     assert doc["hash"]["scales"] == sc.config_hash({"current_counts_per_a": 1135.0})
@@ -1465,7 +1486,7 @@ def block(first, root, **policy):
 def test_the_motor_block_binds_from_the_record_through_the_stage_1_scales_the_gear_and_the_count(first, tmp_path):
     doc, notes = block(first, tmp_path)
     f, sha = doc["fields"], cn.points_sha1(POINTS)
-    assert notes == ["1-board/wide-codes: the results it read are not recorded"]
+    assert notes == ["1-board/wide-codes: the results it read are not recorded", *PROTECTION_SIDE]
     # the resistance, ohm x tap counts per V / shunt counts per A, by the rule the policy names, its band the
     # rule again at each end of the resistance's band and of the shunt scale's
     assert f["r_q12"] == {
@@ -1519,7 +1540,7 @@ def test_the_policy_names_which_of_a_fields_rules_binds(first, tmp_path):
     doc, notes = block(first, tmp_path, rule={})
     assert doc["fields"]["r_q12"] == {"value": 17100, "class": "held", "held": NO_RULE.format("r_q12", *["r"] * 4),
                                       "carried_from": first["hash"]["set"], "protection": None}
-    assert "r_bemf_q12" not in doc["fields"] and [HELD_BLOCK[0], NO_BLOCK[0]] == notes[1:]
+    assert "r_bemf_q12" not in doc["fields"] and [HELD_BLOCK[1], NO_BLOCK[0]] == notes[2:4]
     with pytest.raises(ValueError, match="policy.json: r.guess is no rule of r_q12 \\(r.rails_fit, r.locked_laps"):
         block(first, tmp_path, rule={"r_q12": "r.guess"})
 
@@ -1542,9 +1563,9 @@ def test_a_held_field_stands_beside_what_its_rule_gives_and_one_with_nothing_to_
         "inputs": ["3-servo/ladder:ke_v_s_per_rad", "1-board/terminal-chain:terminal_counts_per_v", "scale",
                    "registry:gear_ratio"]}
     assert (doc["fields"]["r_q12"]["value"], doc["fields"]["r_q12"]["would_be"]) == (17100, 4096)
-    assert notes[1:] == [f"r_q12: held, {HOLDS['r_q12']}; its rule gives 4096",
-                         f"recip_ke_q: held, {HOLDS['recip_ke_q']}; its rule gives {would}",
-                         "r_bemf_q12: left out, the servo's image has no such field yet; its rule gives 5120"]
+    assert notes[2:5] == [f"r_q12: held, {HOLDS['r_q12']}; its rule gives 4096",
+                          f"recip_ke_q: held, {HOLDS['recip_ke_q']}; its rule gives {would}",
+                          "r_bemf_q12: left out, the servo's image has no such field yet; its rule gives 5120"]
     assert list(doc["fields"]) == [*first["fields"], *JOINED[1:]]
     # a value carried from before the path is still at a scale nothing recorded: holding it gave it none
     unknown = [cn.described(d)[0].split("; ")[1] for d in (first, doc)]
@@ -1649,6 +1670,219 @@ def test_the_bench_pairs_block_is_what_its_record_gives_on_its_table():
         "r_bemf.rails_fit": 3744, "r_bemf.locked_laps": 3781, "r_bemf.small_step": 4799, "r_bemf.take_back": 4557}
     assert cn.rule_of(c, "r_bemf_q12").name == "r_bemf.small_step" and "r_bemf_q12" not in f
     assert ways["r_bemf.small_step"]["band"] == [4036, 5562]
+
+
+# --- the protection rules: the NTC curve and the current limits ---
+
+CURVE = ("ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24")        # the words of the curve a rule binds
+LIMITS = ("current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_trip_counts")
+
+
+def test_the_protection_rules_bind_in_a_build_that_names_them(first, tmp_path):
+    plain, _ = block(first, tmp_path)
+    # a build of the plant leaves them: the one the servo holds carried with what it would be
+    assert plain["fields"]["current_limit_counts"] == {**first["fields"]["current_limit_counts"], "would_be": 500}
+    assert not any(n in plain["fields"] for n in (*CURVE, *LIMITS[1:]))
+    doc, _ = cn.build(PAIR, plain, protection=[*CURVE, *LIMITS], root=tmp_path, registry=BOARD_REG)
+    f = doc["fields"]
+    assert moved_hashes(plain, doc) == ["protection"]
+    # a limit: the policy's mA through the board's measured counts per A, its band the scale's
+    assert f["current_limit_counts"] == {
+        "value": 500, "class": "policy", "rule": "current_limit.policy", "rule_rev": 1, "unit": "ccounts", "q": 0,
+        "pos_unit": 0, "inputs": ["policy:current_limit_ma", "1-board/current-scale:counts_per_a"],
+        "band": [495, 505], "protection": {"looser": "up"}}
+    assert {n: (f[n]["value"], f[n]["rule"]) for n in LIMITS[1:]} == {
+        "i_cont_counts": (250, "i_cont.policy"), "stall_release_counts": (90, "stall_release.policy"),
+        "oc_trip_counts": (2200, "oc_trip.policy")}
+    assert f["i_cont_counts"]["protection"] == {"looser": "judged"}
+    # the curve: the design quadratic's three words as the board's result holds them, each in its field's unit
+    assert f["ntc_k1_q88"] == {
+        "value": 200, "class": "measured", "rule": "ntc_k1.design", "rule_rev": 1, "unit": "cC/count", "q": 8,
+        "pos_unit": 0, "inputs": ["1-board/ntc-curve:design_k1_q88"], "protection": {"looser": "judged"}}
+    assert {n: (f[n]["value"], f[n]["q"]) for n in CURVE} == {
+        "ntc_t_ref_cc": (2600, 0), "ntc_k1_q88": (200, 8), "ntc_k2_q24": (30000, 24)}
+    # the reference count has no rule: the result names none for its design curve
+    assert "ntc_raw_ref" not in cn.RULES and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
+    # a scale that moves moves the limits with it, and the set that stood is stale by the fields that read it
+    plant(tmp_path, {"1-board/current-scale": {"counts_per_a": (1100.0,)}})
+    lines, stale = cn.status(doc, tmp_path, BOARD_REG)
+    assert stale and all(n in lines[0] for n in LIMITS)
+    with pytest.raises(ValueError, match="what the set is scored with would move: build the plant first"):
+        cn.build(PAIR, doc, protection=list(LIMITS), root=tmp_path, registry=BOARD_REG)
+    moved, _ = cn.build(PAIR, cn.build(PAIR, doc, root=tmp_path, registry=BOARD_REG)[0], protection=list(LIMITS),
+                        root=tmp_path, registry=BOARD_REG)
+    assert [moved["fields"][n]["value"] for n in LIMITS] == [550, 275, 99, 2420]
+
+
+def test_a_held_protection_field_is_held_by_a_build_of_the_plant_and_moves_no_hash(first, tmp_path):
+    why = "it moves on a protection step of its own"
+    doc, notes = block(first, tmp_path, hold={"current_limit_counts": why, "ntc_k1_q88": why})
+    assert doc["fields"]["current_limit_counts"] == {
+        "value": 554, "class": "held", "rule": "current_limit.policy", "would_be": 500, "held": why,
+        "carried_from": first["hash"]["set"], "protection": {"looser": "up"},
+        "inputs": ["policy:current_limit_ma", "1-board/current-scale:counts_per_a"]}
+    assert notes[1] == f"current_limit_counts: held, {why}; its rule gives 500"
+    # a held field the set never held stays out, said with what its rule gives
+    assert "ntc_k1_q88" not in doc["fields"] and f"ntc_k1_q88: left out, {why}; its rule gives 200" in notes
+    assert doc["hash"]["protection"] == first["hash"]["protection"]
+    # it stands as held in every build after, of the plant or of protection fields, until it is released
+    again, _ = cn.build(PAIR, doc, root=tmp_path, registry=BOARD_REG)
+    named, _ = cn.build(PAIR, doc, protection=["current_limit_counts"], root=tmp_path, registry=BOARD_REG)
+    assert again["fields"] == named["fields"] == doc["fields"] and again["hash"] == doc["hash"]
+
+
+@pytest.fixture
+def steps(first, tmp_path):
+    """The pair's set of record with the curve and the limits in it and
+    held, each rule giving another value than the set holds."""
+    plain, _ = block(first, tmp_path)
+    bound, _ = cn.build(PAIR, plain, protection=[*CURVE, *LIMITS], root=tmp_path, registry=BOARD_REG)
+    why = "it moves on a protection step of its own"
+    inputs(tmp_path, policy={**BLOCK_POLICY, "current_limit_ma": 512.0, "i_cont_ma": 256.0, "stall_release_ma": 92.0,
+                             "oc_trip_ma": 2250.0, "hold": dict.fromkeys((*CURVE, *LIMITS), why)})
+    plant(tmp_path, {"1-board/ntc-curve": {"design_t_ref_cc": (2584.0,), "design_k1_q88": (212.0,),
+                                           "design_k2_q24": (28463.0,)}})
+    doc, _ = cn.build(PAIR, bound, root=tmp_path, registry=BOARD_REG)
+    cn.write(doc, cn.set_path(PAIR, tmp_path))
+    assert doc["hash"] == bound["hash"] and all(doc["fields"][n]["class"] == "held" for n in (*CURVE, *LIMITS))
+    return doc
+
+
+def test_a_deviation_moves_the_protection_fields_of_one_step_and_releases_its_holds_together(steps, tmp_path):
+    def derived(name, **doc):
+        return cn.derive(steps, dev_file(tmp_path, name, **doc), tmp_path, BOARD_REG)[0]
+
+    # the curve's three words are one curve, and the limits one scale: each group is released whole
+    curve = derived("curve", note="the curve of record", release=list(CURVE))
+    assert curve["deviation"]["fields"] == {"ntc_t_ref_cc": [2600, 2584], "ntc_k1_q88": [200, 212],
+                                            "ntc_k2_q24": [30000, 28463]}
+    limits = derived("limits", release=list(LIMITS))
+    assert limits["deviation"]["fields"] == {"current_limit_counts": [500, 512], "i_cont_counts": [250, 256],
+                                             "stall_release_counts": [90, 92], "oc_trip_counts": [2200, 2250]}
+    assert moved_hashes(steps, curve) == moved_hashes(steps, limits) == ["protection"]
+    assert all(limits["fields"][n] == steps["fields"][n] for n in CURVE)
+    # a part of a group left held is refused: a curve of two fits is no curve
+    with pytest.raises(ValueError, match="the holds of the ntc curve are released together, and ntc_k2_q24 would "
+                                         "stay held"):
+        derived("half", release=list(CURVE[:2]))
+    with pytest.raises(ValueError, match="the holds of the current scale are released together, and i_cont_counts, "
+                                         "stall_release_counts, oc_trip_counts would stay held"):
+        derived("one", release=["current_limit_counts"])
+    # two steps in one deviation are refused, grouped or not
+    with pytest.raises(ValueError, match="a deviation moves the protection fields of one step, and these are of "
+                                         "2: ntc curve, current scale"):
+        derived("two", release=[*CURVE, *LIMITS])
+    with pytest.raises(ValueError, match="of 2: stall_response, stall_omega_max_cps"):
+        derived("lone", pins={"stall_response": pin("Yield (1)"), "stall_omega_max_cps": pin(400)})
+    with pytest.raises(ValueError, match="of 2: current scale, stall_omega_max_cps"):
+        derived("mixed", pins={"current_limit_counts": pin(400), "stall_omega_max_cps": pin(400)})
+    # a pin is a literal typed for a rung: one limit alone, the others standing held
+    lone = derived("limit", pins={"current_limit_counts": pin(400)})
+    assert lone["deviation"]["fields"] == {"current_limit_counts": [500, 400]}
+    assert lone["fields"]["i_cont_counts"] == steps["fields"]["i_cont_counts"]
+    # what the install of each step has to be told, against a servo that holds the set of record
+    state = {"fields": {n: e["value"] for n, e in steps["fields"].items()}}
+    assert cn.gate(limits, state) == [
+        "current_limit_counts: servo 500, set 512, protects less (less is up): name it with --protection "
+        "current_limit_counts and --loosen current_limit_counts",
+        "i_cont_counts: servo 250, set 256, judged, taken as protecting less: name it with --protection "
+        "i_cont_counts and --loosen i_cont_counts",
+        "stall_release_counts: servo 90, set 92, protects less (less is up): name it with --protection "
+        "stall_release_counts and --loosen stall_release_counts",
+        "oc_trip_counts: servo 2200, set 2250, protects less (less is up): name it with --protection "
+        "oc_trip_counts and --loosen oc_trip_counts"]
+    assert cn.gate(limits, state, protection=LIMITS, loosen=LIMITS) == []
+    assert [line.split(":")[0] for line in cn.gate(curve, state, protection=CURVE)] == list(CURVE)
+    assert cn.gate(curve, state, protection=CURVE, loosen=CURVE) == []
+
+
+def of_the_bench_pair():
+    """(the bench pair's set of record, a Context on its table, its
+    board)."""
+    pair = postable.default_pair()
+    doc = cn.of_record(pair)
+    c = cn.Context(pair)
+    cn.table_of(c, doc, cn.slots_of(c, doc))
+    return doc, c, boards.BOARDS[pair.partition("__")[2]]
+
+
+def test_the_bench_pairs_current_limits_are_held_beside_the_ma_they_were_typed_for():
+    doc, c, board = of_the_bench_pair()
+    f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    nominal, measured = board.counts_per_a, doc["scales"][cn.CURRENT]["value"]
+    # field: (what the servo holds, the policy's entry, what the rule gives)
+    limits = {"current_limit_counts": (554, "current_limit_ma", 568), "i_cont_counts": (277, "i_cont_ma", 284),
+              "stall_release_counts": (100, "stall_release_ma", 102), "oc_trip_counts": (2439, "oc_trip_ma", 2497)}
+    assert tuple(limits) == LIMITS == cn.GROUPS["current scale"]
+    for name, (stored, key, gives) in limits.items():
+        # the mA the stored counts were typed for: the one whole mA the board's nominal parts take to them
+        typed = [ma for ma in range(1, 4000) if raw(ma * nominal / 1000) == stored]
+        assert typed == [policy[key]], name
+        e = cn.evaluate(cn.rule_of(c, name), c)
+        assert e["value"] == gives == raw(policy[key] * measured / 1000), name
+        assert (f[name]["value"], f[name]["class"], f[name]["would_be"]) == (stored, "held", gives), name
+        # more counts on the same mA: every one of them moves the way that protects less, or is judged
+        assert gives > stored and cn.LOOSER[name] in ("up", "judged"), name
+    # what the servo's counts are at the measured scale, and how far the rule's are over them, mA
+    now = {n: round(1000 * stored / measured, 1) for n, (stored, _, _) in limits.items()}
+    assert now == {"current_limit_counts": 488.1, "i_cont_counts": 244.0, "stall_release_counts": 88.1,
+                   "oc_trip_counts": 2148.9}
+    more = {n: round(1000 * (gives - stored) / measured, 1) for n, (stored, _, gives) in limits.items()}
+    assert more == {"current_limit_counts": 12.3, "i_cont_counts": 6.2, "stall_release_counts": 1.8,
+                    "oc_trip_counts": 51.1}
+    # the collision trip is off on the servo, no current, and has no rule
+    assert f["stall_tau_trip_counts"]["value"] == 65535 and "stall_tau_trip_counts" not in cn.RULES
+
+
+def test_what_the_stored_curve_and_the_curve_of_record_read_on_the_bench_board():
+    doc, c, board = of_the_bench_pair()
+    f = doc["fields"]
+    assert cn.GROUPS["ntc curve"] == ("ntc_raw_ref", *CURVE)
+    stored = tuple(f[n]["value"] for n in cn.GROUPS["ntc curve"])
+    record = (stored[0], *(cn.evaluate(cn.rule_of(c, n), c)["value"] for n in CURVE))
+    assert stored == (2048, 2500, 563, 5779) and record == (2048, 2584, 212, 28463)
+    assert all((f[n]["class"], f[n]["would_be"]) == ("held", v) for n, v in zip(CURVE, record[1:]))
+    assert f["ntc_raw_ref"]["class"] == "adopted"
+    # the temperature each reports with the board at a true one, the part's nominal equation as the truth
+    reads = {t: (ntc.reads_c(board, stored, t), ntc.reads_c(board, record, t)) for t in (25, 40, 60, 80, 100)}
+    assert reads == {25: (25.0, 25.84), 40: (40.19, 37.75), 60: (57.31, 61.79), 80: (68.53, 81.64),
+                     100: (75.08, 94.39)}
+    # the true temperature at which each reaches the derate and the cutoff as the set holds them
+    derate, cutoff = f["derate_start_cc"]["value"], f["cutoff_cc"]["value"]
+    assert (derate, cutoff) == (8000, 10000)
+    reaches = [[ntc.reaches_c(board, curve, at) for at in (derate, cutoff)] for curve in (stored, record)]
+    assert reaches == [[pytest.approx(130.3, abs=0.05), None],
+                       [pytest.approx(78.0, abs=0.05), pytest.approx(113.8, abs=0.05)]]
+    # the stored curve tops out under the cutoff: short of the rail check no board temperature reads it
+    counts = range(ntc.RAIL_COUNTS + 1, ntc.ADC_FULL - 1 - ntc.RAIL_COUNTS)
+    assert max(ntc.ntc_cc(r, *stored) for r in counts) == 8416
+    assert float(board.ntc_c_beta(ntc.RAIL_COUNTS)) == pytest.approx(290.2, abs=0.05)
+    # where the curve of record reads under the stored one, which is where it protects less
+    under = [r for r in counts if ntc.ntc_cc(r, *record) < ntc.ntc_cc(r, *stored)]
+    assert [round(float(board.ntc_c_beta(r)), 1) for r in (under[-1], under[0])] == [26.5, 49.4]
+    worst = min(under, key=lambda r: ntc.ntc_cc(r, *record) - ntc.ntc_cc(r, *stored))
+    assert (ntc.ntc_cc(worst, *record) - ntc.ntc_cc(worst, *stored), round(float(board.ntc_c_beta(worst)), 1)) == (
+        -264, 37.4)
+    # and the cold side of the quadratic: it turns at a true 20 C and reads warmer as the board cools below it
+    lowest = min(counts, key=lambda r: ntc.ntc_cc(r, *record))
+    assert (ntc.ntc_cc(lowest, *record), round(float(board.ntc_c_beta(lowest)), 1)) == (2482, 20.2)
+    assert (ntc.reads_c(board, record, 0), ntc.reads_c(board, stored, 0)) == (37.51, 4.84)
+
+
+def test_the_protection_steps_of_record_name_what_their_install_needs():
+    doc, _, _ = of_the_bench_pair()
+    state = {"fields": {n: e["value"] for n, e in doc["fields"].items()}}
+    folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
+    for name, fields in (("protection-ntc-curve", CURVE), ("protection-current-scale", LIMITS)):
+        derived, _ = cn.derive(doc, folder / f"{name}.json")
+        assert tuple(derived["deviation"]["fields"]) == fields, name
+        assert [k for k in ("plant", "protection") if derived["hash"][k] != doc["hash"][k]] == ["protection"]
+        # every field of the step is named as a protection change and to loosen: it is judged, or it protects less
+        asked = cn.gate(derived, state)
+        assert [line.split(":")[0] for line in asked] == list(fields), name
+        assert all(line.endswith(f"name it with --protection {n} and --loosen {n}") for n, line in zip(fields, asked))
+        assert len(cn.gate(derived, state, protection=fields)) == len(fields)
+        assert cn.gate(derived, state, protection=fields, loosen=fields) == []
 
 
 # --- save and restore ---

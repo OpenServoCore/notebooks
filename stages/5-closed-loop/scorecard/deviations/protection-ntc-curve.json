@@ -1,0 +1,4 @@
+{
+  "note": "the board NTC's curve at the stage 1 design quadratic, fitted through the part's nominal beta equation over 20 to 100 C, in place of the stored tangent form about 25 C: the three words of the curve together, the reference count as the servo holds it. A protection step: it moves nothing else",
+  "release": ["ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24"]
+}

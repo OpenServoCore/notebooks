@@ -192,7 +192,9 @@ fields the policy file holds, each then bound at what its rule gives
 is built again with the file and must come out as itself with that one
 change, so a set of record that is not what a build of its inputs
 gives now is refused, as is a deviation that moves nothing. A
-deviation that moves a protection field may move nothing else.
+deviation that moves a protection field may move nothing else, and
+moves the protection fields of one step only
+([The constant set](#the-constant-set)).
 `rung.json` names the deviation's file and every field it moved as
 [of record, deviated]. The deviation files of the ladder are in
 [scorecard/deviations/](scorecard/deviations), for example
@@ -325,7 +327,8 @@ whose input is missing does not guess: the field is `held` at the value
 the set had, with the missing input named. One build moves one hash,
 the plant by default: a protection field is carried, with what its rule
 would give beside it, until a build names it with `--protection`, which
-then moves nothing of the plant.
+then moves nothing of the plant. A held field stands as held in either
+build: its value is the one that stood.
 
 The kernel works in counts: tap counts, shunt counts, position counts
 and its MEDIUM tick, a tenth of the tick rate. A rule of the motor
@@ -394,6 +397,79 @@ as is one whose rule has no value to bind. The releases of record are
 [motor-rest.json](scorecard/deviations/motor-rest.json), the block
 outside the back-EMF pair and the Coulomb term, and
 [motor-r.json](scorecard/deviations/motor-r.json), `r_q12` alone.
+
+Two groups of protection fields have rules, both held, so the set
+shows what the record gives beside what protects the servo now and no
+limit moves.
+
+The board NTC's curve is the design quadratic of the board's stage 1
+`ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
+`ntc_k1_q88` and `ntc_k2_q24` as that result holds them, the
+fixed-point quadratic in the count fitted through the part's nominal
+beta equation over 20 to 100 C. The thermocouple run graded that
+equation and found it inside the meter's class once the rig's two
+effects are taken out. The result's `refit_*` curve and its
+fitted beta are fits against a thermocouple shown to read low and are
+not design constants. `ntc_raw_ref` has no rule and stays as the servo
+holds it: the result names a reference count for its refit and none
+for its design curve, which the notebook fits about the same count,
+2048, and has to publish. The servo holds another curve, the host's
+tangent form about 25 C. What each reads on the bench board, through
+the kernel's own conversion and with the part's nominal equation as
+the truth:
+
+| board at a true | 25 C | 40 C | 60 C | 80 C | 100 C |
+|---|---|---|---|---|---|
+| the stored curve reads | 25.0 | 40.2 | 57.3 | 68.5 | 75.1 |
+| the curve of record reads | 25.8 | 37.8 | 61.8 | 81.6 | 94.4 |
+
+| reaches | the derate at 80 C | the cutoff at 100 C |
+|---|---|---|
+| the stored curve | at a true 130.3 C | never: it tops out at 84.2 C |
+| the curve of record | at a true 78.0 C | at a true 113.8 C |
+
+So the board term of the thermal protection is far looser than its
+numbers on the stored curve, and the curve of record brings the derate
+to within 2 C of its number and leaves the cutoff 14 C late, which is
+the form's own error: the quadratic reads 5.6 C low at a true 100 C,
+the end of the range it was fitted over, and falls further behind past
+it. Two more things about the curve of
+record. Between a true 26.5 and 49.4 C it reads under the stored curve,
+by up to 2.6 C at 37.4 C, so over that stretch it protects less. And
+it turns at a true 20 C: below that it reads warmer as the board
+cools, 37.5 C at a true 0 C where the stored curve reads 4.8 C.
+
+The current limits are each a policy entry in mA, taken to shunt
+counts by the board's measured counts per amp, the scale the set
+carries. The kernel compares its own current reading against them,
+and that reading is over the awake zero, which already holds the
+driver's own current, so the in-drive offset of stage 1 is not added.
+The entries are the mA the stored counts were typed for: the whole mA
+the board's nominal parts take to each stored count.
+
+| field | policy | the servo holds | which is | the rule gives |
+|---|---|---|---|---|
+| `current_limit_counts` | 500 mA | 554 | 488.1 mA | 568 |
+| `i_cont_counts` | 250 mA | 277 | 244.0 mA | 284 |
+| `stall_release_counts` | 90 mA | 100 | 88.1 mA | 102 |
+| `oc_trip_counts` | 2200 mA | 2439 | 2148.9 mA | 2497 |
+
+Each stored limit is 2.3 % under the current it was typed for, and the
+rule's value puts more counts on the same mA, which protects less than
+what the servo holds. `stall_tau_trip_counts` is off on the servo and
+has no rule.
+
+A deviation moves the protection fields of one step: the words of the
+NTC curve are one step and the four current limits another, a
+protection field in neither is a step alone, and a release of one
+field of a step releases every held field of it, so no curve of two
+fits and no limits at two scales are built. The steps of record are
+[protection-ntc-curve.json](scorecard/deviations/protection-ntc-curve.json)
+and
+[protection-current-scale.json](scorecard/deviations/protection-current-scale.json).
+The install of either names every field it moves as `--protection`
+and again as `--loosen`: the curve's words are judged, as is the
+continuous current, and the other limits move up.
 
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. `check`
