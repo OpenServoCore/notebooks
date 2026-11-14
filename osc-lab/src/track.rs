@@ -28,8 +28,10 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
 use osc_client::Id;
+use osc_client::blocking::Client;
 use osc_client::data_state::{allows, fault};
 use osc_client::descriptor::{self as desc, Access, Descriptor, Kind, Value};
+use osc_client::pipe::Pipe;
 use osc_protocol::tel::Chunks;
 use osc_servo_core::estimator::thermal::{NtcCfg, ntc_cc};
 use osc_servo_core::kernel::TICK_HZ;
@@ -43,7 +45,7 @@ use crate::instrument::regs::{Reg, calib, config, control, telemetry};
 use crate::rig::battery::{self, Verdict};
 use crate::rig::plant::Lut;
 use crate::rig::pump::{self, BurstStats, Lease, STOP};
-use crate::rig::servo::{Servo, Wire, guard};
+use crate::rig::servo::{Between, Servo, Wire, guard};
 use crate::rig::snapshot::read_u16;
 use crate::sweep::{RowFields, chunks_json, samples_of_ms, servo_meta, unix_s};
 
@@ -258,10 +260,10 @@ pub struct Args {
     /// the servo's tick, the COMMIT waiting for its grid point behind the
     /// staged writes. A goal the host has not staged by its point goes out
     /// at once and is counted late, and the goals after it aim at their
-    /// own points. Inside a train the poll after a goal's burst is the
-    /// poll before the next goal. At most 250 ms, the keepalive's cadence:
-    /// the wait is bus silence [default: none, a goal goes out as soon as
-    /// the host is ready].
+    /// own points. Inside a train there is one poll between two bursts,
+    /// taken once the next goal is staged, ahead of the wait. At most 250
+    /// ms, the keepalive's cadence: the wait is bus silence [default: none,
+    /// a goal goes out as soon as the host is ready].
     #[arg(long)]
     goal_period_ms: Option<f64>,
 }
@@ -394,10 +396,11 @@ impl Poll {
 
     fn read<S: Servo>(s: &mut S) -> Result<Self> {
         let id = s.id();
-        let raw = s
-            .client()
-            .read(id, POLL_BASE, POLL_LEN)
-            .context("telemetry poll")?;
+        Self::read_on(s.client(), id)
+    }
+
+    fn read_on<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<Self> {
+        let raw = c.read(id, POLL_BASE, POLL_LEN).context("telemetry poll")?;
         Self::parse(&raw).context("telemetry poll parse (short read?)")
     }
 }
@@ -592,15 +595,13 @@ struct Train {
     sent_ms: f64,
     stamp: u16,
     ticks: f64,
-    /// The poll after the last goal's burst, judged.
-    poll: Option<Poll>,
 }
 
 /// A goal aimed at a grid point, as it went out.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) struct Held {
-    /// How long before its point the host had it staged, the room the
-    /// period left it; 0 when late.
+    /// How long before its point the host was ready to send it, the room
+    /// the period left it; 0 when late.
     pub(crate) wait_ms: f64,
     /// How long after its point the COMMIT went out.
     pub(crate) late_ms: f64,
@@ -633,18 +634,6 @@ impl Pace {
         Some(self.aim(&t, t.point + 1.0))
     }
 
-    /// The poll after the last goal's burst, for the goal that follows it
-    /// in the train.
-    fn take_poll(&mut self) -> Option<Poll> {
-        self.train.as_mut()?.poll.take()
-    }
-
-    fn keep_poll(&mut self, poll: Poll) {
-        if let Some(t) = self.train.as_mut() {
-            t.poll = Some(poll);
-        }
-    }
-
     /// Anything but a goal ends the train.
     fn rest(&mut self) {
         self.train = None;
@@ -670,7 +659,6 @@ impl Pace {
                 sent_ms: stats.sent_ms,
                 stamp,
                 ticks: 0.0,
-                poll: None,
             });
             return None;
         };
@@ -684,7 +672,7 @@ impl Pace {
         let landed_past = t.ticks / self.ticks_per_ms - t.point * self.period_ms;
         let sent_past = stats.sent_ms - self.aim(&t, t.point);
         t.trim_ms -= TRIM_GAIN * (landed_past - sent_past);
-        (t.burst_ms, t.sent_ms, t.stamp, t.poll) = (burst_ms, stats.sent_ms, stamp, None);
+        (t.burst_ms, t.sent_ms, t.stamp) = (burst_ms, stats.sent_ms, stamp);
         self.train = Some(t);
         self.held += 1;
         self.late += (late_ms * self.ticks_per_ms > 1.0) as u32;
@@ -1230,6 +1218,15 @@ fn check_deadman<S: Servo>(s: &mut S, cfg: &Cfg, lease: &mut Lease) -> Result<&'
 
 /// One item: the poll before it, then its write, rest or burst, the burst's
 /// rows and the poll after them judged.
+///
+/// Inside a train held to a period there is one poll between two bursts.
+/// A goal the next goal follows on the grid leaves the poll after its
+/// burst to that goal, which takes it once its own writes are staged,
+/// ahead of the wait: mid-gap, where the poll before a goal sits without a
+/// period, and not at the gap's start. It is judged there, before the
+/// COMMIT. On a trip torque goes off ahead of the carrier, so the staged
+/// goal lands on a servo that no longer drives, nothing stays staged, and
+/// the item's rows are the coast.
 #[allow(clippy::too_many_arguments)]
 fn run_item<S: Servo>(
     s: &mut S,
@@ -1252,11 +1249,8 @@ fn run_item<S: Servo>(
         }
         (_, None) => None,
     };
-    // inside a train the poll after the goal before, judged there, is
-    // this goal's
-    let carried = slot.and(cfg.pace.as_mut()).and_then(Pace::take_poll);
-    let poll = match carried {
-        Some(poll) => poll,
+    let poll = match slot {
+        Some(_) => Poll::default(),
         None => watch(s, &mut cfg.wd)?,
     };
     let t_start = anchor + s.now_ms() / 1000.0;
@@ -1293,7 +1287,39 @@ fn run_item<S: Servo>(
                 _ => None,
             };
             lease.keep(s)?;
-            let (frames, stats) = s.stream_at(samples, g, cfg.chunks, slot)?;
+            let id = s.id();
+            let mut polled = None;
+            let burst = {
+                let wd = &mut cfg.wd;
+                let mut staged = |c: &mut Client<S::P>| -> Result<()> {
+                    let poll = Poll::read_on(c, id)?;
+                    let verdict = wd.poll(&poll);
+                    if verdict.is_err() {
+                        pump::write_reg(c, id, control::TORQUE_ENABLE, 0)?;
+                    }
+                    polled = Some((poll, verdict));
+                    Ok(())
+                };
+                let between: Option<Between<'_, S::P>> = match slot {
+                    Some(_) => Some(&mut staged),
+                    None => None,
+                };
+                s.stream_at(samples, g, cfg.chunks, slot, between)
+            };
+            if let Some((poll, verdict)) = polled {
+                seg.poll = poll;
+                if let Err(reason) = verdict {
+                    if let Ok((frames, stats)) = burst {
+                        (seg.frames, seg.stats, seg.samples) = (frames, stats, samples);
+                    }
+                    return Err(Tripped {
+                        reason,
+                        seg: Some(Box::new(seg)),
+                    }
+                    .into());
+                }
+            }
+            let (frames, stats) = burst?;
             if let (Some(_), Some(pace)) = (g, &mut cfg.pace) {
                 seg.held = pace.landed(*ms, slot, &stats);
             }
@@ -1310,14 +1336,14 @@ fn run_item<S: Servo>(
                     seg.stats.garble
                 ))
             } else {
-                cfg.wd.rows(&seg.frames, poll.current_bias_counts)
+                cfg.wd.rows(&seg.frames, seg.poll.current_bias_counts)
             };
+            // the goal after this one takes the poll when it follows on the grid
+            let follows = matches!(cfg.items.get(k + 1), Some(Item::Goal { .. }))
+                && cfg.pace.as_ref().is_some_and(|p| p.slot().is_some());
             let verdict = match verdict {
-                Ok(()) => watch(s, &mut cfg.wd).map(|after| {
-                    if let (Some(_), Some(pace)) = (g, &mut cfg.pace) {
-                        pace.keep_poll(after);
-                    }
-                }),
+                Ok(()) if g.is_some() && follows => Ok(()),
+                Ok(()) => watch(s, &mut cfg.wd).map(|_| ()),
                 Err(reason) => trip(reason),
             };
             if let Err(e) = verdict {
@@ -2877,8 +2903,8 @@ mod tests {
     /// burst and after each, so the run itself reads the counter alone.
     /// Every row the servo dropped is still counted, on the burst it was
     /// dropped from. Without a period every goal is polled before and
-    /// after; inside a train held to one, once: the poll after a goal's
-    /// burst is the poll before the next goal.
+    /// after; inside a train held to one there is one poll between two
+    /// bursts.
     #[test]
     fn an_item_reads_once_what_it_repeats_and_counts_every_drop() {
         use osc_protocol::table::{BAUD_RATE_IDX, CAPABILITY_FLAGS};
@@ -2921,11 +2947,61 @@ mod tests {
         }
     }
 
-    /// Inside a train the watchdog still judges every burst: a fault the
-    /// servo latched in a held goal's burst aborts at that goal, torque
-    /// off next, and the goal after it never goes out.
+    /// Inside a train there is one poll between two bursts, and it sits
+    /// behind the next goal's staged writes, ahead of its COMMIT: the first
+    /// goal of a train is polled before it as any item is, a goal the next
+    /// one follows on the grid leaves the poll after its burst to that
+    /// goal, and the last goal of the train is polled after its burst.
     #[test]
-    fn a_fault_inside_a_train_aborts_at_its_goal() {
+    fn a_train_polls_once_between_bursts_behind_the_staged_writes() {
+        use crate::rig::testkit::Sent::{Commit, Hold, Read, Write};
+        let mut r = rig_at(2029, 0);
+        let schedule = format!("{},hold@20", train(3));
+        let mut c = cfg(
+            &mut r,
+            &[
+                "--goal-period-ms",
+                "25.6",
+                "--deadman-ms",
+                "0",
+                "--no-center",
+                "--mode",
+                "position",
+                "--schedule",
+                &schedule,
+            ],
+        );
+        r.sent();
+        let (seen, _, res) = drive(&mut r, &mut c);
+        res.unwrap();
+        assert_eq!(seen.len(), 4);
+        let sent = r.sent();
+        let poll = Read(POLL_BASE, POLL_LEN);
+        let drops = Read(telemetry::TEL_DROP_COUNT.addr, 2);
+        let goal = Hold(control::GOAL_POSITION.addr);
+        let arm = Hold(control::CHUNK0_ADDR.addr);
+        let first = sent.iter().position(|s| *s == goal).unwrap();
+        let want = [
+            // the first goal: the poll before it, the drop counter's first read
+            [poll, drops, goal, arm, Commit, drops].as_slice(),
+            &[goal, arm, poll, Commit, drops],
+            &[goal, arm, poll, Commit, drops, poll],
+            // the hold: its own polls, the arm write its carrier
+            &[poll, Write(control::CHUNK0_ADDR.addr), drops, poll],
+        ]
+        .concat();
+        assert_eq!(sent[first - 2..first - 2 + want.len()], want);
+    }
+
+    /// Inside a train the watchdog still judges every burst, at the poll
+    /// behind the next goal's staged writes: a fault the servo latched in
+    /// a goal's burst turns torque off ahead of the next goal's COMMIT, so
+    /// that goal lands on a servo that no longer drives and nothing stays
+    /// staged; the run aborts at that goal with its rows, the coast, kept,
+    /// and the goal after it never goes out.
+    #[test]
+    fn a_fault_inside_a_train_turns_torque_off_ahead_of_the_next_commit() {
+        use crate::rig::testkit::Sent::{Commit, Hold, Read, Write};
         let mut r = rig_at(2029, 0);
         let schedule = train(4);
         let mut c = cfg(
@@ -2947,17 +3023,46 @@ mod tests {
                 });
             }
         }));
+        r.sent();
         let (seen, _, res) = drive(&mut r, &mut c);
         let e = res.unwrap_err();
-        assert_eq!(e.downcast_ref::<Abort>().unwrap().seg, Some(1), "{e}");
-        assert_eq!(seen.len(), 2);
+        assert_eq!(exit_code(&e), Some(3), "{e}");
+        assert_eq!(e.downcast_ref::<Abort>().unwrap().seg, Some(2), "{e}");
+        assert!(e.to_string().contains("code 3 (stall)"), "{e}");
+        assert_eq!(
+            seen[..],
+            [
+                (0, "goal", 2100, 400),
+                (1, "goal", 2101, 400),
+                (2, "goal", 2102, 400)
+            ]
+        );
+        let sent = r.sent();
+        let last = sent.iter().rposition(|s| *s == Commit).unwrap();
+        assert_eq!(
+            sent[last - 4..=last],
+            [
+                Hold(control::GOAL_POSITION.addr),
+                Hold(control::CHUNK0_ADDR.addr),
+                Read(POLL_BASE, POLL_LEN),
+                Write(control::TORQUE_ENABLE.addr),
+                Commit
+            ]
+        );
+        assert_eq!(sent.iter().filter(|s| **s == Commit).count(), 3);
         let k = r
             .writes
             .iter()
-            .position(|w| *w == (control::GOAL_POSITION, 2101))
+            .position(|w| *w == (control::GOAL_POSITION, 2102))
             .unwrap();
         assert_eq!(r.writes[k + 1], (control::TORQUE_ENABLE, 0));
-        assert!(!r.writes.contains(&(control::GOAL_POSITION, 2102)));
+        assert!(!r.writes[k..].contains(&(control::TORQUE_ENABLE, 1)));
+        assert!(!r.writes.contains(&(control::GOAL_POSITION, 2103)));
+        // nothing is left staged: a COMMIT changes nothing
+        r.c.commit().unwrap();
+        assert_eq!(reg_at(&mut r, control::TEL_COUNT), 0);
+        assert_eq!(reg_at(&mut r, control::GOAL_POSITION), 2102);
+        assert_eq!(reg_at(&mut r, control::TORQUE_ENABLE) & 0xff, 0);
     }
 
     /// The default end moves to the middle in Position mode, the goal ahead

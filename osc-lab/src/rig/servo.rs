@@ -28,6 +28,10 @@ pub(crate) struct Memo {
     drops: Option<u16>,
 }
 
+/// What a drive does on the servo's table between a burst's staged writes
+/// and its carrier ([`Servo::burst`]).
+pub(crate) type Between<'a, P> = &'a mut dyn FnMut(&mut Client<P>) -> Result<()>;
+
 pub(crate) trait Servo {
     type P: Pipe;
 
@@ -39,17 +43,19 @@ pub(crate) trait Servo {
     fn write(&mut self, reg: Reg, value: i32) -> Result<()>;
     fn snapshot(&mut self) -> Result<TelemetrySnapshot>;
     /// One TEL burst of `samples` fast ticks of `chunks` rows, the `goal`
-    /// write applied in the instant the burst starts. With `not_before_ms`
-    /// the carrier waits for that instant on the servo's clock
-    /// ([`Servo::now_ms`]) behind the staged writes, and goes out at once
-    /// when they are staged after it. The stats say when the writes were
-    /// staged and when the carrier went out. Drives call [`Servo::stream`].
+    /// write applied in the instant the burst starts. `between` runs once
+    /// the writes are staged, one exchange on a test servo's clock. With
+    /// `not_before_ms` the carrier then waits for that instant on the
+    /// servo's clock ([`Servo::now_ms`]), and goes out at once when the
+    /// host is ready after it. The stats say when the host was ready and
+    /// when the carrier went out. Drives call [`Servo::stream`].
     fn burst(
         &mut self,
         samples: u16,
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
         not_before_ms: Option<f64>,
+        between: Option<Between<'_, Self::P>>,
     ) -> Result<(Vec<TelFrame>, BurstStats)>;
     fn sleep(&mut self, ms: u32);
     fn memo(&mut self) -> &mut Memo;
@@ -102,6 +108,7 @@ pub(crate) trait Servo {
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
         not_before_ms: Option<f64>,
+        between: Option<Between<'_, Self::P>>,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
         let samples = self.burst_cap()?.check(samples)?;
         let id = self.id();
@@ -109,7 +116,7 @@ pub(crate) trait Servo {
             Some(n) => n,
             None => read_u16(self.client(), id, telemetry::TEL_DROP_COUNT)?,
         };
-        let (frames, mut stats) = self.burst(samples, goal, chunks, not_before_ms)?;
+        let (frames, mut stats) = self.burst(samples, goal, chunks, not_before_ms, between)?;
         let after = read_u16(self.client(), id, telemetry::TEL_DROP_COUNT)?;
         self.memo().drops = Some(after);
         stats.rows_dropped = after.wrapping_sub(before);
@@ -123,7 +130,7 @@ pub(crate) trait Servo {
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
-        self.stream_at(samples, goal, chunks, None)
+        self.stream_at(samples, goal, chunks, None, None)
     }
 }
 
@@ -223,11 +230,15 @@ impl<C: AsClient> Servo for Wire<C> {
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
         not_before_ms: Option<f64>,
+        between: Option<Between<'_, C::P>>,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
         let line = self.tel_line()?;
         let t0 = self.t0;
         let (mut staged, mut sent) = (0.0, 0.0);
-        let r = exchange_tel_burst(self.c.get(), self.id, line, samples, goal, chunks, || {
+        let r = exchange_tel_burst(self.c.get(), self.id, line, samples, goal, chunks, |c| {
+            if let Some(between) = between {
+                between(c)?;
+            }
             staged = ms_since(t0);
             sent = match not_before_ms {
                 Some(at) if at > staged => {
@@ -236,6 +247,7 @@ impl<C: AsClient> Servo for Wire<C> {
                 }
                 _ => staged,
             };
+            Ok(())
         });
         let (frames, mut stats) = r?;
         (stats.staged_ms, stats.sent_ms) = (staged, sent);
@@ -365,10 +377,10 @@ mod tests {
         let (_, st) = w.stream(40, goal, TEL_RAW).unwrap();
         assert_eq!(st.sent_ms, st.staged_ms);
         let ahead = w.now_ms() + 15.0;
-        let (_, st) = w.stream_at(40, goal, TEL_RAW, Some(ahead)).unwrap();
+        let (_, st) = w.stream_at(40, goal, TEL_RAW, Some(ahead), None).unwrap();
         assert!(st.sent_ms >= ahead && st.sent_ms >= st.staged_ms);
         let past = w.now_ms() - 1.0;
-        let (_, st) = w.stream_at(40, goal, TEL_RAW, Some(past)).unwrap();
+        let (_, st) = w.stream_at(40, goal, TEL_RAW, Some(past), None).unwrap();
         assert_eq!(st.sent_ms, st.staged_ms);
     }
 

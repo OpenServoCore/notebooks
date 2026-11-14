@@ -126,9 +126,12 @@ disagreement is taken out as it grows and never adds up, the time a
 commit takes to land is in the trim too, and one landing's scatter moves
 the next aim by an eighth of itself. An item also reads less than
 before: what it read ahead of every arm is read once a run, the drop
-count once an item, and inside a ramp the poll after a burst is the poll
-before the next goal. So the host's share is shorter, and the wait takes
-up what is left of the period.
+count once an item, and inside a ramp there is one poll between two
+bursts. That poll is taken once the next goal and its arm are staged,
+ahead of the wait, so it sits mid-gap, where the poll before a goal sat
+on the rungs before, and the rows that read the servo's reports keep
+their meaning. So the host's share is shorter, and the wait takes up
+what is left of the period.
 
 A goal the host has not staged by its grid point goes out at once, late,
 and the grid stands. The goals after it aim at their own points, so a
@@ -198,7 +201,8 @@ Two rows read the servo's own reports against the pot,
 `position_report_error_deg` and `speed_report_error_deg_s`. A report is
 polled once a goal item, in the gap of about 5 ms between two bursts of
 rows: 2 to 3 ms after the rows stop on a rung that ran at the host's
-pace, right after them on one that held its goals to the period. On a
+pace, and behind the next goal's staged writes, mid-gap as well, on one
+that holds its goals to the period. On a
 goal stream the shaft speeds up
 and slows down inside every goal period, and on the 1 % ramp it stands
 still through that gap, so the speed row grades each poll against the

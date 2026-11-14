@@ -204,8 +204,8 @@ pub(crate) struct BurstStats {
     pub(crate) rows_dropped: u16,
     /// The first row's `sample_tick`, low 16 bits.
     pub(crate) stamp0: Option<u16>,
-    /// When the writes ahead of the stream's carrier were staged and when
-    /// the carrier went out, ms on the servo's clock: [`Servo::burst`] sets
+    /// When the host was ready to send the stream's carrier and when the
+    /// carrier went out, ms on the servo's clock: [`Servo::burst`] sets
     /// both.
     pub(crate) staged_ms: f64,
     pub(crate) sent_ms: f64,
@@ -357,8 +357,10 @@ const _: () =
 /// the goal write and the arm are staged under HOLD and a broadcast COMMIT
 /// (the stream carrier) applies both in the same instant; with None the
 /// acked arm write itself carries the stream. `at_carrier` runs right
-/// before the carrier goes out, the staged writes behind it: the servo
-/// keeps them until the COMMIT, however long that takes. Frames decode
+/// before the carrier goes out, the staged writes behind it, and may talk
+/// to the servo: the servo keeps the staged writes until the COMMIT,
+/// however long that takes and whatever plain exchange comes between. If
+/// it fails the carrier never goes out and the writes stay staged. Frames decode
 /// through [`StreamAssembler`], the window judged against the line's
 /// floor; corrupt frames never appear (the adapter drops them into garble
 /// + a seq hole).
@@ -369,7 +371,7 @@ pub(crate) fn exchange_tel_burst<P: Pipe>(
     samples: u16,
     goal: Option<(Reg, i32)>,
     chunks: Chunks,
-    at_carrier: impl FnOnce(),
+    at_carrier: impl FnOnce(&mut Client<P>) -> Result<()>,
 ) -> Result<(Vec<TelFrame>, BurstStats)> {
     line.admit(chunks)?;
     let mut asm =
@@ -385,7 +387,7 @@ pub(crate) fn exchange_tel_burst<P: Pipe>(
             c.write_hold(id, control::CHUNK0_ADDR.addr, &arm)
                 .context("hold tel arm")?;
             let inst = Inst::instruction(Opcode::Commit, 0);
-            at_carrier();
+            at_carrier(c)?;
             c.exchange_stream(Id::BROADCAST, inst, &[], window)
         }
         None => {
@@ -393,7 +395,7 @@ pub(crate) fn exchange_tel_burst<P: Pipe>(
             let n =
                 build::write(&mut p, control::CHUNK0_ADDR.addr, &arm).context("tel arm payload")?;
             let inst = Inst::instruction(Opcode::Write, 0);
-            at_carrier();
+            at_carrier(c)?;
             c.exchange_stream(id, inst, &p[..n], window)
         }
     };
@@ -561,7 +563,7 @@ mod tests {
         chunks: Chunks,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
         let line = TelLine::read(c, id)?;
-        exchange_tel_burst(c, id, line, samples, goal, chunks, || ())
+        exchange_tel_burst(c, id, line, samples, goal, chunks, |_| Ok(()))
     }
 
     /// Admission refuses a line under 3 M before anything else, then the
