@@ -493,6 +493,21 @@ def test_install_raises_a_commit_that_does_not_land_live_by_name(window, verdict
     assert not any(c[0] == "read" for c in w.log)
 
 
+def test_an_all_zero_table_is_to_land_identity(window):
+    zero = pt.from_points(bytes(2 * pt.INTERVALS), *STOPS)
+    poll = [x for x in pt.install_steps(zero) if not isinstance(x, str) and x.op == "poll"]
+    assert [(x.field, x.want) for x in poll] == [("pos_lut_state", "IDENTITY")]
+    w = window(verdict="IDENTITY")
+    pt.install_table(zero)
+    assert len(w.writes()) == 2 * pt.PAGES + 1 and sum(c[0] == "read" for c in w.log) == pt.PAGES
+    # a firmware that judges only the shape lands it LIVE, which is said as that
+    w = window(verdict="LIVE")
+    with pytest.raises(pt.settings.Refused, match="the COMMIT of an all-zero table landed LIVE, not IDENTITY: the "
+                                                  "servo's firmware lands an all-zero table LIVE"):
+        pt.install_table(zero)
+    assert not any(c[0] == "read" for c in w.log)
+
+
 def test_install_raises_a_read_back_that_differs_with_its_page(window):
     w = window(bad=5, flip=0x01)
     with pytest.raises(pt.settings.Refused, match="page 5 reads back"):

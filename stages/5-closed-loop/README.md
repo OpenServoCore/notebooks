@@ -263,7 +263,9 @@ writes only what differs: the slots, the stops, the table (a LIVE table
 from the pair's table file, which must hold the set's points, be built
 against the set's stops and name no other slots than the set's as the
 ones its lookup was fitted on; a file that records none is said and
-taken), then the other fields in table order,
+taken; an IDENTITY table as all-zero points, whose COMMIT must land
+IDENTITY, a servo whose firmware lands it LIVE being refused as that),
+then the other fields in table order,
 each read back, a write the servo refuses tried once more after the
 rest. It then reads the whole state back, and only when that is the set
 does it stamp it, no save, and require the data state clean. A servo
@@ -311,11 +313,7 @@ then holds and these steps.
 `stored.json` or any `servo.json` that holds its table's points: it is
 the install of the set adopted from the record, the table written from
 the record's own points and not from a file, behind the same protection
-gate. No write returns a LIVE table to IDENTITY short of a boot (a
-COMMIT of all-zero points lands LIVE), so a record with an identity
-table cannot be put back on a servo that holds a LIVE one; `save`
-therefore refuses, before it installs anything, to put a LIVE table
-over a stored table that is not LIVE.
+gate.
 
 ## The ladder
 
