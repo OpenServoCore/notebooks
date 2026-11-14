@@ -214,6 +214,8 @@ uv run python -m oscnb.constants build [--out PATH] [--protection NAME ...]
 uv run python -m oscnb.constants status
 uv run python -m oscnb.constants check
 uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
+uv run python -m oscnb.constants save [--protection NAME ...] [--loosen NAME ...]
+uv run python -m oscnb.constants restore --from STATE_JSON [--protection NAME ...] [--loosen NAME ...]
 ```
 
 `status`, `check` and `install` read the pair's set of record, or a
@@ -276,6 +278,44 @@ curve, the heat time constants, the two where 0 means off) always needs
 both. A refusal after the first write reboots the servo, which returns
 its saved state. The scorecard's own `--settings`, `--pos-table` and
 `--wide-codes` do not go through the set yet.
+
+`save` makes the set what a reboot returns, from the state the servo
+has stored. It is a verb of its own and saves the pair's set of record
+alone. With the bus untouched it refuses a derived set, a set with a
+moved input file and a set file that is not committed as it stands (a
+read only `git status` of that one file); then torque must be off. It
+reboots the servo, waits for the bus and writes the state the servo
+boots with, its table's points in it, to
+`telemetry/<pair>/constants/<set hash, 12 characters>/stored.json`; a
+later save of the same set keeps its files in a numbered folder inside
+that one, so no such record is written over. From there it installs the
+set, the same install behind the same gate (`--protection` and
+`--loosen` are passed through, so a set that differs from the stored
+state in a protection field is refused unless named), and the `check`
+after it must be clean. Then the SAVE, a reboot, the wait, the state to
+`after.json` beside the record, and its comparison with the set. The
+SAVE keeps the servo's CONFIG and CALIB whole, with the slots, the stamp
+and the table's points, so what those regions hold outside the set, the
+bus id and rate among it, is saved with it. A refusal before the SAVE
+leaves flash as it was, and a reboot returns it.
+
+A save is undone from its own record. `restore --from stored.json`
+installs the state the servo had stored, volatile, and it is made
+permanent again by adopting that record as the pair's set of record
+(the present set's file out of the way first, since `adopt` writes a
+first set only), committing it and saving it. A servo that does not
+come back from the SAVE as the set is reported as that, with what flash
+then holds and these steps.
+
+`restore` puts a recorded state back, volatile, from a save's
+`stored.json` or any `servo.json` that holds its table's points: it is
+the install of the set adopted from the record, the table written from
+the record's own points and not from a file, behind the same protection
+gate. No write returns a LIVE table to IDENTITY short of a boot (a
+COMMIT of all-zero points lands LIVE), so a record with an identity
+table cannot be put back on a servo that holds a LIVE one; `save`
+therefore refuses, before it installs anything, to put a LIVE table
+over a stored table that is not LIVE.
 
 ## The ladder
 

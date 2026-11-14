@@ -153,9 +153,11 @@ def test_every_field_of_an_adopted_set_is_in_exactly_one_hash(adopted):
     (lambda d: d["fields"]["current_limit_counts"].update(protection=None),
      "current_limit_counts says None of protection, the tool {'looser': 'up'}"),
     (lambda d: d["fields"]["r_q12"].update(protection={"looser": "up"}), "r_q12 says .* of protection, the tool None"),
+    (lambda d: d["fields"]["r_q12"].pop("protection"), "r_q12 says nothing of protection, the tool None"),
     (lambda d: d.update(format=2), "format 2, this tool reads 1"),
 ], ids=["a field edited", "the table edited", "a class the format has none of", "no value", "no origin",
-        "a protection field marked as the plant's", "a plant field marked as protection", "another format"])
+        "a protection field marked as the plant's", "a plant field marked as protection",
+        "a field that says nothing of protection", "another format"])
 def test_load_refuses_a_file_that_is_not_a_set_as_the_tool_writes_one(adopted, change, match):
     doc, path = adopted
     change(doc)
@@ -240,6 +242,8 @@ def built(root):
         },
         "previous": None,
     }
+    for name, e in doc["fields"].items():
+        e["protection"] = cn.protection_of(name)
     doc["hash"] = cn.hashes(doc)
     return cn.load(cn.write(doc, cn.set_path(PAIR, root))), files
 
@@ -435,14 +439,22 @@ class Bench(Servo):
     VARIANTS = ("Fault", "Yield")
 
     def __init__(self):
-        self.drop, self.drift = set(), {}
+        self.drop, self.drift, self.flash, self.torn = set(), {}, None, {}
         super().__init__()
 
     def reboot(self):
+        """The stored state back: the board's defaults and the identity
+        table, or what the last SAVE programmed, CONFIG and CALIB with
+        the table's points and the stamp, `torn` fields reading as a
+        save that did not land leaves them."""
         super().reboot()
         self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
-        self.set("pos_lut_state", 0)
         self.stamp, self.data = "0x9c45 = live set", "clean"
+        if self.flash:
+            self.table[:0xc0], self.pages, self.stamp = self.flash[0], list(self.flash[1]), self.flash[2]
+        for name, v in self.torn.items():
+            self.set(name, v)
+        self.set("pos_lut_state", postable.STATES.index("LIVE" if any(any(p) for p in self.pages) else "IDENTITY"))
 
     def decoded(self, name):
         if self.FIELDS[name][3] != "enum":
@@ -489,6 +501,10 @@ class Bench(Servo):
         self.log.append(("run", *args))
         if args[0] == "stamp":
             self.stamp, self.data = "0x1234 = live set", "clean"
+        elif args[0] == "save":
+            if self.decoded("torque_enable") == "on":
+                raise subprocess.CalledProcessError(1, ["osc", "save"])
+            self.flash = (bytes(self.table[:0xc0]), list(self.pages), self.stamp)
         elif args[0] == "reboot":
             self.reboot()
 
@@ -1239,3 +1255,210 @@ def test_a_derived_set_is_checked_and_installed_by_its_path(geared, tmp_path, mo
     cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pos_lut.json").unlink()
     with pytest.raises(ValueError, match="would move: build the plant first"):
         cn.build(PAIR, cn.load(derived), protection=["current_limit_counts"], root=tmp_path, registry=REG)
+
+
+# --- save and restore ---
+
+OLD_POINTS = [0] * 120 + [5] + [0] * 135
+BOTH = {"protection": NAMED["protection"], "loosen": NAMED["protection"]}
+
+
+@pytest.fixture
+def committed(monkeypatch):
+    """`git status` says the set's file is committed as it stands."""
+    monkeypatch.setattr(cn, "uncommitted", lambda path: "")
+
+
+def backup(doc, root):
+    return root / "telemetry" / PAIR / "constants" / doc["hash"]["set"][:12]
+
+
+def stored_live(bench):
+    """The fake's flash holding its board defaults under a LIVE table of
+    other points than the set's; returns the state it boots with."""
+    bench.pages = [postable.page_bytes(OLD_POINTS, p) for p in range(postable.PAGES)]
+    bench.set("pos_lut_state", postable.STATES.index("LIVE"))
+    bench.run("save")
+    bench.reboot()
+    bench.log.clear()
+    return sc.servo_state()
+
+
+def held(state):
+    return {k: state[k] for k in ("fields", "pos_table", "wide_codes", "data_state")}
+
+
+def test_save_backs_up_saves_and_reads_back(target, bench, tmp_path, committed):
+    boot = stored_live(bench)
+    bench.set("r_q12", 1)     # volatile: what is recorded is the state a boot gives, not this
+    bench.log.clear()
+    stored, after = cn.save(PAIR, **NAMED, root=tmp_path)
+    folder = backup(target, tmp_path)
+    assert (stored, after) == (folder / "stored.json", folder / "after.json")
+    assert json.loads(stored.read_text()) == boot and boot["pos_table"]["points"] == b"".join(
+        postable.page_bytes(OLD_POINTS, p) for p in range(postable.PAGES)).hex()
+    back = json.loads(after.read_text())
+    assert cn.differences(target, back) == [] and back["data_state"] == "clean"
+    assert back["wide_codes"] == NEW_SLOTS.hex() and str(tmp_path) not in stored.read_text() + after.read_text()
+    # torque read, the reboot onto the stored state, the install with its stamp, the SAVE, the reboot
+    wrote = bench.wrote()
+    assert bench.log[0] == ("get", "torque_enable") and wrote[0] == ("run", "reboot")
+    assert wrote[-3:] == [("run", "stamp"), ("run", "save"), ("run", "reboot")] and wrote.count(("run", "save")) == 1
+    # what a reboot returns from now on is the set
+    bench.set("r_q12", 1)
+    bench.reboot()
+    assert cn.check(target) == []
+    # and the record puts the state the servo had stored back, the table from its own points
+    assert cn.restore(stored, PAIR, **BOTH, root=tmp_path)[-1] == "stamp"
+    assert held(sc.servo_state()) == held(boot)
+    # a second save of the same set keeps its files beside the first, which stand as they were
+    first = stored.read_text()
+    again = cn.save(PAIR, **NAMED, root=tmp_path)
+    assert again == (folder / "2" / "stored.json", folder / "2" / "after.json") and stored.read_text() == first
+    assert held(json.loads(again[0].read_text())) == held(back)
+
+
+def test_save_refuses_a_deviation(cli, bench, tmp_path, monkeypatch):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    cli("adopt", "--from", str(record(tmp_path)))
+    path = cn.set_path(PAIR)
+    derived = tmp_path / "derived.json"
+    cn.write(deviated(cn.load(path), p_kp_q88=5026), derived)
+    bench.log.clear()
+    with pytest.raises(SystemExit, match="refused: .*derived.json is a derived set: only the pair's set of record "
+                                         "is saved"):
+        cli("--set", str(derived), "save")
+    # nor does a derived set put in the place of the set of record pass: it is not the committed file
+    monkeypatch.setattr(cn, "uncommitted", lambda p: f"M {p.name}")
+    derived.replace(path)
+    with pytest.raises(SystemExit, match=f"refused: .*{PAIR}.constants.json is not committed as it stands "
+                                         f"\\(M {PAIR}.constants.json\\)"):
+        cli("save")
+    assert bench.log == [] and not (tmp_path / "telemetry").exists()
+
+
+def test_save_refuses_a_stale_set_with_the_bus_untouched_and_then_torque_on(stored, bench, tmp_path, committed):
+    bench.set("torque_enable", 1)
+    with pytest.raises(settings.Refused, match="torque_enable reads on: a save reboots the servo and needs torque "
+                                               "off"):
+        cn.save(PAIR, root=tmp_path)
+    assert bench.wrote() == []
+    bench.log.clear()
+    stored["inputs"]["3-servo/ladder"] = {"file": "stages/3-servo/ladder/results/gone.json", "sha1": "0" * 40}
+    cn.write(stored, cn.set_path(PAIR, tmp_path))
+    with pytest.raises(settings.Refused, match="the set is stale: stale: 3-servo/ladder .* is gone"):
+        cn.save(PAIR, root=tmp_path)
+    assert bench.log == [] and bench.flash is None and not (tmp_path / "telemetry").exists()
+
+
+def test_save_refuses_a_protection_change_from_the_stored_state_that_is_not_named(
+        target, bench, tmp_path, committed):
+    boot = stored_live(bench)
+    flash = bench.flash
+    with pytest.raises(settings.Refused) as e:
+        cn.save(PAIR, root=tmp_path)
+    stored = backup(target, tmp_path) / "stored.json"
+    said = str(e.value).splitlines()
+    assert said[0] == "the protection gate:" and len(said) == 4
+    assert said[-1] == (f"nothing was saved: a reboot returns the state the servo has stored, which {stored} "
+                        f"records (`uv run python -m oscnb.constants restore --from {stored}` installs, volatile, "
+                        "the state the servo had stored)")
+    # the stored state recorded, nothing written, nothing saved
+    assert json.loads(stored.read_text()) == boot and not stored.with_name("after.json").exists()
+    assert bench.wrote() == [("run", "reboot")] and bench.flash is flash
+    # named but not as a loosening, it is refused the same way; an install that fails half way leaves the
+    # servo rebooted onto what it has stored
+    with pytest.raises(settings.Refused, match="stall_response: .*\\nnothing was saved"):
+        cn.save(PAIR, protection=NAMED["protection"], root=tmp_path)
+    bench.drop = {"r_q12"}
+    with pytest.raises(settings.Refused, match="r_q12: wrote 16000, read back .*; rebooted: the servo is back on "
+                                               "its saved state\\nnothing was saved"):
+        cn.save(PAIR, **NAMED, root=tmp_path)
+    assert bench.flash is flash and held(sc.servo_state()) == held(boot)
+    # each attempt recorded the stored state in a folder of its own
+    assert [json.loads((stored.parent / n / "stored.json").read_text()) for n in ("2", "3")] == [boot, boot]
+
+
+def test_save_refuses_to_put_a_live_table_over_a_stored_identity(target, bench, tmp_path, committed):
+    bench.log.clear()
+    with pytest.raises(settings.Refused) as e:
+        cn.save(PAIR, **NAMED, root=tmp_path)
+    stored = backup(target, tmp_path) / "stored.json"
+    assert str(e.value) == (
+        "the servo's stored table is IDENTITY and the set's LIVE: no write returns a LIVE table to IDENTITY short "
+        f"of a boot, so `restore` could not put {stored} back and this save could not be undone from its own "
+        "record. Nothing was written to the servo")
+    assert bench.wrote() == [("run", "reboot")] and bench.flash is None
+    # which is what a restore of that record onto the set would say
+    cn.install(target, **NAMED, root=tmp_path)
+    with pytest.raises(settings.Refused, match="the set's table is IDENTITY .* and the servo's LIVE .*: an install "
+                                               "writes a LIVE table only"):
+        cn.restore(stored, PAIR, **BOTH, root=tmp_path)
+
+
+def test_a_save_that_does_not_read_back_says_what_flash_holds_and_what_puts_the_old_state_back(
+        target, bench, tmp_path, committed):
+    stored_live(bench)
+    bench.torn = {"r_q12": 123}
+    with pytest.raises(settings.Refused) as e:
+        cn.save(PAIR, **NAMED, root=tmp_path)
+    stored = backup(target, tmp_path) / "stored.json"
+    after = stored.with_name("after.json")
+    assert str(e.value) == (
+        "after the SAVE and a reboot the servo is not the set (data state clean; r_q12: servo 123, set 16000 "
+        f"[adopted]): the save did not land as verified. Flash now holds the new state, the one {after} records, "
+        f"and no longer the old one. `uv run python -m oscnb.constants restore --from {stored}` installs, "
+        "volatile, the state the servo had stored; to make that permanent again, adopt that record as the pair's "
+        "set of record (`adopt --from`, which writes a pair's first set only: the present set's file out of the "
+        "way first), commit it and `save` it")
+    assert json.loads(after.read_text())["fields"]["r_q12"] == 123
+    # the restore is behind the gate, and writes the table from the record's own points: the pair's table
+    # file holds the set's and is not read
+    with pytest.raises(settings.Refused, match="the protection gate"):
+        cn.restore(stored, PAIR, root=tmp_path)
+    cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pos_lut.json").unlink()
+    wrote = cn.restore(stored, PAIR, **BOTH, root=tmp_path)
+    assert wrote[:4] == ["wide-code slots", "raw_min", "raw_max", "position table"] and wrote[-1] == "stamp"
+    assert held(sc.servo_state()) == held(json.loads(stored.read_text()))
+    # a record that holds only the sha1 of its points cannot give its table back
+    old = json.loads(stored.read_text())
+    del old["pos_table"]["points"]
+    stored.write_text(json.dumps(old))
+    bench.reboot()
+    with pytest.raises(ValueError, match="holds the sha1 of its table's points and not the points"):
+        cn.restore(stored, PAIR, **BOTH, root=tmp_path)
+
+
+def test_save_and_restore_as_commands(cli, bench, tmp_path, committed, monkeypatch, capsys):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    cli("adopt", "--from", str(record(tmp_path)))
+    cli("save")
+    out = capsys.readouterr().out.splitlines()[-1]
+    folder = next((tmp_path / "telemetry" / PAIR / "constants").iterdir())
+    shown = folder.relative_to(tmp_path)
+    assert out == (f"saved: after a reboot the servo reads as the set, data state clean; {shown / 'stored.json'} "
+                   f"holds the state it had stored before, {shown / 'after.json'} the state it boots with now")
+    bench.set("r_q12", 1)
+    cli("restore", "--from", str(folder / "stored.json"))
+    assert capsys.readouterr().out.splitlines()[-1] == "volatile, not saved: `osc reboot` returns the saved state"
+    assert bench.decoded("r_q12") == 17100
+    cli("restore", "--from", str(folder / "stored.json"))
+    assert capsys.readouterr().out.splitlines()[-1] == "the servo holds the record's state: nothing written"
+    # the flags of the gate are the install's
+    bench.reboot()
+    cn.write(deviated(cn.load(cn.set_path(PAIR)), current_limit_counts=500), cn.set_path(PAIR))
+    with pytest.raises(SystemExit, match="refused: the protection gate:"):
+        cli("save")
+    cli("save", "--protection", "current_limit_counts")
+    # the refused attempt recorded the stored state too, so the save's files are the second of that set
+    second = backup(cn.load(cn.set_path(PAIR)), tmp_path)
+    assert bench.decoded("current_limit_counts") == 500
+    assert (second / "stored.json").exists() and (second / "2" / "after.json").exists()
+
+
+def test_git_says_whether_a_set_file_is_committed(tmp_path):
+    # outside a repository git cannot say, and that is a refusal, not a pass
+    path = tmp_path / "x.constants.json"
+    path.write_text("{}")
+    with pytest.raises(settings.Refused, match="git cannot say whether .*x.constants.json is committed"):
+        cn.uncommitted(path)
