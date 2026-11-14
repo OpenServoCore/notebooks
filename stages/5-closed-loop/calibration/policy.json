@@ -5,6 +5,14 @@
  "i_cont_ma": 250.0,
  "stall_release_ma": 90.0,
  "oc_trip_ma": 2200.0,
+ "velocity_limit_deg_s": 79.31,
+ "accel_limit_deg_s2": 1586.0,
+ "stall_omega_max_deg_s": 26.44,
+ "pos_error_deg": 21.15,
+ "soft_margin_share": 0.0625,
+ "hold_band_noise_multiple": 2.5,
+ "hold_band_floor_counts": 4,
+ "sensor_delta_max_counts": 256,
  "rule": {
   "r_q12": "r.rails_fit",
   "r_bemf_q12": "r_bemf.small_step"
@@ -25,6 +33,10 @@
   "current_limit_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds",
   "i_cont_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds",
   "stall_release_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds",
-  "oc_trip_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds"
+  "oc_trip_counts": "it moves on a protection step of its own, the current limits together: the measured shunt scale puts more counts on the same mA, which protects less than the value the servo holds",
+  "velocity_limit_cps": "it moves on a rung of its own, the motion limits together: typed in counts at the raw pot's scale, the same speed is more counts on the table",
+  "accel_limit_q88": "it moves on a rung of its own, the motion limits together: typed in counts at the raw pot's scale, the same speed is more counts on the table",
+  "pos_error_counts": "it moves on a protection step of its own: typed in counts at the raw pot's scale, the same angle is more counts on the table, which protects less than the value the servo holds",
+  "stall_omega_max_cps": "it moves on a protection step of its own: typed in counts at the raw pot's scale, the same speed is more counts on the table"
  }
 }

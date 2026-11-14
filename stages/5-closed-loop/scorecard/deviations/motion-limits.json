@@ -1,0 +1,4 @@
+{
+  "note": "the speed limit and the acceleration limit at the deg/s and deg/s^2 their counts were typed for at the raw pot's mid travel scale, on the set's count in place of the stored counts: the same speed is more counts on the table. The two together: the acceleration limit was typed as the speed limit reached in 50 ms",
+  "release": ["velocity_limit_cps", "accel_limit_q88"]
+}

@@ -527,6 +527,76 @@ The install of either names every field it moves as `--protection`
 and again as `--loosen`: the curve's words are judged, as is the
 continuous current, and the other limits move up.
 
+The fields in counts of position were typed when the servo ran on the
+raw pot, 18.913 counts per degree at mid travel, and are read by a
+kernel that runs on the set's count, the table's 20.127 counts per
+degree. A count typed then is 6.4 % less speed or angle now. Each has
+a policy entry in the unit a person sets it in and a rule that takes
+it to counts at the set's scale: a speed in deg/s and an angle in deg
+times the counts per degree, an acceleration in deg/s^2 times the
+counts per degree over the MEDIUM rate, since the kernel holds it as
+the speed one MEDIUM tick adds. The entries are what the stored counts
+were typed for at the raw pot's mid travel scale, to four figures.
+None is a round number: the stored counts are the firmware's boot
+defaults, which are round in counts (1500 count/s, reached in 50 ms;
+500 count/s; 400 counts).
+
+| field | the kernel's use | policy | the servo holds | typed for | on the table | the rule gives |
+|---|---|---|---|---|---|---|
+| `velocity_limit_cps` | the cap of the profile's speed and of the position loop's command, count/s | 79.31 deg/s | 1500 | 79.31 deg/s | 74.53 deg/s | 1596 |
+| `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 1586 deg/s^2 | 3840 | 1586 deg/s^2 | 1491 deg/s^2 | 4086 |
+| `stall_omega_max_cps` | a press over the continuous current counts toward a stall while the estimate's speed is under this, count/s | 26.44 deg/s | 500 | 26.44 deg/s | 24.84 deg/s | 532 |
+| `pos_error_counts` | the profile less the estimate, over this for the error time, faults; counts | 21.15 deg | 400 | 21.15 deg | 19.87 deg | 426 |
+
+All four are held, so no value moves. The two limits of motion are of
+the plant and move together on a rung,
+[motion-limits.json](scorecard/deviations/motion-limits.json): the
+acceleration limit was typed as the speed limit reached in 50 ms. The
+two screens are protection fields, each a step alone.
+[protection-position-error.json](scorecard/deviations/protection-position-error.json)
+puts the screen at 426 counts, which trips later than 400 and protects
+less: its install names `pos_error_counts` as `--protection` and as
+`--loosen`.
+[protection-stall-speed.json](scorecard/deviations/protection-stall-speed.json)
+puts the stall speed at 532, so a press is taken as a stall up to a
+higher speed, which protects more: its install names
+`stall_omega_max_cps` as `--protection` alone.
+
+Three more fields are counts of position and move with no table. The
+soft limits are positions: `osc cal` typed them a sixteenth of the
+travel inside each stop on a straight line between the stops, and the
+table's count is that line, reading the stops as themselves. Their
+rule is the policy's `soft_margin_share` of the stops' span inside
+each stop, 314 and 3560, the values the servo holds, so they bind and
+are of class `policy`. On the raw pot the same counts sat 10.4 and
+10.9 deg inside the stops; on the table they are 11.5 deg, what they
+were typed for. They keep the train off its stops, the wall that zeroes
+the current into a stop and the clamp of a goal, and are not among the
+protection fields yet: naming them there moves two hashes of every
+set with no value moved, which is a step of its own.
+
+The hold band, `pos_deadband_counts`, and the sensor screen,
+`sensor_delta_max`, are in the raw counts of the pot whatever the
+table: the kernel takes the band through the table's local gain
+itself, and screens the pot sample before any table. So neither was
+ever at another scale. The band's rule is the firmware repo's own
+(`ident/src/gains.rs`): 2.5 times the pot's noise at rest
+([stage 3, pot-table](../3-servo/README.md#pot-table)) and no less than 4
+counts, the policy's `hold_band_noise_multiple` and
+`hold_band_floor_counts`. This pot's noise is under a count, so the
+band sits on the floor, 4, the value the servo holds. The band at 8
+counts, over half the train's play, stays a pin of its own deviation.
+The sensor screen is the policy's `sensor_delta_max_counts`, 256 raw
+counts between two MEDIUM samples, the value the servo holds. Both
+bind.
+
+Of the loop gains, two carry a position unit: `v_kp_q88` and
+`v_ki_q412` are shunt counts per count/s, so they fall as the counts
+per degree rise. They have no rule yet and are the two fields left
+with no source at a scale nothing recorded. `p_kp_q88` is count/s per
+count, a rate, and carries none, nor do `v_kaw_q412` and the three
+gains of the current loop.
+
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. `check`
 needs the bus and changes nothing the servo holds: it reads the servo's
