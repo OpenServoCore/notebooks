@@ -192,14 +192,16 @@ the ADC wide-code slots; the position table's state and the sha1 of its
 points. The file is never typed. The same inputs give the same bytes,
 and a file whose hashes are not those of its content is refused.
 
-A field's class says what stands behind its value. The first set of a
-servo that already runs holds every field as `adopted`: the value the
-servo held before the set existed, taken from a record of its state
-(the `servo.json` of a scorecard run) and named by that record's sha1,
-so it has no source in the notebooks. Every verb prints that count, the
-fields with no source, and the count of adopted fields whose value is
-per position count, which were fitted at a scale nothing recorded. The
-other classes are in the module's docstring.
+A field's class says what stands behind its value: `measured` a rule
+over results of record, `policy` a rule over a general choice, `pinned`
+a literal typed for the pair, `held` a value carried while its rule may
+not bind. The first set of a servo that already runs holds every field
+as `adopted`: the value the servo held before the set existed, taken
+from a record of its state (the `servo.json` of a scorecard run) and
+named by that record's sha1, so it has no source in the notebooks.
+Every verb prints that count, the fields with no source, and the count
+of adopted fields whose value is per position count, which were fitted
+at a scale nothing recorded.
 
 Three hashes close the file: `protection` over the values of the
 protection fields (the limits, the fault thresholds, the NTC curve and
@@ -208,13 +210,45 @@ the slots, and `set` over the two.
 
 ```
 uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
+uv run python -m oscnb.constants build [--out PATH] [--protection NAME ...]
 uv run python -m oscnb.constants status
 uv run python -m oscnb.constants check
 uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
 ```
 
+`status`, `check` and `install` read the pair's set of record, or a
+derived set named with `--set PATH` ahead of the verb.
+
 `adopt` writes the first set of a servo that already runs, and only the
-first. `status` is offline: the sha1 of every file the set read against
+first.
+
+`build` is offline. It writes the set from the results of record on top
+of the pair's set of record, which it replaces, or to `--out` as a
+derived set, and prints what it changes. A field is bound by a rule,
+one function a field in the module, which reads results, the registry
+and [calibration/policy.json](calibration/policy.json) through one
+reader that records each read: a field's `inputs` are what its rule
+read, and the set names every file by its sha1. The rules so far are
+the ones that define a count and what follows from it directly. The
+slots are the board's wide-code result. The table is the pair's table
+file, LIVE, which must be built against the set's stops and fitted on
+the set's slots. The scale is the table's counts per degree. The angle
+map puts the clockwise stop at the policy's angle and the other stop
+the travel past it, the travel being the stops' span at that scale, so
+a host that reads the map gets the table's counts per degree. The gear
+ratio and the gear class are the registry's. Every other field is
+carried as it stands, the stops among them, which have no notebook
+source yet. `policy.json` holds the choices that are no measurement, in
+physical units, one file for every pair; a `<pair>.pins.json` beside
+it, where there is one, holds literals typed for one pair, each with
+its reason and the rung that chose it, and shows as `pinned`. A rule
+whose input is missing does not guess: the field is `held` at the value
+the set had, with the missing input named. One build moves one hash,
+the plant by default: a protection field is carried, with what its rule
+would give beside it, until a build names it with `--protection`, which
+then moves nothing of the plant.
+
+`status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. `check`
 needs the bus and changes nothing the servo holds: it reads the servo's
 state the way a run records it and prints a line for every field of the

@@ -1,10 +1,13 @@
 """The constant set of a pair with `osc` stubbed by a fake servo: the
 first set adopted from a record of its state, the file's bytes and its
 three hashes, what `load` refuses, the set against its input files, the
-servo read against the set, and the set installed on it: the order of
-the writes, the protection gate, the read-back ahead of the stamp and
-the reboot after a refusal."""
+servo read against the set, the set installed on it (the order of the
+writes, the protection gate, the read-back ahead of the stamp and the
+reboot after a refusal), and the set built by its rules: what a rule
+reads recorded, the encoder, the bands, the fields held, and the one
+hash a build moves."""
 import copy
+import dataclasses
 import hashlib
 import json
 import subprocess
@@ -79,8 +82,12 @@ def test_adopt_reproduces_the_servo_state(servo, tmp_path):
     # every field a host may write past the bus front, in table order: not the read-only model number
     # and tick rate, not the id, not the stamp, and the slots as the slots
     assert list(doc["fields"]) == OWNED
-    assert all(e == {"value": state["fields"][n], **ADOPTED, **({"scale": "unknown"} if "scale" in e else {})}
-               for n, e in doc["fields"].items())
+    assert all(e == {"value": state["fields"][n], **ADOPTED, "protection": cn.protection_of(n),
+                     **({"scale": "unknown"} if "scale" in e else {})} for n, e in doc["fields"].items())
+    # a protection field says which way protects less, a field of the plant that it is none
+    assert doc["fields"]["current_limit_counts"]["protection"] == {"looser": "up"}
+    assert doc["fields"]["stall_omega_max_cps"]["protection"] == {"looser": "down"}
+    assert doc["fields"]["r_q12"]["protection"] is None
     assert doc["fields"]["drive_polarity"]["value"] == "on" and doc["fields"]["r_q12"]["value"] == 17100
     assert [n for n, e in doc["fields"].items() if e.get("scale") == "unknown"] == [
         "pos_max_soft_counts", "stall_omega_max_cps", "recip_ke_q"]
@@ -101,8 +108,12 @@ def test_adopt_reproduces_the_servo_state(servo, tmp_path):
 def test_the_file_holds_a_field_a_line_in_one_key_order(adopted):
     doc, path = adopted
     lines = path.read_text().splitlines()
-    assert '  "r_q12": {"value": 17100, "class": "adopted", "origin": "servo-state"}' in (s.rstrip(",") for s in lines)
-    assert '  "recip_ke_q": {"value": 11817, "class": "adopted", "origin": "servo-state", "scale": "unknown"}' in lines
+    assert ('  "r_q12": {"value": 17100, "class": "adopted", "origin": "servo-state", "protection": null}'
+            in (s.rstrip(",") for s in lines))
+    assert ('  "recip_ke_q": {"value": 11817, "class": "adopted", "origin": "servo-state", "protection": null, '
+            '"scale": "unknown"}') in lines
+    assert ('  "current_limit_counts": {"value": 554, "class": "adopted", "origin": "servo-state", '
+            '"protection": {"looser": "up"}},') in lines
     # the bytes do not depend on the order a document was put together in
     shuffled = {k: doc[k] for k in reversed(list(doc))}
     shuffled["fields"] = {n: dict(reversed(list(e.items()))) for n, e in doc["fields"].items()}
@@ -139,9 +150,12 @@ def test_every_field_of_an_adopted_set_is_in_exactly_one_hash(adopted):
     (lambda d: d["fields"]["r_q12"].update({"class": "guessed"}), "r_q12 holds no value of one class"),
     (lambda d: d["fields"]["r_q12"].pop("value"), "r_q12 holds no value of one class"),
     (lambda d: d["origins"].clear(), "is adopted from 'servo-state', which the file does not hold"),
+    (lambda d: d["fields"]["current_limit_counts"].update(protection=None),
+     "current_limit_counts says None of protection, the tool {'looser': 'up'}"),
+    (lambda d: d["fields"]["r_q12"].update(protection={"looser": "up"}), "r_q12 says .* of protection, the tool None"),
     (lambda d: d.update(format=2), "format 2, this tool reads 1"),
 ], ids=["a field edited", "the table edited", "a class the format has none of", "no value", "no origin",
-        "another format"])
+        "a protection field marked as the plant's", "a plant field marked as protection", "another format"])
 def test_load_refuses_a_file_that_is_not_a_set_as_the_tool_writes_one(adopted, change, match):
     doc, path = adopted
     change(doc)
@@ -232,7 +246,8 @@ def built(root):
 
 def test_status_names_a_moved_input_and_its_fields(tmp_path):
     doc, files = built(tmp_path)
-    lines, stale = cn.status(doc, tmp_path)
+    reg = {"servo": {"gear_ratio": 308.05}}
+    lines, stale = cn.status(doc, tmp_path, reg)
     assert not stale and lines == [
         "2 input files, none moved",
         "5 fields: 3 measured, 1 policy, 0 pinned, 0 held, 1 adopted (no source); 0 per-count at an unknown scale",
@@ -245,18 +260,23 @@ def test_status_names_a_moved_input_and_its_fields(tmp_path):
     rest = lines[1:]
     ladder = tmp_path / files["3-servo/ladder"]
     ladder.write_text('{"notes": "re-run"}\n')
-    lines, stale = cn.status(doc, tmp_path)
+    lines, stale = cn.status(doc, tmp_path, reg)
     assert stale and lines == [
         f"stale: 3-servo/ladder ({files['3-servo/ladder']}) is no longer the file the set read, sha1 "
         f"{sc.file_sha1(ladder)}: recip_ke_q, ke_vpc_q", *rest]
     # a file that is gone is named too, the inputs in name order
     (tmp_path / files["1-board/current-scale"]).unlink()
-    lines, stale = cn.status(doc, tmp_path)
+    lines, stale = cn.status(doc, tmp_path, reg)
     assert stale and lines[:2] == [
         f"stale: 1-board/current-scale ({files['1-board/current-scale']}) is gone: current_limit_counts",
         f"stale: 3-servo/ladder ({files['3-servo/ladder']}) is no longer the file the set read, sha1 "
         f"{sc.file_sha1(ladder)}: recip_ke_q, ke_vpc_q"]
     assert cn.moved(doc, tmp_path)[0][2] is None
+    # a registry value the set read that the registry no longer holds, or holds no entry for
+    lines, stale = cn.status(doc, tmp_path, {"servo": {"gear_ratio": 310.0}})
+    assert stale and lines[2] == "stale: the registry's servo gear_ratio was 308.05, it is 310.0: " \
+                                 "recip_ke_q, gear_ratio_centi"
+    assert cn.registry_moved(doc) == [("servo", "gear_ratio", 308.05, None)]
 
 
 def test_an_adopted_set_has_no_input_to_move(adopted, tmp_path):
@@ -383,7 +403,7 @@ def test_the_verbs_as_commands(cli, servo, tmp_path, capsys):
 
 def test_status_of_a_stale_set_exits_1(cli, tmp_path, monkeypatch, capsys):
     cli("adopt", "--from", str(record(tmp_path)))
-    monkeypatch.setattr(cn, "status", lambda doc: (["stale: an input"], True))
+    monkeypatch.setattr(cn, "status", lambda doc, root: (["stale: an input"], True))
     with pytest.raises(SystemExit) as e:
         cli("status")
     assert e.value.code == 1 and capsys.readouterr().out.splitlines()[-1] == "stale: an input"
@@ -785,3 +805,437 @@ def test_install_as_a_command(cli, bench, tmp_path, capsys):
     cli("install")
     assert capsys.readouterr().out.splitlines()[-1] == "the servo holds the set: nothing written"
     cli("check")
+
+
+# --- the rules and build ---
+
+class Geared(Bench):
+    """The fake servo with the angle map and the gear fields the first
+    rules bind."""
+
+    FIELDS = {**{n: f for n, f in Bench.FIELDS.items() if f[0] < 0xc0},
+              "angle_min_cdeg": (0xa8, 2, "rw", "uint"), "angle_max_cdeg": (0xaa, 2, "rw", "uint"),
+              "gear_ratio_centi": (0xac, 2, "rw", "uint"), "gear_class": (0xae, 1, "rw", "class"),
+              **{n: f for n, f in Bench.FIELDS.items() if f[0] >= 0xc0}}
+    STORED = {**Bench.STORED, "angle_min_cdeg": 0, "angle_max_cdeg": 18774, "gear_ratio_centi": 30805,
+              "gear_class": 2}
+
+    def decoded(self, name):
+        if self.FIELDS[name][3] != "class":
+            return super().decoded(name)
+        v = self.table[self.FIELDS[name][0]]
+        return f"{v} ({cn.GEAR_CLASSES[v]})"
+
+    def get(self, name):
+        # `osc get` prints a class as its number alone
+        v = super().get(name)
+        return int(v.split()[0]) if self.FIELDS[name][3] == "class" else v
+
+
+REG = {"servo": {"gear_ratio": 308.0533, "gear_class": "metal"}}
+STOPS = (82, 3792)
+THETA = (-90.0, 90.0)      # the tag angle at the stops: 180 deg of travel, 3710 counts
+SCALE = (STOPS[1] - STOPS[0]) / 180
+WIDE = "stages/1-board/wide-codes/results/board.json"
+
+
+def inputs(root, slots=NEW_SLOTS, theta=THETA, policy=None, fitted=NEW_SLOTS, wide_inputs=None):
+    """The inputs of record a build reads, under `root`: the board's
+    wide-code result (none for `slots` None), the pair's table file
+    (none for `theta` None) and the policy file."""
+    if slots is not None:
+        (root / WIDE).parent.mkdir(parents=True, exist_ok=True)
+        (root / WIDE).write_text(json.dumps({
+            **({} if wide_inputs is None else {"inputs": wide_inputs}), wc.FIELD: list(slots)}))
+    if theta is not None:
+        path = table_file(root, stops=STOPS, fitted=fitted)
+        doc = json.loads(path.read_text())
+        doc["target"]["theta_at_stops_deg"] = list(theta)
+        path.write_text(json.dumps(doc))
+    path = cn.set_path(PAIR, root).with_name("policy.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"angle_cw_stop_deg": 0.0, "hold": {}, **(policy or {})}))
+
+
+@pytest.fixture
+def geared(monkeypatch):
+    return Geared().stub(monkeypatch)
+
+
+@pytest.fixture
+def first(geared, tmp_path):
+    """The set adopted from the fake servo as it boots, the set a build
+    stands on."""
+    doc, _ = cn.adopt(PAIR, record(tmp_path), root=tmp_path)
+    geared.log.clear()
+    return doc
+
+
+def built_on(previous, root, **kw):
+    return cn.build(PAIR, previous, root=root, registry=REG, **kw)
+
+
+def moved_hashes(a, b):
+    return [k for k in ("plant", "protection") if a["hash"][k] != b["hash"][k]]
+
+
+def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
+    inputs(tmp_path)
+    doc, notes = built_on(first, tmp_path)
+    sha = cn.points_sha1(POINTS)
+    wide = f"1-board/wide-codes:{wc.FIELD}"
+    assert doc["wide_codes"] == {"slots": list(NEW_SLOTS), "class": "measured", "rule": "slots.wide_codes",
+                                 "inputs": [wide]}
+    assert doc["pos_table"] == {"state": "LIVE", "points_sha1": sha, "class": "measured", "rule": "table.pos_lut",
+                                "fitted_on_slots_sha1": postable.slots_sha1(NEW_SLOTS), "inputs": ["pos_table"]}
+    assert doc["scale"] == {"kind": "table", "counts_per_deg": pytest.approx(SCALE), "points_sha1": sha}
+    f = doc["fields"]
+    angle = {"class": "measured", "rule_rev": 1, "unit": "cdeg", "q": 0, "pos_unit": -1, "scale_points_sha1": sha,
+             "protection": None}
+    assert f["angle_min_cdeg"] == {"value": 0, "rule": "angle_min.table", **angle,
+                                   "inputs": ["policy:angle_cw_stop_deg", "pos_table:theta_at_stops_deg"]}
+    assert f["angle_max_cdeg"] == {
+        "value": 18000, "rule": "angle_max.table", **angle,
+        "inputs": ["policy:angle_cw_stop_deg", "pos_table:theta_at_stops_deg", "pos_table:stops", "scale"]}
+    assert f["gear_ratio_centi"] == {
+        "value": 30805, "class": "measured", "rule": "gear_ratio.registry", "rule_rev": 1,
+        "unit": "motor rev per output rev x100", "q": 0, "pos_unit": 0, "inputs": ["registry:gear_ratio"],
+        "protection": None}
+    assert (f["gear_class"]["value"], f["gear_class"]["inputs"]) == ("2 (metal)", ["registry:gear_class"])
+    # every other field stands as it was adopted, in the previous set's order, the stops among them
+    rules = set(cn.RULES)
+    assert list(f) == list(first["fields"])
+    assert all(f[n] == first["fields"][n] for n in f if n not in rules)
+    assert f["raw_min"]["class"] == f["pos_min_soft_counts"]["class"] == "adopted"
+    assert all("protection" in e for e in f.values())
+    # what the build read, each file by its sha1, the registry by its values, and the origin still used
+    assert doc["inputs"] == {
+        "1-board/wide-codes": {"file": WIDE, "sha1": sc.file_sha1(tmp_path / WIDE), "inputs_recorded": False},
+        "policy": {"file": "stages/5-closed-loop/calibration/policy.json",
+                   "sha1": sc.file_sha1(cn.set_path(PAIR, tmp_path).with_name("policy.json"))},
+        "pos_table": {"file": f"stages/5-closed-loop/calibration/{PAIR}.pos_lut.json",
+                      "sha1": sc.file_sha1(cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pos_lut.json"))},
+        "registry": REG}
+    assert doc["origins"] == first["origins"] and doc["previous"] == first["hash"]
+    assert notes == ["1-board/wide-codes: the results it read are not recorded"]
+    # the plant moved and the protection fields did not; the same inputs give the same bytes; the file loads
+    assert moved_hashes(first, doc) == ["plant"]
+    assert cn.render(built_on(first, tmp_path)[0]) == cn.render(doc)
+    path = cn.write(doc, tmp_path / "derived" / "x.constants.json")
+    assert cn.load(path) == doc and str(tmp_path) not in path.read_text()
+    assert cn.described(doc)[3] == f"scale: {SCALE:.4f} counts/deg, the table one"
+    lines, stale = cn.status(doc, tmp_path, REG)
+    assert not stale and lines[:2] == [
+        "3 input files, none moved",
+        "1-board/wide-codes: the results it read are not recorded: wide-code slots"]
+    assert cn.changes(first, doc) == [
+        f"wide-code slots: {SLOTS.hex(' ')} -> {NEW_SLOTS.hex(' ')} [measured, slots.wide_codes]",
+        "position table state: IDENTITY -> LIVE [measured, table.pos_lut]",
+        f"position table points sha1: {NO_POINTS} -> {sha} [measured, table.pos_lut]",
+        f"scale: none -> {SCALE:.4f} counts/deg, the table one",
+        "angle_min_cdeg: 0 [adopted -> measured, angle_min.table]",
+        "angle_max_cdeg: 18774 -> 18000 [measured, angle_max.table]",
+        "gear_ratio_centi: 30805 [adopted -> measured, gear_ratio.registry]",
+        "gear_class: 2 (metal) [adopted -> measured, gear_class.registry]",
+        f"hash: plant moved: plant {first['hash']['plant'][:12]} -> {doc['hash']['plant'][:12]}, protection "
+        f"{first['hash']['protection'][:12]} -> {doc['hash']['protection'][:12]}, set "
+        f"{first['hash']['set'][:12]} -> {doc['hash']['set'][:12]}"]
+
+
+def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
+    inputs(tmp_path)
+    doc, _ = built_on(first, tmp_path)
+    assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "angle_max_cdeg", "stamp"]
+    assert cn.check(doc) == []
+
+
+def context(root, k=1.0, **kw):
+    """The Context a build gives its rules over `inputs(**kw)`, the
+    scale of the count times `k`."""
+    inputs(root, **kw)
+    c = cn.Context(PAIR, root, REG)
+    cn.table_of(c, None, cn.slots_of(c, None))
+    c.scale = {**c.scale, "counts_per_deg": c.scale["counts_per_deg"] * k}
+    return c
+
+
+def scales_by_its_unit(r, root, k, theta):
+    """Whether rule `r`'s value at k times the counts per deg is its
+    value times k to the power of its position unit, and it read the
+    scale exactly when it declares one."""
+    values, read = [], []
+    for scale in (1.0, k):
+        c = context(root, scale, theta=theta)
+        c.reads = []
+        values.append(r.fn(c))
+        read.append(any(name == "scale" for name, _ in c.reads))
+    x, xk = values
+    if isinstance(x, str):
+        return x == xk and r.pos_unit == 0 and not any(read)
+    same = xk == pytest.approx(x * k ** r.pos_unit, rel=1e-9, abs=1e-9)
+    # a value that is zero at every scale says nothing of the scale, and need not read it
+    return same and (x == xk == 0 or read == [bool(r.pos_unit)] * 2)
+
+
+@pytest.mark.parametrize("theta", [THETA, THETA[::-1]], ids=["ascending", "descending"])
+def test_every_rule_scales_by_its_position_unit(tmp_path, theta):
+    for r in cn.RULES.values():
+        assert scales_by_its_unit(r, tmp_path, 1.25, theta), r.name
+        # the check has teeth: the same rule declared at another power fails it
+        if not isinstance(r.fn(context(tmp_path, theta=theta)), str):
+            wrong = dataclasses.replace(r, pos_unit=r.pos_unit + 1)
+            other = context(tmp_path, theta=theta)
+            other.reads = []
+            assert r.fn(other) == 0 or not scales_by_its_unit(wrong, tmp_path, 1.25, theta), r.name
+
+
+def test_the_angle_map_puts_the_clockwise_stop_at_the_policys_angle(tmp_path):
+    def angles(**kw):
+        c = context(tmp_path, **kw)
+        return [cn.evaluate(cn.RULES[n], c)["value"] for n in ("angle_min_cdeg", "angle_max_cdeg")]
+
+    assert angles() == [0, 18000]
+    # a tag angle that falls as the count rises: the high stop is the clockwise one
+    assert angles(theta=THETA[::-1]) == [18000, 0]
+    assert angles(policy={"angle_cw_stop_deg": -90.0}) == [-9000, 9000]
+
+
+def test_a_field_that_does_not_fit_is_refused(first, tmp_path):
+    inputs(tmp_path, theta=(-200.0, 200.0))
+    with pytest.raises(ValueError) as e:
+        built_on(first, tmp_path)
+    assert str(e.value) == ("angle_max_cdeg: angle_max.table gives 40000 cdeg, 40000 as the field holds it, which "
+                            "does not fit its i16 (-32768..32767)")
+    # the encoder rounds to the field's Q format, half away from zero, and passes text; it never clamps
+    r = dataclasses.replace(cn.RULES["angle_max_cdeg"], kind="u16", q=8)
+    assert [cn.encode(r, x) for x in (1.5, 0.001953125, 0.0019, 255.998)] == [384, 1, 0, 65535]
+    assert cn.encode(dataclasses.replace(r, kind="i16", q=0), -2.5) == -3
+    assert cn.encode(r, "2 (metal)") == "2 (metal)"
+    for x in (256.0, -0.01):
+        with pytest.raises(ValueError, match="does not fit its u16"):
+            cn.encode(r, x)
+
+
+def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
+    # a board with no wide-code result and a pair with no table: what the set held stands, and says why
+    inputs(tmp_path, slots=None, theta=None)
+    doc, notes = built_on(first, tmp_path)
+    carried = {"class": "held", "carried_from": first["hash"]["set"]}
+    assert doc["wide_codes"] == {"slots": list(SLOTS), **carried, "rule": "slots.wide_codes",
+                                 "held": "1-board/wide-codes has no result for board"}
+    assert doc["pos_table"] == first["pos_table"] and "scale" not in doc
+    no_table = "the pair has no position table: which stop is the clockwise one is not known"
+    assert doc["fields"]["angle_max_cdeg"] == {"value": 18774, **carried, "rule": "angle_max.table",
+                                               "held": no_table, "protection": None}
+    assert doc["fields"]["gear_ratio_centi"]["class"] == "measured"
+    assert notes == [
+        "wide-code slots: held, 1-board/wide-codes has no result for board",
+        "scale: none, 3-servo/pot-table has no result for synth__board",
+        f"angle_min_cdeg: held, {no_table}", f"angle_max_cdeg: held, {no_table}"]
+    assert cn.described(doc)[0].startswith("16 fields: 2 measured, 0 policy, 0 pinned, 2 held, 12 adopted")
+    assert moved_hashes(first, doc) == [] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
+    # held again on top of that set, the value still names the set it first came from
+    again, _ = built_on(doc, tmp_path)
+    assert again["fields"]["angle_max_cdeg"]["carried_from"] == first["hash"]["set"]
+    # a registry with no such entry holds the gear fields the same way
+    lone, _ = cn.build(PAIR, first, root=tmp_path, registry={})
+    assert lone["fields"]["gear_class"] == {"value": "2 (metal)", **carried, "rule": "gear_class.registry",
+                                            "held": "the registry has no servo gear_class for synth__board",
+                                            "protection": None}
+    # with nothing to carry the field is left out, and said
+    new, notes = cn.build(PAIR, None, root=tmp_path, registry=REG)
+    assert list(new["fields"]) == ["gear_ratio_centi", "gear_class"] and new["wide_codes"] is None
+    assert new["pos_table"] == {"state": "IDENTITY", "points_sha1": NO_POINTS, "class": "measured",
+                                "rule": "table.none"} and new["previous"] is None
+    assert f"angle_max_cdeg: left out, {no_table}" in notes and notes[0].startswith("wide-code slots: left out, ")
+
+
+def test_a_field_the_policy_holds_is_carried_with_what_its_rule_would_give(first, tmp_path):
+    inputs(tmp_path, policy={"hold": {"angle_max_cdeg": "the hosts read the old travel until they are moved"}})
+    doc, notes = built_on(first, tmp_path)
+    assert doc["fields"]["angle_max_cdeg"] == {
+        "value": 18774, "class": "held", "rule": "angle_max.table", "would_be": 18000,
+        "held": "the hosts read the old travel until they are moved", "carried_from": first["hash"]["set"],
+        "protection": None}
+    assert notes[-1] == ("angle_max_cdeg: held, the hosts read the old travel until they are moved; its rule "
+                         "gives 18000")
+
+
+def test_a_measured_field_at_another_table_is_refused(first, tmp_path):
+    inputs(tmp_path)
+    doc, _ = built_on(first, tmp_path)
+    path = tmp_path / "x.constants.json"
+    other = copy.deepcopy(doc)
+    other["fields"]["angle_max_cdeg"]["scale_points_sha1"] = NO_POINTS
+    with pytest.raises(ValueError, match=f"angle_max_cdeg was computed for the table of points sha1 {NO_POINTS}, "
+                                         f"the set's scale is that of {cn.points_sha1(POINTS)}"):
+        cn.load(cn.write(other, path))
+    # nor does a set hold a scale of one table and the points of another
+    other = copy.deepcopy(doc)
+    other["pos_table"]["points_sha1"] = NO_POINTS
+    other["hash"] = cn.hashes(other)
+    with pytest.raises(ValueError, match="its scale is that of the table of points sha1"):
+        cn.load(cn.write(other, path))
+
+
+def test_build_refuses_a_table_that_is_not_the_sets(first, tmp_path):
+    inputs(tmp_path, fitted=SLOTS)
+    with pytest.raises(ValueError) as e:
+        built_on(first, tmp_path)
+    assert str(e.value) == (f"the lookup was fitted on other slots (sha1 {postable.slots_sha1(SLOTS)}, the set's "
+                            f"are {postable.slots_sha1(NEW_SLOTS)}): re-run stage 4 position, then `postable build`")
+    # a table file that records no slots is said, not refused
+    inputs(tmp_path, fitted=None)
+    doc, notes = built_on(first, tmp_path)
+    assert doc["pos_table"]["fitted_on_slots_sha1"] is None
+    assert "position table: the wide-code slots its lookup was fitted on are not recorded" in notes
+    # the stops are the set's, adopted, and the table has to be built against them
+    table_file(tmp_path, stops=NEW_STOPS)
+    with pytest.raises(ValueError, match="was built against stops 90 and 3780, the set's are 82 and 3792"):
+        built_on(first, tmp_path)
+
+
+def limit(c):
+    return 2 * c.q("1-board/current-scale", "half_limit_counts")
+
+
+@pytest.fixture
+def limited(monkeypatch, tmp_path):
+    """A rule for a protection field, over a banded result that names
+    what it read."""
+    monkeypatch.setitem(cn.RULES, "current_limit_counts", cn.Rule(
+        "current_limit_counts", "current_limit.class", "u16", "ccounts", 0, 0, 1, "policy", "none", limit))
+    path = tmp_path / "stages/1-board/current-scale/results/board.json"
+    path.parent.mkdir(parents=True)
+
+    def write(value, read=None):
+        path.write_text(json.dumps({"inputs": {} if read is None else read,
+                                    "half_limit_counts": {"value": value, "lo": value - 5, "hi": value + 10}}))
+    write(250)
+    return write
+
+
+def test_one_build_moves_one_hash(first, limited, tmp_path):
+    inputs(tmp_path)
+    # the plant moves: the protection field stands, with what its rule would give beside it
+    doc, notes = built_on(first, tmp_path)
+    assert moved_hashes(first, doc) == ["plant"]
+    assert doc["fields"]["current_limit_counts"] == {**first["fields"]["current_limit_counts"], "would_be": 500}
+    assert notes[-1] == "current_limit_counts: carried at 554, it would be 500: name it with --protection"
+    # named, it moves, alone: the plant is the previous set's to the byte
+    named, notes = built_on(doc, tmp_path, protection=["current_limit_counts"])
+    assert moved_hashes(doc, named) == ["protection"] and notes == [
+        "1-board/wide-codes: the results it read are not recorded"]
+    assert named["fields"]["current_limit_counts"] == {
+        "value": 500, "class": "policy", "rule": "current_limit.class", "rule_rev": 1, "unit": "ccounts", "q": 0,
+        "pos_unit": 0, "inputs": ["1-board/current-scale:half_limit_counts"], "band": [490, 520],
+        "protection": {"looser": "up"}}
+    assert all(named["fields"][n] == doc["fields"][n] for n in doc["fields"] if n != "current_limit_counts")
+    assert [named[k] for k in ("wide_codes", "pos_table", "scale")] == [doc[k] for k in ("wide_codes", "pos_table",
+                                                                                         "scale")]
+    assert named["previous"] == doc["hash"] and cn.load(cn.write(named, tmp_path / "x.constants.json")) == named
+    # a plant build on top of it leaves the limit where it was put
+    assert moved_hashes(named, built_on(named, tmp_path)[0]) == []
+    # a plant field its rule would move stays put in a protection build, and is said
+    limited(260)
+    inputs(tmp_path, theta=(-80.0, 100.0), policy={"angle_cw_stop_deg": 10.0})
+    both, notes = built_on(named, tmp_path, protection=["current_limit_counts"])
+    assert moved_hashes(named, both) == ["protection"] and both["fields"]["current_limit_counts"]["value"] == 520
+    assert both["fields"]["angle_min_cdeg"] == {**named["fields"]["angle_min_cdeg"], "would_be": 1000}
+    assert "angle_min_cdeg: carried at 0, it would be 1000" in notes
+    # what defines a count has to stand: a protection build does not carry a table that would move
+    inputs(tmp_path, theta=(-100.0, 100.0))
+    with pytest.raises(ValueError, match="the slots, the table or the scale would move: build the plant first"):
+        built_on(named, tmp_path, protection=["current_limit_counts"])
+    for names, match in ((["p_kp_q88"], "p_kp_q88 is no protection field"),):
+        with pytest.raises(ValueError, match=match):
+            built_on(named, tmp_path, protection=names)
+    with pytest.raises(ValueError, match="there is no set to carry the plant from"):
+        cn.build(PAIR, None, protection=["current_limit_counts"], root=tmp_path, registry=REG)
+
+
+def test_a_result_that_read_a_file_since_moved_is_stale(first, limited, tmp_path):
+    inputs(tmp_path)
+    limited(250, {WIDE: "0" * 40})
+    with pytest.raises(ValueError) as e:
+        built_on(first, tmp_path)
+    assert str(e.value) == (f"1-board/current-scale is stale: it read {WIDE} at sha1 {'0' * 40}, which is "
+                            f"{sc.file_sha1(tmp_path / WIDE)} now: re-run 1-board/current-scale")
+    # one that names what it read, and it stands, says nothing
+    limited(250, {WIDE: sc.file_sha1(tmp_path / WIDE)})
+    doc, notes = built_on(first, tmp_path)
+    assert "inputs_recorded" not in doc["inputs"]["1-board/current-scale"]
+    assert not any("current-scale" in n and "not recorded" in n for n in notes)
+
+
+def test_a_pin_binds_its_field_and_shows_as_pinned(first, tmp_path):
+    inputs(tmp_path)
+    pins = cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pins.json")
+    pins.write_text(json.dumps({"p_kp_q88": {"value": 5026, "why": "the 3 Hz loop", "rung": "01b"},
+                                "angle_max_cdeg": {"value": 18433, "why": "the travel", "rung": "12a"}}))
+    doc, _ = built_on(first, tmp_path)
+    assert doc["fields"]["p_kp_q88"] == {"value": 5026, "class": "pinned", "why": "the 3 Hz loop", "rung": "01b",
+                                         "protection": None}
+    # a pin stands ahead of the field's rule
+    assert doc["fields"]["angle_max_cdeg"]["class"] == "pinned" and doc["fields"]["angle_max_cdeg"]["value"] == 18433
+    assert doc["inputs"]["pins"] == {"file": f"stages/5-closed-loop/calibration/{PAIR}.pins.json",
+                                     "sha1": sc.file_sha1(pins)}
+    assert cn.described(doc)[0].startswith("16 fields: 3 measured, 0 policy, 2 pinned, 0 held, 11 adopted")
+    pins.write_text(json.dumps({"p_kp_q88": {"value": 5026}}))
+    with pytest.raises(ValueError, match="p_kp_q88 lacks its value, its why or its rung"):
+        built_on(first, tmp_path)
+
+
+def test_the_policy_of_record_holds_what_the_rules_read():
+    policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    assert isinstance(policy["angle_cw_stop_deg"], float) and isinstance(policy["hold"], dict)
+    assert set(policy["hold"]) <= set(cn.RULES)
+
+
+def test_build_as_a_command(cli, geared, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    monkeypatch.setattr(cn, "registry_of", lambda pair: REG)
+    cli("adopt", "--from", str(record(tmp_path)))
+    inputs(tmp_path)
+    # the cli fixture keeps the sets flat under tmp_path, the table file beside them
+    table_file(tmp_path, stops=STOPS).rename(tmp_path / f"{PAIR}.pos_lut.json")
+    of_record = (tmp_path / f"{PAIR}.constants.json").read_bytes()
+    capsys.readouterr()
+    cli("build", "--out", str(tmp_path / "derived.json"))
+    out = capsys.readouterr().out.splitlines()
+    assert out[0].endswith("derived.json") and "angle_max_cdeg: 18774 -> 18000 [measured, angle_max.table]" in out
+    assert any(line.startswith("hash: plant moved: ") for line in out)
+    assert (tmp_path / f"{PAIR}.constants.json").read_bytes() == of_record
+    # without --out it is the set of record that is written, on top of the one that stood
+    cli("build")
+    doc = cn.load(tmp_path / f"{PAIR}.constants.json")
+    assert doc["previous"] == cn.load(tmp_path / "derived.json")["previous"] and doc["pos_table"]["state"] == "LIVE"
+    cli("status")
+    assert "3 input files, none moved" in capsys.readouterr().out.splitlines()
+
+
+def test_a_derived_set_is_checked_and_installed_by_its_path(geared, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    monkeypatch.setattr(cn, "registry_of", lambda pair: REG)
+    run = lambda *args: cn.main(["--pair", PAIR, *args])   # noqa: E731
+    run("adopt", "--from", str(record(tmp_path)))
+    inputs(tmp_path)
+    derived = tmp_path / "elsewhere" / "derived.json"
+    run("build", "--out", str(derived))
+    of_record = cn.set_path(PAIR, tmp_path).read_bytes()
+    # the set of record is what the servo holds; the derived set is not, until it is installed
+    run("check")
+    with pytest.raises(SystemExit) as e:
+        run("--set", str(derived), "check")
+    assert e.value.code == 1
+    capsys.readouterr()
+    run("--set", str(derived), "install")
+    out = capsys.readouterr().out.splitlines()
+    assert "angle_max_cdeg: 18774 -> 18000" in out and "position table: IDENTITY -> LIVE, 8 pages read back" in out
+    run("--set", str(derived), "check")
+    run("--set", str(derived), "status")
+    assert cn.set_path(PAIR, tmp_path).read_bytes() == of_record
+    # a protection build with a table that fell away: what defines a count would move
+    cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pos_lut.json").unlink()
+    with pytest.raises(ValueError, match="would move: build the plant first"):
+        cn.build(PAIR, cn.load(derived), protection=["current_limit_counts"], root=tmp_path, registry=REG)
