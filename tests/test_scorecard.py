@@ -11,7 +11,10 @@ set and the deviation it records, the test set planned from it, a servo
 that is not the rung's set, and the rows read through the table and the
 slots of the rung's own record; an A/B of two rungs, each side on its
 own derived set and image, its flashes and refusals, and the flash's
-command line; the servo's constant state beside every run and a run
+command line; three sides in an order, each side's calls through its own
+`osc` tool, a run lost to a short burst run again and kept in the
+record, and the wait for the host's load; the servo's constant state
+beside every run and a run
 that reads another refused by name; rungs recorded before a rung named
 a set, read through the files they name, an identity rung's plan and a
 table rung's plans rebuilt byte for byte, the last from the set of
@@ -45,6 +48,7 @@ BOARD = boards.BOARDS[boards.DEFAULT]
 TS = sc.testset()
 STAGE1 = [results.path("1-board", name, BOARD.key) for name in ("current-scale", "terminal-chain")]
 CPA = sc.scales.load(BOARD).counts_per_a      # the board's measured counts per A, stage 1 current-scale
+IDENTITY = sc.osc.identity                    # the real one, behind the fixture's stub
 A_PER_COUNT = 1 / CPA
 
 
@@ -471,6 +475,7 @@ def bus(monkeypatch, tmp_path):
     monkeypatch.setattr(cn, "registry_of", lambda pair: {})
     state["servo"] = synth.Bench().stub(monkeypatch, lambda: {"torque_enable": state["torque"]})
     monkeypatch.setattr(sc.osc, "bus_baud", lambda: state["baud"])
+    monkeypatch.setattr(sc.osc, "identity", lambda: {"sha1": f"sha1 of {sc.osc.tool()}", "version": None})
     monkeypatch.setattr(sc.bench, "read_vsys", lambda board=None: state["vsys"])
     monkeypatch.setattr(sc.osc, "track", track)
     monkeypatch.setattr(sc, "result_path", lambda pair, label: tmp_path / "results" / pair / f"{label}.json")
@@ -936,13 +941,15 @@ def ab_bench(bus, monkeypatch, tmp_path):
     and a run's first capture, with the position gain the servo holds
     under it, go into the servo's own log, so they stand in one order
     with its writes. A flash reboots the servo onto its stored state;
-    `descriptors` gives an image its own fields and stored values."""
+    `descriptors` gives an image its own fields and stored values,
+    `stale` names the images every boot of which reads STAMP_MISMATCH,
+    and `unblessed` those a stamp does not clear it on."""
     servo = bus["servo"]
     images = {}
     for name in ("a", "b"):
         images[name] = tmp_path / f"{name}.bin"
         images[name].write_bytes(name.encode() * 64)
-    descriptors = {}
+    descriptors, stale, unblessed = {}, set(), set()
     track = sc.osc.track
 
     def tracked(out, mode, schedule, **kw):
@@ -954,12 +961,12 @@ def ab_bench(bus, monkeypatch, tmp_path):
     def flash(image):
         servo.log.append(("flash", Path(image).name))
         servo.FIELDS, servo.STORED = descriptors.get(Path(image).name, (type(servo).FIELDS, type(servo).STORED))
+        servo.stale, servo.unblessed = Path(image).name in stale, Path(image).name in unblessed
         servo.reboot()
-        servo.stamp = bus.get("stamp", servo.stamp)
 
     monkeypatch.setattr(sc.osc, "track", tracked)
     monkeypatch.setattr(sc.osc, "flash", flash)
-    return {"images": images, "descriptors": descriptors}
+    return {"images": images, "descriptors": descriptors, "stale": stale, "unblessed": unblessed}
 
 
 def side(bench, label, image, **kw):
@@ -1070,18 +1077,63 @@ def test_a_side_on_the_table_installs_it_around_its_own_runs_and_is_planned_in_i
     assert (constants(a, 1)["pos_table"]["state"], constants(b, 1)["pos_table"]["state"]) == ("IDENTITY", "LIVE")
 
 
-def test_ab_stops_before_any_run_when_the_stamp_is_not_the_live_set(ab_bench, bus, capsys):
-    bus["stamp"] = "0x9c45 != live set 0x1234"
-    with pytest.raises(SystemExit, match="unverified image"):
+def test_a_side_whose_image_boots_with_a_stale_stamp_runs_once_the_install_has_stamped_it(ab_bench, bus):
+    """An image whose stored stamp is from before its covered fields
+    changed: every boot of it reads STAMP_MISMATCH. No stamp is asked
+    of it after the flash; the install finds the servo the set field by
+    field, stamps it and requires clean, and the reboot after the run
+    brings back the state the image boots with."""
+    ab_bench["stale"].add("b.bin")
+    servo = bus["servo"]
+    a, b = sc.ab(side(ab_bench, "12-a", "a"), side(ab_bench, "12-b", "b"), rounds=2, servo=SERVO, board=BOARD)
+    expected = []
+    for k in (1, 2):
+        expected += [("flash", "a.bin"), ("capture", "12-a", f"run-{k}", 40212),
+                     ("flash", "b.bin"), ("run", "stamp"), ("capture", "12-b", f"run-{k}", 40212), ("run", "reboot")]
+    assert events(bus) == expected
+    for k in (1, 2):
+        state = constants(b, k)
+        assert (state["data_state"], state["stamp"]) == ("clean", "0x1234 = live set")
+        assert cn.differences(cn.load(b / sc.SET_COPY), state) == [] and sc.run_complete(b / f"run-{k}")
+    assert (servo.data, servo.stamp) == ("STAMP_MISMATCH", synth.STALE)
+
+
+def test_a_side_whose_install_cannot_make_the_servo_the_set_does_not_start(ab_bench, bus, capsys):
+    """The same image under a tool whose stamp the servo does not take
+    as its own: the install's stamp leaves the data state as it was, so
+    the install is refused and the side records nothing."""
+    ab_bench["stale"].add("b.bin")
+    ab_bench["unblessed"].add("b.bin")
+    with pytest.raises(SystemExit) as e:
         sc.ab(side(ab_bench, "12-a", "a"), side(ab_bench, "12-b", "b"), rounds=3, servo=SERVO, board=BOARD)
-    assert events(bus) == [("flash", "a.bin")] and bus["log"] == []
-    assert not sc.rung_dir(PAIR, "12-a").exists() and not sc.rung_dir(PAIR, "12-b").exists()
-    assert "left on the servo: " in capsys.readouterr().out
+    assert str(e.value) == ("12-b: the rung's set does not install: data state STAMP_MISMATCH: closed loop is "
+                            "refused; rebooted: the servo is back on its saved state")
+    assert events(bus) == [("flash", "a.bin"), ("capture", "12-a", "run-1", 40212), ("flash", "b.bin"),
+                           ("run", "stamp"), ("run", "reboot")]
+    assert sc.run_complete(sc.rung_dir(PAIR, "12-a") / "run-1") and not sc.rung_dir(PAIR, "12-b").exists()
+    assert len(bus["log"]) == len([c for c in TS.CAPTURES if (sc.rung_dir(PAIR, "12-a") / "run-1" / c).exists()])
+    assert "left on the servo: b.bin" in capsys.readouterr().out
+
+
+def test_a_reboot_that_lands_another_data_state_than_before_the_install_is_refused(bus, monkeypatch, tmp_path):
+    servo = bus["servo"]
+    track = sc.osc.track
+
+    def then_stale(out, mode, schedule, **kw):
+        servo.stale = True
+        return track(out, mode, schedule, **kw)
+
+    monkeypatch.setattr(sc.osc, "track", then_stale)
+    f = deviation(tmp_path, "soft", p_kp_q88=5026)
+    with pytest.raises(settings.Refused, match="after the reboot the data state is STAMP_MISMATCH, not the clean "
+                                               "of before the install"):
+        sc.run("01-soft", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
+    assert servo.wrote()[-1] == ("run", "reboot")
 
 
 @pytest.mark.parametrize("labels, change, match", [
     (("13-a", "13-b"), {"torque": "on"}, "torque is on"),
-    (("13-a", "13-a"), {}, "both sides are labeled"),
+    (("13-a", "13-a"), {}, "two sides are labeled '13-a'"),
     (("13-a", "00-baseline"), {}, "already holds a rung"),
 ])
 def test_ab_refuses_before_anything_is_flashed(ab_bench, bus, labels, change, match):
@@ -1110,23 +1162,38 @@ def test_ab_reboots_a_sides_set_away_after_an_abort_in_its_run(ab_bench, bus, mo
 
 
 def test_the_cli_names_the_set_and_the_deviation_of_a_run_and_of_each_side(monkeypatch):
-    seen = []
-    monkeypatch.setattr(sc, "run", lambda *a, **kw: seen.append(a) or Path("x"))
+    seen, loads = [], []
+    monkeypatch.setattr(sc, "run", lambda *a, **kw: seen.append(a) or loads.append(kw) or Path("x"))
     sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s"])
     assert seen[-1] == ("l", "f", "s", 3, "", None, None, [], [])
     sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s", "--set", "x.json", "--deviation", "d.json",
              "--protection", "current_limit_counts", "stall_response", "--loosen", "stall_response"])
     assert seen[-1][5:] == (Path("x.json"), Path("d.json"), ["current_limit_counts", "stall_response"],
                             ["stall_response"])
-    monkeypatch.setattr(sc, "ab", lambda *sides, rounds: seen.append(sides) or (Path("a"), Path("b")))
-    sc.main(["ab", "--a-label", "a", "--a-fw", "f", "--a-image", "i", "--b-label", "b", "--b-fw", "g",
-             "--b-image", "j", "--b-set", "x.json", "--b-deviation", "d.json", "--b-protection", "cutoff_cc",
-             "--b-loosen", "cutoff_cc"])
-    a, b = seen[-1]
+    monkeypatch.setattr(sc, "ab", lambda *sides, **kw: seen.append((sides, kw)) or (Path("a"), Path("b")))
+    two = ["ab", "--a-label", "a", "--a-fw", "f", "--a-image", "i", "--b-label", "b", "--b-fw", "g",
+           "--b-image", "j", "--b-set", "x.json", "--b-deviation", "d.json", "--b-protection", "cutoff_cc",
+           "--b-loosen", "cutoff_cc"]
+    sc.main(two)
+    (a, b), kw = seen[-1]
     assert a == {"label": "a", "fw": "f", "image": Path("i"), "note": "", "set_file": None, "deviation": None,
-                 "protection": [], "loosen": []}
+                 "protection": [], "loosen": [], "osc": None}
     assert b == {"label": "b", "fw": "g", "image": Path("j"), "note": "", "set_file": Path("x.json"),
-                 "deviation": Path("d.json"), "protection": ["cutoff_cc"], "loosen": ["cutoff_cc"]}
+                 "deviation": Path("d.json"), "protection": ["cutoff_cc"], "loosen": ["cutoff_cc"], "osc": None}
+    assert kw == {"rounds": 3, "order": None, "max_load": None}
+    # a third side, each side's tool, the order within a round and the load gate
+    sc.main([*two, "--a-osc", "main/osc", "--c-label", "c", "--c-fw", "g", "--c-image", "j", "--c-osc", "new/osc",
+             "--c-deviation", "e.json", "--order", "cba", "--max-load", "4", "--rounds", "2"])
+    (a, b, c), kw = seen[-1]
+    assert (a["osc"], b["osc"], c["osc"]) == ("main/osc", None, "new/osc")
+    assert c == {"label": "c", "fw": "g", "image": Path("j"), "note": "", "set_file": None,
+                 "deviation": Path("e.json"), "protection": [], "loosen": [], "osc": "new/osc"}
+    assert kw == {"rounds": 2, "order": "cba", "max_load": 4.0}
+    for half in (["--c-note", "x"], ["--c-label", "c", "--c-image", "j"]):
+        with pytest.raises(SystemExit):
+            sc.main([*two, *half])
+    sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s", "--max-load", "2.5"])
+    assert loads[0] == {"max_load": None} and loads[-1] == {"max_load": 2.5}
     # the flags a rung had before its set are gone
     for gone in ("--settings", "--pos-table", "--wide-codes"):
         with pytest.raises(SystemExit):
@@ -1180,6 +1247,254 @@ def test_ab_rungs_are_the_rungs_run_records(ab_bench, tmp_path):
         out = json.loads(sc.result_path(PAIR, rung.name).read_text())
         assert out["runs"] == ["run-1", "run-2", "run-3"] and out["skipped"] == []
     assert rung_json(rungs[1])["deviation"]["fields"] == {"p_kp_q88": [40212, 6000]}
+
+
+# --- three sides, a tool a side, a run lost to a short burst, the host's load ---
+
+def test_three_sides_run_one_of_each_a_round_in_the_order_given(ab_bench, bus, tmp_path):
+    fc = deviation(tmp_path, "fc", p_kp_q88=6000)
+    sides = [side(ab_bench, "30-a", "a"), side(ab_bench, "30-b", "b"), side(ab_bench, "30-c", "b", deviation=fc)]
+    rungs = sc.ab(*sides, rounds=2, order="cba", servo=SERVO, board=BOARD)
+    expected = []
+    for k in (1, 2):
+        # c and b share an image: one flash for the two, c's set on around its own run alone
+        expected += [("flash", "b.bin"), ("set", "p_kp_q88", "6000"), ("run", "stamp"),
+                     ("capture", "30-c", f"run-{k}", 6000), ("run", "reboot"),
+                     ("capture", "30-b", f"run-{k}", 40212),
+                     ("flash", "a.bin"), ("capture", "30-a", f"run-{k}", 40212)]
+    assert events(bus) == expected
+    # the folders come back a first, whatever the order
+    assert [r.name for r in rungs] == ["30-a", "30-b", "30-c"]
+    assert all(sc.run_complete(r / f"run-{k}") for r in rungs for k in (1, 2))
+    assert rung_json(rungs[2])["deviation"]["fields"] == {"p_kp_q88": [40212, 6000]}
+    bus["servo"].log.clear()
+    again = [{**x, "label": x["label"].replace("30", "31")} for x in sides]
+    sc.ab(*again, rounds=1, servo=SERVO, board=BOARD)
+    assert [c[1] for c in events(bus) if c[0] == "capture"] == ["31-a", "31-b", "31-c"]
+
+
+@pytest.mark.parametrize("change, order, match", [
+    ({}, "abb", "order 'abb' is not the sides a, b, c once each"),
+    ({}, "ab", "order 'ab' is not the sides a, b, c once each"),
+    ({"label": "32-a"}, None, "two sides are labeled '32-a'"),
+])
+def test_three_sides_are_refused_before_anything_is_flashed(ab_bench, bus, change, order, match):
+    sides = [side(ab_bench, "32-a", "a"), side(ab_bench, "32-b", "b"), {**side(ab_bench, "32-c", "b"), **change}]
+    with pytest.raises(SystemExit, match=match):
+        sc.ab(*sides, order=order, servo=SERVO, board=BOARD)
+    with pytest.raises(SystemExit, match="1 sides: an alternated session records two rungs or three"):
+        sc.ab(sides[0], servo=SERVO, board=BOARD)
+    assert events(bus) == [] and bus["log"] == []
+
+
+class Tagged(list):
+    """A fake servo's log with the `osc` tool in force at each call
+    ahead of the call."""
+
+    def append(self, call):
+        super().append((sc.osc.tool(), *call))
+
+
+def by_tool(log):
+    """The log as [tool, calls] a stretch of calls under one tool."""
+    out = []
+    for tool, *call in log:
+        if not out or out[-1][0] != tool:
+            out.append([tool, []])
+        out[-1][1].append(tuple(call))
+    return out
+
+
+def test_each_sides_calls_go_through_its_own_tool_and_no_other(ab_bench, bus, monkeypatch, tmp_path):
+    servo = bus["servo"]
+    servo.log = Tagged()
+    track = sc.osc.track
+
+    def tracked(out, mode, schedule, **kw):
+        servo.log.append(("track", Path(out).parent.parent.name))
+        return track(out, mode, schedule, **kw)
+
+    monkeypatch.setattr(sc.osc, "track", tracked)
+    monkeypatch.setattr(sc.osc, "bus_baud", lambda: servo.log.append(("ping",)) or 3_000_000)
+    fc = deviation(tmp_path, "fc", p_kp_q88=6000)
+    a, b, c = sc.ab(side(ab_bench, "33-a", "a"), side(ab_bench, "33-b", "b", osc="b/osc"),
+                    side(ab_bench, "33-c", "b", osc="c/osc", deviation=fc), rounds=2, servo=SERVO, board=BOARD)
+    main = sc.osc.TOOL
+    turns = by_tool(servo.log)
+    # the preflight before the session and a's turns on the default tool, then b's and c's each on its own
+    assert [tool for tool, _ in turns] == [main, "b/osc", "c/osc", main, "b/osc", "c/osc"]
+    for tool, calls in turns:
+        label, image = {main: ("33-a", "a.bin"), "b/osc": ("33-b", "b.bin"), "c/osc": ("33-c", None)}[tool]
+        kinds = [x[0] for x in calls]
+        # the flash and the wait for boot behind it, where the turn flashes
+        assert [x[1] for x in calls if x[0] == "flash"] == ([image] if image else [])
+        assert not image or kinds[kinds.index("flash") + 1] == "ping"
+        # the preflight, the state read, the captures
+        assert {"status", "ping", "get", "dump", "read", "field"} <= set(kinds)
+        assert {x[1] for x in calls if x[0] == "track"} == {label}
+        # the install, its stamp and the reboot that takes it away are c's alone
+        wrote = [x for x in calls if x[0] in ("set", "run")]
+        assert wrote == ([("set", "p_kp_q88", "6000"), ("run", "stamp"), ("run", "reboot")] if tool == "c/osc"
+                         else [])
+    assert sc.osc.tool() == main
+    assert [rung_json(r)["tool"] for r in (a, b, c)] == [{"sha1": f"sha1 of {t}", "version": None}
+                                                         for t in (main, "b/osc", "c/osc")]
+
+
+def test_a_side_is_back_on_the_default_tool_after_an_abort_in_its_turn(ab_bench, bus, monkeypatch):
+    def abort(out, mode, schedule, **kw):
+        assert sc.osc.tool() == "b/osc"
+        raise RuntimeError("aborted")
+
+    monkeypatch.setattr(sc.osc, "track", abort)
+    with pytest.raises(RuntimeError, match="aborted"):
+        sc.ab(side(ab_bench, "34-b", "b", osc="b/osc"), side(ab_bench, "34-a", "a"), servo=SERVO, board=BOARD)
+    assert sc.osc.tool() == sc.osc.TOOL
+
+
+def test_a_tool_that_is_not_there_or_changes_under_the_session_is_refused(ab_bench, bus, monkeypatch, tmp_path):
+    stub = sc.osc.identity
+    monkeypatch.setattr(sc.osc, "identity", IDENTITY)
+    with pytest.raises(SystemExit, match="35-b: no osc tool at nowhere/osc"):
+        sc.ab(side(ab_bench, "35-a", "a"), side(ab_bench, "35-b", "b", osc="nowhere/osc"), servo=SERVO,
+              board=BOARD)
+    assert events(bus) == [] and bus["log"] == []
+    built = []
+    monkeypatch.setattr(sc.osc, "identity", lambda: {**stub(), "sha1": f"build {len(built)}"})
+    track = sc.osc.track
+    monkeypatch.setattr(sc.osc, "track", lambda out, *a, **kw: built.append(out) or track(out, *a, **kw))
+    with pytest.raises(SystemExit, match="35-b: its osc tool is not the binary the session began with"):
+        sc.ab(side(ab_bench, "35-a", "a"), side(ab_bench, "35-b", "b", osc="b/osc"), servo=SERVO, board=BOARD)
+    # a's first run is recorded, b's turn does not begin
+    assert events(bus) == [("flash", "a.bin"), ("capture", "35-a", "run-1", 40212)]
+
+
+SHORT = "the burst came back short: 7152 of 10000 rows (178 seq holes, 116 garble bytes)"
+
+
+def aborting(bus, monkeypatch, when, reason=SHORT, code=3):
+    """`osc-lab track` aborting a capture as the tool does, exit `code`
+    with `reason` in the meta.json it lands, where `when(rung, run,
+    capture, the times this capture was tried)` says so. Returns the
+    captures tried, in order."""
+    track, tried = sc.osc.track, []
+
+    def tracked(out, mode, schedule, **kw):
+        out = Path(out)
+        at = (out.parent.parent.name, out.parent.name, out.name)
+        tried.append(at)
+        track(out, mode, schedule, **kw)
+        if when(*at, tried.count(at)):
+            meta = json.loads((out / "meta.json").read_text())
+            (out / "meta.json").write_text(json.dumps({**meta, "ended": {"reason": reason, "segment": 3,
+                                                                         "at": "segment 3 (hold@500)"}}))
+            raise subprocess.CalledProcessError(code, ["osc-lab", "track"])
+        return out
+
+    monkeypatch.setattr(sc.osc, "track", tracked)
+    return tried
+
+
+@pytest.mark.parametrize("lost_at", [("run-1", "steps"), ("run-2", "follow")])
+def test_a_run_that_loses_a_burst_is_run_again_from_its_first_capture_and_kept_in_rung_json(
+        ab_bench, bus, monkeypatch, lost_at):
+    monkeypatch.setattr(sc.os, "getloadavg", lambda: (6.514, 3.0, 2.0))
+    tried = aborting(bus, monkeypatch, lambda rung, run, cap, n: (rung, run, cap) == ("40-b", *lost_at) and n == 1)
+    a, b = sc.ab(side(ab_bench, "40-a", "a"), side(ab_bench, "40-b", "a"), rounds=2, servo=SERVO, board=BOARD)
+    run, cap = lost_at
+    caps = [c for c in TS.CAPTURES if (b / "run-1" / c).exists()]
+    upto = caps[:caps.index(cap) + 1]
+    # the lost run's captures up to the loss, then the whole run again, in its place in the alternation
+    expected = []
+    for k in ("run-1", "run-2"):
+        expected += [("40-a", k, c) for c in caps]
+        expected += [("40-b", k, c) for c in (*(upto if k == run else ()), *caps)]
+    assert tried == expected
+    kept = f"lost/{run}-1"
+    assert rung_json(b)["lost"] == [{"run": run, "capture": cap, "reason": SHORT, "load_1m": 6.51, "rows": kept}]
+    assert "lost" not in rung_json(a)
+    # the rows lost are kept aside, the servo read again and the set checked before the run that counts
+    assert sorted(p.name for p in (b / kept).iterdir()) == sorted(["servo.json", *upto])
+    assert json.loads((b / kept / cap / "meta.json").read_text())["ended"]["reason"] == SHORT
+    assert constants(b, int(run[-1])) == json.loads((b / kept / "servo.json").read_text())
+    assert sorted(p.name for p in b.iterdir()) == [sc.SET_COPY, "lost", "run-1", "run-2", "rung.json"]
+    sc.score("40-b", servo=SERVO, board=BOARD)
+    out = json.loads(sc.result_path(PAIR, "40-b").read_text())
+    assert out["runs"] == ["run-1", "run-2"] and out["skipped"] == [] and out["lost"] == rung_json(b)["lost"]
+
+
+def test_a_run_lost_on_every_try_ends_the_session_torque_off_and_the_stored_state_back(
+        ab_bench, bus, monkeypatch, capsys):
+    monkeypatch.setattr(sc.os, "getloadavg", lambda: (1.0, 1.0, 1.0))
+
+    def lost(rung, run, cap, n):
+        # a tool that could not take torque off after its last abort
+        bus["torque"] = "on" if (rung, cap, n) == ("41-b", "follow", sc.RETRIES + 1) else "off"
+        return (rung, cap) == ("41-b", "follow")
+
+    tried = aborting(bus, monkeypatch, lost)
+    with pytest.raises(SystemExit) as e:
+        sc.ab(side(ab_bench, "41-a", "a"), side(ab_bench, "41-b", "a"), rounds=2, servo=SERVO, board=BOARD)
+    assert str(e.value).endswith(f"41-b: run-1 lost a burst on each of 3 tries, the last in follow: {SHORT}")
+    b = sc.rung_dir(PAIR, "41-b")
+    assert tried.count(("41-b", "run-1", "follow")) == 3 and ("41-a", "run-2", "steps") not in tried
+    assert [x["rows"] for x in rung_json(b)["lost"]] == ["lost/run-1-1", "lost/run-1-2", "lost/run-1-3"]
+    assert not (b / "run-1").exists()
+    # the set of record wrote nothing, and the servo is rebooted onto its stored state all the same
+    assert events(bus) == [("flash", "a.bin"), ("capture", "41-a", "run-1", 40212),
+                           *[("capture", "41-b", "run-1", 40212)] * 3,
+                           ("set", "torque_enable", "off"), ("run", "reboot")]
+    assert "left on the servo: " in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("reason, code", [("current 912 counts over the cap 850 for 100 ms", 3),
+                                          ("the rail reads 3.1 V", 2)])
+def test_a_capture_that_ends_any_other_way_ends_the_session_and_the_stored_state_comes_back(
+        ab_bench, bus, monkeypatch, tmp_path, reason, code):
+    tried = aborting(bus, monkeypatch, lambda rung, run, cap, n: (rung, cap) == ("42-b", "follow"), reason, code)
+    fb = deviation(tmp_path, "fb", p_kp_q88=6000)
+    with pytest.raises(subprocess.CalledProcessError) as e:
+        sc.ab(side(ab_bench, "42-a", "a"), side(ab_bench, "42-b", "a", deviation=fb), servo=SERVO, board=BOARD)
+    assert e.value.returncode == code
+    # tried once, nothing moved aside or kept as lost, the deviation rebooted away
+    b = sc.rung_dir(PAIR, "42-b")
+    assert tried.count(("42-b", "run-1", "follow")) == 1 and tried[-1] == ("42-b", "run-1", "follow")
+    assert not (b / "lost").exists() and "lost" not in rung_json(b) and not sc.run_complete(b / "run-1")
+    assert events(bus)[-4:] == [("set", "p_kp_q88", "6000"), ("run", "stamp"),
+                                ("capture", "42-b", "run-1", 6000), ("run", "reboot")]
+    assert bus["servo"].decoded("p_kp_q88") == 40212
+
+
+def test_the_load_gate_waits_before_a_run_and_keeps_the_wait(bus, monkeypatch, capsys):
+    # run-1 waits two polls for the load to fall, run-2 none, run-3 its whole time and goes on over the limit
+    loads = iter([9.004, 8.0, 3.0, 2.0])
+    slept = []
+    monkeypatch.setattr(sc.os, "getloadavg", lambda: (next(loads, 6.0), 0.0, 0.0))
+    monkeypatch.setattr(sc.time, "sleep", slept.append)
+    rung = sc.run("50-load", "abc123", "f" * 40, runs=3, max_load=4.0, servo=SERVO, board=BOARD)
+    polls = sc.LOAD_WAIT_S // sc.LOAD_POLL_S
+    assert slept == [sc.LOAD_POLL_S] * (2 + polls)
+    assert rung_json(rung)["load_waits"] == [
+        {"run": "run-1", "max_load": 4.0, "load_1m_before": 9.0, "load_1m_after": 3.0, "waited_s": 10,
+         "went_on_over": False},
+        {"run": "run-3", "max_load": 4.0, "load_1m_before": 6.0, "load_1m_after": 6.0, "waited_s": sc.LOAD_WAIT_S,
+         "went_on_over": True}]
+    assert all(sc.run_complete(rung / f"run-{k}") for k in (1, 2, 3))
+    assert "50-load run-1 waits for the host: load 9.0 is over 4" in capsys.readouterr().out
+    # no limit, no wait and nothing kept
+    slept.clear()
+    assert "load_waits" not in rung_json(sc.run("51-free", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD))
+    assert slept == []
+
+
+def test_an_alternated_session_gates_each_sides_run_on_the_load(ab_bench, bus, monkeypatch):
+    loads = iter([1.0, 9.0, 1.0])
+    monkeypatch.setattr(sc.os, "getloadavg", lambda: (next(loads, 1.0), 0.0, 0.0))
+    a, b = sc.ab(side(ab_bench, "52-a", "a"), side(ab_bench, "52-b", "a"), rounds=1, max_load=4.0, servo=SERVO,
+                 board=BOARD)
+    assert "load_waits" not in rung_json(a)
+    assert [(w["run"], w["waited_s"], w["went_on_over"]) for w in rung_json(b)["load_waits"]] == \
+        [("run-1", sc.LOAD_POLL_S, False)]
 
 
 # --- the servo's constant state beside a run ---

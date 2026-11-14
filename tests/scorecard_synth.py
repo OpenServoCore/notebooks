@@ -212,13 +212,19 @@ class Servo:
         return self
 
 
+STALE = "0x9c45 != live set 0x1234"     # how `osc status` words a stamp that is not the live set's
+
+
 class Bench(Servo):
     """The fake servo with the writes an install makes: `osc set` by
     name, refused where it would put the low soft limit at or past the
     high one, the table's STORE and COMMIT behind the window (a COMMIT
     of all-zero points lands IDENTITY, or LIVE with `zero_live`, as a
     firmware that judges only the shape lands it), the slots, the stamp
-    and the reboot. A write of a CONFIG or CALIB field or a
+    and the reboot. With `stale` every boot reads STAMP_MISMATCH, as an
+    image whose stored stamp is from before its covered fields changed,
+    and with `unblessed` a stamp does not clear it, as from a tool that
+    computes another. A write of a CONFIG or CALIB field or a
     COMMIT leaves the data state STAMP_MISMATCH until a stamp. `drop`
     names fields whose write is answered and not taken, `drift` a field
     whose write moves another too."""
@@ -241,6 +247,7 @@ class Bench(Servo):
 
     def __init__(self):
         self.drop, self.drift, self.flash, self.torn, self.zero_live = set(), {}, None, {}, False
+        self.stale = self.unblessed = False
         super().__init__()
 
     def reboot(self):
@@ -253,6 +260,8 @@ class Bench(Servo):
         self.stamp, self.data = "0x9c45 = live set", "clean"
         if self.flash:
             self.table[:0xc0], self.pages, self.stamp = self.flash[0], list(self.flash[1]), self.flash[2]
+        if self.stale:
+            self.stamp, self.data = STALE, "STAMP_MISMATCH"
         for name, v in self.torn.items():
             self.set(name, v)
         self.set("pos_lut_state", postable.STATES.index("LIVE" if any(any(p) for p in self.pages) else "IDENTITY"))
@@ -280,7 +289,7 @@ class Bench(Servo):
             self.set(name, v)
         if name in self.drift:
             self.set(*self.drift[name])
-        self.data, self.stamp = "STAMP_MISMATCH", "0x9c45 != live set 0x1234"
+        self.data, self.stamp = "STAMP_MISMATCH", STALE
 
     def write(self, addr, data):
         self.log.append(("write", addr, bytes(data)))
@@ -301,7 +310,7 @@ class Bench(Servo):
 
     def run(self, *args, **kw):
         self.log.append(("run", *args))
-        if args[0] == "stamp":
+        if args[0] == "stamp" and not self.unblessed:
             self.stamp, self.data = "0x1234 = live set", "clean"
         elif args[0] == "save":
             if self.decoded("torque_enable") == "on":
