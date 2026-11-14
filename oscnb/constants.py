@@ -125,8 +125,11 @@ every field it moved as [of record, deviated]. It is refused when the
 set of record is not what a build of its inputs gives now, when it
 moves nothing, and when it moves a protection field and anything else.
 The protection fields a deviation moves are of one step (GROUPS: the
-words of the NTC curve, the current limits, any other field alone),
-and a release of one held field of a step releases them all.
+words of the NTC curve, the current limits, the four fields of the
+winding model, any other field alone), and a release of one held field
+of a step releases them all. A deviation that moves the winding model
+is said with what the estimate reads under the four held and under the
+four wanted (`winding_step`).
 A derived set is never a set of record and is never saved.
 
 `status` is offline: the sha1 of every input file against the file now,
@@ -148,7 +151,10 @@ host write no field the set holds, when the table cannot be installed,
 or by the protection gate: a protection field the install would change
 has to be named with `--protection`, and named again with `--loosen`
 when the set's value protects less than the servo's (LOOSER; a field
-no one direction says it for is always taken as protecting less). Then,
+no one direction says it for is always taken as protecting less). An
+install that would change the winding model's four prints, with the
+gate's lines or ahead of its writes, what the estimate reads under the
+servo's four and under the set's (`winding_step`). Then,
 in the order a count is defined: the slots, the stops, the table
 (`postable`'s own steps, every page read back; an IDENTITY table is
 written as all-zero points, whose COMMIT must land IDENTITY, and a
@@ -192,7 +198,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from . import boards, osc, postable, results, servos, settings, widecodes
+from . import boards, osc, postable, results, servos, settings, widecodes, winding
 from . import scorecard as sc
 
 FORMAT = 1
@@ -248,13 +254,17 @@ RETIRED = {
 PROTECTION = frozenset((*LOOSER, *RETIRED))
 
 # The protection fields that are one step together: the four words of
-# the NTC curve, which are one curve, and the current limits, which one
-# shunt scale takes from amps to counts. A deviation moves the
+# the NTC curve, which are one curve, the current limits, which one
+# shunt scale takes from amps to counts, and the four fields of the
+# winding estimate, which are one model of the winding's heat, a leak
+# and a rise for each of its two nodes. A deviation moves the
 # protection fields of one group, a field in none being a group of its
 # own, and it releases a group's holds together or not at all.
+MODEL = "winding model"
 GROUPS = {
     "ntc curve": ("ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24"),
     "current scale": ("current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_trip_counts"),
+    MODEL: ("thermal_tau_s", "th_rise_q016", "thermal_tau2_s", "th_rise2_q016"),
 }
 
 # The fields whose value is per position count, or a position in counts:
@@ -1134,6 +1144,68 @@ def cutoff(c):
     return 100 * c.policy("cutoff_c")
 
 
+# The winding estimate is the board NTC plus two heat nodes on one
+# input, each a leak in seconds and a rise in centi-C per count squared
+# of its heat (core estimator/thermal.rs, kernel/phases/loops/limits.rs
+# heat). Its four fields are one model, read from the pair's stage 4
+# winding-temperature result. The fast node is the pair's own: its time
+# constant the one-node fit's, its gain the one refitted beside a slow
+# node at the leaks a stored set runs. The slow node is the family's,
+# which that result quotes from earlier work on another servo of the
+# type: its time constant, and its gain by the reading of the plateau
+# the policy names, the can's rise alone (`low`) or the earlier model's
+# two modes together (`high`). So the fast pair is `measured` and the
+# slow pair `policy`, the family's terms taken by a decision until a
+# lock hold measures this motor's. A gain in C/W is a rise per count
+# squared through the winding's resistance and the shunt's counts per A
+# (oscnb.winding.rise_per_count2). A time constant is written in whole
+# seconds and runs at the nearest power of two of the kernel's 16 ms
+# period (oscnb.winding.leak_s, the mirror of tau_shift), so what a set
+# of the four reads is said by the kernel's integers (`winding_step`) and
+# not by the seconds written.
+WINDING = "4-estimators/winding-temperature"
+READING = "winding_plateau_reading"     # the policy entry that names the reading of the plateau
+READINGS = ("low", "high")
+
+
+def joined(c):
+    """The stage 4 quantity of the reading of the plateau the policy
+    names: the fast node's gain, C/W, fitted beside that reading's slow
+    node, whose gain the quantity carries as `slow_gain_c_per_w`."""
+    name = c.policy(READING)
+    if name not in READINGS:
+        raise ValueError(f"{POLICY}: {READING} is {name!r}: a reading of the plateau is one of "
+                         f"{', '.join(READINGS)}")
+    return f"joined_{name}_fast_gain_c_per_w"
+
+
+def rise(gain):
+    """A node's gain, C/W, as its rise in centi-C per count squared:
+    over the winding's resistance of the stage 3 rails fit, the current
+    in the board's measured shunt counts."""
+    def per_count2(c):
+        return winding.rise_per_count2(gain(c), c.q(*RESISTANCES["rails_fit"]), shunt_counts_per_a(c))
+    return per_count2
+
+
+@rule("thermal_tau_s", "thermal_tau.fast_node", kind="u16", unit="s",
+      mirrors="core kernel/phases/loops/limits.rs tau_shift")
+def thermal_tau(c):
+    return c.q(WINDING, "one_node_tau_s")
+
+
+@rule("thermal_tau2_s", "thermal_tau2.family", kind="u16", unit="s", cls="policy",
+      mirrors="core kernel/phases/loops/limits.rs tau_shift")
+def thermal_tau2(c):
+    return c.q(WINDING, "family_slow_tau_s")
+
+
+rule("th_rise_q016", "th_rise.fast_node", kind="u16", unit="cC/count^2", q=16,
+     mirrors="core estimator/thermal.rs rise_cc")(rise(lambda c: c.q(WINDING, joined(c))))
+rule("th_rise2_q016", "th_rise2.family", kind="u16", unit="cC/count^2", q=16, cls="policy",
+     mirrors="core estimator/thermal.rs rise_cc")(rise(lambda c: c.raw(WINDING, joined(c), "slow_gain_c_per_w")))
+
+
 # --- build ---
 
 def held(what, rule_name, carried, why, previous, would_be=None):
@@ -1456,6 +1528,92 @@ def changes(previous, doc):
     return out
 
 
+# --- the winding model's step ---
+#
+# No one direction says what a step of the winding model's four does to
+# the protection: LOOSER reads a field alone, and here one rise falls
+# while the other rises and both leaks are judged. What the step does
+# is what the estimate then reads, so it is printed as that, by the
+# kernel's own integers (oscnb.winding.stored_rise_c): the rise over
+# the board NTC under the four held and under the four wanted, in a
+# hold from rest at the continuous current and at the limit, the rest
+# after one, and duty cycles at the limit. The gate stands as it is,
+# every field named; this is what is read before naming them.
+HOLD_S = (1, 3, 10, 30, 60, 120, 300, 600, 3600)    # s into a hold from rest
+REST_FROM_S = 600                                   # s at the limit before the rest
+REST_S = (1, 3, 10, 30, 60, 120, 300)               # s into the rest
+CYCLES_S = ((0.5, 4.5), (3.0, 3.0), (3.0, 57.0), (30.0, 30.0))      # s on, s off, at the limit
+CYCLED_S = 1800                                     # s of cycles, the last one read
+
+
+def winding_cases(four, cont, limit):
+    """What a stored set of the winding model's four (GROUPS's order)
+    reads over the board NTC, C, by case: a hold from rest at `cont`
+    and at `limit`, counts, the rest after REST_FROM_S at the limit,
+    and the peak and the mean of the last cycle of CYCLED_S of each
+    duty cycle at the limit."""
+    def at(trace, s):
+        return float(trace[round(s / winding.STORED_PERIOD_S) - 1])
+
+    out = {}
+    for counts in dict.fromkeys((cont, limit)):
+        trace = winding.stored_rise_c(four, [(HOLD_S[-1], counts)])
+        out.update({f"a hold from rest at {counts} counts, {s} s in": at(trace, s) for s in HOLD_S})
+    trace = winding.stored_rise_c(four, [(REST_FROM_S, limit), (REST_S[-1], 0)])
+    out.update({f"the rest after {REST_FROM_S} s at {limit} counts, {s} s in": at(trace, REST_FROM_S + s)
+                for s in REST_S})
+    for on, off in CYCLES_S:
+        cycle = [(on, limit), (off, 0)]
+        last = winding.stored_rise_c(four, cycle * math.ceil(CYCLED_S / (on + off)))[
+            -round((on + off) / winding.STORED_PERIOD_S):]
+        out.update({f"{on:g} s on, {off:g} s off at {limit} counts, the {what} of a cycle": float(v)
+                    for what, v in (("peak", last.max()), ("mean", last.mean()))})
+    return out
+
+
+def winding_compared(held_, wanted, cont, limit):
+    """(the lines a step of the winding model is said with, the cases
+    the wanted four read cooler in): the four as held and as wanted,
+    the leak each node runs at, every case of `winding_cases` under both,
+    and whether the wanted four read at least as hot in every one."""
+    def leaks(four):
+        # a second leak of 0 drops the second node; a first of 0 runs one period
+        return " and ".join(f"{winding.leak_s(tau):g} s" for tau in (four[0], four[2])[:2 if four[2] else 1])
+
+    was, now = (winding_cases(four, cont, limit) for four in (held_, wanted))
+    cooler = [case for case in was if now[case] < was[case]]
+    lines = [f"{MODEL}: {', '.join(GROUPS[MODEL])} held at {', '.join(map(str, held_))}, wanted at "
+             f"{', '.join(map(str, wanted))}",
+             f"{MODEL}: the leaks run at {leaks(held_)}, wanted at {leaks(wanted)} (the nearest power of two of "
+             f"the {1000 * winding.STORED_PERIOD_S:g} ms period)",
+             f"{MODEL}: the estimate's rise over the board NTC, C, held -> wanted, by the kernel's integers:",
+             *(f"  {case}: {was[case]:.2f} -> {now[case]:.2f}" for case in was)]
+    lines.append(f"{MODEL}: the wanted four read at least as hot in every case" if not cooler
+                 else f"{MODEL}: the wanted four read cooler in {len(cooler)} of {len(was)} cases: "
+                 + "; ".join(f"{case} ({now[case] - was[case]:+.2f} C)" for case in cooler))
+    return lines, cooler
+
+
+def winding_step(doc, was):
+    """The lines a step of the winding model is said with
+    (`winding_compared`), from the four as `was`, {field: value}, holds
+    them to the four of set `doc`: none where the two hold the same
+    four or either lacks one. The cases run at the set's own continuous
+    current, the limit where that is 0 (core
+    kernel/phases/loops/limits.rs i_cont_or_cap), and at its current
+    limit."""
+    f = doc["fields"]
+    if not all(n in f and n in was for n in GROUPS[MODEL]):
+        return []
+    held_, wanted = [was[n] for n in GROUPS[MODEL]], [f[n]["value"] for n in GROUPS[MODEL]]
+    if held_ == wanted:
+        return []
+    if not all(n in f for n in ("i_cont_counts", "current_limit_counts")):
+        return [f"{MODEL}: the set holds no current limit to compare the estimate at"]
+    limit = f["current_limit_counts"]["value"]
+    return winding_compared(held_, wanted, f["i_cont_counts"]["value"] or limit, limit)[0]
+
+
 # --- a deviation ---
 
 def in_repo(path, root=results.ROOT, what="a deviation"):
@@ -1500,7 +1658,8 @@ def derive(base, deviation, root=results.ROOT, registry=None):
     anything else: a deviation that moves a protection field may move
     nothing else, moves the protection fields of one step (GROUPS, a
     field in no group being a step alone), and releases the holds of
-    that step together."""
+    that step together. A deviation that moves the winding model is
+    said with what the estimate reads before and after (`winding_step`)."""
     where = sc.shown(deviation)
     if base.get("deviation"):
         raise ValueError(f"the set already holds the deviation {base['deviation']['file']}: a rung runs on a set "
@@ -1534,7 +1693,7 @@ def derive(base, deviation, root=results.ROOT, registry=None):
                          else f"{where}: a deviation moves fields, not the slots, the table or the scale")
     doc["deviation"] = {"file": in_repo(deviation, root).as_posix(), "sha1": sc.file_sha1(deviation),
                         "fields": fields}
-    return doc, notes
+    return doc, [*notes, *winding_step(doc, {n: e["value"] for n, e in base["fields"].items()})]
 
 
 # --- status ---
@@ -1786,9 +1945,12 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=
     written unless torque is off, no input file of the set moved, the
     servo lets a host write every field the set holds, the table can be
     installed (`table_to_write`) and the protection gate passes
-    (`gate`). The writes are the slots, the stops, the table, then the
-    other fields that differ in the servo's table order, each read
-    back, a field the servo refuses tried once more after the rest. The
+    (`gate`). An install that would change the winding model's four
+    says what the estimate reads under the servo's and under the set's
+    (`winding_step`), with the gate's lines or ahead of the writes. The
+    writes are the slots, the stops, the table, then the other fields
+    that differ in the servo's table order, each read back, a field
+    the servo refuses tried once more after the rest. The
     state read back whole must then be the set, and only then is it
     stamped, no save, and its data state required clean. A refusal
     after the first write reboots the servo onto its saved state and
@@ -1809,8 +1971,11 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=
     if missing:
         raise settings.Refused(f"the servo's descriptor lets a host write no {', '.join(missing)}")
     refused = gate(doc, state, protection, loosen)
+    step = winding_step(doc, state["fields"])
     if refused:
-        raise settings.Refused("the protection gate:\n  " + "\n  ".join(refused))
+        raise settings.Refused("the protection gate:\n  " + "\n  ".join([*refused, *step]))
+    if step:
+        print("\n".join(step))
     table = table_to_write(doc, state, root, table)
     differ = [n for n in state["writable"] if n in doc["fields"] and state["fields"][n] != doc["fields"][n]["value"]]
     wrote = []

@@ -8,7 +8,9 @@ reads recorded, the encoder, the bands, the fields held, and the one
 hash a build moves; the rules of the motor block, the feedforwards and
 the observer gains, a hold and its release by a deviation; the rules
 of the NTC curve and the current limits, the protection steps a
-deviation may move, and what each curve reads on the bench board."""
+deviation may move, and what each curve reads on the bench board; the
+rules of the winding model's four fields, their one step, and what the
+estimate reads under the four held and under the four wanted."""
 import copy
 import dataclasses
 import hashlib
@@ -21,7 +23,7 @@ from pathlib import Path
 import pytest
 
 from oscnb import constants as cn
-from oscnb import boards, ntc, postable, results, scorecard as sc, settings
+from oscnb import boards, ntc, postable, results, scorecard as sc, settings, winding
 from oscnb import widecodes as wc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -835,13 +837,16 @@ NO_BLOCK = [
                                                                            "ntc_k2_q24")),
     *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("i_cont", "stall_release", "oc_trip")),
     "stall_tau_trip_counts: left out, policy.json has no collision_trip",
-    "cutoff_cc: left out, policy.json has no cutoff_c"]
+    "cutoff_cc: left out, policy.json has no cutoff_c",
+    *(f"{n}: left out, 4-estimators/winding-temperature has no result for synth__board" for n in (
+        "thermal_tau_s", "thermal_tau2_s")),
+    *(f"{n}: left out, policy.json has no winding_plateau_reading" for n in ("th_rise_q016", "th_rise2_q016"))]
 # the registry with the board's tick rate, and the policy entries the rules of the motor block and of the
 # protection fields read
 BOARD_REG = {**REG, "board": {"tick_hz": 20_000}}
 LIMITS_MA = {"current_limit_ma": 500.0, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
 BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_q12": "r.rails_fit", "r_bemf_q12": "r_bemf.small_step"},
-                **LIMITS_MA, "collision_trip": "off", "cutoff_c": 90.0}
+                **LIMITS_MA, "collision_trip": "off", "cutoff_c": 90.0, "winding_plateau_reading": "high"}
 # the policy entries the rules of the fields in counts of position read, and the pot's noise at rest
 COUNT_POLICY = {"velocity_limit_deg_s": 75.0, "accel_limit_deg_s2": 1500.0, "stall_omega_max_deg_s": 25.0,
                 "pos_error_deg": 20.0, "soft_margin_share": 0.0625, "hold_band_noise_multiple": 2.5,
@@ -855,7 +860,7 @@ BLOCK_SAID = [
     *NO_COUNTS,
     *(f"{n}: left out, name it with --protection" for n in (
         "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts", "oc_trip_counts",
-        "stall_tau_trip_counts", "cutoff_cc"))]
+        "stall_tau_trip_counts", "cutoff_cc", "thermal_tau_s", "thermal_tau2_s", "th_rise_q016", "th_rise2_q016"))]
 PLANT = {
     "1-board/current-scale": {"counts_per_a": (1000.0, 990.0, 1010.0)},
     "1-board/ntc-curve": {"design_t_ref_cc": (2600.0,), "design_k1_q88": (200.0,), "design_k2_q24": (30000.0,)},
@@ -866,14 +871,21 @@ PLANT = {
     "3-servo/run-up": {"j_kg_m2": (6e-9, 5e-9, 7e-9)},
     "3-servo/friction": {"firmware_pair": {"pooled": {"coulomb_uNm": (50.0, 40.0, 60.0),
                                                       "viscous_uNm_s_per_rad": (0.05,)}}},
+    # the fast node's gain beside each reading's slow node, which the quantity carries with it
+    "4-estimators/winding-temperature": {
+        "one_node_tau_s": (2.4, 1.2, 3.2), "family_slow_tau_s": (128.9, 121.0, 135.0),
+        "joined_low_fast_gain_c_per_w": {"value": 21.0, "lo": 16.0, "hi": 21.0, "slow_gain_c_per_w": 32.0},
+        "joined_high_fast_gain_c_per_w": {"value": 20.0, "lo": 15.0, "hi": 20.0, "slow_gain_c_per_w": 60.0}},
 }
 
 
 def quantities(entry):
     """A result's entries with each (value, lo, hi) as the quantity a
-    result file holds."""
+    result file holds, a number as it is."""
     if isinstance(entry, dict):
         return {k: quantities(v) for k, v in entry.items()}
+    if not isinstance(entry, tuple):
+        return entry
     value, lo, hi = (*entry, None, None)[:3]
     return {"value": value, "lo": lo, "hi": hi, "unit": ""}
 
@@ -884,8 +896,8 @@ def plant_path(root, name):
 
 
 def plant(root, values=PLANT):
-    """The stage 1 and stage 3 results the motor block's rules read,
-    under `root`, each naming what it read: nothing."""
+    """The stage 1, stage 3 and stage 4 results the rules read, under
+    `root`, each naming what it read: nothing."""
     for name, doc in values.items():
         path = plant_path(root, name)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -1524,7 +1536,7 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
                                                            "vdd_mv"]
     lines, stale = cn.status(doc)
     assert not stale and "no source, 39 fields, 5 of which a maker's value on record could supply:" in lines
-    assert sum(line.startswith("  ") for line in lines) == 39 and sum("held" in f[n] for n in by["none"]) == 13
+    assert sum(line.startswith("  ") for line in lines) == 39 and sum("held" in f[n] for n in by["none"]) == 17
 
 
 def test_the_policy_of_record_holds_what_the_rules_read():
@@ -1533,11 +1545,13 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     assert set(policy["hold"]) <= set(cn.RULES)
     assert isinstance(policy["observer_hz"], float) and all(policy["hold"].values())
     # a choice that is a decision says so, under `why`, by the name of its entry, or of the field where the
-    # value is not the policy file's: the registry's gear ratio, the two loop gains benched in counts
+    # value is not the policy file's: the registry's gear ratio, the two loop gains benched in counts, the
+    # winding model's slow pair, the family's terms as a stage 4 result quotes them
     fields = cn.of_record(postable.default_pair())["fields"]
     assert policy["why"]["cutoff_c"] == "one thermal limit, at 90 C: the owner's decision"
     assert policy["cutoff_c"] == 90.0
-    assert {k for k in policy["why"] if k not in policy} == {"gear_ratio_centi", "v_kp_q88", "v_ki_q412"} < set(fields)
+    assert {k for k in policy["why"] if k not in policy} == {"gear_ratio_centi", "v_kp_q88", "v_ki_q412",
+                                                             "thermal_tau2_s", "th_rise2_q016"} < set(fields)
     assert all(why.endswith(": the owner's decision") for why in policy["why"].values())
     assert {k: policy[k] for k in ("i_cont_ma", "stall_release_ma", "collision_trip", "hold_band_floor_counts")} == {
         "i_cont_ma": 250.0, "stall_release_ma": 90.0, "collision_trip": "off", "hold_band_floor_counts": 4}
@@ -2259,6 +2273,238 @@ def test_the_protection_steps_of_record_name_what_their_install_needs():
         assert all(line.endswith(f"name it with --protection {n} and --loosen {n}") for n, line in zip(fields, asked))
         assert len(cn.gate(derived, state, protection=fields)) == len(fields)
         assert cn.gate(derived, state, protection=fields, loosen=fields) == []
+
+
+# --- the winding model ---
+
+MODEL = ("thermal_tau_s", "th_rise_q016", "thermal_tau2_s", "th_rise2_q016")
+HIGH = dict(zip(MODEL, (2, 524, 129, 1573)))        # what the rules give on the plant's results, by the reading
+LOW = dict(zip(MODEL, (2, 551, 129, 839)))
+REST = [f"the rest after 600 s at 554 counts, {s} s in" for s in cn.REST_S]
+
+
+class Warm(Geared):
+    """The fake servo with the winding model's four fields, one node on
+    the slow leak, and the continuous current beside the limit."""
+
+    FIELDS = dict(sorted({**Geared.FIELDS, "i_cont_counts": (0x52, 2, "rw", "uint"),
+                          "thermal_tau_s": (0x54, 2, "rw", "uint"), "thermal_tau2_s": (0x56, 2, "rw", "uint"),
+                          "th_rise_q016": (0xb0, 2, "rw", "uint"), "th_rise2_q016": (0xb2, 2, "rw", "uint")}.items(),
+                         key=lambda item: item[1][0]))
+    STORED = {**Geared.STORED, "i_cont_counts": 277, "thermal_tau_s": 115, "th_rise_q016": 1143, "thermal_tau2_s": 0,
+              "th_rise2_q016": 0}
+
+
+@pytest.fixture
+def warm(monkeypatch, tmp_path):
+    """(the fake servo, the set adopted from it as it boots)."""
+    servo = Warm().stub(monkeypatch)
+    doc, _ = cn.adopt(PAIR, record(tmp_path), root=tmp_path)
+    servo.log.clear()
+    return servo, doc
+
+
+def test_the_winding_models_four_are_formed_from_the_stage_4_result_by_the_reading_the_policy_names(tmp_path):
+    c = context(tmp_path)
+    es = {n: cn.evaluate(cn.rule_of(c, n), c) for n in MODEL}
+    assert {n: e["value"] for n, e in es.items()} == HIGH
+    result = "4-estimators/winding-temperature"
+    # a leak is the result's time constant in whole seconds: the fast node's the pair's own fit, measured,
+    # the slow node's the family's, a decision until this motor's is measured
+    assert es["thermal_tau_s"] == {
+        "value": 2, "class": "measured", "rule": "thermal_tau.fast_node", "rule_rev": 1, "unit": "s", "q": 0,
+        "pos_unit": 0, "inputs": [f"{result}:one_node_tau_s"], "band": [1, 3]}
+    assert es["thermal_tau2_s"] == {
+        "value": 129, "class": "policy", "rule": "thermal_tau2.family", "rule_rev": 1, "unit": "s", "q": 0,
+        "pos_unit": 0, "inputs": [f"{result}:family_slow_tau_s"], "band": [121, 135]}
+    # a rise is a gain in C/W over the winding's resistance, the current in shunt counts: 100 G R / (counts
+    # per A)^2 centi-C per count squared, Q0.16. The fast gain is the one fitted beside the reading's slow node
+    per_c_w = 100 * 4.0 / 1000.0 ** 2
+    assert HIGH["th_rise_q016"] == raw(20.0 * per_c_w, 16) and HIGH["th_rise2_q016"] == raw(60.0 * per_c_w, 16)
+    scales = ["3-servo/resistance:r_rails_at_measured_e_ohm", "1-board/current-scale:counts_per_a"]
+    assert es["th_rise_q016"] == {
+        "value": 524, "class": "measured", "rule": "th_rise.fast_node", "rule_rev": 1, "unit": "cC/count^2", "q": 16,
+        "pos_unit": 0, "inputs": ["policy:winding_plateau_reading", f"{result}:joined_high_fast_gain_c_per_w",
+                                  *scales],
+        "band": [raw(15.0 * per_c_w, 16), raw(20.0 * 100 * 4.2 / 1000.0 ** 2, 16)]}
+    assert es["th_rise2_q016"] == {
+        "value": 1573, "class": "policy", "rule": "th_rise2.family", "rule_rev": 1, "unit": "cC/count^2", "q": 16,
+        "pos_unit": 0, "inputs": ["policy:winding_plateau_reading",
+                                  f"{result}:joined_high_fast_gain_c_per_w.slow_gain_c_per_w", *scales],
+        "band": [raw(60.0 * 100 * 3.9 / 1000.0 ** 2, 16), raw(60.0 * 100 * 4.2 / 1000.0 ** 2, 16)]}
+    # each names the kernel function its field is read by, and the four are one step
+    assert {n: cn.rule_of(c, n).mirrors for n in MODEL} == {
+        "thermal_tau_s": "core kernel/phases/loops/limits.rs tau_shift",
+        "th_rise_q016": "core estimator/thermal.rs rise_cc",
+        "thermal_tau2_s": "core kernel/phases/loops/limits.rs tau_shift",
+        "th_rise2_q016": "core estimator/thermal.rs rise_cc"}
+    assert cn.GROUPS[cn.MODEL] == MODEL and all(cn.group_of(n) == (cn.MODEL, MODEL) for n in MODEL)
+    # the other reading is that one policy entry: the two rises move, the leaks stand
+    low = context(tmp_path, policy={"winding_plateau_reading": "low"})
+    assert {n: cn.evaluate(cn.rule_of(low, n), low)["value"] for n in MODEL} == LOW
+    assert LOW["th_rise_q016"] == raw(21.0 * per_c_w, 16) and LOW["th_rise2_q016"] == raw(32.0 * per_c_w, 16)
+    other = context(tmp_path, policy={"winding_plateau_reading": "middle"})
+    with pytest.raises(ValueError, match="policy.json: winding_plateau_reading is 'middle': a reading of the "
+                                         "plateau is one of low, high"):
+        cn.evaluate(cn.rule_of(other, "th_rise_q016"), other)
+    inputs(tmp_path, policy=BLOCK_POLICY)
+
+
+def test_the_winding_model_moves_as_one_step_said_with_what_the_estimate_reads(warm, tmp_path):
+    # the pair's set of record with the four held, each rule giving another value than the servo holds
+    doc, _ = block(warm[1], tmp_path, hold=dict.fromkeys(MODEL, "the four move as one step"))
+    cn.write(doc, cn.set_path(PAIR, tmp_path))
+    f = doc["fields"]
+    stored = {"thermal_tau_s": 115, "th_rise_q016": 1143, "thermal_tau2_s": 0, "th_rise2_q016": 0}
+    assert {n: (f[n]["value"], f[n]["class"], f[n]["would_be"]) for n in MODEL} == {
+        n: (stored[n], "none", HIGH[n]) for n in MODEL}
+    derived, notes = cn.derive(doc, dev_file(tmp_path, "model", release=list(MODEL)), tmp_path, BOARD_REG)
+    assert derived["deviation"]["fields"] == {n: [stored[n], HIGH[n]] for n in f if n in MODEL}
+    assert moved_hashes(doc, derived) == ["protection"]
+    assert {n: derived["fields"][n]["class"] for n in MODEL} == {
+        "thermal_tau_s": "measured", "th_rise_q016": "measured", "thermal_tau2_s": "policy", "th_rise2_q016": "policy"}
+    # the build says the step as what the estimate reads, at the set's own continuous current and limit
+    said = notes[notes.index("winding model: thermal_tau_s, th_rise_q016, thermal_tau2_s, th_rise2_q016 held at "
+                             "115, 1143, 0, 0, wanted at 2, 524, 129, 1573"):]
+    assert said[1] == ("winding model: the leaks run at 131.072 s, wanted at 2.048 s and 131.072 s (the nearest "
+                       "power of two of the 16 ms period)")
+    assert said[2] == ("winding model: the estimate's rise over the board NTC, C, held -> wanted, by the kernel's "
+                       "integers:")
+    assert len(said) == 3 + 33 + 1 and all(line.startswith("  ") for line in said[3:-1])
+    assert said[3].startswith("  a hold from rest at 277 counts, 1 s in: ")
+    assert said[12].startswith("  a hold from rest at 554 counts, 1 s in: ")
+    assert [line.partition(":")[0].strip() for line in said[21:28]] == REST
+    assert said[-1] == "winding model: the wanted four read at least as hot in every case"
+    # a part of the model left held is refused: two fields of one model and two of another are no model
+    with pytest.raises(ValueError, match="the holds of the winding model are released together, and thermal_tau2_s, "
+                                         "th_rise2_q016 would stay held"):
+        cn.derive(doc, dev_file(tmp_path, "half", release=["thermal_tau_s", "th_rise_q016"]), tmp_path, BOARD_REG)
+    # what the install has to be told: a leak is judged, the fast rise falls, and the slow rise only rises
+    state = {"fields": {n: e["value"] for n, e in f.items()}}
+    asked = cn.gate(derived, state)
+    assert [line.split(":")[0] for line in asked] == [n for n in f if n in MODEL]
+    loosen = [n for n in MODEL if n != "th_rise2_q016"]
+    assert {line.split(":")[0]: line.rpartition("name it with ")[2] for line in asked} == {
+        **{n: f"--protection {n} and --loosen {n}" for n in loosen}, "th_rise2_q016": "--protection th_rise2_q016"}
+    assert cn.gate(derived, state, protection=MODEL, loosen=loosen) == []
+    # a step that moves none of the four says nothing of the model
+    soft, notes = cn.derive(doc, dev_file(tmp_path, "soft", pins={"p_kp_q88": pin(5026)}), tmp_path, BOARD_REG)
+    assert soft["deviation"]["fields"] == {"p_kp_q88": [40212, 5026]}
+    assert not any(line.startswith("winding model") for line in notes)
+
+
+def test_an_install_that_moves_the_winding_model_says_what_the_estimate_reads(warm, tmp_path, capsys):
+    servo, doc = warm
+    # the two readings of the bench pair's plateau, on a servo that holds one node on the slow leak
+    high, low = (deviated(doc, **dict(zip(MODEL, four))) for four in ((2, 434, 129, 1274), (2, 461, 129, 680)))
+    with pytest.raises(settings.Refused) as e:
+        cn.install(high, root=tmp_path)
+    said = str(e.value).splitlines()
+    # the gate's lines, a field each, then the step as the estimate reads it under the servo's and the set's
+    assert said[0] == "the protection gate:" and [line.split(":")[0].strip() for line in said[1:5]] == [
+        "thermal_tau_s", "thermal_tau2_s", "th_rise_q016", "th_rise2_q016"]
+    assert said[5] == ("  winding model: thermal_tau_s, th_rise_q016, thermal_tau2_s, th_rise2_q016 held at 115, "
+                       "1143, 0, 0, wanted at 2, 434, 129, 1274")
+    assert said[-1] == "  winding model: the wanted four read at least as hot in every case"
+    assert servo.wrote() == []
+    # named, the step is said ahead of its writes
+    capsys.readouterr()
+    loosen = [n for n in MODEL if n != "th_rise2_q016"]
+    assert cn.install(high, protection=MODEL, loosen=loosen, root=tmp_path) == [
+        "thermal_tau_s", "thermal_tau2_s", "th_rise_q016", "th_rise2_q016", "stamp"]
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == said[5].strip() and out.index("thermal_tau_s: 115 -> 2") == out.index(said[-1].strip()) + 1
+    # a servo that holds the four as the set does is told nothing of the model
+    assert cn.install(high, root=tmp_path) == [] and "winding model" not in capsys.readouterr().out
+    # the other reading from the same servo state: it reads cooler through the whole rest, and that is named
+    servo.reboot()
+    with pytest.raises(settings.Refused) as e:
+        cn.install(low, protection=MODEL, root=tmp_path)
+    verdict = str(e.value).splitlines()[-1]
+    assert verdict.startswith("  winding model: the wanted four read cooler in ") and all(
+        f"{case} (-" in verdict for case in REST)
+    # a set without the limits the cases run at says so and compares nothing
+    bare = {"fields": {n: e for n, e in high["fields"].items() if n != "i_cont_counts"}}
+    assert cn.winding_step(bare, {n: 0 for n in MODEL}) == [
+        "winding model: the set holds no current limit to compare the estimate at"]
+
+
+def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_held_for_its_step():
+    doc, c, _ = of_the_bench_pair()
+    f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    assert cn.GROUPS[cn.MODEL] == MODEL
+    result = results.read("4-estimators", "winding-temperature", pair=doc["pair"])
+    published = {k: [v[n] for n in MODEL] for k, v in result["joined_fields"].items()}
+
+    def formed(reading):
+        c.policies = {**c.policies, cn.READING: reading}
+        return [cn.evaluate(cn.rule_of(c, n), c) for n in MODEL]
+
+    # the rules give the four the stage 4 result publishes for each reading, the policy's the high one
+    low, high = ([e["value"] for e in formed(reading)] for reading in cn.READINGS)
+    assert policy[cn.READING] == "high" and policy["why"][cn.READING].startswith("the high reading")
+    assert high == published["e_high"] == [2, 434, 129, 1274] and low == published["d_low"] == [2, 461, 129, 680]
+    es = dict(zip(MODEL, formed(policy[cn.READING])))
+    assert {n: (e["class"], e["band"]) for n, e in es.items()} == {
+        "thermal_tau_s": ("measured", [1, 3]), "th_rise_q016": ("measured", [331, 436]),
+        "thermal_tau2_s": ("policy", [121, 135]), "th_rise2_q016": ("policy", [1271, 1279])}
+    # the seconds written run at the leaks the fast gain was fitted beside
+    fast = result[f"joined_{policy[cn.READING]}_fast_gain_c_per_w"]
+    assert [winding.leak_s(high[0]), winding.leak_s(high[2])] == [fast["tau_s"], fast["slow_tau_s"]] == [2.048, 131.072]
+    # until its step is installed the set keeps what the servo holds, one node on the slow leak, each field
+    # held with what its rule gives beside it
+    stored = [f[n]["value"] for n in MODEL]
+    assert stored == published["f_one_slow"] == [115, 1143, 0, 0]
+    assert all("held" in f[n] and (f[n]["class"], f[n]["would_be"]) == ("none", v) for n, v in zip(MODEL, high))
+    assert set(MODEL) <= set(policy["hold"]) and {policy["hold"][n] for n in MODEL} == {f[MODEL[0]]["held"]}
+    cont, limit = f["i_cont_counts"]["value"], f["current_limit_counts"]["value"]
+    assert (cont, limit) == (284, 568)
+    # the step of record releases the four together, and its build says it as what the estimate reads
+    folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
+    derived, notes = cn.derive(doc, folder / "protection-winding-model.json")
+    assert derived["deviation"]["fields"] == {n: [a, b] for n, a, b in sorted(
+        zip(MODEL, stored, high), key=lambda row: list(f).index(row[0]))}
+    assert [k for k in ("plant", "protection") if derived["hash"][k] != doc["hash"][k]] == ["protection"]
+    assert {n: derived["fields"][n]["class"] for n in MODEL} == {n: e["class"] for n, e in es.items()}
+    assert cn.classes(derived)["none"] == cn.classes(doc)["none"] - 4
+    lines, cooler = cn.winding_compared(stored, high, cont, limit)
+    assert notes[-len(lines):] == lines and cooler == []
+    assert lines[-1] == "winding model: the wanted four read at least as hot in every case"
+    assert lines[3:6] == ["  a hold from rest at 284 counts, 1 s in: 0.10 -> 2.17",
+                          "  a hold from rest at 284 counts, 3 s in: 0.31 -> 4.52",
+                          "  a hold from rest at 284 counts, 10 s in: 1.03 -> 6.59"]
+    assert lines[20:22] == ["  a hold from rest at 568 counts, 3600 s in: 72.17 -> 125.46",
+                            "  the rest after 600 s at 568 counts, 1 s in: 69.63 -> 109.05"]
+    assert lines[-3:-1] == ["  30 s on, 30 s off at 568 counts, the peak of a cycle: 35.24 -> 71.04",
+                            "  30 s on, 30 s off at 568 counts, the mean of a cycle: 31.61 -> 52.62"]
+    # the cases are the stage 4 result's own tables, to the centi-C the estimate counts in
+    tables = result["joined_fields_vs_one_slow_node_c"]
+    reads = {"f_one_slow": cn.winding_cases(stored, cont, limit), "e_high": cn.winding_cases(high, cont, limit)}
+    for row in tables["hold"]:
+        case = f"a hold from rest at {row['counts']} counts, {row['s']} s in"
+        assert all(reads[k][case] == row[k] for k in reads), case
+    for row in tables["cooling"]:
+        case = f"the rest after 600 s at {limit} counts, {row['s_into_rest']} s in"
+        assert all(reads[k][case] == row[k] for k in reads), case
+    for row in (r for r in tables["duty"] if r["cand"] in reads):
+        got = [reads[row["cand"]][f"{row['cycle']} at {limit} counts, the {what} of a cycle"]
+               for what in ("peak", "mean")]
+        assert got == [row["peak_c"], row["mean_c"]], row["cycle"]
+    # the low reading reads cooler than the servo's four through the whole rest, and a hair under them on the
+    # plateau: its step would loosen, and the comparison names where
+    lines, cooler = cn.winding_compared(stored, low, cont, limit)
+    rest = [f"the rest after 600 s at {limit} counts, {s} s in" for s in cn.REST_S]
+    assert cooler == [f"a hold from rest at {cont} counts, 3600 s in", f"a hold from rest at {limit} counts, 3600 s in",
+                      *rest]
+    assert lines[-1].startswith("winding model: the wanted four read cooler in 9 of 33 cases: ")
+    assert all(f"{case} (-" in lines[-1] for case in rest)
+    assert "the rest after 600 s at 568 counts, 10 s in (-25.81 C)" in lines[-1]
+    # what the install of the step has to be told, against a servo that holds the set of record
+    state = {"fields": {n: e["value"] for n, e in f.items()}}
+    loosen = [n for n in MODEL if n != "th_rise2_q016"]
+    assert {line.split(":")[0]: line.rpartition("name it with ")[2] for line in cn.gate(derived, state)} == {
+        **{n: f"--protection {n} and --loosen {n}" for n in loosen}, "th_rise2_q016": "--protection th_rise2_q016"}
+    assert cn.gate(derived, state, protection=MODEL, loosen=loosen) == []
 
 
 # --- the fields in counts of position ---
