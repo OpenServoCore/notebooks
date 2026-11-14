@@ -1,0 +1,6 @@
+{
+  "note": "the hold band at 8 counts in place of 4, over half the train's play at the pot",
+  "pins": {
+    "pos_deadband_counts": {"value": 8, "why": "over half the play between the motor and the pot, so a landing inside the play parks", "rung": "01d-gains-band-8"}
+  }
+}

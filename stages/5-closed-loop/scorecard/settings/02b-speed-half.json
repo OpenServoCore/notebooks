@@ -1,5 +1,0 @@
-{
-  "note": "01b's gains; speed limit at half the no-load speed, the acceleration limit as stored",
-  "fields": {"p_kp_q88": 5026, "v_kp_q88": 124, "v_ki_q412": 311, "v_kaw_q412": 623,
-             "velocity_limit_cps": 5900}
-}

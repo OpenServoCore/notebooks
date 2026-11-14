@@ -1,0 +1,6 @@
+{
+  "note": "the Coulomb friction term at the stage 3 running friction in place of the stored 100",
+  "pins": {
+    "fric_fc_counts": {"value": 54, "why": "the stage 3 running friction, round(Tc / Ke x counts per A)", "rung": "08a-friction-measured"}
+  }
+}

@@ -154,10 +154,13 @@ def test_every_field_of_an_adopted_set_is_in_exactly_one_hash(adopted):
      "current_limit_counts says None of protection, the tool {'looser': 'up'}"),
     (lambda d: d["fields"]["r_q12"].update(protection={"looser": "up"}), "r_q12 says .* of protection, the tool None"),
     (lambda d: d["fields"]["r_q12"].pop("protection"), "r_q12 says nothing of protection, the tool None"),
+    (lambda d: d.update(deviation={"file": "deviations/x.json", "sha1": "0" * 40, "fields": {"r_q12": [1, 2]}}),
+     "its deviation is not the fields it moved, each as \\[of record, deviated\\]"),
     (lambda d: d.update(format=2), "format 2, this tool reads 1"),
 ], ids=["a field edited", "the table edited", "a class the format has none of", "no value", "no origin",
         "a protection field marked as the plant's", "a plant field marked as protection",
-        "a field that says nothing of protection", "another format"])
+        "a field that says nothing of protection", "a deviation that is not what the fields hold",
+        "another format"])
 def test_load_refuses_a_file_that_is_not_a_set_as_the_tool_writes_one(adopted, change, match):
     doc, path = adopted
     change(doc)
@@ -415,116 +418,7 @@ def test_status_of_a_stale_set_exits_1(cli, tmp_path, monkeypatch, capsys):
 
 # --- install ---
 
-class Bench(Servo):
-    """The fake servo with the writes an install makes: `osc set` by
-    name, refused where it would put the low soft limit at or past the
-    high one, the table's STORE and COMMIT behind the window (a COMMIT
-    of all-zero points lands IDENTITY, or LIVE with `zero_live`, as a
-    firmware that judges only the shape lands it), the slots, the stamp
-    and the reboot. A write of a CONFIG or CALIB field or a
-    COMMIT leaves the data state STAMP_MISMATCH until a stamp. `drop`
-    names fields whose write is answered and not taken, `drift` a field
-    whose write moves another too."""
-
-    FIELDS = {"model_number": (0x00, 2, "ro", "uint"), "id": (0x10, 1, "rw", "uint"),
-              "pos_min_soft_counts": (0x28, 4, "rw", "uint"), "pos_max_soft_counts": (0x2c, 4, "rw", "uint"),
-              "p_kp_q88": (0x40, 2, "rw", "uint"), "pos_deadband_counts": (0x42, 2, "rw", "uint"),
-              "current_limit_counts": (0x48, 2, "rw", "uint"), "stall_response": (0x4a, 1, "rw", "enum"),
-              "drive_polarity": (0x4b, 1, "rw", "bool"), "stall_omega_max_cps": (0x50, 2, "rw", "uint"),
-              "r_q12": (0x80, 2, "rw", "uint"), "recip_ke_q": (0x82, 2, "rw", "uint"),
-              "plant_stamp": (0x8a, 2, "rw", "uint"), wc.FIELD: (0x91, 16, "rw", "bytes"),
-              "tick_hz": (0xa2, 2, "ro", "uint"), "raw_min": (0xa4, 2, "rw", "uint"),
-              "raw_max": (0xa6, 2, "rw", "uint"),
-              "torque_enable": (0xc0, 1, "rw", "bool"), "pos_lut_page": (0xdc, 1, "rw", "uint"),
-              "pos_lut_state": (0xde, 1, "ro", "uint")}
-    STORED = {**Servo.STORED, "pos_min_soft_counts": 314, "stall_response": 0, "raw_min": 82, "raw_max": 3792}
-    VARIANTS = ("Fault", "Yield")
-
-    def __init__(self):
-        self.drop, self.drift, self.flash, self.torn, self.zero_live = set(), {}, None, {}, False
-        super().__init__()
-
-    def reboot(self):
-        """The stored state back: the board's defaults and the identity
-        table, or what the last SAVE programmed, CONFIG and CALIB with
-        the table's points and the stamp, `torn` fields reading as a
-        save that did not land leaves them."""
-        super().reboot()
-        self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
-        self.stamp, self.data = "0x9c45 = live set", "clean"
-        if self.flash:
-            self.table[:0xc0], self.pages, self.stamp = self.flash[0], list(self.flash[1]), self.flash[2]
-        for name, v in self.torn.items():
-            self.set(name, v)
-        self.set("pos_lut_state", postable.STATES.index("LIVE" if any(any(p) for p in self.pages) else "IDENTITY"))
-
-    def decoded(self, name):
-        if self.FIELDS[name][3] != "enum":
-            return super().decoded(name)
-        v = self.table[self.FIELDS[name][0]]
-        return f"{self.VARIANTS[v]} ({v})"
-
-    def get(self, name):
-        # `osc get` is read up to the first space, an enum as its name
-        v = super().get(name)
-        return v.split()[0] if self.FIELDS[name][3] == "enum" else v
-
-    def set_(self, name, value):
-        self.log.append(("set", name, value))
-        kind = self.FIELDS[name][3]
-        v = (self.VARIANTS.index(value) if kind == "enum" else {"on": 1, "off": 0}[value] if kind == "bool"
-             else int(value))
-        soft = {n: self.decoded(n) for n in ("pos_min_soft_counts", "pos_max_soft_counts")}
-        if name in soft and {**soft, name: v}["pos_min_soft_counts"] >= {**soft, name: v}["pos_max_soft_counts"]:
-            raise subprocess.CalledProcessError(1, ["osc", "set", name, value])
-        if name not in self.drop:
-            self.set(name, v)
-        if name in self.drift:
-            self.set(*self.drift[name])
-        self.data, self.stamp = "STAMP_MISMATCH", "0x9c45 != live set 0x1234"
-
-    def write(self, addr, data):
-        self.log.append(("write", addr, bytes(data)))
-        if addr == self.FIELDS[wc.FIELD][0]:
-            self.table[addr:addr + len(data)] = data
-            return
-        assert addr == postable.WINDOW_ADDR
-        page, cmd = data[0], data[1]
-        if cmd == postable.STORE:
-            self.pages[page] = bytes(data[2:])
-            self.set("pos_lut_state", postable.STATES.index("LOADING"))
-        elif cmd == postable.COMMIT:
-            live = self.zero_live or any(any(p) for p in self.pages)
-            self.set("pos_lut_state", postable.STATES.index("LIVE" if live else "IDENTITY"))
-            self.data = "STAMP_MISMATCH"
-        else:
-            self.window = self.pages[page]
-
-    def run(self, *args, **kw):
-        self.log.append(("run", *args))
-        if args[0] == "stamp":
-            self.stamp, self.data = "0x1234 = live set", "clean"
-        elif args[0] == "save":
-            if self.decoded("torque_enable") == "on":
-                raise subprocess.CalledProcessError(1, ["osc", "save"])
-            self.flash = (bytes(self.table[:0xc0]), list(self.pages), self.stamp)
-        elif args[0] == "reboot":
-            self.reboot()
-
-    def bus_baud(self):
-        return 3_000_000
-
-    def stub(self, monkeypatch, regs=dict):
-        super().stub(monkeypatch, regs)
-        for name in ("set_", "run", "bus_baud"):
-            monkeypatch.setattr(sc.osc, name, getattr(self, name))
-        monkeypatch.setattr(settings.time, "sleep", lambda s: None)
-        return self
-
-    def wrote(self):
-        """The calls that change the servo, the FETCH of a page left out."""
-        return [c for c in self.log if c[0] in ("set", "run")
-                or (c[0] == "write" and not (c[1] == postable.WINDOW_ADDR and c[2][1] == postable.FETCH))]
+Bench = synth.Bench
 
 
 POINTS = [0] * 100 + [3] + [0] * 155
@@ -1267,6 +1161,118 @@ def test_build_as_a_command(cli, geared, tmp_path, monkeypatch, capsys):
     assert doc["previous"] == cn.load(tmp_path / "derived.json")["previous"] and doc["pos_table"]["state"] == "LIVE"
     cli("status")
     assert "3 input files, none moved" in capsys.readouterr().out.splitlines()
+    # a deviation is built on the set of record, to a path of its own
+    f = dev_file(tmp_path, "soft", pins={"p_kp_q88": pin(5026)})
+    cli("build", "--deviation", str(f), "--out", str(tmp_path / "soft.constants.json"))
+    out = capsys.readouterr().out.splitlines()
+    assert "p_kp_q88: 40212 -> 5026 [pinned]" in out
+    assert "derived, not a set of record: deviations/soft.json moves p_kp_q88 40212 -> 5026" in out
+    assert cn.load(tmp_path / "soft.constants.json")["deviation"]["fields"] == {"p_kp_q88": [40212, 5026]}
+    assert cn.load(tmp_path / f"{PAIR}.constants.json") == doc
+    with pytest.raises(SystemExit, match="refused: a deviation is built on the set of record, to --out"):
+        cli("build", "--deviation", str(f))
+
+
+# --- a deviation ---
+
+def pin(value, rung="a-rung"):
+    return {"value": value, "why": "a test's", "rung": rung}
+
+
+def dev_file(root, name, **doc):
+    path = root / "deviations" / f"{name}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(doc))
+    return path
+
+
+@pytest.fixture
+def base(first, tmp_path):
+    """The pair's set of record as a build gives it: on its table, its
+    slots and its angle map."""
+    inputs(tmp_path)
+    doc, _ = built_on(first, tmp_path)
+    cn.write(doc, cn.set_path(PAIR, tmp_path))
+    return doc
+
+
+def test_a_deviation_of_policy_goes_through_the_rules_and_is_named_in_the_set(base, tmp_path):
+    f = dev_file(tmp_path, "cw-5", note="the clockwise stop at 5 deg", policy={"angle_cw_stop_deg": 5.0})
+    doc, _ = cn.derive(base, f, tmp_path, REG)
+    # the entry moves what its rules give, both ends of the angle map at the set's scale: no count is typed
+    assert doc["deviation"] == {"file": "deviations/cw-5.json", "sha1": sc.file_sha1(f),
+                                "fields": {"angle_min_cdeg": [0, 500], "angle_max_cdeg": [18000, 18500]}}
+    sha = cn.points_sha1(POINTS)
+    assert (doc["fields"]["angle_max_cdeg"]["class"], doc["fields"]["angle_max_cdeg"]["scale_points_sha1"]) == (
+        "measured", sha)
+    # it is the set with that one thing changed: the file among its inputs, the set before it named
+    assert doc["inputs"] == {**base["inputs"], "deviation": {"file": "deviations/cw-5.json", "sha1": sc.file_sha1(f)}}
+    assert doc["previous"] == base["hash"] and moved_hashes(base, doc) == ["plant"]
+    assert all(doc["fields"][n]["value"] == e["value"] for n, e in base["fields"].items()
+               if n not in doc["deviation"]["fields"])
+    assert all(doc[k] == base[k] for k in ("wide_codes", "pos_table", "scale"))
+    # the same inputs give the same bytes, the file loads, and every verb says what it is
+    path = cn.write(doc, tmp_path / "derived.constants.json")
+    assert cn.load(path) == doc and cn.render(cn.derive(base, f, tmp_path, REG)[0]) == path.read_text()
+    assert cn.described(doc)[0] == ("derived, not a set of record: deviations/cw-5.json moves angle_min_cdeg 0 -> "
+                                    "500, angle_max_cdeg 18000 -> 18500")
+    # the deviation file moved, the derived set is stale
+    assert cn.status(doc, tmp_path, REG)[1] is False
+    f.write_text(json.dumps({"policy": {"angle_cw_stop_deg": 6.0}}))
+    lines, stale = cn.status(doc, tmp_path, REG)
+    assert stale and lines[0].startswith("stale: deviation (deviations/cw-5.json) is no longer the file the set read")
+
+
+def test_a_deviation_pins_literals_and_a_protection_field_moves_alone(base, tmp_path):
+    f = dev_file(tmp_path, "bemf", pins={"recip_ke_q": pin(12000), "r_bemf_q12": pin(16500, "a-later-rung")})
+    doc, _ = cn.derive(base, f, tmp_path, REG)
+    # a field the set does not hold yet joins it, after the others, with nothing of record before it
+    assert doc["deviation"]["fields"] == {"recip_ke_q": [11817, 12000], "r_bemf_q12": [None, 16500]}
+    assert doc["fields"]["recip_ke_q"] == {"value": 12000, "class": "pinned", "why": "a test's", "rung": "a-rung",
+                                           "protection": None}
+    assert list(doc["fields"])[-1] == "r_bemf_q12" and doc["fields"]["r_bemf_q12"]["rung"] == "a-later-rung"
+    assert moved_hashes(base, doc) == ["plant"]
+    # a protection field is a deviation of its own, and moves the protection hash alone
+    limit, _ = cn.derive(base, dev_file(tmp_path, "limit", pins={"current_limit_counts": pin(500)}), tmp_path, REG)
+    assert moved_hashes(base, limit) == ["protection"]
+    assert limit["deviation"]["fields"] == {"current_limit_counts": [554, 500]}
+
+
+@pytest.mark.parametrize("doc, match", [
+    ({"pins": {"current_limit_counts": pin(500), "p_kp_q88": pin(5026)}},
+     "a deviation that moves a protection field \\(current_limit_counts\\) may move nothing else"),
+    ({"pins": {"current_limit_counts": pin(500)}, "policy": {"angle_cw_stop_deg": 5.0}},
+     "a deviation that moves a protection field \\(current_limit_counts\\) may move nothing else"),
+    ({"pins": {"p_kp_q88": pin(40212)}}, "the deviation moves no field of the set"),
+    ({"policy": {"angle_cw_stop_deg": 0.0}}, "the deviation moves no field of the set"),
+    ({"fields": {"p_kp_q88": 5026}}, "a deviation holds policy entries or pins, and no fields"),
+    ({"note": "nothing"}, "a deviation holds policy entries or pins, and this one neither"),
+    ({"pins": {"p_kp_q88": {"value": 5026}}}, "p_kp_q88 lacks its value, its why or its rung"),
+    ({"pins": {"p_kp_q88": pin(70000)}}, None),
+], ids=["a protection field and one of the plant", "a protection field and a policy entry", "a pin of the value "
+        "the set holds", "a policy entry the set is built on", "a list of raw fields", "nothing", "a pin with no "
+        "why", "a pin is a literal: what fits its field is the install's to say"])
+def test_a_deviation_that_is_not_one_change_by_the_rules_is_refused(base, tmp_path, doc, match):
+    f = dev_file(tmp_path, "x", **doc)
+    if match is None:
+        assert cn.derive(base, f, tmp_path, REG)[0]["deviation"]["fields"] == {"p_kp_q88": [40212, 70000]}
+        return
+    with pytest.raises(ValueError, match=match):
+        cn.derive(base, f, tmp_path, REG)
+
+
+def test_a_deviation_is_built_on_a_set_of_record_as_a_build_gives_it_and_only_one(first, base, tmp_path):
+    f = dev_file(tmp_path, "soft", pins={"p_kp_q88": pin(5026)})
+    # on the adopted set the rules would bind the slots, the table and more: more than the one change
+    with pytest.raises(ValueError, match="the set is not what a build of its inputs gives now \\(wide-code slots: "
+                                         ".*\\): `build` it first, a deviation is one change"):
+        cn.derive(first, f, tmp_path, REG)
+    doc, _ = cn.derive(base, f, tmp_path, REG)
+    with pytest.raises(ValueError, match="the set already holds the deviation deviations/soft.json"):
+        cn.derive(doc, dev_file(tmp_path, "other", pins={"r_q12": pin(16000)}), tmp_path, REG)
+    with pytest.raises(ValueError, match="is not a file of the repo"):
+        cn.derive(base, dev_file(tmp_path.parent / f"{tmp_path.name}-out", "soft", pins={"p_kp_q88": pin(5026)}),
+                  tmp_path, REG)
 
 
 def test_a_derived_set_is_checked_and_installed_by_its_path(geared, tmp_path, monkeypatch, capsys):
@@ -1369,10 +1375,19 @@ def test_save_refuses_a_deviation(cli, bench, tmp_path, monkeypatch):
                                          "is saved"):
         cli("--set", str(derived), "save")
     # nor does a derived set put in the place of the set of record pass: it is not the committed file
+    of_record = path.read_text()
     monkeypatch.setattr(cn, "uncommitted", lambda p: f"M {p.name}")
     derived.replace(path)
     with pytest.raises(SystemExit, match=f"refused: .*{PAIR}.constants.json is not committed as it stands "
                                          f"\\(M {PAIR}.constants.json\\)"):
+        cli("save")
+    # and a set that holds a deviation is never saved, committed or not: the file says what it is
+    path.write_text(of_record)
+    f = dev_file(tmp_path, "soft", pins={"p_kp_q88": pin(5026)})
+    cn.write(cn.derive(cn.load(path), f, tmp_path)[0], path)
+    monkeypatch.setattr(cn, "uncommitted", lambda p: "")
+    with pytest.raises(SystemExit, match=f"refused: .*{PAIR}.constants.json holds the deviation "
+                                         "deviations/soft.json: a deviation is never saved"):
         cli("save")
     assert bench.log == [] and not (tmp_path / "telemetry").exists()
 

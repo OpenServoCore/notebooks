@@ -485,4 +485,6 @@ notebook: the tool prints the table and writes `results/<board>.json`.
 
 Run: `uv run python -m oscnb.widecodes capture`, then `find`. `install`
 writes the board's slots to the servo volatile and reads them back, no
-SAVE; the scorecard's `--wide-codes` does the same for a rung.
+SAVE. A scorecard rung gets them from the pair's constant set
+([stage 5](../5-closed-loop/README.md#the-constant-set)), which holds
+the board's slots.

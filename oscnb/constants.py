@@ -26,7 +26,7 @@ says which it is under `protection`: null for the plant, the way the
 value moves to protect less for a protection field, as LOOSER has it.
 
     uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
-    uv run python -m oscnb.constants build [--out PATH] [--protection NAME ...]
+    uv run python -m oscnb.constants build [--out PATH [--deviation FILE]] [--protection NAME ...]
     uv run python -m oscnb.constants status
     uv run python -m oscnb.constants check
     uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
@@ -68,6 +68,18 @@ they read is said, not refused. One build moves one hash: the plant by
 default, every protection field carried with what its rule would give
 beside it (`would_be`), or with `--protection` the fields named and
 nothing of the plant.
+
+A deviation is one change to a set, for a rung: a file of policy
+entries and pins, `{"policy": {...}, "pins": {field: {"value", "why",
+"rung"}}}`, never a list of raw fields. `build --deviation FILE --out
+PATH` (`derive`) builds the set of record again with the file's
+entries over the policy file's and its pins over the pair's, so a
+policy entry moves what its rules give, at the set's scale. The
+derived set names the file among its inputs and, under `deviation`,
+every field it moved as [of record, deviated]. It is refused when the
+set of record is not what a build of its inputs gives now, when it
+moves nothing, and when it moves a protection field and anything else.
+A derived set is never a set of record and is never saved.
 
 `status` is offline: the sha1 of every input file against the file now,
 and the registry values read against the registry, a moved one named
@@ -179,7 +191,8 @@ PER_COUNT = frozenset((
 
 ORIGIN = "servo-state"      # the origin an adopted value names
 BEFORE = "the servo's state before the path"
-TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "fields", "hash", "previous")
+TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "fields", "hash", "previous",
+       "deviation")
 BLOCKS = ("inputs", "origins", "fields")    # written an entry a line
 LEAD = ("value", "slots", "state", "kind", "counts_per_deg", "points_sha1", "class")
 TABLE_STATE, TABLE_POINTS, SLOTS = "position table state", "position table points sha1", "wide-code slots"
@@ -282,6 +295,11 @@ def load(path):
     if doc.get("hash") != hashes(doc):
         raise ValueError(f"{where}: its hashes are not those of its content: a set is generated, never edited "
                          f"(or the protection list moved since it was written)")
+    dev = doc.get("deviation")
+    if dev is not None and (set(dev) != {"file", "sha1", "fields"} or not dev["fields"]
+                            or any(n not in doc["fields"] or doc["fields"][n]["value"] != pair[1]
+                                   for n, pair in dev["fields"].items())):
+        raise ValueError(f"{where}: its deviation is not the fields it moved, each as [of record, deviated]")
     return doc
 
 
@@ -293,15 +311,23 @@ def of_record(pair, root=results.ROOT):
     return load(path)
 
 
+def classes(doc):
+    """How many fields of a set are of each class."""
+    return {c: sum(e["class"] == c for e in doc["fields"].values()) for c in CLASSES}
+
+
 def described(doc):
     """What every verb says of a set: its fields by class, the adopted
     ones being those with no source, the per-count ones at an unknown
     scale, the table and the slots, and the three hashes in short."""
     fields = doc["fields"].values()
-    by_class = ", ".join(f"{sum(e['class'] == c for e in fields)} {c}" for c in CLASSES)
+    by_class = ", ".join(f"{n} {c}" for c, n in classes(doc).items())
     unknown = sum(e.get("scale") == "unknown" for e in fields)
     table, slots, h, scale = doc["pos_table"], doc["wide_codes"], doc["hash"], doc.get("scale")
+    dev = doc.get("deviation")
     return [
+        *([f"derived, not a set of record: {dev['file']} moves "
+           + ", ".join(f"{n} {a} -> {b}" for n, (a, b) in dev["fields"].items())] if dev else []),
         f"{len(fields)} fields: {by_class} (no source); {unknown} per-count at an unknown scale",
         f"position table {table['state']}, points sha1 {table['points_sha1']} [{table['class']}]",
         "wide-code slots: none" if slots is None
@@ -438,9 +464,11 @@ class Context:
     scale of the count (`counts_per_deg`, `travel_deg`, `ascending`).
     `inputs` gathers what a set names under `inputs`, `notes` what a
     build has to say. A read of something that is not there raises
-    Missing."""
+    Missing. With a `deviation` (`deviation_of`) its policy entries
+    stand over the policy file's and its pins over the pair's, and the
+    file is one of the inputs."""
 
-    def __init__(self, pair, root=results.ROOT, registry=None):
+    def __init__(self, pair, root=results.ROOT, registry=None, deviation=None):
         self.pair, self.root = pair, Path(root)
         self.registry = registry_of(pair) if registry is None else registry
         self.inputs, self.notes, self.docs = {}, [], {}
@@ -449,6 +477,11 @@ class Context:
         beside = set_path(pair, root).parent.relative_to(self.root)     # the policy and the pins lie beside the set
         self.policies = self.file("policy", beside / POLICY) or {}
         self.pins = self.file("pins", beside / f"{pair}.pins.json") or {}
+        if deviation is not None:
+            dev = deviation_of(deviation)
+            self.file("deviation", in_repo(deviation, self.root))
+            self.policies = {**self.policies, **dev.get("policy", {})}
+            self.pins = {**self.pins, **dev.get("pins", {})}
         loose = [n for n, pin in self.pins.items() if not all(k in pin for k in ("value", "why", "rung"))]
         if loose:
             raise ValueError(f"the pins of {pair}: {', '.join(loose)} lacks its value, its why or its rung")
@@ -690,7 +723,7 @@ def bound(c, name, carried, previous):
     return None if carried is None else held("value", r.name, carried, why, previous, e["value"])
 
 
-def build(pair, previous=None, protection=(), root=results.ROOT, registry=None):
+def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, deviation=None):
     """(the pair's set, what there is to say of it), built offline from
     the results of record, the registry, the policy file and the pair's
     pins, on top of `previous`, its set of record: first what defines a
@@ -702,12 +735,14 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None):
     every protection field is carried, with `would_be` where its rule
     or pin gives another value. With `protection` it moves the fields
     named there and carries everything else, the slots, the table and
-    the scale with it. A set with nothing before it is built whole."""
+    the scale with it. A set with nothing before it is built whole.
+    `deviation` is a deviation file the build reads over the policy and
+    the pins (`derive`)."""
     wrong = [n for n in protection if n not in PROTECTION]
     if wrong or (protection and previous is None):
         raise ValueError(f"{', '.join(wrong)} is no protection field" if wrong
                          else "there is no set to carry the plant from")
-    c = Context(pair, root, registry)
+    c = Context(pair, root, registry, deviation)
     slots = slots_of(c, previous)
     table = table_of(c, previous, slots)
     scale = c.scale
@@ -793,6 +828,68 @@ def changes(previous, doc):
                + ", ".join(f"{k} {previous['hash'][k][:12]} -> {doc['hash'][k][:12]}"
                            for k in ("plant", "protection", "set")))
     return out
+
+
+# --- a deviation ---
+
+def in_repo(path, root=results.ROOT, what="a deviation"):
+    """A file's path from the repo root, as a set or a rung names it;
+    refused for a file outside the repo, which no record could name."""
+    try:
+        return Path(path).resolve().relative_to(Path(root).resolve())
+    except ValueError:
+        raise ValueError(f"{path} is not a file of the repo: {what} is named by its path in it") from None
+
+
+def deviation_of(path):
+    """A deviation file's document: `{"policy": {...}, "pins": {field:
+    {"value", "why", "rung"}}}`, either or both, and a `note`. It names
+    no raw list of fields: a policy entry goes through the rules, at
+    the set's scale, and a pin is a literal with its reason and the
+    rung that chose it."""
+    doc = json.loads(Path(path).read_text())
+    extra = [k for k in doc if k not in ("note", "policy", "pins")]
+    if extra or not (doc.get("policy") or doc.get("pins")):
+        raise ValueError(f"{sc.shown(path)}: a deviation holds policy entries or pins"
+                         f"{', and no ' + ', '.join(extra) if extra else ', and this one neither'}")
+    return doc
+
+
+def derive(base, deviation, root=results.ROOT, registry=None):
+    """(the set `base` with one deviation, what the build has to say):
+    `base` built again with the deviation file's policy entries and
+    pins over its own, the file named among its inputs, and under
+    `deviation` the file, its sha1 and every field it moved as [of
+    record, deviated]. Refused when `base` already holds a deviation,
+    when `base` is not what a build of its inputs gives now, so the
+    derived set would differ by more than the deviation, when the
+    deviation moves nothing, and when it pins a protection field and
+    anything else: a deviation that moves a protection field may move
+    nothing else."""
+    where = sc.shown(deviation)
+    if base.get("deviation"):
+        raise ValueError(f"the set already holds the deviation {base['deviation']['file']}: a rung runs on a set "
+                         f"or on a set with one deviation")
+    dev = deviation_of(deviation)
+    pins = dev.get("pins", {})
+    named = [n for n in pins if n in PROTECTION]
+    if named and (len(named) < len(pins) or dev.get("policy")):
+        raise ValueError(f"{where}: a deviation that moves a protection field ({', '.join(named)}) may move "
+                         f"nothing else")
+    plain, _ = build(base["pair"], base, named, root, registry)
+    if plain["hash"] != base["hash"] or plain.get("scale") != base.get("scale"):
+        raise ValueError("the set is not what a build of its inputs gives now ("
+                         + "; ".join(changes(base, plain)[:-1]) + "): `build` it first, a deviation is one change")
+    doc, notes = build(base["pair"], base, named, root, registry, deviation)
+    fields = {n: [base["fields"].get(n, {}).get("value"), e["value"]] for n, e in doc["fields"].items()
+              if n not in base["fields"] or base["fields"][n]["value"] != e["value"]}
+    if not fields or doc.get("scale") != base.get("scale") \
+            or any(hashed(doc)[0][k] != hashed(base)[0][k] for k in ("wide_codes", "pos_table")):
+        raise ValueError(f"{where}: the deviation moves no field of the set" if not fields
+                         else f"{where}: a deviation moves fields, not the slots, the table or the scale")
+    doc["deviation"] = {"file": in_repo(deviation, root).as_posix(), "sha1": sc.file_sha1(deviation),
+                        "fields": fields}
+    return doc, notes
 
 
 # --- status ---
@@ -969,15 +1066,40 @@ def points_sha1(points):
     return hashlib.sha1(b"".join(postable.page_bytes(points, p) for p in range(postable.PAGES))).hexdigest()
 
 
+def live_table(doc, stops, root=results.ROOT, quiet=False):
+    """The Table of a set whose table is LIVE, from the pair's table
+    file, which must hold the set's points, be built against `stops`
+    and name no other slots than the set's as the ones its lookup was
+    fitted on; a file that records none is said, unless `quiet`, and
+    taken."""
+    want = doc["pos_table"]
+    path = set_path(doc["pair"], root).with_name(postable.out_path(doc["pair"]).name)
+    if not path.exists():
+        raise settings.Refused(f"the set's table is LIVE and the pair has no table file ({sc.shown(path)})")
+    t, file = postable.load_file(path)
+    fitted = file["inputs"].get("fitted_on_slots_sha1")
+    slots = doc["wide_codes"]["slots"] if doc["wide_codes"] is not None else bytes(widecodes.SLOTS)
+    if fitted is None:
+        if not quiet:
+            print(f"{sc.shown(path)}: {postable.fitted_on_said(file)}")
+    elif fitted != postable.slots_sha1(slots):
+        raise settings.Refused(f"the lookup was fitted on other slots (sha1 {fitted}, the set's are "
+                               f"{postable.slots_sha1(slots)}): re-run stage 4 position, then `postable build`")
+    if points_sha1(t.points) != want["points_sha1"]:
+        raise settings.Refused(f"{sc.shown(path)} holds points of sha1 {points_sha1(t.points)}, the set's table "
+                               f"is {want['points_sha1']}")
+    if list(stops) != [t.raw_min, t.raw_max]:
+        raise settings.Refused(f"{sc.shown(path)} was built against stops {t.raw_min} and {t.raw_max}, the set's "
+                               f"are {stops[0]} and {stops[1]}")
+    return t
+
+
 def table_to_write(doc, state, root=results.ROOT, table=None):
     """The Table an install has to write, None when the servo holds the
     set's. An IDENTITY table is all-zero points against the set's
     stops. A LIVE one is `table` when it is given and holds the set's
-    points, else the one of the pair's table file, which must hold the
-    set's points, be built against the set's stops, and name no other
-    slots than the set's as the ones its lookup was fitted on; a file
-    that records none is said and taken. No other state can be
-    written."""
+    points, else the one of the pair's table file (`live_table`). No
+    other state can be written."""
     want, have = doc["pos_table"], state["pos_table"]
     if all(have[k] == want[k] for k in ("state", "points_sha1")):
         return None
@@ -993,27 +1115,17 @@ def table_to_write(doc, state, root=results.ROOT, table=None):
             raise settings.Refused(f"the table at hand holds points of sha1 {points_sha1(table.points)}, the "
                                    f"set's table is {want['points_sha1']}")
         return table
-    path = set_path(doc["pair"], root).with_name(postable.out_path(doc["pair"]).name)
-    if not path.exists():
-        raise settings.Refused(f"the set's table is LIVE and the pair has no table file ({sc.shown(path)})")
-    t, file = postable.load_file(path)
-    fitted = file["inputs"].get("fitted_on_slots_sha1")
-    slots = doc["wide_codes"]["slots"] if doc["wide_codes"] is not None else bytes(widecodes.SLOTS)
-    if fitted is None:
-        print(f"{sc.shown(path)}: {postable.fitted_on_said(file)}")
-    elif fitted != postable.slots_sha1(slots):
-        raise settings.Refused(f"the lookup was fitted on other slots (sha1 {fitted}, the set's are "
-                               f"{postable.slots_sha1(slots)}): re-run stage 4 position, then `postable build`")
-    if points_sha1(t.points) != want["points_sha1"]:
-        raise settings.Refused(f"{sc.shown(path)} holds points of sha1 {points_sha1(t.points)}, the set's table "
-                               f"is {want['points_sha1']}")
-    if stops != [t.raw_min, t.raw_max]:
-        raise settings.Refused(f"{sc.shown(path)} was built against stops {t.raw_min} and {t.raw_max}, the set's "
-                               f"are {stops[0]} and {stops[1]}")
-    return t
+    return live_table(doc, stops, root)
 
 
-def install(doc, protection=(), loosen=(), root=results.ROOT, table=None):
+def protection_moves(doc, state):
+    """The protection fields of the set the servo's `state` holds at
+    another value, each as [the servo's, the set's]."""
+    return {n: [state["fields"][n], e["value"]] for n, e in doc["fields"].items()
+            if n in PROTECTION and state["fields"].get(n) != e["value"]}
+
+
+def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=None):
     """Make the servo equal the set, volatile; prints each write as it
     lands and returns what was written, by name, in order. Nothing is
     written unless torque is off, no input file of the set moved, the
@@ -1023,8 +1135,10 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None):
     other fields that differ in the servo's table order, each read
     back, a field the servo refuses tried once more after the rest. The
     state read back whole must then be the set, and only then is it
-    stamped, no save, and its data state required clean. A refusal after the first write
-    reboots the servo onto its saved state and says so."""
+    stamped, no save, and its data state required clean. A refusal
+    after the first write reboots the servo onto its saved state and
+    says so. `state` is the servo's state where the caller has just
+    read it."""
     torque = osc.get("torque_enable")
     if not settings.same("off", torque):
         raise settings.Refused(f"torque_enable reads {torque}: a set is installed with torque off")
@@ -1032,7 +1146,7 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None):
     if stale:
         raise settings.Refused(f"the set is stale, {', '.join(name for name, *_ in stale)} moved: `status` names "
                                f"the fields")
-    state = sc.servo_state()
+    state = sc.servo_state() if state is None else state
     slots = doc["wide_codes"]
     missing = [n for n in doc["fields"] if n not in state["writable"]]
     if slots is not None and state["wide_codes"] is None:
@@ -1152,6 +1266,9 @@ def save(pair, protection=(), loosen=(), root=results.ROOT):
     the two paths."""
     path = set_path(pair, root)
     doc = of_record(pair, root)
+    if doc.get("deviation"):
+        raise settings.Refused(f"{sc.shown(path)} holds the deviation {doc['deviation']['file']}: a deviation is "
+                               f"never saved")
     lines, stale = status(doc, root)
     if stale:
         raise settings.Refused(f"the set is stale: {'; '.join(s for s in lines if s.startswith('stale: '))}")
@@ -1229,6 +1346,8 @@ def main(argv=None):
     ad.add_argument("--origin", default=BEFORE, help="where the record came from, in words the set keeps")
     b = sub.add_parser("build", help="offline: the set from the results of record, on top of the set of record")
     b.add_argument("--out", type=Path, help="write a derived set here and leave the set of record as it is")
+    b.add_argument("--deviation", type=Path,
+                   help="with --out: the set of record with this deviation file's policy entries and pins")
     b.add_argument("--protection", nargs="+", default=[], metavar="NAME",
                    help="move these protection fields and carry the plant, not the other way about")
     sub.add_parser("status", help="offline: the set's input files against the files now")
@@ -1264,7 +1383,11 @@ def main(argv=None):
         elif a.cmd == "build":
             path = set_path(a.pair, root)
             previous = load(path) if path.exists() else None
-            doc, notes = build(a.pair, previous, a.protection, root)
+            if a.deviation and (a.out is None or a.protection or previous is None):
+                raise ValueError("a deviation is built on the set of record, to --out, and names its own "
+                                 "protection fields: it is never the set of record")
+            doc, notes = (derive(previous, a.deviation, root) if a.deviation
+                          else build(a.pair, previous, a.protection, root))
             out = write(doc, a.out or path)
             print("\n".join([f"wrote {sc.shown(out)}", *(changes(previous, doc) if previous else []), *notes,
                              *described(doc)]))
