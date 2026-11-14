@@ -38,15 +38,17 @@ every capture's `meta.json` carries.
 - **The runs**, under `telemetry/<servo>__<board>/scorecard/<label>/`. A
   rung is one build at one label, `run-1` to `run-K` inside it, and
   `rung.json` with the label, the commit, the image sha, a note, the time,
-  a hash of the CONFIG it ran on and the goals of the wide holds. Each
-  run holds a `servo.json` beside its captures, the servo's constant
-  state read off it before the run's first capture, with the rung's
-  settings, table and slots on: the bytes of CONFIG and CALIB with every
-  field there by name and the writable ones named, the position table's
-  state and its points as the servo holds them with their sha1, the ADC
-  wide-code slots, the plant stamp and the data state. `rung.json` keeps
-  the hash of the first run's, and a later run that reads another state
-  is refused, the fields that differ named.
+  a hash of the CONFIG it ran on, the constant set it ran on and the
+  goals of the wide holds. Each run holds a `servo.json` beside its
+  captures, the servo's constant state read off it before the run's
+  first capture, with the rung's set installed: the bytes of CONFIG and
+  CALIB with every field there by name and the writable ones named, the
+  position table's state and its points as the servo holds them with
+  their sha1, the ADC wide-code slots, the plant stamp and the data
+  state. A servo that is not the rung's set then does not start the
+  run. `rung.json` keeps the hash of the first run's state, and a later
+  run that reads another state is refused, the fields that differ
+  named. A copy of the set lies beside `rung.json` as `constants.json`.
 - **The results**, one file per rung,
   `scorecard/results/<servo>__<board>/<label>.json`: every score as the
   median over the rung's runs with their range as the bounds.
@@ -72,7 +74,7 @@ board's result, none typed. A code is held when both of those goals fit
 the soft range with the set's 5 degree margin. A board with no wide-code
 result, or with no such code in reach, has no `wide` capture: its rows
 are then absent from the result and empty in the ladder, not zero. The
-capture runs on every rung, with or without `--wide-codes`, since a rung
+capture runs on every rung, whatever slots its set holds, since a rung
 without the slots is the one that shows the defect.
 
 Three rows read it, each over the last 500 ms of the holds.
@@ -122,16 +124,46 @@ the bus at 3 Mbps, torque off, the production image flashed. The runner
 never touches the supply and never prompts; it refuses to start otherwise.
 
 ```
-uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table] [--wide-codes]
-uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-pos-table] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-pos-table] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
+uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...]
+uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-set PATH] [--b-deviation FILE] [--b-protection NAME ...] [--b-loosen NAME ...] [--b-note TEXT] [--rounds 3]
 uv run python -m oscnb.scorecard score 00-baseline
 uv run python -m oscnb.scorecard table
 ```
 
-A rung of settings runs on a file of CONFIG fields, `{"fields": {...}}`,
-passed as `--settings`: the fields are written volatile and stamped
-(`oscnb/settings.py`), and a reboot brings the stored set back when the
-runs end. The pot's position table in the servo's format is built and
+A rung runs on a constant set ([the constant set](#the-constant-set)):
+the pair's set of record, or the set of `--set`, a file of the repo.
+Nothing else puts a constant on the servo for a rung. The set is
+installed before the runs, volatile, by the set's own `install`: only
+what differs from the servo is written, the whole state is read back,
+and it is stamped there and nowhere else. A protection field the
+install would change on the servo is named with `--protection`, and
+with `--loosen` where it protects less, as for `install`. A reboot
+brings the stored state back when the runs end, where the install
+wrote anything. The test set is planned from the set: its soft range,
+and on a set whose position table is LIVE the table's counts at the
+table's scale. `rung.json` names the set by its file, its three hashes
+and its fields by class, and protection as an entry of its own, the
+hash and what the install moved against the servo's values.
+
+A rung that tries one thing runs on the set with one deviation, the
+file of `--deviation`: `{"policy": {...}, "pins": {field: {"value",
+"why", "rung"}}}`, policy entries, pins or both, and a `note`. It is
+not a list of raw fields. A policy entry stands over
+[calibration/policy.json](calibration/policy.json) and goes through
+the rules, so what it moves is computed at the set's scale; a pin is a
+literal, with its reason and the rung that chose it. The set of record
+is built again with the file and must come out as itself with that one
+change, so a set of record that is not what a build of its inputs
+gives now is refused, as is a deviation that moves nothing. A
+deviation that moves a protection field may move nothing else.
+`rung.json` names the deviation's file and every field it moved as
+[of record, deviated]. The deviation files of the ladder are in
+[scorecard/deviations/](scorecard/deviations), for example
+`--deviation stages/5-closed-loop/scorecard/deviations/hold-band-8.json`.
+A deviation that pins a field the servo's image does not have is
+refused by the install, the field named, before anything is written.
+
+The pot's position table in the servo's format is built and
 graded offline by `oscnb/postable.py` into [calibration/](calibration).
 It is built from the stage 4 lookup, which is fitted on pot readings
 that carry the board's ADC wide-code step
@@ -146,25 +178,23 @@ A stage 4 result written before results named what they read gives a
 table file that says the slots are not recorded, which `build` and
 `check` print.
 `uv run python -m oscnb.postable install` writes the table to the servo
-volatile and reads every page back. A rung passed `--pos-table` runs on
-the pair's table: installed after the settings, one stamp over both, the
-file and its sha1 kept in `rung.json`, and the same reboot dropping it at
-the end. `score` reads such a rung's raw pot through the table its
-`rung.json` names, and refuses a capture with a live table and no table
-named.
+volatile and reads every page back, without a stamp. A rung gets the
+table from its set, and the board's ADC wide-code slots, found once per
+board ([stage 1, wide-codes](../1-board/README.md#wide-codes)), the
+same way.
 
-A rung passed `--wide-codes` (on `ab`, `--a-wide-codes` or
-`--b-wide-codes`) runs on the board's ADC wide-code slots, found once per
-board ([stage 1, wide-codes](../1-board/README.md#wide-codes)): written
-after the settings and the table, outside the stamp, the board's result
-file and its sha1 kept in `rung.json`, and the same reboot dropping them
-at the end. `score` reads such a rung's pot as its firmware did: a row
-at a wide code is read as the middle of the span the code stands for,
-with the slots of the result file `rung.json` names, and the raw code is
-kept beside it. Under a live position table that step comes first and
-the table is read at the stepped value. A result file that is no longer
-the one recorded is refused. A rung that names no slots is read as
-before.
+`score` reads a rung's pot as its firmware did. Under a live position
+table the raw pot is read through the table, and where the rung's set
+holds wide-code slots a row at a wide code is first read as the middle
+of the span the code stands for, the raw code kept beside it. The
+table and the slots are those of the rung's own record: the set copied
+into its folder, and the table's points as the run's `servo.json` holds
+them, which must be the set's. A rung recorded before rungs named a set
+has no `set` in its `rung.json`: it names there the fields, the table
+file and the wide-code result file it ran on, the files by their sha1,
+and is read through those files as it was, refused when a file is no
+longer the one recorded, or when its capture has a live table and it
+names none.
 
 The same servo drifts within a session, so a candidate and its control
 are best recorded together. `ab` records two rungs at once, one run of
@@ -173,9 +203,11 @@ image file, and the image sha in its `rung.json` is that file's sha1.
 Before a side's run the servo is flashed with its image whenever it
 holds the other side's, and before the first run always, and nothing
 runs until `osc status` reads the stamp as the live set; two sides on
-one image file, a comparison of settings alone, flash once. A side's
-`--settings` are applied around its own runs only. Each side comes out
-a rung like any other, for `score` and `table`.
+one image file, a comparison of constants alone, flash once. Each side
+names its own set and deviation, installed on its own image around its
+own runs only, so an A/B is the set against the set with one thing
+changed, the one thing named in the record. Each side comes out a rung
+like any other, for `score` and `table`.
 
 `table` prints the ladder, one column per rung in label order, with a
 last column of other people's figures for stock smart servos (STS3215,
@@ -210,7 +242,7 @@ the slots, and `set` over the two.
 
 ```
 uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
-uv run python -m oscnb.constants build [--out PATH] [--protection NAME ...]
+uv run python -m oscnb.constants build [--out PATH [--deviation FILE]] [--protection NAME ...]
 uv run python -m oscnb.constants status
 uv run python -m oscnb.constants check
 uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
@@ -278,8 +310,11 @@ servo. Which way protects less is one table by field name in the
 module; a field no one direction says it for (the stall policy, the NTC
 curve, the heat time constants, the two where 0 means off) always needs
 both. A refusal after the first write reboots the servo, which returns
-its saved state. The scorecard's own `--settings`, `--pos-table` and
-`--wide-codes` do not go through the set yet.
+its saved state. No rung is stamped any other way: a scorecard rung runs
+on a set installed this way ([Running it](#running-it)), and
+`build --deviation FILE --out PATH` writes the derived set a rung with
+that deviation runs on, which names the file and the fields it moved
+and is never saved.
 
 `save` makes the set what a reboot returns, from the state the servo
 has stored. It is a verb of its own and saves the pair's set of record
@@ -318,13 +353,23 @@ gate.
 ## The ladder
 
 On mg90-d with board dev-v006-2A-D, a free horn. From
-`12a-pos-table-live` on, the rungs run on the pair's position table,
-passed `--pos-table`. From `13a-wide-step-on-table` on, the rows of a
+`12a-pos-table-live` on, the rungs run on the pair's position table.
+From `13a-wide-step-on-table` on, the rows of a
 rung on the table are in degrees of the table's own scale. A rung is
 kept when the
 rows it aims at gain by more than the baseline's own spread over its three
 runs and no other row loses. A rung that is not kept leaves its result
-file, its settings file and one line here, not its rows.
+file and one line here, not its rows. The rungs up to `13a` were
+recorded before a rung named a constant set: each ran on a file of
+fields, kept in its result file under `settings`, and where its
+`rung.json` names them on the table file and the wide-code result. The
+pair's set of record holds what `13a` ran on, `01b`'s gains, the table
+and the slots, so a rung on it is given `13a`'s goals. Of the fields
+those rungs tried, the ones that mean on the set what they meant when
+typed are kept as deviation files, the hold band at 8 counts and the
+measured friction term; a speed limit, an acceleration limit or a
+velocity gain typed in counts at the raw pot's scale is not, since on
+the table's count it is another speed or gain.
 
 Kept:
 

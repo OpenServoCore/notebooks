@@ -2,8 +2,8 @@
 fixed test set, scored from the pot, so a change is kept or dropped on
 numbers.
 
-  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table] [--wide-codes]
-  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-pos-table] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-pos-table] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
+  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...]
+  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-set PATH] [--b-deviation FILE] [--b-protection NAME ...] [--b-loosen NAME ...] [--b-note TEXT] [--rounds 3]
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard table
 
@@ -12,29 +12,38 @@ numbers.
 `telemetry/<pair>/scorecard/<label>/run-K/{steps,follow,hold,wide}`, with
 `rung.json` naming the build. `wide`, holds at the middle of each ADC
 wide code of the board, is run where the board's wide-code result names
-a code in reach, on every rung, and `rung.json` names its goals. With
-`--settings` the rung runs on a file of CONFIG fields applied volatile
-(oscnb.settings) and rebooted away at the end, the fields kept in
-`rung.json`. With `--pos-table` it runs on the
-pair's position table (oscnb.postable) installed volatile after the
-fields, one stamp over both, the file and its sha1 kept in `rung.json`
-and the same reboot dropping it, its set planned in the table's counts
-at the table's scale, centered on the raw center read through it
-(testset.py). With `--wide-codes` it runs on the
-board's ADC wide-code slots (oscnb.widecodes) written volatile after the
-rest, outside the stamp, the board's result file and its sha1 kept in
-`rung.json` and the same reboot dropping them. Before a run's first
-capture, the settings, the table and the slots on, the servo's constant
-state is read into `run-K/servo.json`: the bytes of CONFIG and CALIB with
-every field there by name and the writable ones named, the position
-table's state and its points as fetched back with their sha1, the
-wide-code slots, the stamp and the data state. `rung.json` keeps the
-hash of the first run's, and a later run that reads another state is
-refused, what differs named.
+a code in reach, on every rung, and `rung.json` names its goals.
+
+A rung runs on a constant set (oscnb.constants): the pair's set of
+record, the set of `--set`, or that set with one deviation, the file of
+`--deviation`, built over it by the set's own rules. Nothing else puts
+a constant on the servo: no list of fields, no table and no slots are
+applied beside the set. The test set is planned from that set, its soft
+range, and where its position table is LIVE the table's counts at the
+table's scale, centered on the raw center read through it (testset.py).
+The set is installed before the runs (`constants.install`, volatile,
+behind its protection gate, which `--protection` and `--loosen` name
+fields for, and stamped there alone) and a reboot brings the stored
+state back after them. Before a run's first capture the servo's
+constant state is read into `run-K/servo.json`: the bytes of CONFIG and
+CALIB with every field there by name and the writable ones named, the
+position table's state and its points as fetched back with their sha1,
+the wide-code slots, the stamp and the data state. A servo that is not
+the rung's set then, or whose data state is not clean, does not start
+the run. `rung.json` keeps the hash of the first run's state, and a
+later run that reads another is refused, what differs named. It names
+the set by its file, its three hashes and its fields by class, the
+deviation by its file and every field it moved as [of record,
+deviated], and protection as its own entry, the hash and what the
+install moved against the servo's values; a copy of the set the rung
+ran on lies beside it as `constants.json`, so the rung stays readable
+when the set of record moves.
 `ab` records two such rungs at once, one
 run of each per round, A then B, flashing a side's image (and verifying
 the stamp) whenever the servo holds the other's, so the two share the
-servo's drift through the session. `score` writes the rung's scores, the median
+servo's drift through the session. Each side names its own set and
+deviation, installed on its own image around its own runs: an A/B is
+the set against the set with one thing changed, the one thing named. `score` writes the rung's scores, the median
 over its runs and their range, to
 `stages/5-closed-loop/scorecard/results/<pair>/<label>.json`. `table`
 prints the ladder, one column per rung.
@@ -42,10 +51,15 @@ prints the ladder, one column per rung.
 Every score reads the pot, `pos` in counts against the goal in counts,
 turned to degrees by the plan's counts per degree. Under a LIVE position
 table the goals are linearized counts, so the rows' raw pot is read
-through the table the rung ran on first. On a `--wide-codes` rung the
-servo reads a pot sample at a wide code as the middle of the span the
-code stands for, so the rows' raw pot takes the same step first, with
-the slots of the file the rung names, ahead of the table. The rows' `pos`
+through the table the rung ran on first. On a rung whose set holds ADC
+wide-code slots the servo reads a pot sample at a wide code as the
+middle of the span the code stands for, so the rows' raw pot takes the
+same step first, with the rung's slots, ahead of the table. The table
+and the slots are those of the rung's own record: the set copied into
+its folder, the table's points from the run's `servo.json`. A rung
+recorded before rungs named a set carries no `set` in its `rung.json`
+and names the table file and the wide-code result it ran on there, each
+by its sha1; it is read through those files as it always was. The rows' `pos`
 carries spikes while the bridge drives, so every peak, slope and settle read goes
 through a centered rolling median of MEDIAN_ROWS rows, taken within one
 segment; the hold's jitter alone reads the raw pot. A capture's rows go on
@@ -70,6 +84,7 @@ import pandas as pd
 from . import bench, boards, osc, postable, results, servos, settings, widecodes
 
 STAGE = "5-closed-loop"
+SET_COPY = "constants.json"     # the set a rung ran on, beside its rung.json
 TESTSET = results.ROOT / "stages" / STAGE / "scorecard" / "testset.py"
 TICK_WRAP = 1 << 16
 MEDIAN_ROWS = 41          # about 2 ms: wider than a pot spike, far under a move
@@ -111,6 +126,13 @@ UNITS = {
     "enable_kick_deg": "deg",
     "enable_drive_ms": "ms", "speed_report_error_deg_s": "deg/s", "position_report_error_deg": "deg",
 }
+
+
+def constants():
+    """oscnb.constants, imported where it is used: it imports this
+    module for the servo's state."""
+    from . import constants as cn
+    return cn
 
 
 def base_of(key):
@@ -155,9 +177,38 @@ def rung_named(folder, key):
     return json.loads(p.read_text()).get(key) if p.exists() else None
 
 
+def rung_set(folder):
+    """The constant set a capture's rung ran on, from the copy in the
+    rung's folder; None for a rung recorded before rungs named a set,
+    which names the files it ran on instead. Refused when the copy is
+    not the set `rung.json` names."""
+    cn = constants()
+    named = rung_named(folder, "set")
+    if not named:
+        return None
+    doc = cn.load(Path(folder).parent.parent / SET_COPY)
+    if doc["hash"] != named["hash"]:
+        raise ValueError(f"{folder}: the rung's {SET_COPY} is not the set its rung.json names "
+                         f"(set hash {named['hash']['set']})")
+    return doc
+
+
 def rung_table(folder):
-    """The Table a capture's rung names, None when it names none; refused
-    when the file is not the one recorded."""
+    """The Table a capture's rung ran on, None when it ran on none. On a
+    rung that names its constant set it is the points the run's
+    `servo.json` holds, which must be the set's; on a rung recorded
+    before, the table file `rung.json` names, refused when the file is
+    not the one recorded."""
+    cn = constants()
+    doc = rung_set(folder)
+    if doc is not None:
+        if doc["pos_table"]["state"] != "LIVE":
+            return None
+        state = json.loads((Path(folder).parent / "servo.json").read_text())
+        points = bytes.fromhex(state["pos_table"]["points"])
+        if hashlib.sha1(points).hexdigest() != doc["pos_table"]["points_sha1"]:
+            raise ValueError(f"{folder}: the run's servo.json does not hold the points of the rung's set")
+        return postable.from_points(points, *(state["fields"][n] for n in cn.STOPS))
     named = rung_named(folder, "pos_table")
     if not named:
         return None
@@ -168,8 +219,14 @@ def rung_table(folder):
 
 
 def rung_wide_slots(folder):
-    """The ADC wide-code slots a capture's rung ran on, None when it names
-    none; refused when the file is not the one recorded."""
+    """The ADC wide-code slots a capture's rung ran on, None when it ran
+    on none: the slots of the constant set the rung names, or on a rung
+    recorded before, those of the result file `rung.json` names, refused
+    when the file is not the one recorded."""
+    doc = rung_set(folder)
+    if doc is not None:
+        slots = doc["wide_codes"]
+        return bytes(slots["slots"]) if slots is not None and any(slots["slots"]) else None
     named = rung_named(folder, "wide_codes")
     if not named:
         return None
@@ -773,10 +830,18 @@ def differing(first, now):
 
 def record_constants(r, k):
     """The servo's constant state before run `k` of rung `r`, into the
-    run's `servo.json`. The rung's first is kept on `r`, for `rung.json`'s
-    hash; a later run that reads another is refused before it records or
-    drives anything, what differs named."""
+    run's `servo.json`, with a copy of the rung's set beside `rung.json`
+    on the first. A servo that is not the rung's set, or whose data
+    state is not clean, is refused before anything is recorded or
+    driven: the run does not start. The rung's first state is kept on
+    `r`, for `rung.json`'s hash; a later run that reads another is
+    refused the same way, what differs named."""
+    cn = constants()
     now = servo_state()
+    off = cn.differences(r["set"], now)
+    if off or now["data_state"] != "clean":
+        raise SystemExit(f"{shown(r['dir'])}: run-{k} does not start: the servo is not the rung's set (data state "
+                         f"{now['data_state']}{''.join('; ' + d for d in off)})")
     first = r.setdefault("constants", now)
     if now["hash"] != first["hash"]:
         raise SystemExit(f"{shown(r['dir'])}: run-{k} reads a constant state other than the one the rung's "
@@ -784,6 +849,8 @@ def record_constants(r, k):
     out = r["dir"] / f"run-{k}"
     out.mkdir(parents=True, exist_ok=True)
     (out / "servo.json").write_text(json.dumps(now, indent=2) + "\n")
+    if not (r["dir"] / SET_COPY).exists():
+        cn.write(r["set"], r["dir"] / SET_COPY)
 
 
 def capture(out, name, segs, center, guard, inp, deadman_check, ts):
@@ -804,73 +871,89 @@ def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     return meta
 
 
-def new_rung(pair, label, fw, image_sha, runs, note="", settings_file=None, pos_table=False, wide_codes=False,
-             board_key=None):
+def new_rung(pair, label, fw, image_sha, runs, note="", set_file=None, deviation=None, protection=(), loosen=()):
     """A rung to record, refused when its label already holds one: its
-    folder and what `rung.json` names, the settings file's fields, the
-    pair's table and the board's ADC wide-code slots it runs on loaded."""
+    folder, what `rung.json` names and the constant set it runs on,
+    which is the set of `set_file`, the pair's set of record without
+    one, or that set with the one deviation of file `deviation`
+    (`constants.derive`). Refused offline when the set is not the
+    pair's, an input file of it moved, or the deviation does not build.
+    `protection` and `loosen` are the names the set's install passes
+    its protection gate with."""
+    cn = constants()
     rung = rung_dir(pair, label)
     if rung.exists():
         raise SystemExit(f"{shown(rung)} already holds a rung: pick a new label or remove it")
-    fields = settings.load(settings_file)[0] if settings_file else None
-    table = None
-    if pos_table:
-        postable.load(pair)
-        path = postable.out_path(pair)
-        table = {"file": str(results.rel(path)), "sha1": file_sha1(path)}
-    wide = None
-    if wide_codes:
-        try:
-            widecodes.slots_of_record(board_key)
-        except settings.Refused as e:
-            raise SystemExit(f"--wide-codes: {e}")
-        path = widecodes.result_file(board_key)
-        wide = {"file": str(shown(path)), "sha1": file_sha1(path)}
-    return {"dir": rung, "label": label, "fw": fw, "image_sha": image_sha, "note": note,
-            "runs": runs, "fields": fields, "table": table, "wide": wide, "board": board_key}
+    root = results.ROOT
+    try:
+        path = Path(set_file) if set_file else cn.set_path(pair, root)
+        doc = cn.load(path) if set_file else cn.of_record(pair, root)
+        named = cn.in_repo(path, root, "the set a rung runs on").as_posix()
+        if doc["pair"] != pair:
+            raise ValueError(f"{shown(path)} is the set of {doc['pair']}, the servo at hand is {pair}")
+        if deviation:
+            doc, _ = cn.derive(doc, deviation, root)
+        lines, stale = cn.status(doc, root)
+        if stale:
+            raise ValueError(f"the set is stale: {'; '.join(x for x in lines if x.startswith('stale: '))}")
+    except (ValueError, settings.Refused) as e:
+        raise SystemExit(f"{label}: {e}")
+    return {"dir": rung, "label": label, "fw": fw, "image_sha": image_sha, "note": note, "runs": runs,
+            "set": doc, "set_file": named, "protection": tuple(protection), "loosen": tuple(loosen)}
 
 
 def bench_sets(servo, board, pair, rungs):
-    """The test set built for the servo at hand for each of `rungs`, after
-    one preflight: the module, the rung's inputs, the soft range read off
-    the servo, the center and the captures' segments. A rung on the
-    pair's table gets the set planned in the table's counts."""
+    """The test set built for each of `rungs` from the constant set it
+    runs on, after one preflight: the module, the rung's inputs, the
+    set's soft range, the center and the captures' segments. A rung on
+    a set with a LIVE table gets the test set planned in the table's
+    counts."""
     ts = testset()
-    inps = [ts.inputs(servo, pair, board.key, pos_table=bool(r["table"])) for r in rungs]
+    try:
+        inps = [ts.inputs(servo, pair, board.key, r["set"]) for r in rungs]
+    except settings.Refused as e:
+        raise SystemExit(str(e))
+    guards = [ts.guard_of(r["set"]) for r in rungs]
     preflight(servo, board)
-    guard = (osc.get("pos_min_soft_counts"), osc.get("pos_max_soft_counts"))
     out = []
-    for inp in inps:
+    for inp, guard in zip(inps, guards):
         center, sets = ts.build(guard, inp)
         out.append({"ts": ts, "inp": inp, "guard": guard, "center": center, "sets": sets})
     return out
 
 
 @contextmanager
-def applied(r, pair):
-    """Rung `r`'s settings, table and the board's ADC wide-code slots on
-    the servo for the body; the slots lie outside the stamp, so they go on
-    after it."""
+def applied(r):
+    """Rung `r`'s constant set on the servo for the body:
+    `constants.install`, the one place a state is stamped, behind its
+    protection gate, and the protection fields it moves against the
+    servo's values kept on `r` for `rung.json`. A reboot brings the
+    stored state back when the body ends or aborts, where the install
+    wrote anything."""
+    cn = constants()
     try:
-        if r["fields"]:
-            settings.apply(r["fields"], stamp=not r["table"])
-        if r["table"]:
-            postable.install(pair)
-            settings.stamp_live()
-        if r["wide"]:
-            widecodes.install(r["board"])
+        state = servo_state()
+        r.setdefault("protection_moved", cn.protection_moves(r["set"], state))
+        wrote = cn.install(r["set"], r["protection"], r["loosen"], results.ROOT, state=state)
+    except (ValueError, settings.Refused) as e:
+        raise SystemExit(f"{r['label']}: the rung's set does not install: {e}")
+    try:
         yield
     finally:
-        # the stored set comes back whether the runs ended or aborted
-        if r["fields"] or r["table"] or r["wide"]:
+        # the stored state comes back whether the runs ended or aborted
+        if wrote:
             settings.restore()
 
 
 def record_run(r, k, s):
     """Run `k` of rung `r` on bench set `s`: the servo's constant state
     (`record_constants`), then the captures the set built, in the test
-    set's order, and `rung.json` once the rung's first capture lands, the
-    wide holds' goals in it."""
+    set's order, and `rung.json` once the rung's first capture lands:
+    the constant set by its file, its three hashes and its fields by
+    class, the deviation with every field it moved as [of record,
+    deviated], the protection hash with what the install moved against
+    the servo's values, and the wide holds' goals."""
+    cn = constants()
     rung, ts = r["dir"], s["ts"]
     record_constants(r, k)
     wide = [{"stuck_code": g["stuck_code"], "side": g["side"], "goal_counts": g["goal_counts"],
@@ -885,19 +968,21 @@ def record_run(r, k, s):
                 "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "config_hash": config_hash(meta["config"]), "constants_hash": r["constants"]["hash"],
                 "runs_asked": r["runs"],
-                "settings": r["fields"], "pos_table": r["table"], "wide_codes": r["wide"],
+                "set": {"file": r["set_file"], "hash": r["set"]["hash"], "classes": cn.classes(r["set"])},
+                "deviation": r["set"].get("deviation"),
+                "protection": {"hash": r["set"]["hash"]["protection"], "moved": r["protection_moved"]},
                 "wide_goals": wide or None,
             }, indent=2) + "\n")
 
 
-def run(label, fw, image_sha, runs=3, note="", settings_file=None, pos_table=False, wide_codes=False,
+def run(label, fw, image_sha, runs=3, note="", set_file=None, deviation=None, protection=(), loosen=(),
         servo=None, board=None):
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
-    r = new_rung(pair, label, fw, image_sha, runs, note, settings_file, pos_table, wide_codes, board.key)
+    r = new_rung(pair, label, fw, image_sha, runs, note, set_file, deviation, protection, loosen)
     s, = bench_sets(servo, board, pair, [r])
-    with applied(r, pair):
+    with applied(r):
         for k in range(1, runs + 1):
             if k > 1:
                 preflight(servo, board)
@@ -917,14 +1002,14 @@ def require_live_set(image):
 def ab(a, b, rounds=3, servo=None, board=None):
     """Two rungs recorded alternately, one run of each per round, A then B,
     so both share the servo's drift through the session. `a` and `b` are
-    {"label", "fw", "image", "note", "settings_file", "pos_table",
-    "wide_codes"}, the last four optional; each rung is the one `run` records, its image sha the image
-    file's. A side's image is flashed, the bus awaited and the stamp
-    verified before its run whenever the servo holds the other side's,
-    and before the first run always; its settings, the pair's table and
-    the board's wide-code slots are applied around its own runs alone,
-    and a side on the table runs the set planned in the table's counts.
-    Returns the two rungs' folders."""
+    {"label", "fw", "image", "note", "set_file", "deviation",
+    "protection", "loosen"}, the last five optional; each rung is the
+    one `run` records, its image sha the image file's. A side's image
+    is flashed, the bus awaited and the stamp verified before its run
+    whenever the servo holds the other side's, and before the first run
+    always; its constant set, the set of record or its own derived set,
+    is installed around its own runs alone, on the image it runs on, and
+    its test set is planned from it. Returns the two rungs' folders."""
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
@@ -932,10 +1017,9 @@ def ab(a, b, rounds=3, servo=None, board=None):
         raise SystemExit(f"both sides are labeled {a['label']!r}: an A/B records two rungs")
     sides = []
     for side in (a, b):
-        r = new_rung(pair, side["label"], side["fw"], file_sha1(side["image"]), rounds,
-                     side.get("note", ""), side.get("settings_file"), pos_table=side.get("pos_table", False),
-                     wide_codes=side.get("wide_codes", False),
-                     board_key=board.key)
+        r = new_rung(pair, side["label"], side["fw"], file_sha1(side["image"]), rounds, side.get("note", ""),
+                     side.get("set_file"), side.get("deviation"), side.get("protection", ()),
+                     side.get("loosen", ()))
         r["image"] = Path(side["image"])
         sides.append(r)
     sets = bench_sets(servo, board, pair, sides)
@@ -951,7 +1035,7 @@ def ab(a, b, rounds=3, servo=None, board=None):
                     settings.await_boot()
                     require_live_set(r["image"])
                 preflight(servo, board)
-                with applied(r, pair):
+                with applied(r):
                     record_run(r, k, s)
                 print(f"{r['label']} run-{k} of {rounds} done")
     finally:
@@ -1009,6 +1093,19 @@ def table(servo=None, board=None, file=None):
         print("  ".join(v.ljust(w) for v, w in zip(r, widths)).rstrip(), file=file or sys.stdout)
 
 
+def set_args(parser, side):
+    """The flags that name the constant set a rung, or a side of an A/B,
+    runs on."""
+    parser.add_argument(f"--{side}set", type=Path,
+                        help="the constant set to run on, the pair's set of record if omitted")
+    parser.add_argument(f"--{side}deviation", type=Path,
+                        help="one deviation file, built over that set by its rules")
+    parser.add_argument(f"--{side}protection", nargs="+", default=[], metavar="NAME",
+                        help="the protection fields the set's install may change on the servo")
+    parser.add_argument(f"--{side}loosen", nargs="+", default=[], metavar="NAME",
+                        help="of those, the ones it may set to protect less than the servo's value")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m oscnb.scorecard", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1018,22 +1115,13 @@ def main(argv=None):
     r.add_argument("--image-sha", required=True, help="the sha1 of the flashed image")
     r.add_argument("--runs", type=int, default=3)
     r.add_argument("--note", default="")
-    r.add_argument("--settings", type=Path, help="a file of CONFIG fields the rung runs on, applied volatile")
-    r.add_argument("--pos-table", action="store_true",
-                   help="run on the pair's position table, installed volatile")
-    r.add_argument("--wide-codes", action="store_true",
-                   help="run on the board's ADC wide-code slots, installed volatile")
+    set_args(r, "")
     x = sub.add_parser("ab", help="record two rungs on the bench, their runs alternated")
     for side in ("a", "b"):
         x.add_argument(f"--{side}-label", required=True)
         x.add_argument(f"--{side}-fw", required=True, help="the firmware commit the image was built from")
         x.add_argument(f"--{side}-image", required=True, type=Path, help="the raw .bin image to flash")
-        x.add_argument(f"--{side}-settings", type=Path,
-                       help="a file of CONFIG fields the side runs on, applied volatile")
-        x.add_argument(f"--{side}-pos-table", action="store_true",
-                       help="the side runs on the pair's position table, installed volatile")
-        x.add_argument(f"--{side}-wide-codes", action="store_true",
-                       help="the side runs on the board's ADC wide-code slots, installed volatile")
+        set_args(x, f"{side}-")
         x.add_argument(f"--{side}-note", default="")
     x.add_argument("--rounds", type=int, default=3)
     s = sub.add_parser("score", help="score a recorded rung")
@@ -1041,13 +1129,13 @@ def main(argv=None):
     sub.add_parser("table", help="print the ladder")
     a = ap.parse_args(argv)
     if a.cmd == "run":
-        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.settings, a.pos_table, a.wide_codes)))
+        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.set, a.deviation, a.protection, a.loosen)))
     elif a.cmd == "ab":
         sides = [{"label": getattr(a, f"{side}_label"), "fw": getattr(a, f"{side}_fw"),
                   "image": getattr(a, f"{side}_image"), "note": getattr(a, f"{side}_note"),
-                  "settings_file": getattr(a, f"{side}_settings"),
-                  "pos_table": getattr(a, f"{side}_pos_table"),
-                  "wide_codes": getattr(a, f"{side}_wide_codes")} for side in ("a", "b")]
+                  "set_file": getattr(a, f"{side}_set"), "deviation": getattr(a, f"{side}_deviation"),
+                  "protection": getattr(a, f"{side}_protection"), "loosen": getattr(a, f"{side}_loosen")}
+                 for side in ("a", "b")]
         for rung in ab(*sides, rounds=a.rounds):
             print(shown(rung))
     elif a.cmd == "score":

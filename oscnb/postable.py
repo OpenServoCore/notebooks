@@ -39,7 +39,8 @@ compensated raw (`Table.lin` of `widecodes.compensated`).
 grades it offline, `plan` prints the `osc` commands an install takes and
 runs none of them. `install` runs the plan's steps 1 to 4 on the servo,
 each read checked and every page read back, and stops short of the stamp:
-the table is volatile until a SAVE, which nothing here sends.
+nothing here stamps or saves. The stamp is the constant set's, written
+once the servo reads back as the whole set (oscnb.constants).
 """
 import argparse
 import hashlib
@@ -540,13 +541,10 @@ def plan(pair):
     lines = [f"# install {results.rel(out_path(pair))} (protocol sec 5.7); nothing here has run"]
     lines += [shown_step(s, o) for s in install_steps(t)]
     lines += [
-        "# 5. stamp the live set, the LIVE points in it; no --save",
-        f"{o} stamp                # 'data state clean: closed loop allowed'",
-        f"{o} status               # 'data  clean' and 'stamp 0x.... = live set'",
-        "# 6. no SAVE: the table and the stamp stay volatile, and osc reboot returns",
-        "#    the saved identity table and the saved stamp. A SAVE (osc save, or",
-        "#    osc stamp --save) would persist them, and with them every volatile",
-        "#    CONFIG write standing at the time (oscnb.settings apply).",
+        "# 5. no stamp and no SAVE: the table stands volatile and the data state reads",
+        "#    STAMP_MISMATCH. The pair's constant set stamps, once the servo reads back as",
+        "#    the whole set (python -m oscnb.constants install), and osc reboot returns the",
+        "#    saved table.",
     ]
     return "\n".join(lines)
 
@@ -645,7 +643,7 @@ def main(argv=None):
         elif a.cmd == "install":
             install(a.pair)
             print(f"{results.rel(out_path(a.pair))}: LIVE, {PAGES} pages read back the same; not "
-                  "stamped and not saved (osc stamp blesses it, osc reboot drops it)")
+                  "stamped and not saved (the constant set's install stamps, osc reboot drops it)")
         else:
             print(plan(a.pair))
     except (ValueError, settings.Refused) as e:

@@ -248,7 +248,7 @@ def test_load_refuses_a_hand_edited_table(repo):
         pt.load(PAIR)
 
 
-def test_plan_writes_every_page_then_commits_reads_back_and_stamps_unsaved(repo):
+def test_plan_writes_every_page_then_commits_and_reads_back_and_neither_stamps_nor_saves(repo):
     write_lookup(repo)
     t, _ = pt.build(PAIR, *STOPS)
     text = pt.plan(PAIR)
@@ -261,11 +261,12 @@ def test_plan_writes_every_page_then_commits_reads_back_and_stamps_unsaved(repo)
         np.testing.assert_array_equal(np.frombuffer(b[2:], "<i2"), t.points[32 * p:32 * (p + 1)])
     order = [next(i for i, c in enumerate(cmds) if key in c)
              for key in ("get torque_enable", "write 0x19c 0001", "write 0x19c 0003",
-                         "write 0x19c 0702", " stamp")]
+                         "write 0x19c 0702")]
     assert order == sorted(order)
+    # the stamp is the constant set's alone: the plan has no step that stamps or saves
     words = {c.split()[3] for c in cmds}
-    assert words <= {"get", "write", "stamp", "status"}
-    assert not any("--save" in c or " save" in c for c in cmds)
+    assert words <= {"get", "write"}
+    assert "oscnb.constants install" in text
 
 
 def synthetic_sets(seed=2):

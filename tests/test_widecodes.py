@@ -2,8 +2,8 @@
 carries, at the range's edges and too wide for a byte, and a thin sweep
 refused; the slots; the step on a recording's readings and its load; the
 bench sweep's code histogram; the sweep's schedule and its capture with
-`osc` stubbed; the install against a fake bus and the slots read back
-off it; and the scorecard's `--wide-codes` rung."""
+`osc` stubbed; and the install against a fake bus and the slots read
+back off it."""
 import hashlib
 import json
 import math
@@ -411,88 +411,3 @@ def test_osc_field_reads_the_descriptors_place_off_get(monkeypatch):
     assert seen == [(("get", "adc_wide_mid_q4"), {"capture": True, "check": False})]
     monkeypatch.setattr(wc.osc, "run", lambda *a, **kw: "")
     assert wc.osc.field("adc_wide_mid_q4") is None
-
-
-# --- the scorecard's flag ---
-
-@pytest.fixture
-def rung_bench(monkeypatch, tmp_path):
-    """The fake servo of the scorecard's tests, a wide-code result on disk
-    and every settings, table, slots and reboot call logged in order."""
-    state = {"shaft": 1950.0, "log": [], "calls": []}
-    monkeypatch.setattr(sc.osc, "bus_baud", lambda: 3_000_000)
-    synth.Servo().stub(monkeypatch, lambda: {"torque_enable": "off", "pos_min_soft_counts": 314,
-                                             "pos_max_soft_counts": 3560})
-    monkeypatch.setattr(sc.bench, "read_vsys", lambda board=None: 5.05)
-
-    def track(out, mode, schedule, **kw):
-        state["log"].append(Path(out).name)
-        state["shaft"] = synth.fake_track(out, schedule, state["shaft"])
-        return out
-
-    monkeypatch.setattr(sc.osc, "track", track)
-    monkeypatch.setattr(sc, "rung_dir", lambda pair, label: tmp_path / "telemetry" / pair / "scorecard" / label)
-    path = tmp_path / "wide.json"
-    path.write_text(json.dumps({"capture": "x", wc.FIELD: list(SLOTS_OF_RECORD)}))
-    monkeypatch.setattr(wc, "result_file", lambda board: path if board == KEY else tmp_path / "none.json")
-    calls = state["calls"]
-    monkeypatch.setattr(sc.settings, "apply",
-                        lambda fields, note="", stamp=True: calls.append(("apply", dict(fields), stamp)))
-    monkeypatch.setattr(sc.postable, "install", lambda pair: calls.append(("table", pair)))
-    monkeypatch.setattr(sc.settings, "stamp_live", lambda: calls.append(("stamp",)))
-    monkeypatch.setattr(sc.widecodes, "install", lambda board: calls.append(("wide", board)))
-    monkeypatch.setattr(sc.settings, "restore", lambda: calls.append(("restore", len(state["log"]))))
-    state["path"] = path
-    return state
-
-
-def test_a_wide_codes_rung_installs_last_records_the_file_and_reboots(rung_bench, tmp_path):
-    f = tmp_path / "gains.json"
-    f.write_text(json.dumps({"fields": {"p_kp_q88": 5026}}))
-    rung = sc.run("04-wide", "abc123", "f" * 40, runs=1, settings_file=f, pos_table=True, wide_codes=True,
-                  servo=SERVO, board=BOARD)
-    assert rung_bench["calls"] == [("apply", {"p_kp_q88": 5026}, False), ("table", PAIR), ("stamp",),
-                                   ("wide", KEY), ("restore", 3)]
-    doc = json.loads((rung / "rung.json").read_text())
-    assert doc["wide_codes"] == {"file": str(rung_bench["path"]),
-                                 "sha1": hashlib.sha1(rung_bench["path"].read_bytes()).hexdigest()}
-
-
-def test_a_wide_codes_rung_alone_installs_and_reboots_and_a_plain_rung_names_none(rung_bench):
-    sc.run("04-wide", "abc123", "f" * 40, runs=1, wide_codes=True, servo=SERVO, board=BOARD)
-    assert rung_bench["calls"] == [("wide", KEY), ("restore", 3)]
-    rung = sc.run("00-plain", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
-    assert json.loads((rung / "rung.json").read_text())["wide_codes"] is None
-    assert rung_bench["calls"] == [("wide", KEY), ("restore", 3)]
-
-
-def test_a_wide_codes_rung_without_a_result_is_refused_before_anything_moves(rung_bench):
-    rung_bench["path"].unlink()
-    with pytest.raises(SystemExit, match="--wide-codes: no ADC wide-code result for board"):
-        sc.run("04-wide", "abc123", "f" * 40, runs=1, wide_codes=True, servo=SERVO, board=BOARD)
-    assert rung_bench["log"] == [] and rung_bench["calls"] == []
-
-
-def test_ab_installs_a_sides_slots_around_its_own_runs_only(rung_bench, monkeypatch, tmp_path):
-    image = tmp_path / "a.bin"
-    image.write_bytes(b"a" * 64)
-    monkeypatch.setattr(sc.osc, "flash", lambda image: rung_bench["calls"].append(("flash",)))
-    monkeypatch.setattr(sc.osc, "status", lambda: "      data  clean\n      stamp 0x9c45 = live set\n")
-    monkeypatch.setattr(sc.settings, "await_boot", lambda: None)
-    a = {"label": "05-a", "fw": "abc123", "image": image}
-    b = {"label": "05-b", "fw": "abc123", "image": image, "wide_codes": True}
-    ra, rb = sc.ab(a, b, rounds=2, servo=SERVO, board=BOARD)
-    assert rung_bench["calls"] == [("flash",), ("wide", KEY), ("restore", 6), ("wide", KEY), ("restore", 12)]
-    assert json.loads((ra / "rung.json").read_text())["wide_codes"] is None
-    assert json.loads((rb / "rung.json").read_text())["wide_codes"]["file"] == str(rung_bench["path"])
-
-
-def test_the_cli_passes_the_flags(monkeypatch):
-    seen = []
-    monkeypatch.setattr(sc, "run", lambda *a, **kw: seen.append(a) or Path("x"))
-    sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s", "--wide-codes"])
-    assert seen[-1][-1] is True
-    monkeypatch.setattr(sc, "ab", lambda *sides, rounds: seen.append(sides) or (Path("a"), Path("b")))
-    sc.main(["ab", "--a-label", "a", "--a-fw", "f", "--a-image", "i", "--b-label", "b", "--b-fw", "f",
-             "--b-image", "i", "--b-wide-codes"])
-    assert [s["wide_codes"] for s in seen[-1]] == [False, True]

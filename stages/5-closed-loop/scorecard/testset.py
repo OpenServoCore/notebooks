@@ -29,11 +29,13 @@ segment: its test, size or speed share, direction and goal in counts and
 in degrees from the center, and for a hold at a wide code its stuck code
 and the side it is approached from.
 
-A set for a rung on the pair's position table is planned in linearized
-counts. Under a live table they are the counts of the goals, of the
-servo's soft limits and of `osc-lab track`'s guard, so the soft range
-read off the servo is taken as it is and the fit compares like with
-like. Counts per degree is the table's own scale, constant over the
+A rung runs on a constant set (oscnb.constants), and its test set is
+planned from that set: the soft range is the set's, and a set whose
+position table is LIVE is planned on the table, an identity one on the
+raw pot. A set on the table is planned in linearized counts. Under a
+live table they are the counts of the goals, of the servo's soft limits
+and of `osc-lab track`'s guard, so the set's soft range is taken as it
+is and the fit compares like with like. Counts per degree is the table's own scale, constant over the
 travel, and the center is the raw middle of the soft range read through
 the table, the place an identity set centers on. A wide code's goals are
 the table's reading of the raw goals, each segment keeping its raw goal
@@ -44,7 +46,7 @@ never in a sitting.
 """
 import math
 
-from oscnb import postable, results, scorecard, widecodes
+from oscnb import constants, postable, results, scorecard, widecodes
 
 STEP_SIZES_DEG = (2, 20, 60)
 STEP_HOLD_MS = (1200, 1500, 2000)   # per size, the settle and the 500 ms rest window
@@ -69,14 +71,17 @@ CAP_MS = 100                        # the watchdog's current cap holds this long
 CAPTURES = ("steps", "follow", "hold", "wide")   # in run order; `wide` only where the set built one
 
 
-def inputs(servo, pair, board=None, pos_table=False):
+def inputs(servo, pair, board=None, doc=None):
     """The constants the set is built from, with where each came from.
     `board` is the registry key of the board whose ADC wide codes the
     `wide` capture holds at: the ones its result of record gives a slot.
-    Without a board, or for one with no result, there are none. With
-    `pos_table` the set is for a rung on the pair's position table: its
-    counts per degree is the table's scale, and `table` is the Table
-    `build` reads the center and the wide goals through."""
+    Without a board, or for one with no result, there are none. `doc`
+    is the constant set the rung runs on. Where its position table is
+    LIVE the test set is planned on it: its counts per degree is the
+    table's scale, and `table` is the Table `build` reads the center
+    and the wide goals through, the pair's table file checked against
+    the set. A constant set that names a scale must name the one the
+    test set is planned at."""
     pot = results.read("3-servo", "pot-table", pair)
     runup = results.read("3-servo", "run-up", pair)
     rev_s = runup["no_load_speed_rev_s"]["value"]
@@ -99,14 +104,33 @@ def inputs(servo, pair, board=None, pos_table=False):
                              for b in sorted(slotted, key=lambda b: b.stuck)]
         inp["sources"]["wide_codes"] = (f"{scorecard.shown(widecodes.result_file(board))} wide_codes, "
                                         f"the codes that take a slot")
-    if pos_table:
-        table = postable.load(pair)[0]
-        f = results.rel(postable.out_path(pair))
+    if doc is not None and doc["pos_table"]["state"] == "LIVE":
+        table = constants.live_table(doc, held(doc, constants.STOPS), results.ROOT, quiet=True)
+        f = scorecard.shown(constants.set_path(pair, results.ROOT).with_name(postable.out_path(pair).name))
         inp["table"] = table
         inp["counts_per_deg"] = table.scale
         inp["sources"]["counts_per_deg"] = f"{f} target counts_per_deg, the table's linearized counts per deg"
         inp["sources"]["center_counts"] = f"the raw middle of the soft range read through {f}"
+    scale = (doc or {}).get("scale")
+    if scale and scale["counts_per_deg"] != inp["counts_per_deg"]:
+        raise SystemExit(f"the constant set's scale is {scale['counts_per_deg']} counts per deg, the {scale['kind']} "
+                         f"one, and the test set would be planned at {inp['counts_per_deg']}: the set is not on "
+                         f"the table or the pot result at hand")
     return inp
+
+
+def held(doc, names):
+    """The values a constant set holds for `names`, refused when it
+    holds none of one."""
+    missing = [n for n in names if n not in doc["fields"]]
+    if missing:
+        raise SystemExit(f"the constant set holds no {', '.join(missing)}")
+    return tuple(doc["fields"][n]["value"] for n in names)
+
+
+def guard_of(doc):
+    """The soft range a rung on constant set `doc` runs in."""
+    return held(doc, ("pos_min_soft_counts", "pos_max_soft_counts"))
 
 
 def center_of(guard):
