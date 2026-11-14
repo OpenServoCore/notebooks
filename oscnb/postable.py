@@ -60,6 +60,9 @@ INTERVALS = 1 << (ADC_BITS - GRID_SHIFT)  # host-written points
 PAGE_POINTS = 32
 PAGES = INTERVALS // PAGE_POINTS
 GAIN_MAX = 16                           # local gain under 16x nominal
+# the servo's clamp on the hold band's gain, Q4: half the deadband in shaft
+# angle at the least, four deadbands at the most
+BAND_GAIN_MIN_Q4, BAND_GAIN_MAX_Q4 = GRID // 2, 4 * GRID
 ADC_MASK = (1 << ADC_BITS) - 1
 STATES = ("IDENTITY", "LOADING", "LIVE", "REJECT_TORQUE", "REJECT_ENDS",
           "REJECT_SHAPE")
@@ -135,6 +138,15 @@ class Table:
         r = np.clip(np.asarray(raw, float), 0, ADC_MASK)
         i = np.minimum((r // GRID).astype(int), INTERVALS - 1)
         return r + c[i] + (c[i + 1] - c[i]) * (r - GRID * i) / GRID
+
+    def band_gain(self, raw):
+        """Linearized counts per raw count of the interval raw code `raw`
+        falls in, clamped as the servo clamps it for the hold band: the
+        servo's band at `raw` is its deadband times this."""
+        c = np.r_[self.points, 0].astype(np.int64)
+        i = (np.asarray(raw, np.int64) & ADC_MASK) >> GRID_SHIFT
+        q4 = np.minimum(np.maximum(GRID + c[i + 1] - c[i], BAND_GAIN_MIN_Q4), BAND_GAIN_MAX_Q4)
+        return q4 / GRID
 
     def angle(self, raw):
         """deg at pot counts `raw` through the table."""

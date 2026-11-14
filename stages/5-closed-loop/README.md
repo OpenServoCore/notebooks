@@ -24,9 +24,17 @@ every capture's `meta.json` carries.
   written in the servo's own terms: degrees through the stage 3
   pot-table's counts per degree, speeds as shares of the stage 3 run-up's
   no-load speed, the center the middle of the servo's soft range, the
-  wide codes from the board's stage 1 result. A servo whose soft range
-  cannot fit it is refused. Each capture writes a `plan.json` beside its
-  rows naming every segment.
+  wide codes from the board's stage 1 result. A rung that runs on the
+  pair's position table is planned in the table's linearized counts, the
+  counts its goals and the servo's soft range are in under the table:
+  degrees through the table's own counts per degree, which is constant
+  over the travel, the center the raw middle of the soft range read
+  through the table, and a wide code's goals the table's reading of the
+  raw goals. A rung on the table and one on the raw pot then center on
+  the same place and move the same angles. A servo whose soft range
+  cannot fit the set is refused. Each capture writes a `plan.json` beside
+  its rows naming every segment and the counts per degree it was planned
+  at, and every score in degrees is taken at that scale.
 - **The runs**, under `telemetry/<servo>__<board>/scorecard/<label>/`. A
   rung is one build at one label, `run-1` to `run-K` inside it, and
   `rung.json` with the label, the commit, the image sha, a note, the time,
@@ -85,8 +93,10 @@ about 1.5, 2 and 3 deg/s at 1, 3 and 10 %, so a change shows on it only
 past about 3, 4 and 6 deg/s. The row read the report against the ramp's
 mean speed before, which graded the poll's place in the period: a
 perfect report scored about -6, -3.5 and -3 deg/s there. A rung whose
-rows were not kept stays as scored then. The position row is empty
-under a position table, where the report is in linearized counts.
+rows were not kept stays as scored then. Under a position table the
+position row reads report and pot in linearized counts, and a goal's pot
+counts as quiet within the deadband times the table's local gain there,
+the band the servo holds to.
 
 `crawl_swing_deg` reads how far the shaft strays inside one goal period
 of the slowest ramp, the span of the pot about the period's own line, at
@@ -351,15 +361,22 @@ Kept:
   quantity on the two sides. The hold jitter reads 1.04 and 1.04 counts
   against 1.47 and 1.51, the ranges apart, and the hold sits where the
   pot is steep, so that row is not a gain. The follow error sd is a row
-  of the same kind. The position report error has no value on a rung
-  that ran on the table, where the report is in linearized counts. The
-  speed report on the 10 % ramp changes sign, -1.09 and -2.70 deg/s
-  against 0.57 and 7.59, the ranges apart in both sets, figures read
+  of the same kind. The table side was planned like the other, at the
+  stage 3 counts per degree and on the middle of the soft range in
+  linearized counts, before a rung on the table was planned at the
+  table's own scale on the raw center, so its moves and ramps are not
+  the angles and speeds asked, its center is not the raw center and its
+  wide holds sit off the codes they name; a later rung on the table runs
+  another test, and its rows compare with this rung's only with that in
+  mind. The position report error reads 0.057 deg against 0.057 in the
+  first set, the ranges overlapping; the table side of the second set
+  has no value, its rows not kept. The speed report on the 10 % ramp
+  changes sign, -1.09 and -2.70 deg/s against 0.57 and 7.59, the ranges
+  apart in both sets, figures read
   under the row's earlier definition, the ramp's mean speed as the
   reference. Open on it: the follow error sd at 1 %, the one-set losses
   on the 2 degree move, the 1 % follow and the enable kick, the landing
-  rows, and a position report row for a rung on the table, an open point
-  of the scorer.
+  rows.
 
 Tried, not kept:
 

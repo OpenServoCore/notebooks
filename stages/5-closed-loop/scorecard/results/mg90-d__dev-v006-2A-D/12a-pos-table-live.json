@@ -203,9 +203,9 @@
       "unit": "deg"
     },
     "position_report_error_deg": {
-      "value": null,
-      "lo": null,
-      "hi": null,
+      "value": 0.05665142675532621,
+      "lo": 0.039814087053776016,
+      "hi": 0.07854008402546787,
       "unit": "deg"
     },
     "enable_drive_ms": {

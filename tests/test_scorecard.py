@@ -6,8 +6,10 @@ after arrival and the landings that hunt, the crawl's swing inside a
 goal item, the servo's speed and position
 reports against the pot, and the runner's refusals with
 `osc` stubbed, then one rung end to end on a fake servo; a rung on a
-position table, its install's place in the runner and its rows read
-through the table; an A/B of two rungs, its flashes, settings and
+position table, its install's place in the runner, its rows read
+through the table, its set planned at the table's scale and center, its
+position report gated on the servo's band, an identity rung's plan
+rebuilt byte for byte and a table rung of record scored as recorded; an A/B of two rungs, its flashes, settings and
 refusals, and the flash's command line; the wide capture the set builds
 from a board's wide-code result, its three rows, a rung with and without
 it, and a wide-codes rung's rows read through the board's slots."""
@@ -877,6 +879,134 @@ def test_identity_rows_score_bit_for_bit_as_before(tmp_path, monkeypatch):
     for f in (sc.step_scores, sc.rest_error_deg, sc.landing_buzz_share):
         assert f(live) == f(ident)
     assert float(live["rows"]["pos"].std()) == float(ident["rows"]["pos"].std())
+
+
+# --- a rung on the table: its plan and its position report ---
+
+def bump_table():
+    return postable.Table(bump_points(40), *STOPS, -90.0, 90.0)
+
+
+def table_inp(t, **kw):
+    return {**INP, "counts_per_deg": t.scale, "table": t, **kw}
+
+
+def test_a_table_set_is_planned_at_the_tables_scale_on_the_raw_center_read_through_it():
+    t = bump_table()
+    center, sets = TS.build(GUARD, table_inp(t))
+    raw_center = TS.center_of(GUARD)
+    assert center == round(float(t.lin(raw_center))) and center - raw_center > 30
+    moves = [s for s in sets["steps"] if s["test"] == "step"]
+    out = [round(size * t.scale) for size in TS.STEP_SIZES_DEG]
+    assert [s["goal_counts"] - center for s in moves[::4]] == out
+    assert moves[-2]["goal_deg"] == pytest.approx(-60.0, abs=0.5 / t.scale)
+    # 1 % of 600 deg/s for 3 s is 18 deg, at the table's counts per degree
+    first = [s for s in sets["follow"] if s["test"] == "ramp" and s["ramp"] == 0]
+    assert first[-1]["goal_counts"] == center + round(18 * t.scale)
+    doc = TS.plan_doc("steps", sets["steps"], center, GUARD, table_inp(t))
+    assert (doc["counts_per_deg"], doc["center_counts"]) == (t.scale, center)
+
+
+def test_a_table_set_fits_the_soft_range_in_the_tables_counts():
+    t = bump_table()
+    with pytest.raises(SystemExit, match=rf"5 deg \({5 * t.scale:.0f} counts\)"):
+        TS.build((900, 3100), table_inp(t))
+
+
+def test_a_table_sets_wide_goals_are_the_tables_reading_of_the_raw_goals():
+    t = bump_table()
+    center, sets = TS.build(GUARD, table_inp(t, wide_codes=WIDE_CODES))
+    segs = sets["wide"]
+    assert [s["raw_counts"] for s in segs[:4]] == [1023 + 10 + 30, 1029, 1023 - 30, 1029]
+    assert all(s["goal_counts"] == round(float(t.lin(s["raw_counts"]))) for s in segs)
+    assert all(s["goal_counts"] != s["raw_counts"] for s in segs)
+    assert segs[1]["goal_deg"] == pytest.approx((segs[1]["goal_counts"] - center) / t.scale)
+
+
+def test_a_table_rungs_inputs_name_the_tables_scale_and_file():
+    pair = sc.pair_of(SERVO, BOARD)
+    t = postable.load(pair)[0]
+    inp = TS.inputs(SERVO, pair, BOARD.key, pos_table=True)
+    assert inp["counts_per_deg"] == t.scale != TS.inputs(SERVO, pair)["counts_per_deg"]
+    f = str(results.rel(postable.out_path(pair)))
+    assert inp["sources"]["counts_per_deg"] == f"{f} target counts_per_deg, the table's linearized counts per deg"
+    assert inp["sources"]["center_counts"].endswith(f)
+    center, sets = TS.build((314, 3560), inp)
+    doc = json.loads(json.dumps(TS.plan_doc("steps", sets["steps"], center, (314, 3560), inp)))
+    assert doc["counts_per_deg"] == t.scale and doc["sources"] == inp["sources"]
+
+
+def test_an_identity_rungs_plan_is_rebuilt_byte_for_byte():
+    """`11a`'s recorded plans, an identity rung, rebuilt from its guard
+    and the inputs of record; the `wide` capture is left out, its plan
+    following the board's wide-code result, which may gain a code."""
+    pair = sc.pair_of(SERVO, BOARD)
+    run = results.ROOT / "telemetry" / pair / "scorecard" / "11a-first-reading" / "run-1"
+    inp = TS.inputs(SERVO, pair, BOARD.key)
+    for name in (c for c in TS.CAPTURES if c != "wide"):
+        f = run / name / "plan.json"
+        guard = tuple(json.loads(f.read_text())["guard_counts"])
+        center, sets = TS.build(guard, inp)
+        assert json.dumps(TS.plan_doc(name, sets[name], center, guard, inp), indent=2) + "\n" == f.read_text()
+
+
+def test_a_table_rung_planned_at_the_pots_scale_scores_as_its_result_holds():
+    """`12a` ran on the table on a plan at the stage 3 pot scale: it keeps
+    that scale, and every row reads as its result file holds it, the
+    position report row among them."""
+    pair = sc.pair_of(SERVO, BOARD)
+    rung = results.ROOT / "telemetry" / pair / "scorecard" / "12a-pos-table-live"
+    planned = json.loads((rung / "run-1" / "steps" / "plan.json").read_text())
+    assert planned["counts_per_deg"] == TS.inputs(SERVO, pair)["counts_per_deg"]
+    want = json.loads(sc.result_path(pair, "12a-pos-table-live").read_text())["scores"]
+    assert results._plain(sc.score_rung(rung))["scores"] == want
+    assert want["position_report_error_deg"]["value"] is not None
+
+
+def gained_points():
+    """A table at a local gain of 1.5 from raw 320 to 1920 (linearized 1.5
+    raw - 160), then 0.5 to 3520 (0.5 raw + 1760)."""
+    k = np.arange(postable.INTERVALS)
+    return np.clip(np.minimum(8 * (k - 20), 8 * (220 - k)), 0, None).astype(np.int64)
+
+
+def square(lo, hi, n=30_000, half=100):
+    return np.where((np.arange(n) // half) % 2 == 0, hi, lo)
+
+
+def test_a_table_rungs_position_report_is_gated_on_the_servos_band_there(tmp_path, monkeypatch):
+    """Three goals on a LIVE table, the deadband 4: one at rest, one whose
+    pot swings 3 raw counts where the gain is 1.5 (4.5 linearized, inside
+    the servo's band of 6 there), one swinging 6 where it is 0.5 (3
+    linearized, outside its band of 2); the reports read 1, 3 and 10
+    counts off the pot."""
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    raws = [np.full(30_000, 1000), square(1199, 1202), square(2800, 2806)]
+    pots = [1340.0, 1.5 * 1200.5 - 160, 0.5 * 2803 + 1760]
+    segs = [goal_seg(round(p)) for p in pots] + [hold_seg(500)]
+    rows = [(s["item"], s["goal_counts"], r, np.zeros(30_000, int)) for s, r in zip(segs, raws)]
+    rows.append(("hold@500", segs[2]["goal_counts"], np.full(10_000, 2803), np.zeros(10_000, int)))
+    theta = [0] + [round((p + o) * sc.Q16) for p, o in zip(pots, (1, 3, 10))]
+    cap_dir, _ = table_rung(tmp_path, gained_points(), "LIVE", rows, plan(segs), polls={"theta_hat_q16": theta})
+    cap = sc.load(cap_dir)
+    assert cap["table"].band_gain(np.array([1200, 2803])).tolist() == [1.5, 0.5]
+    assert sc.position_report_error_deg(cap) == pytest.approx(3 / CPD, abs=0.01 / CPD)
+
+
+def test_a_table_rungs_side_of_an_ab_is_planned_in_the_tables_counts(ab_bench, monkeypatch):
+    monkeypatch.setattr(sc.postable, "install", lambda pair: None)
+    monkeypatch.setattr(sc.settings, "stamp_live", lambda: None)
+    a, b = sc.ab(side(ab_bench, "16-a", "a"), side(ab_bench, "16-b", "a", pos_table=True), rounds=1,
+                 servo=SERVO, board=BOARD)
+    pair = sc.pair_of(SERVO, BOARD)
+    t = postable.load(pair)[0]
+    pa, pb = (json.loads((r / "run-1" / "steps" / "plan.json").read_text()) for r in (a, b))
+    middle = TS.center_of((314, 3560))
+    assert (pa["counts_per_deg"], pa["center_counts"]) == (TS.inputs(SERVO, pair)["counts_per_deg"], middle)
+    assert (pb["counts_per_deg"], pb["center_counts"]) == (t.scale, round(float(t.lin(middle))))
+    wide = json.loads((b / "rung.json").read_text())["wide_goals"]
+    assert all(g["goal_counts"] == round(float(t.lin(g["raw_counts"]))) for g in wide)
+    assert all("raw_counts" not in g for g in json.loads((a / "rung.json").read_text())["wide_goals"])
 
 
 # --- the wide capture: the set ---
