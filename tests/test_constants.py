@@ -1675,7 +1675,7 @@ def test_the_bench_pairs_block_is_what_its_record_gives_on_its_table():
     f = doc["fields"]
     c = cn.Context(pair)
     cn.table_of(c, doc, cn.slots_of(c, doc))
-    # field: (what the servo holds, what its rule gives from the results of record, the rule's band)
+    # field: (what the servo held before the set, what its rule gives from the results of record, the rule's band)
     block_of_record = {
         "r_q12": (4541, 3744, [3735, 3758]), "recip_ke_q": (11817, 13315, [13233, 13399]),
         "ke_vpc_q": (355, 315, [313, 317]), "b_i_q313": (2657, 2434, [2213, 2672]),
@@ -1685,8 +1685,11 @@ def test_the_bench_pairs_block_is_what_its_record_gives_on_its_table():
     for name, (stored, gives, band) in block_of_record.items():
         e = cn.evaluate(cn.rule_of(c, name), c)
         assert (e["value"], e.get("band")) == (gives, band), name
-        # the set of record holds each field its rule would move, at the servo's value, and binds the two it
-        # would not
+        # the set of record binds the two fields whose release was benched and kept at what their rules give,
+        # holds every other field its rule would move at the servo's value, and binds the two it would not
+        if name in ("fric_fv_q016", "ke_vpc_q"):
+            assert (f[name]["value"], f[name]["class"], f[name].get("would_be")) == (gives, "measured", None), name
+            continue
         want = {"class": "held", "would_be": gives} if gives != stored else {"class": "policy", "would_be": None}
         assert f[name]["value"] == stored and {k: f[name].get(k) for k in want} == want, name
     # the resistance each way it is on record; the back-EMF boxcar's own takes the small step's, on no image yet
@@ -2062,8 +2065,8 @@ def test_the_bench_pairs_fields_in_counts_are_held_beside_what_they_were_typed_f
     # what is left with no source at a scale nothing recorded: the velocity loop's two gains
     assert [n for n, e in f.items() if e["class"] == "adopted" and e.get("scale") == "unknown"] == [
         "v_kp_q88", "v_ki_q412"]
-    assert cn.described(doc)[0] == ("63 fields: 4 measured, 6 policy, 0 pinned, 19 held, 34 adopted (no source); "
-                                    "12 per-count at an unknown scale")
+    assert cn.described(doc)[0] == ("63 fields: 6 measured, 6 policy, 0 pinned, 17 held, 34 adopted (no source); "
+                                    "10 per-count at an unknown scale")
 
 
 def test_the_steps_of_the_fields_in_counts_name_what_their_install_needs():

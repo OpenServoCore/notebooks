@@ -759,9 +759,13 @@ def test_every_result_of_record_names_the_one_current_scale_its_rows_are_at():
     assert docs and {d["current_scale"]["counts_per_a"] for d in docs} == {CPA}
     for d in docs:
         rows = (results.ROOT / d["capture"] / "rung.json").exists()
-        # scored from its rows where they are kept, carried from the nominal figure where they are not
-        assert ("carried" in d["current_scale"]) == (not rows), d["label"]
-        assert ("hold_jitter_deg" in d["scores"]) == rows and ("hold_jitter_counts" in d["scores"]) != rows, d["label"]
+        scale = d["current_scale"]
+        # scored from its rows at the measured scale: every rung whose rows are kept, and a rung run on a set,
+        # whose rows are not; any other is carried from the nominal figure it was scored at
+        scored = "carried" not in scale
+        assert scored == (rows or scale.get("from") == "set"), d["label"]
+        jitter = ("hold_jitter_deg" in d["scores"], "hold_jitter_counts" in d["scores"])
+        assert jitter == (scored, not scored), d["label"]
 
 
 def test_a_protection_deviation_moves_nothing_else_and_is_named_at_the_install(bus, tmp_path):
@@ -1932,7 +1936,7 @@ def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what
     pair = sc.pair_of(SERVO, BOARD)
     base = cn.of_record(pair)
     files = sorted((results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations").glob("*.json"))
-    assert {f.stem for f in files} >= {"motor-r", "motor-rest"}
+    assert {f.stem for f in files} >= {"motor-r", "motor-model"}
     for f in files:
         dev = json.loads(f.read_text())
         pins, release = dev.get("pins", {}), dev.get("release", [])
@@ -1946,8 +1950,8 @@ def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what
                    for n in release) and dev["note"]
         assert "/Users/" not in f.read_text() and "/home/" not in f.read_text()
     assert json.loads((files[0].parent / "motor-r.json").read_text())["release"] == ["r_q12"]
-    assert json.loads((files[0].parent / "motor-rest.json").read_text())["release"] == [
-        "b_i_q313", "fric_fv_q016", "ke_vpc_q", "j_ff_q88", "l3_q88"]
+    assert json.loads((files[0].parent / "motor-model.json").read_text())["release"] == [
+        "b_i_q313", "j_ff_q88", "l3_q88"]
 
 
 def test_an_identity_rungs_plan_is_rebuilt_byte_for_byte():
