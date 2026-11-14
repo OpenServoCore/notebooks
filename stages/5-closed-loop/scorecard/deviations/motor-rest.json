@@ -1,4 +1,0 @@
-{
-  "note": "the block's fields outside the back-EMF pair and the Coulomb term at what the stage 3 record gives on the set's count, in place of the stored fit: the model gain, the viscous friction term, the feedforward Ke, the inertia feedforward and the observer's disturbance gain. The Coulomb term was benched alone as 08a-friction-measured and not kept, and the back-EMF pair waits for the estimator's on-time term",
-  "release": ["b_i_q313", "fric_fv_q016", "ke_vpc_q", "j_ff_q88", "l3_q88"]
-}

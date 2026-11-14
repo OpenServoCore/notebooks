@@ -1,0 +1,4 @@
+{
+  "note": "the three fields of the motor-rest step whose stored value is inside its rule's band, at what the stage 3 record gives on the set's count: the model gain, the inertia feedforward and the observer's disturbance gain. The second half of the motor-rest step split in two",
+  "release": ["b_i_q313", "j_ff_q88", "l3_q88"]
+}

@@ -470,10 +470,14 @@ motor block whose rule gives another value than the servo holds are
 held, each to move on a rung of its own: the back-EMF pair, `r_q12`
 and `recip_ke_q`, which a replay reads worse on an estimator without
 the on-time term; the Coulomb term, benched alone as
-`08a-friction-measured` and not kept; and the rest, `b_i_q313`,
-`fric_fv_q016`, `ke_vpc_q`, `j_ff_q88` and `l3_q88`. `r_bemf_q12` is
-held because no image has the field yet. `l1_q016` and `l2_q88` bind:
-their rules give what the servo holds. A value held from before the
+`08a-friction-measured` and not kept; and `b_i_q313`, `j_ff_q88` and
+`l3_q88`, whose stored values sit inside their rules' bands.
+`r_bemf_q12` is held because no image has the field yet. `l1_q016` and
+`l2_q88` bind: their rules give what the servo holds. `fric_fv_q016`
+and `ke_vpc_q` bind at what their rules give, 812 and 315 where the
+servo held 289 and 355, the two stored values of the block outside
+their rule's band: their release was benched on the saved set and
+kept (below). A value held from before the
 set existed is still counted as at an unknown scale where it is per
 count.
 
@@ -483,9 +487,37 @@ gives, `rung.json` showing it as [of record, deviated] like any field
 a deviation moves. Nothing else of the policy is restated, and the
 other holds stand. A release of a field that is not held is refused,
 as is one whose rule has no value to bind. The releases of record are
-[motor-rest.json](scorecard/deviations/motor-rest.json), the block
-outside the back-EMF pair and the Coulomb term, and
+[motor-model.json](scorecard/deviations/motor-model.json), the model
+gain, the inertia feedforward and the observer's disturbance gain, and
 [motor-r.json](scorecard/deviations/motor-r.json), `r_q12` alone.
+
+The first release benched was the block outside the back-EMF pair and
+the Coulomb term, five fields together, against the saved set of
+record: two alternated sets of three runs, the sides' order swapped
+for the second, a row moved when the two sides' ranges are apart in
+both sets, the fields to bind unless a row was worse on them in both
+(`zz-ab-before-motor-rest` against `zz-ab-motor-rest`, and the same
+with `-2`). One row was: the 1 % ramp's duty rms, 9.08 [8.97, 9.17]
+against 9.47 [9.18, 9.51] % and 10.48 [8.82, 10.55] against 11.65
+[11.04, 12.81] %. The five stayed held and the step was split in two
+and run three-sided by the same rule (`zz-ab-before-motor-split`,
+`zz-ab-motor-feedforward` and `zz-ab-motor-model`, and the same with
+`-2`): `fric_fv_q016` and `ke_vpc_q`, the two stored values outside
+their rule's band, against `b_i_q313`, `j_ff_q88` and `l3_q88`, the
+three inside it. No row was worse on either half in both sets, the
+1 % ramp's duty rms among them (9.49 against 9.30 and 9.32 %, 9.65
+against 9.74 and 9.14 %), so the first step's row did not repeat on
+either half. The first half binds. The second stays held: its values
+are inside their bands, so the record does not tell them from the
+stored ones, and its reversal rows leaned up, each apart in one set
+(the 60 degree move's 498 against 528 a second in the first set, the
+1 % ramp's 156 against 186 and the 10 % ramp's 416 against 514 in the
+second). The 20 degree landing ran its hold out hunting, a settle
+over 1000 ms, in 3 of 6 runs of the first step's released side and
+none of its control's, and in the split in 2 of 6 runs of the control
+itself, 2 of 6 of the first half and 1 of 6 of the second: it lands on
+a stuck code's gap and flips from run to run on the set of record
+alone.
 
 Two groups of protection fields have rules, both held, so the set
 shows what the record gives beside what protects the servo now and no
