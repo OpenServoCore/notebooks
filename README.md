@@ -258,6 +258,14 @@ on a servo and board pair writes `results/<servo>__<board>.json` in its
 folder instead, one file per pair. A later stage reads these files and
 nothing else from the stages before it.
 
+A result also names what it stands on. Under `inputs` it lists every
+result file the process that wrote it had read, each by its path from
+the repo root with the sha1 of the bytes read, so a result whose input
+was re-run since can be told from one that is current. `oscnb.results`
+records this by itself, no notebook names its inputs by hand. The key
+is written when a notebook is next run: a result without it was written
+before, and its inputs are not recorded.
+
 Once a stage settles, its README opens with a TL;DR. It holds the
 constants a later stage reads, with their bounds, unit, confidence and
 notebook, then the key findings, the open questions and what the next stage

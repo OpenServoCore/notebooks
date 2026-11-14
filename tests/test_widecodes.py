@@ -267,6 +267,22 @@ def test_find_writes_the_boards_result_with_the_bands_slots_and_ramp_servo(monke
     assert wc.slots_of_record(KEY) == bytes(doc["adc_wide_mid_q4"])
 
 
+def test_the_slots_and_the_bands_of_record_are_read_as_a_result(monkeypatch, tmp_path):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    path = wc.result_file(KEY)
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps({wc.FIELD: [0, 0, 0, 88] + [0] * 12,
+                                "wide_codes": [{"stuck_code": 1023, "skipped": 11, "ratio": 11.5}]}))
+    name = f"stages/1-board/wide-codes/results/{KEY}.json"
+    for read in (wc.slots_of_record, wc.bands_of_record):
+        monkeypatch.setattr(results, "_READ", {})
+        read(KEY)
+        assert results._READ == {name: hashlib.sha1(path.read_bytes()).hexdigest()}
+    # so a result written after names the slots it stands on
+    results.write("4-estimators", "position", tmp_path / "capture-1", pair=f"{SERVO.key}__{KEY}")
+    assert list(results.read("4-estimators", "position", f"{SERVO.key}__{KEY}")["inputs"]) == [name]
+
+
 # --- the install ---
 
 ADDR = 0x1F0

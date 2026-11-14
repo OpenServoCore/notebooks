@@ -192,7 +192,7 @@ def next_label(board):
 def slots_of_file(path):
     """The 16 slot values of a result file, refused when it holds no 16
     bytes."""
-    v = json.loads(Path(path).read_text()).get(FIELD)
+    v = results.read_file(path).get(FIELD)
     if not isinstance(v, list) or len(v) != SLOTS or not all(isinstance(x, int) and 0 <= x <= SLOT_MAX for x in v):
         raise settings.Refused(f"{sc.shown(path)}: {FIELD} is not {SLOTS} values 0..{SLOT_MAX}")
     return bytes(v)
@@ -214,7 +214,7 @@ def bands_of_record(board):
     if not path.exists():
         return []
     return [Band(b["stuck_code"], b["skipped"], b["ratio"])
-            for b in json.loads(path.read_text()).get("wide_codes", [])]
+            for b in results.read_file(path).get("wide_codes", [])]
 
 
 # --- the readings ---

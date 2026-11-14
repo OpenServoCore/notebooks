@@ -4,6 +4,7 @@ servo's two rules, the build from a small synthetic lookup, the
 held-out grade through it, the board's wide-code step ahead of the
 table in every grade, the install plan's wire steps and the install
 itself on a fake window, and the table read back off it."""
+import hashlib
 import json
 
 import numpy as np
@@ -140,6 +141,71 @@ def test_build_linearizes_the_lookup_with_the_stops_fixed(repo):
     assert "/" + "Users" not in path.read_text() and "/" + "home" not in path.read_text()
     back, _ = pt.load(PAIR)
     np.testing.assert_array_equal(back.points, t.points)
+
+
+def fitted(repo, slots, read=True):
+    """Stage 4's lookup of record as a fit on the board's wide-code
+    result leaves it: the result of `slots` at its place, and stage 4's
+    result naming it among the results it read, when `read`. Returns
+    the wide-code result's path."""
+    write_lookup(repo)
+    wide = wc.result_file("board")
+    wide.parent.mkdir(parents=True)
+    wide.write_text(json.dumps({wc.FIELD: list(slots)}))
+    res = results.path(*pt.STAGE4, pair=PAIR)
+    doc = json.loads(res.read_text())
+    doc["inputs"] = {"stages/1-board/current-scale/results/board.json": "0" * 40}
+    if read:
+        doc["inputs"][results.rel(wide).as_posix()] = hashlib.sha1(wide.read_bytes()).hexdigest()
+    res.write_text(json.dumps(doc))
+    return wide
+
+
+def built_doc(repo):
+    _, path = pt.build(PAIR, *STOPS)
+    return json.loads(path.read_text())
+
+
+SLOTS = bytes([0, 0, 0, 88] + [0] * 12)
+
+
+def test_build_names_the_slots_the_lookup_was_fitted_on(repo):
+    fitted(repo, SLOTS)
+    doc = built_doc(repo)
+    assert doc["inputs"]["fitted_on_slots_sha1"] == hashlib.sha1(SLOTS).hexdigest() == pt.slots_sha1(list(SLOTS))
+    assert pt.fitted_on_said(doc) == f"lookup fitted on wide-code slots of sha1 {hashlib.sha1(SLOTS).hexdigest()}"
+
+
+def test_build_says_when_the_fit_recorded_no_slots(repo):
+    # a stage 4 result written before results named what they read
+    write_lookup(repo)
+    doc = built_doc(repo)
+    assert "fitted_on_slots_sha1" in doc["inputs"] and doc["inputs"]["fitted_on_slots_sha1"] is None
+    assert pt.fitted_on_said(doc) == "the wide-code slots its lookup was fitted on are not recorded"
+
+
+def test_build_says_when_the_fit_read_no_wide_code_result(repo):
+    fitted(repo, SLOTS, read=False)
+    assert built_doc(repo)["inputs"]["fitted_on_slots_sha1"] is None
+    # and a table file written before the key reads as not recorded too
+    doc = built_doc(repo)
+    del doc["inputs"]["fitted_on_slots_sha1"]
+    assert pt.fitted_on_said(doc) == "the wide-code slots its lookup was fitted on are not recorded"
+
+
+def test_build_refuses_a_lookup_fitted_on_a_wide_code_result_that_moved(repo):
+    wide = fitted(repo, SLOTS)
+    then = hashlib.sha1(wide.read_bytes()).hexdigest()
+    wide.write_text(json.dumps({wc.FIELD: [0, 0, 0, 48] + [0] * 12}))
+    with pytest.raises(ValueError) as e:
+        pt.build(PAIR, *STOPS)
+    assert str(e.value) == (f"stages/1-board/wide-codes/results/board.json is no longer the wide-code result the "
+                            f"lookup was fitted on (sha1 {then} then, {hashlib.sha1(wide.read_bytes()).hexdigest()} "
+                            f"now): re-run stage 4 position, then `postable build`")
+    assert not pt.out_path(PAIR).exists()
+    wide.unlink()
+    with pytest.raises(ValueError, match="then, gone now"):
+        pt.build(PAIR, *STOPS)
 
 
 def test_build_refuses_a_lookup_off_the_grid_or_out_of_step_with_its_result(repo):

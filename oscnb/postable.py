@@ -42,6 +42,7 @@ each read checked and every page read back, and stops short of the stamp:
 the table is volatile until a SAVE, which nothing here sends.
 """
 import argparse
+import hashlib
 import json
 import re
 import time
@@ -215,6 +216,40 @@ def out_path(pair):
     return OUT_DIR / f"{pair}.pos_lut.json"
 
 
+def slots_sha1(slots):
+    """The sha1 a table file names 16 wide-code slots by."""
+    return hashlib.sha1(bytes(slots)).hexdigest()
+
+
+def fitted_on(res):
+    """The sha1 of the wide-code slots stage 4's lookup was fitted on
+    (`slots_sha1`), from the wide-code result its result `res` names
+    among the results it read; None when it names none, or was written
+    before results named what they read. Refused when that file is no
+    longer the one the fit read: its slots then are not known."""
+    folder = results.rel(results.path(widecodes.STAGE, widecodes.EXPERIMENT, "x").parent).as_posix()
+    read = res.get("inputs") or {}
+    named = [name for name in read if name.rsplit("/", 1)[0] == folder]
+    if not named:
+        return None
+    if len(named) > 1:
+        raise ValueError(f"stage 4's result read more than one wide-code result: {', '.join(named)}")
+    path = results.ROOT / named[0]
+    now = hashlib.sha1(path.read_bytes()).hexdigest() if path.exists() else "gone"
+    if now != read[named[0]]:
+        raise ValueError(f"{named[0]} is no longer the wide-code result the lookup was fitted on (sha1 "
+                         f"{read[named[0]]} then, {now} now): re-run stage 4 position, then `postable build`")
+    return slots_sha1(widecodes.slots_of_file(path))
+
+
+def fitted_on_said(doc):
+    """What a table file's document says of the slots its lookup was
+    fitted on, in words: their sha1, or that it records none."""
+    sha = doc["inputs"].get("fitted_on_slots_sha1")
+    return (f"lookup fitted on wide-code slots of sha1 {sha}" if sha
+            else "the wide-code slots its lookup was fitted on are not recorded")
+
+
 def build(pair, raw_min, raw_max):
     """Write the pair's table against stops `raw_min`, `raw_max`; returns
     (Table, path)."""
@@ -232,6 +267,7 @@ def build(pair, raw_min, raw_max):
             "result": str(results.rel(results.path(*STAGE4, pair=pair))),
             "lookup_pitch_counts": res["lookup_pitch_counts"]["value"],
             "end_lines_counts_per_deg": [lk.lo_slope, lk.hi_slope],
+            "fitted_on_slots_sha1": fitted_on(res),
             "stops": {"raw_min": raw_min, "raw_max": raw_max,
                       "from": "the command line; the install plan reads "
                               "them off the servo first"},
@@ -394,7 +430,7 @@ def check(pair):
     lk, _, res = lookup_of_record(pair)
     print(f"{results.rel(out_path(pair))}: LIVE against stops {t.raw_min} "
           f"and {t.raw_max}; {t.scale:.3f} linearized counts/deg, local gain "
-          f"{doc['local_gain'][0]:.2f} to {doc['local_gain'][1]:.2f}")
+          f"{doc['local_gain'][0]:.2f} to {doc['local_gain'][1]:.2f}; {fitted_on_said(doc)}")
     pf, slots = sitting(pair)
     fc = format_cost(t, lk, slots)
     print(f"against the lookup of record, every raw code inside its knots, "
@@ -582,7 +618,7 @@ def main(argv=None):
             t, path = build(a.pair, *a.stops)
             print(f"wrote {results.rel(path)}: stops {t.raw_min} and {t.raw_max}, "
                   f"{int(np.count_nonzero(t.points))} nonzero points, "
-                  f"{t.scale:.3f} counts/deg")
+                  f"{t.scale:.3f} counts/deg; {fitted_on_said(load_file(path)[1])}")
         elif a.cmd == "check":
             check(a.pair)
         elif a.cmd == "install":

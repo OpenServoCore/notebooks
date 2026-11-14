@@ -139,6 +139,12 @@ that carry the board's ADC wide-code step
 holds the pot alone. Its grades read the pot the same way: the camera
 sitting's frames loaded with the step on, and a raw code read through
 the table at the code plus its slot, the step ahead of the table.
+`build` writes into the table file the sha1 of the slots the lookup was
+fitted on, from the wide-code result the stage 4 result names among the
+results it read, and refuses when that file is no longer the one read.
+A stage 4 result written before results named what they read gives a
+table file that says the slots are not recorded, which `build` and
+`check` print.
 `uv run python -m oscnb.postable install` writes the table to the servo
 volatile and reads every page back. A rung passed `--pos-table` runs on
 the pair's table: installed after the settings, one stamp over both, the
@@ -218,8 +224,10 @@ difference and refuses a servo whose data state is not clean.
 
 `install` makes the servo equal the set, volatile, torque off, and
 writes only what differs: the slots, the stops, the table (a LIVE table
-from the pair's table file, which must hold the set's points and be
-built against the set's stops), then the other fields in table order,
+from the pair's table file, which must hold the set's points, be built
+against the set's stops and name no other slots than the set's as the
+ones its lookup was fitted on; a file that records none is said and
+taken), then the other fields in table order,
 each read back, a write the servo refuses tried once more after the
 rest. It then reads the whole state back, and only when that is the set
 does it stamp it, no save, and require the data state clean. A servo

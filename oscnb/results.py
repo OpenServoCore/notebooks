@@ -1,13 +1,21 @@
 """The result of an experiment: one JSON file next to its notebook.
 
 A result is a dict of named quantities, each `{"value", "lo", "hi", "unit"}`,
-plus `capture` (the dataset folder it came from) and `notes`. An experiment
-without a servo and board pair writes `results.json` in its folder. One with
-a pair writes `results/<servo>__<board>.json` there, one file per pair, and
-a new run of the same pair replaces it. A later stage takes its constants
-from these files; it may also quote the earlier notebooks and re-read their
-datasets.
+plus `capture` (the dataset folder it came from), `notes` and `inputs`. An
+experiment without a servo and board pair writes `results.json` in its
+folder. One with a pair writes `results/<servo>__<board>.json` there, one
+file per pair, and a new run of the same pair replaces it. A later stage
+takes its constants from these files; it may also quote the earlier
+notebooks and re-read their datasets.
+
+`inputs` is what the result stands on: every result file the process that
+wrote it had read (`read`, `read_file`), by its path from the repo root
+with the sha1 of the bytes read, so a result whose input was since re-run
+can be told from one that is current. A file written before results named
+what they read has no `inputs`: that is "not recorded", not "read
+nothing", which is an empty `inputs`.
 """
+import hashlib
 import json
 from pathlib import Path
 
@@ -15,6 +23,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+_READ = {}      # {path from the repo root: sha1} of every result file this process has read
 
 
 def quantity(value, lo=None, hi=None, unit=""):
@@ -119,13 +128,32 @@ def path(stage, experiment, pair=None):
 
 
 def write(stage, experiment, capture, pair=None, notes="", **quantities):
+    """Write a result; returns its path from the repo root. `inputs`
+    names every result file this process has read, the result's own
+    earlier file left out."""
+    if "inputs" in quantities:
+        raise ValueError("`inputs` is where a result names the results it read, not a quantity")
     p = path(stage, experiment, pair)
     p.parent.mkdir(parents=True, exist_ok=True)
     capture = Path(capture)
-    doc = {"capture": str(rel(capture)), "notes": notes, **quantities}
+    own = rel(p).as_posix()
+    doc = {"capture": str(rel(capture)), "notes": notes,
+           "inputs": {name: _READ[name] for name in sorted(_READ) if name != own}, **quantities}
     p.write_text(json.dumps(_plain(doc), indent=2) + "\n")
     return rel(p)
 
 
+def read_file(p):
+    """A result file's document. The file is noted as read by this
+    process, for `write` to name in the results the process writes; a
+    file outside the repo is no result of record and is not noted."""
+    data = Path(p).read_bytes()
+    try:
+        _READ[rel(p).as_posix()] = hashlib.sha1(data).hexdigest()
+    except ValueError:
+        pass
+    return json.loads(data)
+
+
 def read(stage, experiment, pair=None):
-    return json.loads(path(stage, experiment, pair).read_text())
+    return read_file(path(stage, experiment, pair))
