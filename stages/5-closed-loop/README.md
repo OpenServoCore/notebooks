@@ -181,11 +181,14 @@ hash and what the install moved against the servo's values.
 
 A rung that tries one thing runs on the set with one deviation, the
 file of `--deviation`: `{"policy": {...}, "pins": {field: {"value",
-"why", "rung"}}}`, policy entries, pins or both, and a `note`. It is
-not a list of raw fields. A policy entry stands over
+"why", "rung"}}, "release": [field, ...]}`, policy entries, pins, holds
+to release or any of them together, and a `note`. It is not a list of
+raw values. A policy entry stands over
 [calibration/policy.json](calibration/policy.json) and goes through
 the rules, so what it moves is computed at the set's scale; a pin is a
-literal, with its reason and the rung that chose it. The set of record
+literal, with its reason and the rung that chose it; a release names
+fields the policy file holds, each then bound at what its rule gives
+([The constant set](#the-constant-set)). The set of record
 is built again with the file and must come out as itself with that one
 change, so a set of record that is not what a build of its inputs
 gives now is refused, as is a deviation that moves nothing. A
@@ -300,10 +303,10 @@ first.
 `build` is offline. It writes the set from the results of record on top
 of the pair's set of record, which it replaces, or to `--out` as a
 derived set, and prints what it changes. A field is bound by a rule,
-one function a field in the module, which reads results, the registry
+a function in the module, which reads results, the registry
 and [calibration/policy.json](calibration/policy.json) through one
 reader that records each read: a field's `inputs` are what its rule
-read, and the set names every file by its sha1. The rules so far are
+read, and the set names every file by its sha1. The first rules are
 the ones that define a count and what follows from it directly. The
 slots are the board's wide-code result. The table is the pair's table
 file, LIVE, which must be built against the set's stops and fitted on
@@ -311,9 +314,10 @@ the set's slots. The scale is the table's counts per degree. The angle
 map puts the clockwise stop at the policy's angle and the other stop
 the travel past it, the travel being the stops' span at that scale, so
 a host that reads the map gets the table's counts per degree. The gear
-ratio and the gear class are the registry's. Every other field is
-carried as it stands, the stops among them, which have no notebook
-source yet. `policy.json` holds the choices that are no measurement, in
+ratio and the gear class are the registry's. The motor block, the
+feedforwards and the observer gains have the rules of the table below.
+Every other field is carried as it stands, the stops among them, which
+have no notebook source yet. `policy.json` holds the choices that are no measurement, in
 physical units, one file for every pair; a `<pair>.pins.json` beside
 it, where there is one, holds literals typed for one pair, each with
 its reason and the rung that chose it, and shows as `pinned`. A rule
@@ -322,6 +326,74 @@ the set had, with the missing input named. One build moves one hash,
 the plant by default: a protection field is carried, with what its rule
 would give beside it, until a build names it with `--protection`, which
 then moves nothing of the plant.
+
+The kernel works in counts: tap counts, shunt counts, position counts
+and its MEDIUM tick, a tenth of the tick rate. A rule of the motor
+block takes a stage 3 quantity there through the board's measured
+stage 1 scales (tap counts per volt, shunt counts per amp), the gear
+ratio and the scale of the count, so a field per position count is
+computed for the set's table and names it. The power of counts per
+degree a field carries is declared with its rule, and one test holds
+every rule to it.
+
+| field | what its rule gives | from | per count |
+|---|---|---|---|
+| `r_q12` | the winding resistance, R x tap counts per V / shunt counts per A | the resistance as the policy names it, below | no |
+| `recip_ke_q` | 1 / Ke, count/s per tap count | Ke x tap counts per V / counts per motor rad, stage 3 ladder | times |
+| `ke_vpc_q` | Ke, tap counts per count/s | the same | over |
+| `b_i_q313` | B, the count/s a shunt count adds in a MEDIUM tick | Ke / shunt counts per A / J x counts per motor rad / MEDIUM rate, J the stage 3 run-up's | times |
+| `fric_fc_counts` | the Coulomb friction as a current, Tc / Ke x shunt counts per A | the friction result's pair for the firmware's model, pooled | no |
+| `fric_fv_q016` | the viscous friction, shunt counts per count/s, b / Ke x shunt counts per A / counts per motor rad | the same | over |
+| `j_ff_q88` | the inertia feedforward, 1 / B | B | over |
+| `l1_q016` | the observer's position gain, 1 - p^3 | p = exp(-2 pi f / MEDIUM rate), f the policy's `observer_hz` | no |
+| `l2_q88` | its speed gain, 1.5 (1 - p)^2 (1 + p) x MEDIUM rate | the same | no |
+| `l3_q88` | its disturbance gain, (1 - p)^3 x MEDIUM rate / (2 B) | p and B | over |
+
+Each rule names in the module the firmware function that uses its
+field. The feedforward and the three observer gains are the firmware
+repo's own synthesis (`ident/src/gains.rs`), and one test holds the
+rules to the fields that file's code gives on its own test plant. The
+three observer gains are of class `policy`: the bandwidth is a choice.
+
+The resistance is on record four ways in stage 3, each a rule:
+`rails_fit`, the fit over three rails with the edge lags at stage 1's
+measured ones; `locked_laps`, the laps of the locked horn;
+`small_step`, the volts over the current across a small duty step of
+a spinning motor, the volts built the firmware's way; `take_back`,
+the current such a step takes back as the speed follows, with no
+volts in it. `policy.json` names under `rule` the one that binds
+`r_q12`, the rails fit, which is the winding's. A field with several rules and none named
+is held: the choice is not the tool's. The same four are the rules of
+`r_bemf_q12`, the resistance the back-EMF boxcar subtracts on an image
+that gives it a field of its own, for which the policy names the small
+step's.
+
+`policy.json` holds a field back under `hold`, with the reason. A held
+field stays at the value the set had, class `held`, with what its rule
+gives beside it as `would_be` and the results the rule read still
+listed, so the set shows what the record gives next to what the servo
+holds and moves nothing. A held field the set never held stays out of
+it, and `build` says so with what its rule gives. The fields of the
+motor block whose rule gives another value than the servo holds are
+held, each to move on a rung of its own: the back-EMF pair, `r_q12`
+and `recip_ke_q`, which a replay reads worse on an estimator without
+the on-time term; the Coulomb term, benched alone as
+`08a-friction-measured` and not kept; and the rest, `b_i_q313`,
+`fric_fv_q016`, `ke_vpc_q`, `j_ff_q88` and `l3_q88`. `r_bemf_q12` is
+held because no image has the field yet. `l1_q016` and `l2_q88` bind:
+their rules give what the servo holds. A value held from before the
+set existed is still counted as at an unknown scale where it is per
+count.
+
+A rung releases a hold with a deviation: `"release": [field, ...]`
+names held fields, and the derived set binds each at what its rule
+gives, `rung.json` showing it as [of record, deviated] like any field
+a deviation moves. Nothing else of the policy is restated, and the
+other holds stand. A release of a field that is not held is refused,
+as is one whose rule has no value to bind. The releases of record are
+[motor-rest.json](scorecard/deviations/motor-rest.json), the block
+outside the back-EMF pair and the Coulomb term, and
+[motor-r.json](scorecard/deviations/motor-r.json), `r_q12` alone.
 
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. `check`
