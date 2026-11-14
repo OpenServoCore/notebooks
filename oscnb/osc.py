@@ -5,37 +5,77 @@ it. It installs with `cargo install --locked --path osc-lab` from this repo,
 and is found on the PATH or named by the OSC_LAB environment variable. Every
 other call (get, set, dump, read, write, status, ping, baud, flash) runs `osc`, on
 the PATH (`cargo install --path tools/osc` in the firmware repo) or named by
-the OSC environment variable. Every call addresses one servo id, OSC_ID or 1.
+the OSC environment variable, or for the calls of one body by `using`: the
+plant stamp is computed by the tool, so an image whose stamp covers other
+fields is blessed by the `osc` built from its own tree. Every call addresses
+one servo id, OSC_ID or 1.
 The tools print their connection status on stderr and their output on
 stdout, so stdout is parsed and stderr is passed through.
 """
+import hashlib
 import os
 import re
+import shutil
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
 
 TOOL = os.environ.get("OSC", "osc")
 LAB = os.environ.get("OSC_LAB", "osc-lab")
 ID = os.environ.get("OSC_ID", "1")
+_using = []     # the tools `using` has in force, the innermost last
 
 
-def run(*args, capture=False, check=True, tool=TOOL):
-    """Run `<tool> -i <id> <args>`, `osc` unless `tool` says otherwise;
-    returns stdout when `capture`."""
-    cmd = [tool, "-i", ID, *map(str, args)]
+def tool():
+    """The `osc` a call goes through now: the one `using` names for the
+    body the call is in, else TOOL."""
+    return _using[-1] if _using else TOOL
+
+
+@contextmanager
+def using(path):
+    """`path` as the `osc` of every call made in the body, read when the
+    call is made; the tool of before is back when the body ends or
+    raises. `osc-lab` is not `osc` and stays LAB. None changes nothing."""
+    if path is None:
+        yield
+        return
+    _using.append(str(path))
+    try:
+        yield
+    finally:
+        _using.pop()
+
+
+def identity():
+    """What a record can hold of the `osc` in force without its path:
+    the sha1 of the binary and its `--version` line, None from a tool
+    that has no such flag. None when no such tool is found."""
+    path = shutil.which(tool())
+    if path is None:
+        return None
+    r = subprocess.run([path, "--version"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    return {"sha1": hashlib.sha1(Path(path).read_bytes()).hexdigest(),
+            "version": (last_line(r.stdout) or None) if r.returncode == 0 else None}
+
+
+def run(*args, capture=False, check=True, lab=False):
+    """Run `<tool> -i <id> <args>`, `osc` or with `lab` `osc-lab`; returns
+    stdout when `capture`."""
+    cmd = [LAB if lab else tool(), "-i", ID, *map(str, args)]
     r = subprocess.run(cmd, stdout=subprocess.PIPE if capture else None, text=True, check=check)
     return r.stdout if capture else None
 
 
-def start(*args, tool=TOOL):
+def start(*args, lab=False):
     """`<tool> -i <id> <args>` started and left running: the Popen, for a
     caller that acts on the bench while the tool drives."""
-    return subprocess.Popen([tool, "-i", ID, *map(str, args)], text=True)
+    return subprocess.Popen([LAB if lab else tool(), "-i", ID, *map(str, args)], text=True)
 
 
 def bus_baud():
     """The bus rate the tool finds, from its connection line on stderr."""
-    r = subprocess.run([TOOL, "-i", ID, "ping"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    r = subprocess.run([tool(), "-i", ID, "ping"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     m = re.search(r"bus at (\d+) baud", r.stderr)
     if r.returncode != 0 or not m:
         raise RuntimeError(f"no servo answers: {r.stderr.strip()}")
@@ -135,7 +175,7 @@ def flash(image, rate=FLASH_RATE):
     the tool has the app back. The tool's progress rewrites one line with
     carriage returns, so stdout is captured and only its last line shown;
     a failed install raises with that line."""
-    cmd = [TOOL, "-b", str(bus_baud()), "flash", str(image), "--rate", str(rate), ID]
+    cmd = [tool(), "-b", str(bus_baud()), "flash", str(image), "--rate", str(rate), ID]
     r = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
     last = last_line(r.stdout)
     if r.returncode != 0:
@@ -193,8 +233,8 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
         if value is not None:
             args += [flag, value]
     if background:
-        return start(*args, tool=LAB)
-    run(*args, tool=LAB)
+        return start(*args, lab=True)
+    run(*args, lab=True)
     return out
 
 
@@ -224,7 +264,7 @@ def track(out, mode, schedule, tel_chunks=CHUNKS_SERVO, current_cap_ma=None,
         args.append("--deadman-check")
     if not center:
         args.append("--no-center")
-    run(*args, tool=LAB)
+    run(*args, lab=True)
     return out
 
 
@@ -234,7 +274,7 @@ def clapper(path, flashes):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
-        subprocess.run([TOOL, "-i", ID, "clapper", "--flashes", str(flashes)],
+        subprocess.run([tool(), "-i", ID, "clapper", "--flashes", str(flashes)],
                        stdout=f, text=True, check=True)
     return path
 
@@ -254,7 +294,7 @@ def bursts(out, pct, repeats=3, chans="diff", dirs="both", rest_ms=150, decay="s
         args += ["--decay", decay]
     if spin_ms:
         args += ["--spin-ms", spin_ms]
-    run(*args, tool=LAB)
+    run(*args, lab=True)
     return out
 
 

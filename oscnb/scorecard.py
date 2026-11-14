@@ -2,8 +2,8 @@
 fixed test set, scored from the pot, so a change is kept or dropped on
 numbers.
 
-  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...]
-  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-set PATH] [--b-deviation FILE] [--b-protection NAME ...] [--b-loosen NAME ...] [--b-note TEXT] [--rounds 3]
+  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...] [--max-load N]
+  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-osc PATH] [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label ... [--c-label ...] [--order abc] [--rounds 3] [--max-load N]
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard carry
   uv run python -m oscnb.scorecard table
@@ -39,12 +39,30 @@ deviated], and protection as its own entry, the hash and what the
 install moved against the servo's values; a copy of the set the rung
 ran on lies beside it as `constants.json`, so the rung stays readable
 when the set of record moves.
-`ab` records two such rungs at once, one
-run of each per round, A then B, flashing a side's image (and verifying
-the stamp) whenever the servo holds the other's, so the two share the
-servo's drift through the session. Each side names its own set and
-deviation, installed on its own image around its own runs: an A/B is
-the set against the set with one thing changed, the one thing named. `score` writes the rung's scores, the median
+`ab` records two or three such rungs at once, the sides a, b and c
+with the same flags each, one run of each per round in `--order`,
+flashing a side's image whenever the servo holds another, so all share
+the servo's drift through the session. A flash that `osc flash` does
+not confirm ends the session; what the image then holds is verified by
+the set's install and the state read before the run, as on any rung,
+so an image that boots with a stamp from before its covered fields
+changed runs once the install has stamped it. Each
+side names its own set and deviation, installed on its own image around
+its own runs: an A/B is the set against the set with one thing changed,
+the one thing named. A side also names its own `osc`, `--a-osc`: the
+plant stamp is computed by the tool, so an image whose stamp covers
+other fields is flashed, read, installed on and stamped by the tool
+built from its own tree. Every `osc` call of the side's turn, from its
+flash to the reboot after its run, goes through that tool, and none
+outside it. `rung.json` names the tool by the sha1 of its binary and
+its `--version` line, never a path. A run that ends because a telemetry
+burst came back short is rows lost on the link and no result: it is
+moved under the rung's `lost/`, kept in `rung.json` with the capture,
+the tool's reason and the host's load, and started again from its first
+capture, the servo read again and checked against the set, RETRIES
+times at most; any other failure ends the session. With `--max-load` a
+run waits while the host's one minute load is over it, LOAD_WAIT_S at
+most, then goes on, the wait kept in `rung.json`. `score` writes the rung's scores, the median
 over its runs and their range, to
 `stages/5-closed-loop/scorecard/results/<pair>/<label>.json`, with the
 scale its current rows are at, `current_scale`. `carry` brings the
@@ -80,8 +98,11 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import re
+import subprocess
 import sys
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -107,6 +128,11 @@ HOLD_HEAD_MS = 500        # the head of a hold that starts at torque-on, left to
 TAIL_DRIVEN_SHARE = 0.02  # a hunting tail: above the share a single noise wake leaves
 FOLLOW_TAIL = 2 / 3       # the share of a ramp, from its end, a follow score reads
 RAIL_TOL_V = 0.3          # the rail against the servo's rated voltage before a run
+SHORT_BURST = "the burst came back short"   # how `osc-lab track` words a burst that lost rows on the link
+RETRIES = 2               # the times a run that lost a burst is started again
+LOAD_WAIT_S = 300         # the longest a run waits for the host's load to fall
+LOAD_POLL_S = 5
+SIDES = "abc"             # the sides of an alternated session, two or three of them
 REPORT_POT_MS = 50        # the pot a position report is read against, its span the quiet gate
 REPORT_EDGE_ROWS = 20     # 1 ms at 20 kHz each side of a poll's hole: the pot's level there
 CRAWL_SWING_PCTL = 95     # the crawl's widest goal items, short of a lone one
@@ -900,16 +926,45 @@ def record_constants(r, k):
         cn.write(r["set"], r["dir"] / SET_COPY)
 
 
+class Lost(Exception):
+    """A capture `osc-lab track` aborted because a telemetry burst came
+    back short: rows lost on the link, not a result of the servo."""
+
+    def __init__(self, capture, reason):
+        super().__init__(f"{capture}: {reason}")
+        self.capture, self.reason = capture, reason
+
+
+class GaveUp(SystemExit):
+    """A run that lost a burst on its last try too."""
+
+
+def short_burst(out):
+    """The reason an aborted capture's meta.json ends on, where it is a
+    burst that came back short; None for any other end."""
+    p = Path(out) / "meta.json"
+    ended = json.loads(p.read_text()).get("ended") if p.exists() else None
+    reason = ended.get("reason") if isinstance(ended, dict) else None
+    return reason if reason and reason.startswith(SHORT_BURST) else None
+
+
 def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     """One capture: its plan.json, then `osc-lab track`, then the check
     that the servo ran the range the plan was built for: the guard and
     the middle of it `osc-lab track` centers to at the end, which on a
-    table rung is not the plan's own center."""
+    table rung is not the plan's own center. An abort on a short burst
+    raises `Lost`, any other as the tool's own failure."""
     out.mkdir(parents=True, exist_ok=True)
     (out / "plan.json").write_text(json.dumps(ts.plan_doc(name, segs, center, guard, inp), indent=2) + "\n")
-    osc.track(out, "position", [s["item"] for s in segs],
-              current_cap_ma=inp["current_cap_ma"], current_cap_ms=inp["current_cap_ms"],
-              deadman_check=deadman_check)
+    try:
+        osc.track(out, "position", [s["item"] for s in segs],
+                  current_cap_ma=inp["current_cap_ma"], current_cap_ms=inp["current_cap_ms"],
+                  deadman_check=deadman_check)
+    except subprocess.CalledProcessError:
+        reason = short_burst(out)
+        if reason is None:
+            raise
+        raise Lost(name, reason) from None
     meta = json.loads((out / "meta.json").read_text())
     middle = ts.center_of(guard)
     if tuple(meta["guard"]) != tuple(guard) or meta["center"] != middle:
@@ -976,7 +1031,8 @@ def applied(r):
     protection gate, and the protection fields it moves against the
     servo's values kept on `r` for `rung.json`. A reboot brings the
     stored state back when the body ends or aborts, where the install
-    wrote anything."""
+    wrote anything, and always after a run given up as lost
+    (`stored_back`)."""
     cn = constants()
     try:
         state = servo_state()
@@ -984,22 +1040,45 @@ def applied(r):
         wrote = cn.install(r["set"], r["protection"], r["loosen"], results.ROOT, state=state)
     except (ValueError, settings.Refused) as e:
         raise SystemExit(f"{r['label']}: the rung's set does not install: {e}")
+    gave_up = False
     try:
         yield
+    except GaveUp:
+        gave_up = True
+        raise
     finally:
         # the stored state comes back whether the runs ended or aborted
-        if wrote:
-            settings.restore()
+        if wrote or gave_up:
+            stored_back(state["data_state"])
+
+
+def stored_back(data_state):
+    """Reboot onto the stored state and wait for the bus. The data
+    state must then be `data_state`, the one the servo held before the
+    install: clean, or on an image whose stored stamp is from before
+    its covered fields changed the mismatch every boot of it gives,
+    which the install stamps away for the run alone."""
+    osc.run("reboot")
+    settings.await_boot()
+    status = osc.status()
+    now = settings.data_state(status)
+    if now != data_state:
+        raise settings.Refused(f"after the reboot the data state is {now}, not the {data_state} of before the "
+                               f"install")
+    print(f"rebooted: data state {now}, plant stamp {settings.plant_stamp(status)}")
 
 
 def record_run(r, k, s):
     """Run `k` of rung `r` on bench set `s`: the servo's constant state
     (`record_constants`), then the captures the set built, in the test
     set's order, and `rung.json` once the rung's first capture lands:
+    the `osc` tool the rung's bus calls go through (`osc.identity`),
     the constant set by its file, its three hashes and its fields by
     class, the deviation with every field it moved as [of record,
     deviated], the protection hash with what the install moved against
-    the servo's values, and the wide holds' goals."""
+    the servo's values, the wide holds' goals, and the runs lost and
+    the waits for the host's load before it, where there were any
+    (`keep`)."""
     cn = constants()
     rung, ts = r["dir"], s["ts"]
     record_constants(r, k)
@@ -1011,7 +1090,8 @@ def record_run(r, k, s):
                        deadman_check=i == 0, ts=ts)
         if not (rung / "rung.json").exists():
             (rung / "rung.json").write_text(json.dumps({
-                "label": r["label"], "fw": r["fw"], "image_sha": r["image_sha"], "note": r["note"],
+                "label": r["label"], "fw": r["fw"], "image_sha": r["image_sha"], "tool": r["tool"],
+                "note": r["note"],
                 "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "config_hash": config_hash(meta["config"]), "constants_hash": r["constants"]["hash"],
                 "runs_asked": r["runs"],
@@ -1019,78 +1099,165 @@ def record_run(r, k, s):
                 "deviation": r["set"].get("deviation"),
                 "protection": {"hash": r["set"]["hash"]["protection"], "moved": r["protection_moved"]},
                 "wide_goals": wide or None,
+                **{key: r[key] for key in KEPT if key in r},
             }, indent=2) + "\n")
 
 
+KEPT = ("lost", "load_waits")   # what `keep` adds to a rung.json, absent from a rung with none
+
+
+def keep(r, key, entry):
+    """`entry` on rung `r`'s list `key`, and in its `rung.json` where
+    the rung has one; a rung with none yet writes the list with it."""
+    r.setdefault(key, []).append(entry)
+    p = r["dir"] / "rung.json"
+    if p.exists():
+        p.write_text(json.dumps({**json.loads(p.read_text()), key: r[key]}, indent=2) + "\n")
+
+
+def host_load():
+    """The host's one minute load."""
+    return round(os.getloadavg()[0], 2)
+
+
+def await_load(r, k, max_load):
+    """Wait before run `k` of rung `r` while the host's one minute load
+    is over `max_load`, LOAD_WAIT_S at most, then go on: the telemetry
+    link drops rows on a loaded host. A wait is kept in `rung.json`,
+    with the load it began and ended at and whether the run went on
+    over the limit. None gates nothing."""
+    if max_load is None:
+        return
+    first = load = host_load()
+    waited = 0
+    if load > max_load:
+        print(f"{r['label']} run-{k} waits for the host: load {load} is over {max_load:g}")
+    while load > max_load and waited < LOAD_WAIT_S:
+        time.sleep(LOAD_POLL_S)
+        waited += LOAD_POLL_S
+        load = host_load()
+    if waited:
+        keep(r, "load_waits", {"run": f"run-{k}", "max_load": max_load, "load_1m_before": first,
+                               "load_1m_after": load, "waited_s": waited, "went_on_over": load > max_load})
+
+
+def recorded(r, k, s, servo, board, max_load=None):
+    """`record_run` with the rung's set on the servo. A run that loses a
+    capture to a short burst is no result: its folder is moved under
+    the rung's `lost/`, the loss is kept in `rung.json` with the
+    capture, the tool's reason and the host's load, and the run starts
+    again from its first capture after the load gate and the preflight,
+    the servo read again and checked against the set, RETRIES times at
+    most. A run lost on its last try too ends the session, torque off."""
+    for n in range(1, RETRIES + 2):
+        if n > 1:
+            await_load(r, k, max_load)
+            preflight(servo, board)
+        try:
+            return record_run(r, k, s)
+        except Lost as e:
+            lost = e
+            aside = Path("lost") / f"run-{k}-{n}"
+            (r["dir"] / aside.parent).mkdir(exist_ok=True)
+            (r["dir"] / f"run-{k}").rename(r["dir"] / aside)
+            keep(r, "lost", {"run": f"run-{k}", "capture": e.capture, "reason": e.reason,
+                             "load_1m": host_load(), "rows": aside.as_posix()})
+            print(f"{r['label']} run-{k} lost in {e.capture}: {e.reason}")
+    if osc.get("torque_enable") not in ("off", 0):
+        osc.set_("torque_enable", "off")
+    raise GaveUp(f"{shown(r['dir'])}: run-{k} lost a burst on each of {RETRIES + 1} tries, the last in "
+                 f"{lost.capture}: {lost.reason}")
+
+
 def run(label, fw, image_sha, runs=3, note="", set_file=None, deviation=None, protection=(), loosen=(),
-        servo=None, board=None):
+        servo=None, board=None, max_load=None):
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
     r = new_rung(pair, label, fw, image_sha, runs, note, set_file, deviation, protection, loosen)
+    r["tool"] = osc.identity()
     s, = bench_sets(servo, board, pair, [r])
     with applied(r):
         for k in range(1, runs + 1):
+            await_load(r, k, max_load)
             if k > 1:
                 preflight(servo, board)
-            record_run(r, k, s)
+            recorded(r, k, s, servo, board, max_load)
             print(f"run-{k} of {runs} done")
     return r["dir"]
 
 
-def require_live_set(image):
-    """Refuse unless `osc status` reads the plant stamp as the live set."""
-    stamp = settings.plant_stamp(osc.status())
-    if not stamp or not re.fullmatch(r"\S+ = live set", stamp):
-        raise SystemExit(f"after flashing {shown(image)} osc status reads the stamp {stamp!r}, not "
-                         f"'= live set': nothing runs on an unverified image")
-
-
-def ab(a, b, rounds=3, servo=None, board=None):
-    """Two rungs recorded alternately, one run of each per round, A then B,
-    so both share the servo's drift through the session. `a` and `b` are
-    {"label", "fw", "image", "note", "set_file", "deviation",
-    "protection", "loosen"}, the last five optional; each rung is the
-    one `run` records, its image sha the image file's. A side's image
-    is flashed, the bus awaited and the stamp verified before its run
-    whenever the servo holds the other side's, and before the first run
-    always; its constant set, the set of record or its own derived set,
-    is installed around its own runs alone, on the image it runs on, and
-    its test set is planned from it. Returns the two rungs' folders."""
+def ab(*sides, rounds=3, order=None, max_load=None, servo=None, board=None):
+    """Two or three rungs recorded alternately, one run of each per
+    round in `order`, a permutation of the sides' letters ("ab", "cab"),
+    a then b then c without one, so all share the servo's drift through
+    the session. A side is {"label", "fw", "image", "note", "set_file",
+    "deviation", "protection", "loosen", "osc"}, the last six optional;
+    each rung is the one `run` records, its image sha the image file's.
+    A side's turn is everything from its flash to the reboot after its
+    run, and every `osc` call in it goes through the side's own tool,
+    the file of "osc" (`osc.using`), which is the default again outside
+    it. In a turn the side's image is flashed and the bus awaited
+    whenever the servo holds another image, and before the first run
+    always. No stamp is asked of the image as it boots: the side's
+    constant set, the set of record or its own derived set, is
+    installed around its own run alone, on the image it runs on, and
+    the install makes the servo the set field by field, stamps it where
+    the data state is not clean and requires clean, so a side whose
+    install cannot do that does not start. Its test set is planned from
+    the set. A tool that
+    is not found, or is another binary at a later turn than at the
+    session's start, is refused. Returns the rungs' folders, a first."""
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
-    if a["label"] == b["label"]:
-        raise SystemExit(f"both sides are labeled {a['label']!r}: an A/B records two rungs")
-    sides = []
-    for side in (a, b):
+    letters = SIDES[:len(sides)]
+    if len(sides) not in (2, 3):
+        raise SystemExit(f"{len(sides)} sides: an alternated session records two rungs or three")
+    order = order or letters
+    if sorted(order) != sorted(letters):
+        raise SystemExit(f"order {order!r} is not the sides {', '.join(letters)} once each")
+    labels = [side["label"] for side in sides]
+    twice = sorted({x for x in labels if labels.count(x) > 1})
+    if twice:
+        raise SystemExit(f"two sides are labeled {twice[0]!r}: each side records its own rung")
+    rungs = []
+    for side in sides:
         r = new_rung(pair, side["label"], side["fw"], file_sha1(side["image"]), rounds, side.get("note", ""),
                      side.get("set_file"), side.get("deviation"), side.get("protection", ()),
                      side.get("loosen", ()))
-        r["image"] = Path(side["image"])
-        sides.append(r)
-    sets = bench_sets(servo, board, pair, sides)
+        r["image"], r["osc"] = Path(side["image"]), side.get("osc")
+        with osc.using(r["osc"]):
+            r["tool"] = osc.identity()
+        if r["osc"] and r["tool"] is None:
+            raise SystemExit(f"{r['label']}: no osc tool at {r['osc']}")
+        rungs.append(r)
+    sets = bench_sets(servo, board, pair, rungs)
+    turns = [(rungs[letters.index(x)], sets[letters.index(x)]) for x in order]
     on_servo = None
     flashing = None
     try:
         for k in range(1, rounds + 1):
-            for r, s in zip(sides, sets):
-                if on_servo is None or on_servo["image_sha"] != r["image_sha"]:
-                    on_servo, flashing = None, r
-                    osc.flash(r["image"])
-                    on_servo, flashing = r, None
-                    settings.await_boot()
-                    require_live_set(r["image"])
-                preflight(servo, board)
-                with applied(r):
-                    record_run(r, k, s)
+            for r, s in turns:
+                with osc.using(r["osc"]):
+                    if osc.identity() != r["tool"]:
+                        raise SystemExit(f"{r['label']}: its osc tool is not the binary the session began with")
+                    if on_servo is None or on_servo["image_sha"] != r["image_sha"]:
+                        on_servo, flashing = None, r
+                        osc.flash(r["image"])
+                        on_servo, flashing = r, None
+                        settings.await_boot()
+                    await_load(r, k, max_load)
+                    preflight(servo, board)
+                    with applied(r):
+                        recorded(r, k, s, servo, board, max_load)
                 print(f"{r['label']} run-{k} of {rounds} done")
     finally:
         if on_servo:
             print(f"left on the servo: {shown(on_servo['image'])} (sha1 {on_servo['image_sha']})")
         elif flashing:
             print(f"the flash of {shown(flashing['image'])} did not finish: the servo's image is unknown")
-    return sides[0]["dir"], sides[1]["dir"]
+    return tuple(r["dir"] for r in rungs)
 
 
 def score(label, servo=None, board=None):
@@ -1191,6 +1358,10 @@ def set_args(parser, side):
                         help="of those, the ones it may set to protect less than the servo's value")
 
 
+LOAD_HELP = (f"wait before a run while the host's one minute load is over this, {LOAD_WAIT_S} s at most, "
+             f"then go on")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m oscnb.scorecard", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1201,28 +1372,37 @@ def main(argv=None):
     r.add_argument("--runs", type=int, default=3)
     r.add_argument("--note", default="")
     set_args(r, "")
-    x = sub.add_parser("ab", help="record two rungs on the bench, their runs alternated")
-    for side in ("a", "b"):
-        x.add_argument(f"--{side}-label", required=True)
-        x.add_argument(f"--{side}-fw", required=True, help="the firmware commit the image was built from")
-        x.add_argument(f"--{side}-image", required=True, type=Path, help="the raw .bin image to flash")
+    r.add_argument("--max-load", type=float, help=LOAD_HELP)
+    x = sub.add_parser("ab", help="record two or three rungs on the bench, their runs alternated")
+    for side in SIDES:
+        need = side != SIDES[2]
+        x.add_argument(f"--{side}-label", required=need)
+        x.add_argument(f"--{side}-fw", required=need, help="the firmware commit the image was built from")
+        x.add_argument(f"--{side}-image", required=need, type=Path, help="the raw .bin image to flash")
         set_args(x, f"{side}-")
         x.add_argument(f"--{side}-note", default="")
+        x.add_argument(f"--{side}-osc", help="the osc tool every bus call of the side's turn goes through, "
+                                              "the one of OSC or the PATH if omitted")
     x.add_argument("--rounds", type=int, default=3)
+    x.add_argument("--order", help="the sides' order within a round, their letters once each: abc if omitted")
+    x.add_argument("--max-load", type=float, help=LOAD_HELP)
     s = sub.add_parser("score", help="score a recorded rung")
     s.add_argument("label")
     sub.add_parser("carry", help="carry the results of rungs whose rows were not kept to the measured current scale")
     sub.add_parser("table", help="print the ladder")
     a = ap.parse_args(argv)
     if a.cmd == "run":
-        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.set, a.deviation, a.protection, a.loosen)))
+        print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.set, a.deviation, a.protection, a.loosen,
+                        max_load=a.max_load)))
     elif a.cmd == "ab":
-        sides = [{"label": getattr(a, f"{side}_label"), "fw": getattr(a, f"{side}_fw"),
-                  "image": getattr(a, f"{side}_image"), "note": getattr(a, f"{side}_note"),
-                  "set_file": getattr(a, f"{side}_set"), "deviation": getattr(a, f"{side}_deviation"),
-                  "protection": getattr(a, f"{side}_protection"), "loosen": getattr(a, f"{side}_loosen")}
-                 for side in ("a", "b")]
-        for rung in ab(*sides, rounds=a.rounds):
+        flags = {"label": "label", "fw": "fw", "image": "image", "note": "note", "set_file": "set",
+                 "deviation": "deviation", "protection": "protection", "loosen": "loosen", "osc": "osc"}
+        sides = [{key: getattr(a, f"{side}_{flag}") for key, flag in flags.items()} for side in SIDES]
+        if not any(sides[2].values()):
+            sides.pop()
+        elif None in (sides[2]["label"], sides[2]["fw"], sides[2]["image"]):
+            ap.error("a third side needs --c-label, --c-fw and --c-image")
+        for rung in ab(*sides, rounds=a.rounds, order=a.order, max_load=a.max_load):
             print(shown(rung))
     elif a.cmd == "score":
         print(score(a.label))

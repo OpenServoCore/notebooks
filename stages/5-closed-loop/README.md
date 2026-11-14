@@ -158,8 +158,8 @@ the bus at 3 Mbps, torque off, the production image flashed. The runner
 never touches the supply and never prompts; it refuses to start otherwise.
 
 ```
-uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...]
-uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-set PATH] [--b-deviation FILE] [--b-protection NAME ...] [--b-loosen NAME ...] [--b-note TEXT] [--rounds 3]
+uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...] [--max-load N]
+uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-osc PATH] [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label ... [--c-label ...] [--order abc] [--rounds 3] [--max-load N]
 uv run python -m oscnb.scorecard score 00-baseline
 uv run python -m oscnb.scorecard table
 ```
@@ -236,17 +236,73 @@ longer the one recorded, or when its capture has a live table and it
 names none.
 
 The same servo drifts within a session, so a candidate and its control
-are best recorded together. `ab` records two rungs at once, one run of
-each per round, A then B, for `--rounds` rounds. Each side names its
-image file, and the image sha in its `rung.json` is that file's sha1.
-Before a side's run the servo is flashed with its image whenever it
-holds the other side's, and before the first run always, and nothing
-runs until `osc status` reads the stamp as the live set; two sides on
-one image file, a comparison of constants alone, flash once. Each side
-names its own set and deviation, installed on its own image around its
-own runs only, so an A/B is the set against the set with one thing
-changed, the one thing named in the record. Each side comes out a rung
-like any other, for `score` and `table`.
+are best recorded together. `ab` records two rungs at once, or three
+with a side c, one run of each per round for `--rounds` rounds. The
+sides take the same flags under `--a-`, `--b-` and `--c-`. `--order`
+is the order of the sides within a round, their letters once each,
+`abc` when it is left out. Each side names its image file, and the
+image sha in its `rung.json` is that file's sha1. Before a side's run
+the servo is flashed with its image whenever it holds another one, and
+before the first run always. A flash counts when `osc flash` ends with
+the image installed and its version confirmed, else the session stops.
+No stamp is asked of the image as it boots. What the servo then holds
+is verified by the side's install and by the state read before the
+run. The install makes the servo the set field by field, stamps it
+where the data state is not clean and requires clean, and a servo that
+is not the rung's set does not start the run. So an image that boots
+with a stamp from before its covered fields changed runs once the
+install has stamped it, and the reboot after the run brings back the
+state that image boots with. Sides on one image file, a comparison of
+constants alone, flash once between them. Each side names its own set
+and deviation, installed on its own image around its own runs only, so
+an A/B is the set against the set with one thing changed, the one
+thing named in the record. Each side comes out a rung like any other,
+for `score` and `table`.
+
+A side can name its own `osc` tool with `--a-osc PATH`. The plant
+stamp is computed by the tool and not by the servo, so an image whose
+stamp covers other fields needs the `osc` built from its own tree, and
+the tool of one image cannot bless a set on the other. A side's turn
+runs from its flash to the reboot after its run. Every `osc` call in
+the turn goes through the side's tool: the flash and the wait for
+boot, the state read, the install with its stamp, the reboot. Outside the turn the tool is the one of `OSC` or the PATH
+again, and a side that names none uses that one. `osc-lab` records the
+captures on every side. `rung.json` names the tool under `tool`, by
+the sha1 of its binary and its `--version` line where the tool has
+one, and never by a path. A tool that is not found is refused before
+anything is flashed, and so is a turn whose tool is no longer the
+binary the session began with.
+
+A firmware gate is three arms: the control, the candidate, and the
+candidate with one constant changed.
+
+```
+uv run python -m oscnb.scorecard ab --rounds 3 --order abc --max-load 4 \
+  --a-label 30-main --a-fw <main rev> --a-image <main.bin> --a-osc <main's osc> --a-note "control" \
+  --b-label 30-new --b-fw <new rev> --b-image <new.bin> --b-osc <the new tree's osc> \
+  --c-label 30-new-one --c-fw <new rev> --c-image <new.bin> --c-osc <the new tree's osc> \
+  --c-deviation stages/5-closed-loop/scorecard/deviations/<one>.json
+```
+
+Sides b and c share an image, so a round flashes twice. A second set
+with the order swapped is a second call with `--order cba` and new
+labels.
+
+The telemetry link drops rows on a loaded host, and `osc-lab track`
+then aborts the capture with "the burst came back short". That is rows
+lost on the link and not a result of the servo. The runner moves the
+run's folder under the rung's `lost/` and starts the run again from
+its first capture, after the preflight, with the servo read again and
+checked against the set. It does this twice at most. Each loss is kept
+in `rung.json` under `lost`, with the capture, the tool's reason line
+and the host's one minute load. A run that is lost a third time ends
+the session with torque off and the servo rebooted onto its stored
+state. Any other failure of a capture ends the session at once, as
+before. With `--max-load N` a run waits while the host's one minute
+load is over N, five minutes at most, then goes on. A wait is kept in
+`rung.json` under `load_waits`, with the load before and after and
+whether the run went on over the limit. `run` takes `--max-load` and
+runs a lost run again the same way.
 
 `table` prints the ladder, one column per rung in label order, with a
 last column of other people's figures for stock smart servos (STS3215,
