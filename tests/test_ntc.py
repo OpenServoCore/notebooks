@@ -1,6 +1,8 @@
 """The board NTC's conversion as the kernel runs it, held to the
 firmware's own function on the same counts, and what a curve reads
 against the part's nominal equation."""
+import math
+
 import numpy as np
 import pytest
 
@@ -35,7 +37,7 @@ def test_the_conversion_is_the_firmwares_on_the_same_counts(curve):
 
 
 def test_the_notebooks_quadratic_is_the_kernels_inside_the_span():
-    curve = (2048, 2584, 212, 28463)
+    curve = (2048, 2430, 474, 19934)
     raws = np.arange(1, 4095)
     assert list(ntc.quadratic_cc(raws, *curve)) == [ntc.ntc_cc(int(r), *curve) for r in raws]
 
@@ -54,3 +56,78 @@ def test_a_curve_is_read_against_the_parts_nominal_equation():
     # a curve that tops out under a threshold never reads it short of the rail check
     assert ntc.reaches_c(BOARD, exact, 10_000) is None
     assert ntc.reaches_c(BOARD, (2048, 2500, 0, 0), 2500) is None
+
+
+# the design curve's request on this board: the true temperature a protection limit is to land at, the stretch
+# the fit is held over, the most it may read under the part's equation there, and the stretch its over-read is
+# made least over
+PINNED = {"pin_c": 90, "range_c": (15, 90), "floor_c": -1.0, "low_range_c": (15, 50)}
+
+
+def residual_c(curve, lo_c, hi_c):
+    """The reading less the part's nominal equation at every whole
+    count between two true temperatures, as the kernel converts it."""
+    raws = range(math.ceil(ntc.raw_of_c(BOARD, hi_c)), math.floor(ntc.raw_of_c(BOARD, lo_c)) + 1)
+    return np.array([ntc.ntc_cc(raw, *curve) / 100 - float(BOARD.ntc_c_beta(raw)) for raw in raws])
+
+
+def test_the_pinned_fit_gives_this_boards_words():
+    words = ntc.fit_pinned(BOARD, 2048, **PINNED)
+    assert words == (2430, 474, 19934)
+    # what the form costs with them: the residual over the stretch, and over the low one
+    held, low = residual_c((2048, *words), 15, 90), residual_c((2048, *words), 15, 50)
+    assert (round(held.min(), 2), round(held.max(), 2)) == (-1.02, 5.5)
+    assert (round(low.min(), 2), round(low.max(), 2)) == (-1.02, 3.27)
+    # a stretch that starts lower moves nothing while the floor does not bind there
+    assert ntc.fit_pinned(BOARD, 2048, **{**PINNED, "range_c": (0, 90)}) == words
+
+
+@pytest.mark.parametrize("pin_c", [60, 80, 90, 100])
+def test_the_pinned_fit_reads_the_pin_exact_to_the_count_grid(pin_c):
+    curve = (2048, *ntc.fit_pinned(BOARD, 2048, **{**PINNED, "pin_c": pin_c, "range_c": (15, pin_c)}))
+    # the pin falls between two whole counts, and the pin's number is read between those two
+    raw = float(ntc.raw_of_c(BOARD, pin_c))
+    cool, warm = math.ceil(raw), math.floor(raw)
+    assert cool == warm + 1 and ntc.ntc_cc(cool, *curve) <= 100 * pin_c <= ntc.ntc_cc(warm, *curve)
+    # so a warming board first reads it at the count just past the pin, under a count's width from it
+    at = ntc.reaches_c(BOARD, curve, 100 * pin_c)
+    assert at == float(BOARD.ntc_c_beta(warm)) and 0 <= at - pin_c < at - float(BOARD.ntc_c_beta(cool))
+
+
+def test_the_pinned_fit_lands_this_boards_pin_within_a_count():
+    curve = (2048, *ntc.fit_pinned(BOARD, 2048, **PINNED))
+    assert ntc.reads_c(BOARD, curve, 90.0) == 89.98
+    assert ntc.reaches_c(BOARD, curve, 9000) == pytest.approx(90.08, abs=0.005)
+
+
+@pytest.mark.parametrize("pin_c", [60, 80, 90, 100])
+def test_the_pinned_fit_holds_its_floor_at_every_whole_count(pin_c):
+    request = {**PINNED, "pin_c": pin_c, "range_c": (15, pin_c)}
+    held = residual_c((2048, *ntc.fit_pinned(BOARD, 2048, **request)), 15, pin_c)
+    # to the rounding of the three words and the floors of the two products, a few centi-C
+    assert -1.0 - 0.03 < held.min() < -1.0 + 0.03
+    # a tighter floor is held as well, and costs over-read
+    tight = residual_c((2048, *ntc.fit_pinned(BOARD, 2048, **{**request, "floor_c": 0.0})), 15, pin_c)
+    assert -0.03 < tight.min() and tight.max() > held.max()
+
+
+def test_the_pinned_fit_keeps_the_curvature_inside_its_field():
+    # the stretch from 80 to 100 C alone bends harder than the field holds: the fit stops at the field's top
+    steep = {"pin_c": 100, "range_c": (80, 100), "floor_c": -1.0, "low_range_c": (80, 100)}
+    assert ntc.fit_pinned(BOARD, 2048, **steep)[2] == ntc.K2_TOP_Q24 == 0xFFFF
+    assert ntc.fit_pinned(BOARD, 2048, **steep, k2_top_q24=10 ** 7)[2] > 4 * ntc.K2_TOP_Q24
+    # a field narrower than the design curve wants holds it too, at a larger over-read
+    words = ntc.fit_pinned(BOARD, 2048, **PINNED, k2_top_q24=15000)
+    assert words[2] == 15000
+    assert residual_c((2048, *words), 15, 50).max() > residual_c((2048, 2430, 474, 19934), 15, 50).max() + 1
+
+
+def test_a_request_no_quadratic_meets_is_refused():
+    # a floor over zero asks the curve to read over the equation where it is pinned on it
+    with pytest.raises(ValueError, match="no quadratic about count 2048 with its curvature inside 0..65535 "
+                                         r"\(Q24\) reads the beta equation exactly at 90 C and stays no more than "
+                                         "-0.5 C under it from 15 to 90 C"):
+        ntc.fit_pinned(BOARD, 2048, **{**PINNED, "floor_c": 0.5})
+    # and on this board so does the floor held 10 C past the pin
+    with pytest.raises(ValueError, match="stays no more than 1 C under it from 15 to 100 C"):
+        ntc.fit_pinned(BOARD, 2048, **{**PINNED, "range_c": (15, 100)})
