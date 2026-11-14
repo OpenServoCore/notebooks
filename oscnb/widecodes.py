@@ -375,7 +375,12 @@ def install(board):
     """Write the board's slots of record to the servo volatile, at the
     address its own descriptor gives, and read them back; returns (the
     slots, the field's bytes before). No SAVE."""
-    data = slots_of_record(board)
+    return write_slots(slots_of_record(board))
+
+
+def write_slots(data):
+    """`install` for 16 slot values at hand: written volatile and read
+    back; returns (the slots, the field's bytes before)."""
     torque = osc.get("torque_enable")
     if not settings.same("off", torque):
         raise settings.Refused(f"torque_enable reads {torque}: the wide-code slots are written with torque off")

@@ -802,7 +802,10 @@ def test_a_run_records_the_servos_constant_state(bus):
                              wc.FIELD: SLOTS.hex(" ")}
     # the fields a host may write, by the servo's own descriptor: the read-only model number is not one
     assert doc["writable"] == [n for n in doc["fields"] if n != "model_number"]
-    assert doc["pos_table"] == {"state": "IDENTITY", "points_sha1": NO_POINTS}
+    # the table's 256 points beside their sha1, which alone is in the hash
+    assert doc["pos_table"] == {"state": "IDENTITY", "points_sha1": NO_POINTS, "points": bytes(512).hex()}
+    assert doc["hash"] == sc.config_hash({**{k: doc[k] for k in sc.HASHED},
+                                          "pos_table": {"state": "IDENTITY", "points_sha1": NO_POINTS}})
     assert doc["wide_codes"] == SLOTS.hex()
     assert (doc["stamp"], doc["data_state"]) == ("0x9c45 = live set", "clean")
     assert json.loads((rung / "rung.json").read_text())["constants_hash"] == doc["hash"]

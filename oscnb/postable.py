@@ -532,7 +532,12 @@ def install(pair):
     every page, COMMIT, LIVE, every page read back the same. No stamp and
     no SAVE; returns the Table. A refusal past the first STORE leaves the
     array loading: `osc reboot` returns the saved table."""
-    t, _ = load(pair)
+    return install_table(load(pair)[0])
+
+
+def install_table(t):
+    """`install` for a Table at hand: its steps 1 to 4 run on the servo;
+    returns the Table."""
     for s in install_steps(t):
         if isinstance(s, str):
             continue
