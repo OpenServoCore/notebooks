@@ -614,6 +614,25 @@ def test_ab_on_one_image_flashes_once_and_applies_each_sides_settings_around_its
     assert ab_bench["events"] == expected
 
 
+def test_ab_installs_the_table_on_its_side_alone_and_reboots_it_away_before_the_other(ab_bench, monkeypatch,
+                                                                                         tmp_path):
+    events = ab_bench["events"]
+    monkeypatch.setattr(sc.postable, "install", lambda pair: events.append(("install", pair)))
+    monkeypatch.setattr(sc.settings, "stamp_live", lambda: events.append(("stamp",)))
+    f = settings_file(tmp_path, "f", {"p_kp_q88": 5026})
+    a, b = sc.ab(side(ab_bench, "12-a", "a", settings_file=f),
+                 side(ab_bench, "12-b", "a", settings_file=f, pos_table=True), rounds=2, servo=SERVO, board=BOARD)
+    pair = sc.pair_of(SERVO, BOARD)
+    expected = flashed("a.bin")
+    for k in (1, 2):
+        expected += [("apply", {"p_kp_q88": 5026}, True), ("run", "12-a", f"run-{k}"), ("restore",),
+                     ("apply", {"p_kp_q88": 5026}, False), ("install", pair), ("stamp",),
+                     ("run", "12-b", f"run-{k}"), ("restore",)]
+    assert events == expected
+    assert json.loads((a / "rung.json").read_text())["pos_table"] is None
+    assert json.loads((b / "rung.json").read_text())["pos_table"] == table_of_record()
+
+
 def test_ab_stops_before_any_run_when_the_stamp_is_not_the_live_set(ab_bench, bus, capsys):
     bus["stamp"] = "0x9c45 != live set 0x1234"
     with pytest.raises(SystemExit, match="unverified image"):

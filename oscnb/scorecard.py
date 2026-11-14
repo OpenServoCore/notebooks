@@ -3,7 +3,7 @@ fixed test set, scored from the pot, so a change is kept or dropped on
 numbers.
 
   uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table] [--wide-codes]
-  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
+  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-pos-table] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-pos-table] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard table
 
@@ -796,12 +796,12 @@ def require_live_set(image):
 def ab(a, b, rounds=3, servo=None, board=None):
     """Two rungs recorded alternately, one run of each per round, A then B,
     so both share the servo's drift through the session. `a` and `b` are
-    {"label", "fw", "image", "note", "settings_file", "wide_codes"}, the
-    last three optional; each rung is the one `run` records, its image sha the image
+    {"label", "fw", "image", "note", "settings_file", "pos_table",
+    "wide_codes"}, the last four optional; each rung is the one `run` records, its image sha the image
     file's. A side's image is flashed, the bus awaited and the stamp
     verified before its run whenever the servo holds the other side's,
-    and before the first run always; its settings and the board's
-    wide-code slots are applied around its own runs alone. Returns the two rungs' folders."""
+    and before the first run always; its settings, the pair's table and
+    the board's wide-code slots are applied around its own runs alone. Returns the two rungs' folders."""
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
@@ -810,7 +810,8 @@ def ab(a, b, rounds=3, servo=None, board=None):
     sides = []
     for side in (a, b):
         r = new_rung(pair, side["label"], side["fw"], file_sha1(side["image"]), rounds,
-                     side.get("note", ""), side.get("settings_file"), wide_codes=side.get("wide_codes", False),
+                     side.get("note", ""), side.get("settings_file"), pos_table=side.get("pos_table", False),
+                     wide_codes=side.get("wide_codes", False),
                      board_key=board.key)
         r["image"] = Path(side["image"])
         sides.append(r)
@@ -906,6 +907,8 @@ def main(argv=None):
         x.add_argument(f"--{side}-image", required=True, type=Path, help="the raw .bin image to flash")
         x.add_argument(f"--{side}-settings", type=Path,
                        help="a file of CONFIG fields the side runs on, applied volatile")
+        x.add_argument(f"--{side}-pos-table", action="store_true",
+                       help="the side runs on the pair's position table, installed volatile")
         x.add_argument(f"--{side}-wide-codes", action="store_true",
                        help="the side runs on the board's ADC wide-code slots, installed volatile")
         x.add_argument(f"--{side}-note", default="")
@@ -920,6 +923,7 @@ def main(argv=None):
         sides = [{"label": getattr(a, f"{side}_label"), "fw": getattr(a, f"{side}_fw"),
                   "image": getattr(a, f"{side}_image"), "note": getattr(a, f"{side}_note"),
                   "settings_file": getattr(a, f"{side}_settings"),
+                  "pos_table": getattr(a, f"{side}_pos_table"),
                   "wide_codes": getattr(a, f"{side}_wide_codes")} for side in ("a", "b")]
         for rung in ab(*sides, rounds=a.rounds):
             print(shown(rung))
