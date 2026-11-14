@@ -792,13 +792,16 @@ def test_a_run_records_the_servos_constant_state(bus):
     rung = sc.run("00-baseline", "abc123", "f" * 40, runs=2, servo=SERVO, board=BOARD)
     doc = constants(rung, 1)
     assert constants(rung, 2) == doc
-    assert list(doc) == ["addr", "raw", "fields", "pos_table", "wide_codes", "stamp", "data_state", "hash"]
+    assert list(doc) == ["addr", "raw", "fields", "writable", "pos_table", "wide_codes", "stamp", "data_state",
+                         "hash"]
     # CONFIG and CALIB end where the servo's own descriptor places torque_enable, 0xc0 on the fake
     assert doc["addr"] == 0 and bytes.fromhex(doc["raw"]) == bytes(servo.table[:0xC0])
     assert doc["raw"][2 * 0x40:2 * 0x44] == "149d0400" and bytes.fromhex(doc["raw"])[0x91:0xA1] == SLOTS
     assert doc["fields"] == {"model_number": 257, "p_kp_q88": 40212, "pos_deadband_counts": 4,
                              "drive_polarity": "on", "r_q12": 17100, "plant_stamp": 0x9C45,
                              wc.FIELD: SLOTS.hex(" ")}
+    # the fields a host may write, by the servo's own descriptor: the read-only model number is not one
+    assert doc["writable"] == [n for n in doc["fields"] if n != "model_number"]
     assert doc["pos_table"] == {"state": "IDENTITY", "points_sha1": NO_POINTS}
     assert doc["wide_codes"] == SLOTS.hex()
     assert (doc["stamp"], doc["data_state"]) == ("0x9c45 = live set", "clean")
