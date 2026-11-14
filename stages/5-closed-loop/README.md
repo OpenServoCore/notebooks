@@ -400,16 +400,40 @@ the ADC wide-code slots; the position table's state and the sha1 of its
 points. The file is never typed. The same inputs give the same bytes,
 and a file whose hashes are not those of its content is refused.
 
-A field's class says what stands behind its value: `measured` a rule
-over results of record, `policy` a rule over a general choice, `pinned`
-a literal typed for the pair, `held` a value carried while its rule may
-not bind. The first set of a servo that already runs holds every field
-as `adopted`: the value the servo held before the set existed, taken
-from a record of its state (the `servo.json` of a scorecard run) and
-named by that record's sha1, so it has no source in the notebooks.
-Every verb prints that count, the fields with no source, and the count
-of adopted fields whose value is per position count, which were fitted
-at a scale nothing recorded.
+A field's class says where its value comes from. There are four
+sources: `measured`, a rule over results of record, a measurement on
+this pair; `bench`, a recorded bench result on this servo, a scorecard
+rung's results file or a dated reading, read from the record and never
+typed; `datasheet`, a value the maker of the servo or of a part
+states, a rating or a nominal and no measurement, read from where the
+repo records it with the document named; and `policy`, a rule over a
+decision, whose reason `policy.json` gives under `why`. `pinned` is a
+literal typed for the pair with the rung that chose it. Every other
+field is of class `none`, no source: what the servo held before its
+set existed, which may be another servo's since a board is moved
+between servos, an old tool's output, a boot default or a zero; a
+field held back from its rule, while it is held; and a field whose
+rule reads a policy entry that restates a default nobody decided,
+listed under `undecided` in `policy.json`. A field with no source says
+why (`reason`) and what would give it one (`needs`), and names a
+maker's value the repo records that could supply it, as a candidate
+and not as its source. `<pair>.sources.json`, beside the set, holds
+what no rule can say of one pair: the bench and datasheet records of
+its fields, and the reason and the need of the ones with none.
+
+Every verb prints the count per class, and the count of fields with no
+source whose value is per position count, which were fitted at a scale
+nothing recorded. On mg90-d with board D the set holds 62 fields: 3
+measured, 10 bench, no datasheet, 10 policy and 39 with no source. The
+bench fields are the four loop gains of rung `01b-gains-3hz-50hz`,
+the stops, the drive's sign and the gear class. The stops are a hand
+reading of 2026-11-05, kept as a dated file beside the set that says of
+itself that it is a weak record, to be replaced by three recorded reads
+a stop. The drive's sign is the state the reference rung ran closed
+loop on, since no calibration run found it on this servo. The gear
+class is read off the part, in the registry. The registry says of this
+servo that it has no datasheet worth the name, and no field is of
+class `datasheet` yet.
 
 Three hashes close the file: `protection` over the values of the
 protection fields (the limits, the fault thresholds, the NTC curve and
@@ -455,12 +479,14 @@ the travel past it, the travel being the stops' span at that scale, so
 a host that reads the map gets the table's counts per degree. The gear
 ratio and the gear class are the registry's. The motor block, the
 feedforwards and the observer gains have the rules of the table below.
-Every other field is carried as it stands, the stops among them, which
-have no notebook source yet. `policy.json` holds the choices that are no measurement, in
+A field with no rule, no pin and no record in the pair's sources file
+is carried at its value, with no source. `policy.json` holds the
+choices that are no measurement, in
 physical units, one file for every pair; a `<pair>.pins.json` beside
 it, where there is one, holds literals typed for one pair, each with
-its reason and the rung that chose it, and shows as `pinned`. A rule
-whose input is missing does not guess: the field is `held` at the value
+its reason and the rung that chose it, and shows as `pinned`. A pin
+stands ahead of a record, and a record ahead of a rule. A rule
+whose input is missing does not guess: the field is held at the value
 the set had, with the missing input named. One build moves one hash,
 the plant by default: a protection field is carried, with what its rule
 would give beside it, until a build names it with `--protection`, which
@@ -493,7 +519,10 @@ Each rule names in the module the firmware function that uses its
 field. The feedforward and the three observer gains are the firmware
 repo's own synthesis (`ident/src/gains.rs`), and one test holds the
 rules to the fields that file's code gives on its own test plant. The
-three observer gains are of class `policy`: the bandwidth is a choice.
+three observer gains are the policy's by their rule: the bandwidth is a
+choice. It is one nobody has made: 15 Hz is an old tool's default
+target, listed under `undecided`, so the gains bound at it have no
+source.
 
 The resistance is on record four ways in stage 3, each a rule:
 `rails_fit`, the fit over three rails with the edge lags at stage 1's
@@ -509,10 +538,11 @@ that gives it a field of its own, for which the policy names the small
 step's.
 
 `policy.json` holds a field back under `hold`, with the reason. A held
-field stays at the value the set had, class `held`, with what its rule
-gives beside it as `would_be` and the results the rule read still
-listed, so the set shows what the record gives next to what the servo
-holds and moves nothing. A held field the set never held stays out of
+field stays at the value the set had, with no source, the hold's reason
+under `held`, what its rule gives beside it as `would_be` and the
+results the rule read still listed, so the set shows what the record
+gives next to what the servo holds and moves nothing. A held field the
+set never held stays out of
 it, and `build` says so with what its rule gives. The fields of the
 motor block whose rule gives another value than the servo holds are
 held, each to move on a rung of its own: the back-EMF pair, `r_q12`
@@ -648,8 +678,16 @@ and not alternated with it, its 60 degree move settles in 883 [874,
 893] ms against 910 [906, 912] and its lag at the 10 % ramp reads
 1.941 [1.934, 1.948] deg against 1.983 [1.948, 2.000]; 28 to 68 of its
 ramps' goals went out late on a busy host, so its follow rows are not
-a comparison. `stall_tau_trip_counts` is off on the servo and has no
-rule.
+a comparison.
+
+Three of the four mA are decisions. The continuous current stays
+250 mA, interim, until a lock hold gives this motor's plateau, and the
+release moves with it; `policy.json` says so under `why`. The overcurrent
+trip's 2200 mA is a boot default nobody decided, so `oc_trip_counts`
+binds at it with no source. The collision trip stays off, a decision:
+the policy's `collision_trip` is `off`, and the rule of
+`stall_tau_trip_counts` gives the field's largest value, which no
+disturbance estimate passes. A level in counts has no rule yet.
 
 A deviation moves the protection fields of one step: the words of the
 NTC curve are one step and the four current limits another, a
@@ -719,21 +757,34 @@ ever at another scale. The band's rule is the firmware repo's own
 ([stage 3, pot-table](../3-servo/README.md#pot-table)) and no less than 4
 counts, the policy's `hold_band_noise_multiple` and
 `hold_band_floor_counts`. This pot's noise is under a count, so the
-band sits on the floor, 4, the value the servo holds. The band at 8
+band sits on the floor, 4, the value the servo holds. The band of 4
+counts is a decision, said under `why`. The band at 8
 counts, over half the train's play, stays a pin of its own deviation.
 The sensor screen is the policy's `sensor_delta_max_counts`, 256 raw
 counts between two MEDIUM samples, the value the servo holds. Both
-bind.
+bind, the screen with no source: its 256 is a boot default nobody
+decided.
 
 Of the loop gains, two carry a position unit: `v_kp_q88` and
 `v_ki_q412` are shunt counts per count/s, so they fall as the counts
-per degree rise. They have no rule yet and are the two fields left
-with no source at a scale nothing recorded. `p_kp_q88` is count/s per
-count, a rate, and carries none, nor do `v_kaw_q412` and the three
-gains of the current loop.
+per degree rise. The four gains of the position and velocity loops are
+of class `bench`: rung `01b-gains-3hz-50hz` chose them, and the set
+reads them from that rung's results file. The rung ran on the raw pot,
+and the same counts have run on the table since `12a-pos-table-live`.
+They stay as benched, in counts, which is a decision `policy.json`
+records under `why`, so neither is at a scale nothing recorded.
+`p_kp_q88` is count/s per count, a rate, and carries no position unit,
+nor do `v_kaw_q412` and the three gains of the current loop, which have
+no source: they are an old identification fit of another servo.
 
 `status` is offline: the sha1 of every file the set read against
-the file now, a moved one named with the fields that list it. `check`
+the file now, a moved one named with the fields that list it. It then
+prints the debt: the count per class and every field with no source, a
+line each, with its reason, what would give it one and, where a
+maker's value on record could supply it, that candidate; then the
+fields whose record is a weak one. A test holds the count of
+fields with no source, so a change that gives a field a source shows
+it going down. `check`
 needs the bus and changes nothing the servo holds: it reads the servo's
 state the way a run records it and prints a line for every field of the
 set, the table and the slots where the servo holds something else, then

@@ -691,7 +691,7 @@ def test_a_rung_releases_a_hold_and_records_the_field_of_record_beside_deviated(
     cn.write(held, cn.set_path(PAIR, tmp_path))
     e = held["fields"]["r_q12"]
     gives = e["would_be"]
-    assert (e["value"], e["class"], e["rule"]) == (17100, "held", "r.rails_fit") and gives != 17100
+    assert (e["value"], e["class"], e["rule"]) == (17100, "none", "r.rails_fit") and "held" in e and gives != 17100
     assert held["hash"]["set"] == bus["set"]["hash"]["set"]
     f = tmp_path / "deviations" / "r.json"
     f.parent.mkdir()
@@ -926,7 +926,7 @@ def test_a_rung_off_its_set_does_not_start(bus, monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as e:
         sc.run("01-soft", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
     assert str(e.value).endswith("01-soft: run-1 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [held])")
+                                 "clean; r_q12: servo 16000, set 17100 [none, held])")
     # nothing is recorded, nothing is driven, and the stored state comes back
     assert bus["log"] == [] and not sc.rung_dir(PAIR, "01-soft").exists()
     assert servo.wrote()[-1] == ("run", "reboot") and servo.decoded("r_q12") == 17100
@@ -1642,7 +1642,7 @@ def test_a_constant_changed_between_runs_is_refused_with_the_field_named(bus, mo
     with pytest.raises(SystemExit) as e:
         sc.run("00-baseline", "abc123", "f" * 40, runs=3, servo=SERVO, board=BOARD)
     assert str(e.value).endswith("00-baseline: run-2 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [held])")
+                                 "clean; r_q12: servo 16000, set 17100 [none, held])")
     # nothing of run-2 is recorded or driven, and run-1 stands
     rung = sc.rung_dir(PAIR, "00-baseline")
     assert [name for name, _, _ in bus["log"]] == list(TS.CAPTURES)
@@ -1666,15 +1666,15 @@ OTHER = "reads a constant state other than the one the rung's first run recorded
 
 
 @pytest.mark.parametrize("change, said", [
-    (lambda s: s.set("p_kp_q88", 5026), OFF + "clean; p_kp_q88: servo 5026, set 40212 [adopted])"),
-    (lambda s: s.set("drive_polarity", 0), OFF + "clean; drive_polarity: servo off, set on [adopted])"),
+    (lambda s: s.set("p_kp_q88", 5026), OFF + "clean; p_kp_q88: servo 5026, set 40212 [none])"),
+    (lambda s: s.set("drive_polarity", 0), OFF + "clean; drive_polarity: servo off, set on [none])"),
     (lambda s: s.set(wc.FIELD, bytes(16)),
      OFF + f"clean; wide-code slots: servo {bytes(16).hex(' ')}, set {SLOTS.hex(' ')} [measured, slots.wide_codes])"),
     (lambda s: s.set("pos_lut_state", 2),
-     OFF + "clean; position table state: servo LIVE, set IDENTITY [adopted])"),
+     OFF + "clean; position table state: servo LIVE, set IDENTITY [none])"),
     (a_table_point, OFF + "clean; position table points sha1: servo "
                     f"{hashlib.sha1(bytes(3 * 64) + PAGE_3 + bytes(4 * 64)).hexdigest()}, set {NO_POINTS} "
-                    "[adopted])"),
+                    "[none])"),
     (lambda s: setattr(s, "data", "STAMP_MISMATCH"), OFF + "STAMP_MISMATCH)"),
     # what no set holds is still the state of the rung's first run: the stamp, a byte no field names
     (lambda s: setattr(s, "stamp", "0x9c45 != live set 0x1234"),
@@ -1972,7 +1972,10 @@ def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what
             **{n: [base["fields"][n]["value"], pin["value"]] for n, pin in pins.items()},
             **{n: [base["fields"][n]["value"], base["fields"][n]["would_be"]] for n in release}}, f.name
         assert all(doc["fields"][n]["class"] == "pinned" and pin["why"] and pin["rung"] for n, pin in pins.items())
-        assert all(base["fields"][n]["class"] == "held" and doc["fields"][n]["class"] in ("measured", "policy")
+        # released, a field is bound by its rule: measured, or the policy's, which is no source where the
+        # entry its rule reads is a default nobody decided
+        assert all("held" in base["fields"][n] and base["fields"][n]["class"] == "none" for n in release)
+        assert all("held" not in doc["fields"][n] and doc["fields"][n]["class"] in ("measured", "policy", "none")
                    for n in release) and dev["note"]
         assert "/Users/" not in f.read_text() and "/home/" not in f.read_text()
     assert json.loads((files[0].parent / "motor-r.json").read_text())["release"] == ["r_q12"]

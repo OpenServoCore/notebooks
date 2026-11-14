@@ -1,0 +1,11 @@
+{
+ "what": "the two end stops of mg90-d on dev-v006-2A-D, a hand reading, in raw pot counts",
+ "date": "2026-11-05",
+ "how": "torque off, the horn held by hand against each stop with a light seat, `osc get pos` at each; the two readings were written to the servo with `osc set` as the physical limits and as the ends of the calibration, stamped and saved",
+ "pos_min_phys_counts": 82,
+ "pos_max_phys_counts": 3792,
+ "raw_min": 82,
+ "raw_max": 3792,
+ "weak": "a hand reading with no capture behind it, written down here after the day from a bench note: it awaits three recorded reads a stop at a stated seat",
+ "since": "a re-check by hand on 2026-11-06 read 85 to 88 at the low stop and 3732 to 3750 at the high one, by how hard the hand pressed; pressed by the motor at the lap cap the stops give, the ends reading 1 to 4 and 3806 to 3808"
+}

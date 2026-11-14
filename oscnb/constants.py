@@ -9,14 +9,25 @@ sha1 of its points, and three hashes. It is generated, never typed: the
 same inputs give the same bytes, and `load` refuses a file whose hashes
 are not those of its content.
 
-A field has one class. `measured` is a rule over results of record,
-`policy` a rule over a general choice, `pinned` a literal typed for the
-pair, `held` a value carried while its rule may not bind, and `adopted`
-a value the servo held before its set existed, which has no source. The
-count of adopted fields is the count with no source, and every verb
-prints it. An adopted field that carries a position unit (PER_COUNT)
-was fitted at a scale nothing recorded, so it is marked as at an unknown
-scale and counted too.
+A field has one class, which says where its value comes from.
+`measured` is a rule over results of record, `bench` a recorded bench
+result on this servo, read from the record and never typed,
+`datasheet` a value the maker of the servo or of a part states, a
+rating or a nominal and no measurement, with the document named and
+read from where the repo records it, `policy` a rule over a decision,
+`pinned` a literal typed for the pair, and `none`
+a value with no source. A value has none when the servo held it before
+its set existed (`origin`), when it is carried while its rule may not
+bind (`held`), or when its rule reads a policy entry nobody decided;
+what the servo happened to hold, an old tool's output, a boot default
+and zero are no source. A field with none says why (`reason`) and what
+would give it one (`needs`) where the pair's sources file or the policy
+states them, and where a maker's value the repo records could supply
+it, which one (`datasheet_candidate`): a candidate, not its source.
+Every verb prints the count per class, and `status` lists
+the fields with none. A field with no source that carries a position
+unit (PER_COUNT) was fitted at a scale nothing recorded, so it is
+marked as at an unknown scale and counted too.
 
 `hash.protection` covers the values of the protection fields
 (PROTECTION), `hash.plant` every other field's value with the table's
@@ -41,9 +52,10 @@ value moves to protect less for a protection field, as LOOSER has it.
 derived set named with `--set PATH` ahead of the verb.
 
 `adopt` writes the first set of a servo that already runs, every field
-`adopted`, from a record of its state (`oscnb.scorecard.servo_state`,
-the `servo.json` of a scorecard run). The record is not kept: the set
-names its sha1, the hash of the state and where it came from in words.
+of class `none` and adopted from a record of its state
+(`oscnb.scorecard.servo_state`, the `servo.json` of a scorecard run).
+The record is not kept: the set names its sha1, the hash of the state
+and where it came from in words.
 
 `build` is offline and writes the set from the results of record, on
 top of the pair's set of record, which it replaces, or to `--out` as a
@@ -62,16 +74,32 @@ board's wide-code result, then the table from the pair's table file,
 which must be built against the set's stops and fitted on the set's
 slots, then the scale (the table's counts per deg, the raw pot's on a
 pair with no table), then the fields, a per-count one naming the table
-it was computed for. A field with no rule is carried as it stands.
+it was computed for. A field with no rule, no pin and no record is
+carried at its value, with no source.
 `policy.json`, beside the sets and one for every pair, holds the
-choices that are no measurement, in physical units, and under `hold`
-the fields it holds back with the reason: a held field stays at the
-value the set had, with what its rule gives beside it (`would_be`) and
-what the rule read still listed, and one the set never held stays out
-of it, said with what its rule gives; `<pair>.pins.json` the literals
-typed for one pair, each with its why and the rung that chose it. A
+choices that are no measurement, in physical units: under `why` the
+reason of each one that is a decision, under `undecided` the entries
+that restate a default nobody decided, each with its `reason` and what
+it `needs`, so a field whose rule reads one has no source, and under
+`hold` the fields it holds back with the reason: a held field stays at
+the value the set had, with what its rule gives beside it (`would_be`)
+and what the rule read still listed, and one the set never held stays
+out of it, said with what its rule gives; `<pair>.pins.json` the
+literals typed for one pair, each with its why and the rung that chose
+it. `<pair>.sources.json` says of one pair's fields what no rule can:
+under `bench` the fields whose value a bench record holds, each with
+the record's file in the repo, the key of the value in it and what the
+record is, a scorecard rung's results file or a dated reading, and a
+`weak` line where the record awaits a better one; under `datasheet`
+the fields whose value a maker states, each the same way with the
+`document` named; under `none` the fields with no source, each with
+its `reason`, what it `needs` and its `datasheet_candidate` where it
+has one. A bench or datasheet field takes the record's value, the
+record's file is among the set's inputs, and a record that moves makes
+the set stale. A pin stands ahead of a record, and a record ahead of a
+rule. A
 rule whose
-input is missing does not guess: the field is `held` at the value the
+input is missing does not guess: the field is held at the value the
 set had, the missing input named, or left out and said where there is
 nothing to carry. A result that names a file it read which has moved
 since is stale, and refused; one written before results named what
@@ -103,7 +131,10 @@ A derived set is never a set of record and is never saved.
 
 `status` is offline: the sha1 of every input file against the file now,
 and the registry values read against the registry, a moved one named
-with the fields that list it. `check` reads the servo
+with the fields that list it, then the count per class and every field
+with no source, with its reason, what would give it one and the
+maker's value that could where there is one, and the fields whose
+record is a weak one. `check` reads the servo
 and changes nothing it holds, its only writes the FETCH that brings a
 page of the table into the window (protocol sec 5.7): each field of the
 set by name, the table and the slots against the servo's, a line a
@@ -165,7 +196,11 @@ from . import boards, osc, postable, results, servos, settings, widecodes
 from . import scorecard as sc
 
 FORMAT = 1
-CLASSES = ("measured", "policy", "pinned", "held", "adopted")
+CLASSES = ("measured", "bench", "datasheet", "policy", "pinned", "none")
+# The two classes of a set written before a class said where a value
+# comes from. Neither named a source, so such a set loads as it was
+# written and its fields of either count with `none`.
+WAS = ("held", "adopted")
 FOLDER = postable.OUT_DIR.relative_to(results.ROOT)
 
 # What no set holds, by the descriptor's names: the comms fields of the
@@ -230,14 +265,19 @@ PER_COUNT = frozenset((
     "fric_fv_q016", "ke_vpc_q",
 ))
 
-ORIGIN = "servo-state"      # the origin an adopted value names
+ORIGIN = "servo-state"      # the origin a value adopted from a record of the servo's state names
 BEFORE = "the servo's state before the path"
 TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "scales", "fields", "hash",
        "previous", "deviation")
 BLOCKS = ("inputs", "origins", "scales", "fields")    # written an entry a line
-LEAD = ("value", "slots", "state", "kind", "counts_per_deg", "points_sha1", "class")
+LEAD = ("value", "slots", "state", "kind", "counts_per_deg", "points_sha1", "class", "reason", "needs",
+        "datasheet_candidate")
 TABLE_STATE, TABLE_POINTS, SLOTS = "position table state", "position table points sha1", "wide-code slots"
 STOPS = ("raw_min", "raw_max")      # the stops a table is taken against, written ahead of it
+# what the pair's sources file says of a field, by the block it is under: a record of the repo for the two
+# classes a record gives, the maker's document with it for a datasheet value, and why a field has no source
+SOURCES = {"bench": ("record", "key", "what"), "datasheet": ("record", "key", "what", "document"),
+           "none": ("reason", "needs")}
 
 
 def set_path(pair, root=results.ROOT):
@@ -325,10 +365,12 @@ def write(doc, path):
 
 def load(path):
     """A set file's document, refused when it is not a set as the tool
-    writes one: another format, a field without a value or one class, an
-    adopted value whose origin the file does not hold, a field that
-    says another thing of protection than LOOSER, a measured or policy
-    field computed for another table than the set's, or hashes that are
+    writes one: another format, a field without a value or one class
+    (CLASSES, or WAS in a set written before them), an adopted value
+    whose origin the file does not hold, a bench or datasheet value
+    that names no record, a datasheet value that names no document, a
+    field that says another thing of protection than LOOSER, a field a
+    rule computed for another table than the set's, or hashes that are
     not those of its content."""
     path = Path(path)
     where = sc.shown(path)
@@ -336,11 +378,15 @@ def load(path):
     if doc.get("format") != FORMAT:
         raise ValueError(f"{where}: format {doc.get('format')}, this tool reads {FORMAT}")
     for name, e in (*doc["fields"].items(), *doc.get("scales", {}).items()):
-        if "value" not in e or e.get("class") not in CLASSES:
+        if "value" not in e or e.get("class") not in (*CLASSES, *WAS):
             raise ValueError(f"{where}: {name} holds no value of one class of {', '.join(CLASSES)}")
     for name, e in (*doc["fields"].items(), (SLOTS, doc["wide_codes"] or {}), ("position table", doc["pos_table"])):
-        if e.get("class") == "adopted" and e.get("origin") not in doc["origins"]:
-            raise ValueError(f"{where}: {name} is adopted from {e.get('origin')!r}, which the file does not hold")
+        if "origin" in e and e["origin"] not in doc["origins"]:
+            raise ValueError(f"{where}: {name} is adopted from {e['origin']!r}, which the file does not hold")
+        if e.get("class") in ("bench", "datasheet") and not (e.get("inputs") and (e["class"] == "bench"
+                                                                                   or e.get("document"))):
+            raise ValueError(f"{where}: {name} is of class {e['class']} and names no record"
+                             f"{' or no document' if e['class'] == 'datasheet' else ''}")
     scale, table = doc.get("scale") or {}, doc["pos_table"]["points_sha1"]
     if scale.get("kind") == "table" and scale["points_sha1"] != table:
         raise ValueError(f"{where}: its scale is that of the table of points sha1 {scale['points_sha1']}, its "
@@ -349,8 +395,7 @@ def load(path):
         if "protection" not in e or e["protection"] != protection_of(name):
             raise ValueError(f"{where}: {name} says {e.get('protection', 'nothing')} of protection, the tool "
                              f"{protection_of(name)}")
-        if e["class"] in ("measured", "policy") and e.get("pos_unit") \
-                and e.get("scale_points_sha1") != scale.get("points_sha1"):
+        if e.get("pos_unit") and e.get("scale_points_sha1") != scale.get("points_sha1"):
             raise ValueError(f"{where}: {name} was computed for the table of points sha1 "
                              f"{e.get('scale_points_sha1')}, the set's scale is that of {scale.get('points_sha1')}")
     if doc.get("hash") != hashes(doc):
@@ -372,15 +417,57 @@ def of_record(pair, root=results.ROOT):
     return load(path)
 
 
+def source(e):
+    """The class of an entry as where its value comes from: its class,
+    and `none` for the two of a set written before a class said it."""
+    return "none" if e["class"] in WAS else e["class"]
+
+
 def classes(doc):
     """How many fields of a set are of each class."""
-    return {c: sum(e["class"] == c for e in doc["fields"].values()) for c in CLASSES}
+    return {c: sum(source(e) == c for e in doc["fields"].values()) for c in CLASSES}
+
+
+def tagged(e):
+    """What a line says of an entry after its value: its class, that it
+    is held where it is, and its rule where it has one."""
+    held_ = ["held"] if "held" in e and e["class"] == "none" else []
+    return ", ".join([e["class"], *held_, *([str(e["rule"])] if "rule" in e else [])])
+
+
+def unsourced(doc):
+    """The fields of a set with no source, in the set's order, each as
+    (name, value, why it has none, what would give it one, the maker's
+    value that could supply it or None): the reason and the need its
+    entry states, and where it states none, what carries the value."""
+    out = []
+    for name, e in doc["fields"].items():
+        if source(e) != "none":
+            continue
+        if "held" in e:
+            why = f"held, {e['held']}"
+            needs = f"its hold released: its rule gives {e['would_be']}" if "would_be" in e else "what its rule reads"
+        else:
+            why = "the servo held it before its set existed" if "origin" in e else "nothing binds it"
+            needs = "a rule over a result, a bench record or a decision"
+        out.append((name, e["value"], e.get("reason", why), e.get("needs", needs), e.get("datasheet_candidate")))
+    return out
+
+
+def weak(doc):
+    """The fields of a set whose record is a weak one, by what the
+    record awaits: {what it awaits: [field, ...]}."""
+    out = {}
+    for name, e in doc["fields"].items():
+        if "weak" in e:
+            out.setdefault(e["weak"], []).append(name)
+    return out
 
 
 def described(doc):
-    """What every verb says of a set: its fields by class, the adopted
-    ones being those with no source, the per-count ones at an unknown
-    scale, the table and the slots, and the three hashes in short."""
+    """What every verb says of a set: its fields by class, the last the
+    ones with no source, the per-count ones at an unknown scale, the
+    table and the slots, and the three hashes in short."""
     fields = doc["fields"].values()
     by_class = ", ".join(f"{n} {c}" for c, n in classes(doc).items())
     unknown = sum(e.get("scale") == "unknown" for e in fields)
@@ -408,7 +495,8 @@ def adopted(record, pair, origin):
     """The first set of a servo that already runs, from a record of its
     state: every field the record names writable past the bus front, the
     stamp left out, each at the value the record holds and of class
-    `adopted`, with the table and the slots. `origin` is what the set
+    `none`, adopted from the record, with the table and the slots: a
+    value the servo held has no source. `origin` is what the set
     says of the record. A record that names no writable fields, whose
     data state is not clean, or whose hash is not its content's, is
     refused."""
@@ -420,7 +508,7 @@ def adopted(record, pair, origin):
     if record["data_state"] != "clean":
         raise ValueError(f"the record's data state is {record['data_state']}: a set is adopted from a state the "
                          f"servo runs closed loop on")
-    own = {"class": "adopted", "origin": ORIGIN}
+    own = {"class": "none", "origin": ORIGIN}
     fields = {}
     for name in record["writable"]:
         if name in COMMS or name in (STAMP, widecodes.FIELD):
@@ -478,8 +566,9 @@ class Rule:
     firmware declares it (`kind` its storage, `unit`, `q` its fraction
     bits, `rev` moved by a firmware change of how the field is used),
     the power of counts per deg its value carries, the class its value
-    is of, the firmware code it mirrors, and the function of a Context
-    that gives the value in the field's unit."""
+    is of, or a function of what the rule read that gives it, the
+    firmware code it mirrors, and the function of a Context that gives
+    the value in the field's unit."""
     field: str
     name: str
     kind: str
@@ -487,7 +576,7 @@ class Rule:
     q: int
     pos_unit: int
     rev: int
-    cls: str
+    cls: object
     mirrors: str
     fn: object
 
@@ -552,7 +641,9 @@ class Context:
     `ascending`).
     `inputs` gathers what a set names under `inputs`, `notes` what a
     build has to say. A read of something that is not there raises
-    Missing. With a `deviation` (`deviation_of`) its policy entries
+    Missing. `sources` is the pair's sources file: the fields a record
+    gives (`bench`, `datasheet`) and the ones it says have no source
+    (`none`). With a `deviation` (`deviation_of`) its policy entries
     stand over the policy file's and its pins over the pair's, the
     holds it releases are `released`, and the file is one of the
     inputs."""
@@ -566,6 +657,7 @@ class Context:
         beside = set_path(pair, root).parent.relative_to(self.root)     # the policy and the pins lie beside the set
         self.policies = self.file("policy", beside / POLICY) or {}
         self.pins = self.file("pins", beside / f"{pair}.pins.json") or {}
+        self.sources = self.file("sources", beside / f"{pair}.sources.json") or {}
         self.released = ()
         if deviation is not None:
             dev = deviation_of(deviation)
@@ -583,6 +675,14 @@ class Context:
         gone = [n for n in self.pins if n in RETIRED]
         if gone:
             raise ValueError(f"the pins of {pair}: the firmware names no {', '.join(gone)}")
+        said = [(n, block, e) for block in self.sources for n, e in self.sources[block].items()]
+        loose = [n for n, block, e in said
+                 if not all(isinstance(e.get(k), str) and e[k] for k in SOURCES.get(block, ("no such block",)))]
+        loose += [n for n in dict.fromkeys(n for n, _, _ in said) if sum(n == m for m, _, _ in said) > 1]
+        if loose:
+            raise ValueError(f"the sources of {pair}: a field is under one of "
+                             + "; ".join(f"`{block}` with its {', '.join(keys)}" for block, keys in SOURCES.items())
+                             + f", and {', '.join(dict.fromkeys(loose))} is not")
 
     def file(self, name, rel):
         """The document of an input file, None when there is none; the
@@ -699,8 +799,9 @@ def evaluate(r, c):
     ends = [encode(r, at({name: end}), fit=False) for name, quantity in dict(reads).items()
             if isinstance(quantity, dict) for end in ("lo", "hi") if quantity.get(end) is not None]
     c.side = {}
-    e = {"value": value, "class": r.cls, "rule": r.name, "rule_rev": r.rev, "unit": r.unit, "q": r.q,
-         "pos_unit": r.pos_unit, "inputs": list(dict.fromkeys(name for name, _ in reads))}
+    inputs = list(dict.fromkeys(name for name, _ in reads))
+    e = {"value": value, "class": r.cls(inputs) if callable(r.cls) else r.cls, "rule": r.name, "rule_rev": r.rev,
+         "unit": r.unit, "q": r.q, "pos_unit": r.pos_unit, "inputs": inputs}
     if r.pos_unit:
         e["scale_points_sha1"] = c.scale["points_sha1"]
     if ends and not isinstance(value, str):
@@ -712,26 +813,36 @@ def evaluate(r, c):
 # the horn, the clockwise stop at the policy's angle and the other one
 # the travel past it. The travel is the stops' span at the scale of the
 # count, so a host that divides the map's span by the stops' gets the
-# table's counts per deg (ident kinematics.rs deg_per_count).
-@rule("angle_min_cdeg", "angle_min.table", kind="i16", unit="cdeg", pos_unit=-1,
+# table's counts per deg (ident kinematics.rs deg_per_count). The end
+# at the clockwise stop is the policy's angle and reads no travel; the
+# other one is measured, the travel being the table's.
+def by_travel(inputs):
+    return "measured" if "scale" in inputs else "policy"
+
+
+@rule("angle_min_cdeg", "angle_min.table", kind="i16", unit="cdeg", pos_unit=-1, cls=by_travel,
       mirrors="core regions/calib.rs CalibKinematics, tools/osc cal/mod.rs rail_angles")
 def angle_min(c):
     return 100 * (c.policy("angle_cw_stop_deg") + (0 if c.ascending else c.travel_deg))
 
 
-@rule("angle_max_cdeg", "angle_max.table", kind="i16", unit="cdeg", pos_unit=-1,
+@rule("angle_max_cdeg", "angle_max.table", kind="i16", unit="cdeg", pos_unit=-1, cls=by_travel,
       mirrors="core regions/calib.rs CalibKinematics, tools/osc cal/mod.rs rail_angles")
 def angle_max(c):
     return 100 * (c.policy("angle_cw_stop_deg") + (c.travel_deg if c.ascending else 0))
 
 
-@rule("gear_ratio_centi", "gear_ratio.registry", kind="u16", unit="motor rev per output rev x100",
+# The registry's gear ratio is a choice of which count stands for the
+# unit, the family's tooth count where the unit's own teeth are not
+# counted, so the field is of class `policy`. Its gear class is read off
+# the part, and the registry's entry is that bench record.
+@rule("gear_ratio_centi", "gear_ratio.registry", kind="u16", unit="motor rev per output rev x100", cls="policy",
       mirrors="core regions/calib.rs CalibKinematics, tools/osc cal/mod.rs ratio_to_centi")
 def gear_ratio(c):
     return 100 * c.reg("servo", "gear_ratio")
 
 
-@rule("gear_class", "gear_class.registry", kind="u8", unit="class",
+@rule("gear_class", "gear_class.registry", kind="u8", unit="class", cls="bench",
       mirrors="client calib.rs GearClass, tools/osc main.rs dump")
 def gear_class(c):
     name = c.reg("servo", "gear_class")
@@ -1001,6 +1112,19 @@ for _field, _key, _mirrors in (
          mirrors=_mirrors)(limit_counts(_key))
 
 
+# The collision trip: a disturbance estimate over the field counts as a
+# stall at once. The policy states it off, which is the field's largest
+# value, one no estimate passes (core regions/config.rs
+# STALL_TAU_TRIP_OFF). A level in counts has no rule yet.
+@rule("stall_tau_trip_counts", "stall_tau_trip.policy", kind="u16", unit="ccounts", cls="policy",
+      mirrors="core kernel/phases/loops/limits.rs fold")
+def stall_tau_trip(c):
+    if c.policy("collision_trip") != "off":
+        raise ValueError(f"{POLICY}: collision_trip is {c.policies['collision_trip']!r}: the collision trip is "
+                         f"`off`, a level has no rule yet")
+    return KINDS["u16"][1]
+
+
 # The one thermal limit: the policy's temperature in C, which the kernel
 # compares in centi-C against its winding estimate, the overtemperature
 # fault latching while the estimate reads it or more.
@@ -1016,9 +1140,10 @@ def held(what, rule_name, carried, why, previous, would_be=None):
     """The entry of a field (`what` "value") or of the slots ("slots")
     whose rule does not bind: what the previous set held, why, the set
     it was first carried from, what the rule would give where it gave a
-    value, and the rule's name where one is chosen. A carried value at
+    value, and the rule's name where one is chosen. Its class is
+    `none`: no rule gives the value it carries. A carried value at
     an unknown scale stays marked as that: holding it gave it none."""
-    e = {what: carried[what], "class": "held", **({} if rule_name is None else {"rule": rule_name}), "held": why,
+    e = {what: carried[what], "class": "none", **({} if rule_name is None else {"rule": rule_name}), "held": why,
          "carried_from": carried.get("carried_from", previous["hash"]["set"]),
          **({"scale": carried["scale"]} if "scale" in carried else {})}
     return e if would_be is None else {**e, "would_be": would_be}
@@ -1113,19 +1238,69 @@ def table_of(c, previous, slots):
             "rule": "table.pos_lut", "inputs": ["pos_table"]}
 
 
+def no_source(c, name, e, said=None):
+    """Entry `e` of field `name` as one with no source: of class
+    `none`, with why it has none, what would give it one and the
+    maker's value that could where the pair's sources file says them of
+    the field, else where `said`, the policy's word on an entry its
+    rule read, does."""
+    said = c.sources.get("none", {}).get(name) or said or {}
+    return {**e, "class": "none", **{k: said[k] for k in ("reason", "needs", "datasheet_candidate") if k in said}}
+
+
+def undecided(c, inputs):
+    """The policy's word on the first entry among `inputs` that it
+    restates with no decision, its `reason` and what it `needs`; None
+    where every policy entry read is a decision."""
+    block = c.policies.get("undecided", {})
+    keys = (i.partition(":")[2] for i in inputs if i.startswith("policy:"))
+    return next((block[k] for k in keys if k in block), None)
+
+
+def recorded(c, name, cls):
+    """The entry of a field the pair's sources file gives a record
+    under `cls`, `bench` or `datasheet`: the value the record's file
+    holds at the declared key, read and never typed, what the record
+    is, the maker's document for a datasheet value, and what the record
+    awaits where the sources or the record itself call it `weak`. The
+    file is among the set's inputs, so a record that moves makes the
+    set stale. Refused where the record or its key is not there, or the
+    value is not one a field holds."""
+    said = c.sources[cls][name]
+    rel = in_repo(c.root / said["record"], c.root, f"a {cls} record").as_posix()
+    at = doc = c.file(rel, rel)
+    for key in said["key"].split("."):
+        at = at.get(key) if isinstance(at, dict) else None
+    if type(at) not in (int, str):
+        raise ValueError(f"the sources of {c.pair}: the {cls} record of {name}, {rel}, "
+                         + ("is not there" if doc is None else f"holds no value of a field at {said['key']}"))
+    awaits = said.get("weak", doc.get("weak") if isinstance(doc, dict) else None)
+    return {"value": at, "class": cls, "record": said["what"],
+            **({"document": said["document"]} if cls == "datasheet" else {}),
+            **({} if awaits is None else {"weak": awaits}), "inputs": [f"sources:{cls}.{name}", f"{rel}:{said['key']}"]}
+
+
 def bound(c, name, carried, previous):
     """The entry a build gives field `name`, None when it has none: a
-    pin of the pair, else the value of its rule, the one the policy
-    names where it has several, held at the carried value where the
-    policy holds it or an input is missing, else the previous set's
-    entry as it stands. A field the policy holds lists what its rule
-    read beside what it would be. A hold a deviation releases does not
-    hold, and is refused where the rule has no value to bind."""
+    pin of the pair, else the pair's bench or datasheet record of it,
+    else the value of its rule, the one the policy names where it has
+    several, held at the carried value where the policy holds it or an
+    input is missing. A field with none of them is carried at its
+    value, with no source, a pinned one as it stands. A field the
+    policy holds lists what its rule read beside what it would be. A
+    hold a deviation releases does not hold, and is refused where the
+    rule has no value to bind. A field whose rule reads a policy entry
+    nobody decided is bound at what the rule gives, with no source."""
     if name in c.pins:
         pin = c.pins[name]
         return {"value": pin["value"], "class": "pinned", "why": pin["why"], "rung": pin["rung"]}
+    for cls in ("bench", "datasheet"):
+        if name in c.sources.get(cls, {}):
+            return recorded(c, name, cls)
     if name not in RULES:
-        return copy.deepcopy(carried)
+        if carried is None or carried["class"] == "pinned":
+            return copy.deepcopy(carried)
+        return no_source(c, name, {k: carried[k] for k in ("value", "origin", "scale") if k in carried})
     r = None
     try:
         r = rule_of(c, name)
@@ -1134,25 +1309,29 @@ def bound(c, name, carried, previous):
         if name in c.released:
             raise ValueError(f"{name}: its hold is released and its rule has no value: {m}") from None
         c.notes.append(f"{name}: {'left out' if carried is None else 'held'}, {m}")
-        return None if carried is None else held("value", r and r.name, carried, str(m), previous)
+        return None if carried is None else no_source(c, name, held("value", r and r.name, carried, str(m), previous))
     if len(RULES[name]) > 1:
         e["inputs"] = [f"policy:rule.{name}", *e["inputs"]]
+    open_ = undecided(c, e["inputs"])
     why = None if name in c.released else c.policies.get("hold", {}).get(name)
     if why is None:
-        return e
+        if open_ is None and name in c.sources.get("none", {}):
+            c.notes.append(f"{name}: the pair's sources say it has no source, and {r.name} binds it")
+        return e if open_ is None else no_source(c, name, e, open_)
     c.notes.append(f"{name}: {'left out' if carried is None else 'held'}, {why}; its rule gives {e['value']}")
     # what the rule read stays listed: the value it would be moves with it
-    return None if carried is None else {**held("value", r.name, carried, why, previous, e["value"]),
-                                         "inputs": e["inputs"]}
+    return None if carried is None else no_source(
+        c, name, {**held("value", r.name, carried, why, previous, e["value"]), "inputs": e["inputs"]}, open_)
 
 
 def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, deviation=None):
     """(the pair's set, what there is to say of it), built offline from
     the results of record, the registry, the policy file and the pair's
-    pins, on top of `previous`, its set of record: first what defines a
-    count, the slots, then the table and its scale, then every field,
-    in the previous set's order with new ones after. A field with no
-    rule and no pin is carried as it stands.
+    pins and sources, on top of `previous`, its set of record: first
+    what defines a count, the slots, then the table and its scale, then
+    every field, in the previous set's order with new ones after. A
+    field with no rule, no pin and no record is carried at its value,
+    with no source.
 
     One build moves one hash. Without `protection` it moves the plant:
     every protection field is carried, with `would_be` where its rule
@@ -1188,7 +1367,8 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
         scales = copy.deepcopy(was)
     before = previous["fields"] if previous else {}
     fields = {}
-    for name in dict.fromkeys([*before, *RULES, *c.pins]):
+    for name in dict.fromkeys([*before, *RULES, *c.pins, *c.sources.get("bench", {}),
+                               *c.sources.get("datasheet", {})]):
         if name in RETIRED:
             if name in before and name not in protection:
                 fields[name] = copy.deepcopy(before[name])
@@ -1200,7 +1380,7 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
         e = bound(c, name, before.get(name), previous)
         moves = (name in protection) if name in PROTECTION else not protection
         # a held entry stands on either side: its value is the one that stood, so it moves no hash
-        stands = e is not None and e["class"] == "held" and name in before
+        stands = e is not None and "held" in e and name in before
         if previous is not None and not moves and not stands:
             # the side this build does not move: as it stood, with what it would be beside it
             would = None
@@ -1238,23 +1418,21 @@ def changes(previous, doc):
     def said(e, what):
         return str(e[what]) if what != "slots" else bytes(e[what]).hex(" ")
 
-    def tag(e):
-        return ", ".join(str(e[k]) for k in ("class", "rule") if k in e)
-
     out = []
     for label, key, whats in ((SLOTS, "wide_codes", ("slots",)), ("position table", "pos_table",
                                                                   ("state", "points_sha1"))):
         a, b = previous.get(key), doc.get(key)
         if a is None or b is None:
             if a is not b:
-                out.append(f"{label}: {'none' if a is None else tag(a)} -> {'none' if b is None else tag(b)}")
+                out.append(f"{label}: {'not in the set' if a is None else tagged(a)} -> "
+                           f"{'not in the set' if b is None else tagged(b)}")
             continue
         for what in whats:
             name = label if what == "slots" else f"{label} {what.replace('_', ' ')}"
             if a[what] != b[what]:
-                out.append(f"{name}: {said(a, what)} -> {said(b, what)} [{tag(b)}]")
-            elif tag(a) != tag(b):
-                out.append(f"{name}: {said(b, what)} [{tag(a)} -> {tag(b)}]")
+                out.append(f"{name}: {said(a, what)} -> {said(b, what)} [{tagged(b)}]")
+            elif tagged(a) != tagged(b):
+                out.append(f"{name}: {said(b, what)} [{tagged(a)} -> {tagged(b)}]")
     a, b = previous.get("scale"), doc.get("scale")
     if a != b:
         out.append("scale: " + " -> ".join("none" if x is None else f"{x['counts_per_deg']:.4f} counts/deg, the "
@@ -1267,9 +1445,9 @@ def changes(previous, doc):
                 out.append(f"{label}{name}: {'not in the set' if a is None else a['value']} -> "
                            f"{'not in the set' if b is None else b['value']}")
             elif a["value"] != b["value"]:
-                out.append(f"{label}{name}: {a['value']} -> {b['value']} [{tag(b)}]")
-            elif tag(a) != tag(b):
-                out.append(f"{label}{name}: {b['value']} [{tag(a)} -> {tag(b)}]")
+                out.append(f"{label}{name}: {a['value']} -> {b['value']} [{tagged(b)}]")
+            elif tagged(a) != tagged(b):
+                out.append(f"{label}{name}: {b['value']} [{tagged(a)} -> {tagged(b)}]")
     both = [k for k in ("plant", "protection", "set", "scales") if k in previous["hash"] or k in doc["hash"]]
     moved_ = [k for k in both if k != "set" and previous["hash"].get(k) != doc["hash"].get(k)]
     out.append("hash: " + (f"{' and '.join(moved_)} moved" if moved_ else "neither moved") + ": "
@@ -1344,7 +1522,7 @@ def derive(base, deviation, root=results.ROOT, registry=None):
     doc, notes = build(base["pair"], base, named, root, registry, deviation)
     released = [n for n in named if n in dev.get("release", [])]
     left = [n for n in (group_of(released[0])[1] if released else ())
-            if doc["fields"].get(n, {}).get("class") == "held" and "would_be" in doc["fields"][n]]
+            if "held" in doc["fields"].get(n, {}) and "would_be" in doc["fields"][n]]
     if left:
         raise ValueError(f"{where}: the holds of the {steps[0]} are released together, and {', '.join(left)} "
                          f"would stay held")
@@ -1398,7 +1576,10 @@ def status(doc, root=results.ROOT, registry=None):
     """(lines, stale): the set against its inputs as they are now, a
     moved or missing file and a moved registry value named with what
     lists it, then the inputs that record no inputs of their own, what
-    the set holds and where its adopted values came from."""
+    the set holds, every field with no source with why it has none,
+    what would give it one and the maker's value that could supply it
+    where the set names one, the fields on a weak record, and where its
+    adopted values came from."""
     stale = moved(doc, root)
     lines = [f"stale: {name} ({file}) is {'gone' if now is None else f'no longer the file the set read, sha1 {now}'}"
              f": {', '.join(listed) or 'nothing lists it'}" for name, file, now, listed in stale]
@@ -1412,6 +1593,14 @@ def status(doc, root=results.ROOT, registry=None):
     lines += [f"{name}: the results it read are not recorded: {', '.join(users(doc, name))}"
               for name, inp in sorted(doc["inputs"].items()) if inp.get("inputs_recorded") is False]
     lines += described(doc)
+    debt = unsourced(doc)
+    if debt:
+        could = sum(maker is not None for *_, maker in debt)
+        lines.append(f"no source, {len(debt)} fields, {could} of which a maker's value on record could supply:")
+        lines += [f"  {name} = {value}: {why}; needs {needs}"
+                  + ("" if maker is None else f"; datasheet candidate, not its source: {maker}")
+                  for name, value, why, needs, maker in debt]
+    lines += [f"on a weak record: {', '.join(names)}: {awaits}" for awaits, names in weak(doc).items()]
     for name in sorted(doc["origins"]):
         o = doc["origins"][name]
         lines.append(f"adopted from {name}: {o['from']} (record sha1 {o['sha1']}, state hash {o['state_hash'][:12]})")
@@ -1422,11 +1611,11 @@ def status(doc, root=results.ROOT, registry=None):
 
 def differences(doc, state):
     """Where the servo's `state` (`scorecard.servo_state`) is not the
-    set, a line each as `name: servo X, set Y [class, rule]`: every
-    field of the set by name, the table's state and points, the slots."""
+    set, a line each as `name: servo X, set Y [class, rule]`
+    (`tagged`): every field of the set by name, the table's state and
+    points, the slots."""
     def line(name, got, e, want):
-        tag = ", ".join(str(e[k]) for k in ("class", "rule") if k in e)
-        return f"{name}: servo {got}, set {want} [{tag}]"
+        return f"{name}: servo {got}, set {want} [{tagged(e)}]"
 
     out = []
     for name, e in doc["fields"].items():
@@ -1806,7 +1995,8 @@ def main(argv=None):
     ap.add_argument("--set", type=Path, dest="derived",
                     help="for status, check and install: a derived set's file, not the pair's set of record")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    ad = sub.add_parser("adopt", help="the first set of a servo that already runs, every field adopted")
+    ad = sub.add_parser("adopt", help="the first set of a servo that already runs, every field adopted from a "
+                                      "record of its state")
     ad.add_argument("--from", dest="record", type=Path, required=True,
                     help="a record of the servo's state, a scorecard run's servo.json")
     ad.add_argument("--origin", default=BEFORE, help="where the record came from, in words the set keeps")
@@ -1817,7 +2007,8 @@ def main(argv=None):
                         "released holds")
     b.add_argument("--protection", nargs="+", default=[], metavar="NAME",
                    help="move these protection fields and carry the plant, not the other way about")
-    sub.add_parser("status", help="offline: the set's input files against the files now")
+    sub.add_parser("status", help="offline: the set's input files against the files now, and its fields with "
+                                  "no source")
     sub.add_parser("check", help="the servo read against the set, a line a difference; changes nothing")
     ins = sub.add_parser("install", help="make the servo equal the set, volatile, verified, then stamped")
     ins.add_argument("--protection", nargs="+", default=[], metavar="NAME",
