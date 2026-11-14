@@ -1,6 +1,8 @@
 """The result files and the paths a notebook shows never carry where one
-machine keeps the repo, and the small statistics the notebooks pack
-into them."""
+machine keeps the repo, a result names the results its process read, and
+the small statistics the notebooks pack into them."""
+import hashlib
+import json
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +25,50 @@ def test_write_returns_and_records_repo_relative_paths(tmp_path, monkeypatch):
     doc = results.read("0-instruments", "x")
     assert doc["capture"] == "telemetry/instruments/x/capture-1"
     assert "/" + "home" not in str(out) and not str(out).startswith("/")
+
+
+def test_a_result_names_the_results_it_read(tmp_path, monkeypatch):
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    monkeypatch.setattr(results, "_READ", {})
+    q = results.quantity
+    # a result whose process read nothing says so: that is not a file written before, which has no key
+    results.write("1-board", "a", tmp_path / "capture-1", pair="board", n=q(1))
+    results.write("1-board", "b", tmp_path / "capture-1", pair="board", n=q(2))
+    a, b = (results.path("1-board", x, "board") for x in "ab")
+    assert json.loads(a.read_text())["inputs"] == {}
+    sha = {p: hashlib.sha1(p.read_bytes()).hexdigest() for p in (a, b)}
+    # by name and by path, each by its path from the repo root with the sha1 of the bytes read
+    assert results.read("1-board", "a", "board")["n"]["value"] == 1
+    assert results.read_file(b)["n"]["value"] == 2
+    out = results.write("3-servo", "x", tmp_path / "capture-2", pair="servo__board", n=q(3))
+    doc = json.loads((tmp_path / out).read_text())
+    assert list(doc)[:3] == ["capture", "notes", "inputs"]
+    assert doc["inputs"] == {"stages/1-board/a/results/board.json": sha[a],
+                             "stages/1-board/b/results/board.json": sha[b]}
+    # a re-run reads its own earlier file and an input written anew: its own is left out, the input's
+    # sha1 is the one read last
+    results.read("3-servo", "x", "servo__board")
+    results.write("1-board", "a", tmp_path / "capture-3", pair="board", n=q(4))
+    results.read("1-board", "a", "board")
+    results.write("3-servo", "x", tmp_path / "capture-2", pair="servo__board", n=q(3))
+    again = results.read("3-servo", "x", "servo__board")["inputs"]
+    assert again == {"stages/1-board/a/results/board.json": hashlib.sha1(a.read_bytes()).hexdigest(),
+                     "stages/1-board/b/results/board.json": sha[b]}
+    assert again["stages/1-board/a/results/board.json"] != sha[a]
+    # a file outside the repo is read and not named, and the key is no quantity's
+    (tmp_path.parent / "elsewhere.json").write_text('{"n": 5}')
+    assert results.read_file(tmp_path.parent / "elsewhere.json") == {"n": 5}
+    results.write("3-servo", "y", tmp_path / "capture-2", n=q(6))
+    assert not any("elsewhere" in name for name in results.read("3-servo", "y")["inputs"])
+    with pytest.raises(ValueError, match="not a quantity"):
+        results.write("3-servo", "y", tmp_path / "capture-2", inputs=q(7))
+
+
+def test_the_results_of_record_hold_no_path_of_a_machine_in_what_they_read():
+    for p in sorted(results.ROOT.glob("stages/*/*/results*")):
+        for f in ([p] if p.is_file() else sorted(p.glob("*.json"))):
+            read = json.loads(f.read_text()).get("inputs", {})
+            assert all(not name.startswith("/") and ".." not in name for name in read), f
 
 
 def _round_trip(tmp_path, monkeypatch, **quantities):

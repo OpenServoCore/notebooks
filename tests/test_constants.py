@@ -495,12 +495,15 @@ TARGET = {"pos_min_soft_counts": 3600, "pos_max_soft_counts": 3700, "p_kp_q88": 
           "stall_response": 1, "r_q12": 16000, "raw_min": NEW_STOPS[0], "raw_max": NEW_STOPS[1]}
 
 
-def table_file(root, points=POINTS, stops=NEW_STOPS):
-    """The pair's table file as `postable.load_file` reads one."""
+def table_file(root, points=POINTS, stops=NEW_STOPS, fitted=NEW_SLOTS):
+    """The pair's table file as `postable.load_file` reads one, its
+    lookup fitted on the slots `fitted`; None for a file written before
+    table files named them."""
     path = cn.set_path(PAIR, root).with_name(f"{PAIR}.pos_lut.json")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({
-        "inputs": {"stops": {"raw_min": stops[0], "raw_max": stops[1]}},
+        "inputs": {"stops": {"raw_min": stops[0], "raw_max": stops[1]},
+                   **({} if fitted is None else {"fitted_on_slots_sha1": postable.slots_sha1(fitted)})},
         "target": {"theta_at_stops_deg": [-90.0, 90.0]},
         "points_by_page": [points[32 * p:32 * (p + 1)] for p in range(postable.PAGES)]}))
     return path
@@ -748,6 +751,22 @@ def test_install_refuses_before_anything_is_written(target, bench, tmp_path, mon
     with pytest.raises(settings.Refused, match=match):
         cn.install(target, **NAMED, root=tmp_path)
     assert bench.wrote() == []
+
+
+def test_a_table_fitted_on_other_slots_is_refused(target, bench, tmp_path, capsys):
+    path = table_file(tmp_path, fitted=SLOTS)
+    with pytest.raises(settings.Refused) as e:
+        cn.install(target, **NAMED, root=tmp_path)
+    assert str(e.value) == (f"the lookup was fitted on other slots (sha1 {postable.slots_sha1(SLOTS)}, the set's "
+                            f"are {postable.slots_sha1(NEW_SLOTS)}): re-run stage 4 position, then `postable build`")
+    assert bench.wrote() == []
+    # a table file that names no slots is said, as not recorded, and taken
+    table_file(tmp_path, fitted=None)
+    capsys.readouterr()
+    assert "position table" in cn.install(target, **NAMED, root=tmp_path)
+    assert capsys.readouterr().out.splitlines()[0] == (
+        f"{path}: the wide-code slots its lookup was fitted on are not recorded")
+    assert cn.differences(target, sc.servo_state()) == []
 
 
 def test_install_as_a_command(cli, bench, tmp_path, capsys):

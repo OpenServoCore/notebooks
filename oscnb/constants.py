@@ -428,8 +428,9 @@ def points_sha1(points):
 def table_to_write(doc, state, root=results.ROOT):
     """The Table an install has to write, None when the servo holds the
     set's. Only a LIVE table can be written, from the pair's table file,
-    which must hold the set's points and be built against the set's
-    stops."""
+    which must hold the set's points, be built against the set's stops,
+    and name no other slots than the set's as the ones its lookup was
+    fitted on; a file that records none is said and taken."""
     want, have = doc["pos_table"], state["pos_table"]
     if all(have[k] == want[k] for k in ("state", "points_sha1")):
         return None
@@ -440,7 +441,14 @@ def table_to_write(doc, state, root=results.ROOT):
     path = set_path(doc["pair"], root).with_name(postable.out_path(doc["pair"]).name)
     if not path.exists():
         raise settings.Refused(f"the set's table is LIVE and the pair has no table file ({sc.shown(path)})")
-    t, _ = postable.load_file(path)
+    t, file = postable.load_file(path)
+    fitted = file["inputs"].get("fitted_on_slots_sha1")
+    slots = doc["wide_codes"]["slots"] if doc["wide_codes"] is not None else bytes(widecodes.SLOTS)
+    if fitted is None:
+        print(f"{sc.shown(path)}: {postable.fitted_on_said(file)}")
+    elif fitted != postable.slots_sha1(slots):
+        raise settings.Refused(f"the lookup was fitted on other slots (sha1 {fitted}, the set's are "
+                               f"{postable.slots_sha1(slots)}): re-run stage 4 position, then `postable build`")
     if points_sha1(t.points) != want["points_sha1"]:
         raise settings.Refused(f"{sc.shown(path)} holds points of sha1 {points_sha1(t.points)}, the set's table "
                                f"is {want['points_sha1']}")
