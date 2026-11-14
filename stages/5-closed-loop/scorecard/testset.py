@@ -57,9 +57,11 @@ FOLLOW_SPAN_S = 3                   # a slow ramp is cut to this long
 GOAL_ITEM_MS = 20                   # the burst of one 50 Hz goal
 # A `goal:V@20` item is planned to take this long on the bus, the burst
 # and the host's exchanges around it, the figure of the groundwork ramps;
-# the ramp steps are sized from it. The host's share moves by a
-# millisecond or two from one sitting to the next, so a ramp runs within
-# a few percent of the speed asked: the scorer reads the speed it ran at
+# the ramp steps are sized from it, and the runner has `osc-lab track`
+# hold a ramp's goals to it on the servo's tick. A rung recorded before
+# the period was held ran at the host's pace, whose share moves by a
+# millisecond or two from one sitting to the next, so within a few
+# percent of the speed asked: the scorer reads the speed a ramp ran at
 # off the rows (`ramp_speed_deg_s`) and the lag over it (`lag_ms`).
 GOAL_PERIOD_S = 0.0256
 PAUSE_MS = 500

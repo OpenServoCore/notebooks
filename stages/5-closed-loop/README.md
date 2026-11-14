@@ -105,6 +105,48 @@ the goals' travel over the time from its first commit to its last, on
 the servo's own tick, which a segment's `tick0` gives to one tick and
 which agrees with the host's clock to 0.15 % over a capture.
 
+A rung recorded from here on holds the goals of a ramp to a period. The
+period is the test set's `GOAL_PERIOD_S`, which the runner passes to
+`osc-lab track` as `--goal-period-ms`. It is the 25.6 ms the earlier
+rungs' plans were sized for, so the plans and the goal rate stand: on
+the bench pair a goal is staged 2.4 to 3.0 ms ahead of its point at the
+median, and over three follow captures of 394 held goals the commits
+of goals on time are 512.0 ticks apart with an sd of 0.9 to 1.7 ticks,
+where the goals of an earlier rung were 28 ticks apart in sd about a
+mean that moved from run to run. In those three captures 13, 3 and 55
+goals went out late, the last on a loaded host, the latest by a period
+less a tenth of a millisecond, none past a whole period, and each
+capture's mean spacing over all its goals was 512.0 ticks. The first goal of a ramp goes out
+when the host is ready and starts a grid of that period. For every goal
+after it the host stages the goal and the arm, waits, and sends the
+commit at the goal's own grid point. The host aims by its own clock, and
+each goal's `tick0` says where it landed on the servo's tick, so the
+host trims its aim by an eighth of what it reads there. The two clocks'
+disagreement is taken out as it grows and never adds up, the time a
+commit takes to land is in the trim too, and one landing's scatter moves
+the next aim by an eighth of itself. An item also reads less than
+before: what it read ahead of every arm is read once a run, the drop
+count once an item, and inside a ramp the poll after a burst is the poll
+before the next goal. So the host's share is shorter, and the wait takes
+up what is left of the period.
+
+A goal the host has not staged by its grid point goes out at once, late,
+and the grid stands. The goals after it aim at their own points, so a
+stall is made up at the rate the period leaves room for, and a ramp
+that makes it up ends when it was due to. A goal a whole period late or
+more has missed the points it went past, and the goal after it aims at
+the first point still ahead. In `segments.csv`, `slot_wait_ms` is how long before its
+point a goal was staged, the room the period left it, `slot_late_ms` how
+long after its point its commit went out, and `slots_missed` the points
+it went past. A capture's `meta.json` names the period as `goal_period`,
+with the goals held to it and those of them late, late being more than
+one tick. The result's `follow_late_items` is the number of ramp goals
+late in a run, 0 on a run that held its period. A result without that
+row is of a rung that ran before the period was held, the kept rungs
+`00-baseline` to `13a` among them: its goals went out as soon as the
+host was ready, as described above, and its `ramp_speed_deg_s` says what
+speed that gave.
+
 `lag_deg` is the shaft behind the goal in force. On the 10 % ramp it
 grows with the speed the ramp ran at, 0.7 % of lag for 1 % of speed
 across the runs of each kept rung, so a lag in degrees there is
@@ -155,7 +197,9 @@ no such rows.
 Two rows read the servo's own reports against the pot,
 `position_report_error_deg` and `speed_report_error_deg_s`. A report is
 polled once a goal item, in the gap of about 5 ms between two bursts of
-rows, 2 to 3 ms after the rows stop. On a goal stream the shaft speeds up
+rows: 2 to 3 ms after the rows stop on a rung that ran at the host's
+pace, right after them on one that held its goals to the period. On a
+goal stream the shaft speeds up
 and slows down inside every goal period, and on the 1 % ramp it stands
 still through that gap, so the speed row grades each poll against the
 pot's own speed across the gap it was taken in: the mean pot over the

@@ -62,6 +62,14 @@ def test_using_names_the_tool_of_every_osc_call_in_its_body_and_no_other(ran, tm
     assert ran == [[osc.TOOL, "-i", osc.ID, "status"]]
 
 
+def test_a_track_names_the_goal_period_only_when_it_is_given_one(ran, tmp_path):
+    osc.track(tmp_path / "t", "position", ["goal:2100@20", "goal:2101@20"], goal_period_ms=25.6)
+    osc.track(tmp_path / "t", "position", ["hold@500"])
+    held, free = ran
+    assert held[held.index("--goal-period-ms") + 1] == "25.6"
+    assert "--goal-period-ms" not in free
+
+
 def tool_file(path, body):
     path.write_text(f"#!/bin/sh\n{body}\n")
     path.chmod(0o755)

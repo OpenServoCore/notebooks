@@ -2,7 +2,8 @@
 //! moves nothing, and the moves a drive makes - a write, a telemetry read,
 //! a TEL burst, a wait - on the one clock the servo moves on. On the bus
 //! that clock is the wall; a test servo keeps its own. Every TEL burst
-//! carries the rows the servo dropped from it, read off its table.
+//! carries the rows the servo dropped from it, read off its table, and
+//! what a burst needs of the servo that no drive changes is read once.
 
 use std::time::{Duration, Instant};
 
@@ -12,10 +13,20 @@ use osc_client::blocking::Client;
 use osc_client::pipe::Pipe;
 use osc_protocol::tel::Chunks;
 
-use super::pump::{BurstCap, BurstStats, exchange_tel_burst, identity, read_snapshot, write_reg};
+use super::pump::{
+    BurstCap, BurstStats, TelLine, exchange_tel_burst, identity, read_snapshot, write_reg,
+};
 use super::snapshot::read_u16;
 use crate::instrument::frame::{TelFrame, TelemetrySnapshot};
 use crate::instrument::regs::{Reg, calib, control, telemetry};
+
+/// What a drive reads off its servo once and keeps.
+#[derive(Default)]
+pub(crate) struct Memo {
+    line: Option<TelLine>,
+    /// `tel_drop_count` as the last stream left it.
+    drops: Option<u16>,
+}
 
 pub(crate) trait Servo {
     type P: Pipe;
@@ -28,15 +39,31 @@ pub(crate) trait Servo {
     fn write(&mut self, reg: Reg, value: i32) -> Result<()>;
     fn snapshot(&mut self) -> Result<TelemetrySnapshot>;
     /// One TEL burst of `samples` fast ticks of `chunks` rows, the `goal`
-    /// write applied in the instant the burst starts. Drives call
-    /// [`Servo::stream`].
+    /// write applied in the instant the burst starts. With `not_before_ms`
+    /// the carrier waits for that instant on the servo's clock
+    /// ([`Servo::now_ms`]) behind the staged writes, and goes out at once
+    /// when they are staged after it. The stats say when the writes were
+    /// staged and when the carrier went out. Drives call [`Servo::stream`].
     fn burst(
         &mut self,
         samples: u16,
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
+        not_before_ms: Option<f64>,
     ) -> Result<(Vec<TelFrame>, BurstStats)>;
     fn sleep(&mut self, ms: u32);
+    fn memo(&mut self) -> &mut Memo;
+
+    /// The line a burst streams on ([`TelLine`]), read once.
+    fn tel_line(&mut self) -> Result<TelLine> {
+        if let Some(line) = self.memo().line {
+            return Ok(line);
+        }
+        let id = self.id();
+        let line = TelLine::read(self.client(), id)?;
+        self.memo().line = Some(line);
+        Ok(line)
+    }
 
     /// The servo's fast tick rate, Hz: one TEL row each.
     fn tick_hz(&mut self) -> Result<f64> {
@@ -61,22 +88,42 @@ pub(crate) trait Servo {
     }
 
     /// [`Servo::burst`], its stats carrying the rows the servo dropped from
-    /// it: `tel_drop_count` after it less before it. Firmware without the
-    /// health block reads 0 there, so it drops none. A burst over the
-    /// servo's cap is refused before anything is sent.
+    /// it: `tel_drop_count` after it less the count the stream before it
+    /// left, read ahead of a drive's first. Rows drop only inside a stream,
+    /// every stream of a drive is one of these and no drive writes the
+    /// counter, so a drive's streams add up to every row dropped: one the
+    /// servo publishes after the read, or one dropped from a stream that
+    /// failed, is in the next stream's count. Firmware without the health
+    /// block reads 0 there, so it drops none. A burst over the servo's cap
+    /// is refused before anything is sent.
+    fn stream_at(
+        &mut self,
+        samples: u32,
+        goal: Option<(Reg, i32)>,
+        chunks: Chunks,
+        not_before_ms: Option<f64>,
+    ) -> Result<(Vec<TelFrame>, BurstStats)> {
+        let samples = self.burst_cap()?.check(samples)?;
+        let id = self.id();
+        let before = match self.memo().drops {
+            Some(n) => n,
+            None => read_u16(self.client(), id, telemetry::TEL_DROP_COUNT)?,
+        };
+        let (frames, mut stats) = self.burst(samples, goal, chunks, not_before_ms)?;
+        let after = read_u16(self.client(), id, telemetry::TEL_DROP_COUNT)?;
+        self.memo().drops = Some(after);
+        stats.rows_dropped = after.wrapping_sub(before);
+        Ok((frames, stats))
+    }
+
+    /// [`Servo::stream_at`] as soon as the host is ready.
     fn stream(
         &mut self,
         samples: u32,
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
-        let samples = self.burst_cap()?.check(samples)?;
-        let id = self.id();
-        let before = read_u16(self.client(), id, telemetry::TEL_DROP_COUNT)?;
-        let (frames, mut stats) = self.burst(samples, goal, chunks)?;
-        let after = read_u16(self.client(), id, telemetry::TEL_DROP_COUNT)?;
-        stats.rows_dropped = after.wrapping_sub(before);
-        Ok((frames, stats))
+        self.stream_at(samples, goal, chunks, None)
     }
 }
 
@@ -107,6 +154,7 @@ pub(crate) struct Wire<C> {
     t0: Instant,
     cap: Option<BurstCap>,
     experiment: Option<bool>,
+    memo: Memo,
 }
 
 impl<C: AsClient> Wire<C> {
@@ -117,7 +165,32 @@ impl<C: AsClient> Wire<C> {
             t0: Instant::now(),
             cap: None,
             experiment: None,
+            memo: Memo::default(),
         }
+    }
+}
+
+fn ms_since(t0: Instant) -> f64 {
+    t0.elapsed().as_secs_f64() * 1000.0
+}
+
+/// The last of a wait spins.
+const SPIN: Duration = Duration::from_millis(1);
+
+/// Wait to `ms` past `t0`, to the instant. A sleep returns late, and on a
+/// host that coalesces timers by half its own length, so each sleep is
+/// half of what is left of the wait and the last [`SPIN`] of it spins.
+fn wait_until(t0: Instant, ms: f64) {
+    let at = t0 + Duration::from_secs_f64(ms.max(0.0) / 1000.0);
+    loop {
+        let left = at.saturating_duration_since(Instant::now());
+        if left <= SPIN {
+            break;
+        }
+        std::thread::sleep(left / 2);
+    }
+    while Instant::now() < at {
+        std::hint::spin_loop();
     }
 }
 
@@ -133,7 +206,7 @@ impl<C: AsClient> Servo for Wire<C> {
     }
 
     fn now_ms(&self) -> f64 {
-        self.t0.elapsed().as_secs_f64() * 1000.0
+        ms_since(self.t0)
     }
 
     fn write(&mut self, reg: Reg, value: i32) -> Result<()> {
@@ -149,12 +222,32 @@ impl<C: AsClient> Servo for Wire<C> {
         samples: u16,
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
+        not_before_ms: Option<f64>,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
-        exchange_tel_burst(self.c.get(), self.id, samples, goal, chunks)
+        let line = self.tel_line()?;
+        let t0 = self.t0;
+        let (mut staged, mut sent) = (0.0, 0.0);
+        let r = exchange_tel_burst(self.c.get(), self.id, line, samples, goal, chunks, || {
+            staged = ms_since(t0);
+            sent = match not_before_ms {
+                Some(at) if at > staged => {
+                    wait_until(t0, at);
+                    ms_since(t0)
+                }
+                _ => staged,
+            };
+        });
+        let (frames, mut stats) = r?;
+        (stats.staged_ms, stats.sent_ms) = (staged, sent);
+        Ok((frames, stats))
     }
 
     fn sleep(&mut self, ms: u32) {
         std::thread::sleep(Duration::from_millis(ms as u64));
+    }
+
+    fn memo(&mut self) -> &mut Memo {
+        &mut self.memo
     }
 
     /// Read once, at the first burst.
@@ -215,23 +308,68 @@ mod tests {
     use crate::rig::testkit::{self, Rig};
 
     /// A stream reads the rows the servo dropped from it off the table: the
-    /// counter's change across it, through its wrap.
+    /// counter's change across it, through its wrap. The counter is read
+    /// once ahead of the first stream and once after each, and every row
+    /// dropped is in one stream's count.
     #[test]
     fn a_stream_carries_the_rows_the_servo_dropped_from_it() {
         let mut b = Rig::bench();
-        let (_, st) = b.stream(200, None, TEL_RAW).unwrap();
-        assert_eq!(st.rows_dropped, 0);
         b.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
-            t.telemetry_ext.health.tel_drop_count = u16::MAX - 1;
+            t.telemetry_ext.health.tel_drop_count = u16::MAX - 4;
         });
-        b.drop = 3;
-        let (_, st) = b.stream(200, None, TEL_RAW).unwrap();
-        assert_eq!(st.rows_dropped, 3);
+        b.reads();
+        let mut dropped = Vec::new();
+        for drop in [0, 3, 0, 2, 5] {
+            b.drop = drop;
+            dropped.push(b.stream(200, None, TEL_RAW).unwrap().1.rows_dropped);
+        }
+        assert_eq!(dropped, [0, 3, 0, 2, 5]);
+        let counter = (telemetry::TEL_DROP_COUNT.addr, 2);
+        assert_eq!(b.reads().iter().filter(|r| **r == counter).count(), 6);
         let id = b.id();
         assert_eq!(
             read_u16(&mut b.c, id, telemetry::TEL_DROP_COUNT).unwrap(),
-            1
+            5,
+            "through the wrap"
         );
+    }
+
+    /// What a burst needs of the servo ahead of its arm is read once, at
+    /// the first burst: the identity block and the window floor. A burst
+    /// after it reads the drop counter alone.
+    #[test]
+    fn the_line_a_burst_streams_on_is_read_once() {
+        use osc_protocol::table::{BAUD_RATE_IDX, CAPABILITY_FLAGS};
+        let identity = (CAPABILITY_FLAGS, BAUD_RATE_IDX + 1 - CAPABILITY_FLAGS);
+        let floor = (calib::I_WINDOW_MIN_TICKS.addr, 2);
+        let mut b = Rig::bench();
+        b.reads();
+        b.stream(200, None, TEL_RAW).unwrap();
+        let first = b.reads();
+        let count = |span| first.iter().filter(|r| **r == span).count();
+        assert_eq!((count(identity), count(floor)), (1, 1));
+        for _ in 0..3 {
+            b.stream(200, Some((control::GOAL_DUTY, 0)), TEL_RAW)
+                .unwrap();
+            assert_eq!(b.reads(), [(telemetry::TEL_DROP_COUNT.addr, 2)]);
+        }
+    }
+
+    /// On the wire a carrier with an instant ahead goes out no sooner than
+    /// it, and one staged after its instant goes out at once.
+    #[test]
+    fn the_wire_waits_for_an_instant_ahead_and_no_other() {
+        let (mut c, id) = testkit::table_at(osc_client::BaudRate::B3000000, 1961);
+        let mut w = Wire::new(&mut c, id);
+        let goal = Some((control::GOAL_DUTY, 0));
+        let (_, st) = w.stream(40, goal, TEL_RAW).unwrap();
+        assert_eq!(st.sent_ms, st.staged_ms);
+        let ahead = w.now_ms() + 15.0;
+        let (_, st) = w.stream_at(40, goal, TEL_RAW, Some(ahead)).unwrap();
+        assert!(st.sent_ms >= ahead && st.sent_ms >= st.staged_ms);
+        let past = w.now_ms() - 1.0;
+        let (_, st) = w.stream_at(40, goal, TEL_RAW, Some(past)).unwrap();
+        assert_eq!(st.sent_ms, st.staged_ms);
     }
 
     /// The cap is the descriptor's `tel_count` max, else the field's whole

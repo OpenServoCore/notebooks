@@ -5,12 +5,12 @@
 use anyhow::Result;
 use osc_client::blocking::Client;
 use osc_client::fake::{FakePipe, TelSample};
-use osc_client::{BaudRate, Id};
+use osc_client::{BaudRate, Id, Inst, Opcode};
 use osc_protocol::tel::Chunks;
 use osc_servo_core::kernel::phases::loops::faults::{BIT_DEADMAN, CODE_DEADMAN};
 
 use super::pump::{BurstCap, BurstStats, exchange_tel_burst, read_snapshot, write_reg};
-use super::servo::Servo;
+use super::servo::{Memo, Servo};
 use crate::instrument::frame::{TelFrame, TelemetrySnapshot};
 use crate::instrument::regs::{Reg, calib, config, control};
 
@@ -61,9 +61,29 @@ pub(crate) fn rail_at(c: &mut Client<FakePipe>, vbus_raw: u16, vbus_counts: u16)
 /// What a test does to the table after a burst, given the burst's index.
 pub(crate) type AfterBurst = Box<dyn FnMut(&mut Client<FakePipe>, u32)>;
 
+/// How a timed rig's clock moves on its own, for a test of a drive's
+/// timing: every exchange takes `exchange_ms`, a burst its rows' span, the
+/// host stalls a `stalls` entry's ms ahead of the staged writes of the
+/// burst it names, and the servo's tick runs at `tick_ratio` of its
+/// nominal rate on that clock. A carrier lands `landing_ms.0` after the
+/// host sent it, give or take a seeded normal scatter of sd `landing_ms.1`,
+/// never before it was sent: the burst starts there, and its `stamp0` is
+/// the servo's tick there.
+#[derive(Clone, Debug)]
+pub(crate) struct Timed {
+    pub(crate) exchange_ms: f64,
+    pub(crate) stalls: Vec<(u32, f64)>,
+    pub(crate) tick_ratio: f64,
+    pub(crate) landing_ms: (f64, f64),
+}
+
+/// The scatter's seed: any odd constant, the same run after run.
+const SEED: u64 = 0x9e37_79b9_7f4a_7c15;
+
 /// The bench servo as a drive sees it: the table on the fake adapter at
-/// 3 Mbaud, a clock that moves only when the drive sleeps, every write
-/// logged, and `drop` TEL rows lost from each burst.
+/// 3 Mbaud, a clock that moves only when the drive sleeps or waits for a
+/// slot unless the rig is [`Timed`], every write logged, and `drop` TEL
+/// rows lost from each burst.
 ///
 /// The sim runs no kernel, so with `deadman_honored` the rig plays the
 /// dead-man's part of one: bus silence under torque for the count last
@@ -78,6 +98,11 @@ pub(crate) struct Rig {
     pub(crate) cap: Option<BurstCap>,
     pub(crate) deadman_honored: bool,
     pub(crate) after_burst: Option<AfterBurst>,
+    pub(crate) timed: Option<Timed>,
+    /// What each timed burst's carrier took to land, ms.
+    pub(crate) landings: Vec<f64>,
+    rng: u64,
+    memo: Memo,
     bursts: u32,
     torque: bool,
     deadman_ticks: u16,
@@ -97,6 +122,10 @@ impl Rig {
             cap: None,
             deadman_honored: false,
             after_burst: None,
+            timed: None,
+            landings: Vec::new(),
+            rng: SEED,
+            memo: Memo::default(),
             bursts: 0,
             torque: false,
             deadman_ticks: 0,
@@ -111,13 +140,65 @@ impl Rig {
             t.telemetry.mode.fault_code = code;
         });
     }
+
+    /// The span, address and length, of every READ the host put on the
+    /// wire since the last call, in order: one exchange each.
+    pub(crate) fn reads(&mut self) -> Vec<(u16, u16)> {
+        let frames = self.c.pipe_mut().take_frames();
+        let read = |b: &[u8]| match b {
+            // the break's ring byte, ID, LEN, INST, then the span
+            [_, _, _, inst, a0, a1, n0, n1, ..] if Inst(*inst).opcode() == Some(Opcode::Read) => {
+                Some((
+                    u16::from_le_bytes([*a0, *a1]),
+                    u16::from_le_bytes([*n0, *n1]),
+                ))
+            }
+            _ => None,
+        };
+        frames.iter().filter_map(|f| read(&f.bytes)).collect()
+    }
+
+    /// One exchange's time on a timed rig's clock.
+    fn exchange(&mut self) {
+        self.silent_ms = 0.0;
+        if let Some(t) = &self.timed {
+            self.t_ms += t.exchange_ms;
+        }
+    }
+
+    /// A standard normal draw, near enough: twelve uniform draws of a
+    /// xorshift summed, less their mean.
+    fn normal(&mut self) -> f64 {
+        let mut sum = 0.0;
+        for _ in 0..12 {
+            self.rng ^= self.rng << 13;
+            self.rng ^= self.rng >> 7;
+            self.rng ^= self.rng << 17;
+            sum += (self.rng >> 11) as f64 / (1u64 << 53) as f64;
+        }
+        sum - 6.0
+    }
+
+    /// `ms` of bus silence: under torque, on a rig that honors the
+    /// dead-man, the count last written running out latches its fault.
+    fn silence(&mut self, ms: f64) {
+        self.silent_ms += ms;
+        let ticks_per_ms = osc_servo_core::kernel::TICK_HZ as f64 / 1000.0;
+        if self.deadman_honored
+            && self.torque
+            && self.deadman_ticks > 0
+            && self.silent_ms * ticks_per_ms >= self.deadman_ticks as f64
+        {
+            self.latch(BIT_DEADMAN, CODE_DEADMAN);
+        }
+    }
 }
 
 impl Servo for Rig {
     type P = FakePipe;
 
     fn client(&mut self) -> &mut Client<FakePipe> {
-        self.silent_ms = 0.0;
+        self.exchange();
         &mut self.c
     }
 
@@ -131,7 +212,7 @@ impl Servo for Rig {
 
     fn write(&mut self, reg: Reg, value: i32) -> Result<()> {
         self.writes.push((reg, value));
-        self.silent_ms = 0.0;
+        self.exchange();
         if reg == control::TORQUE_ENABLE {
             let on = value != 0;
             if on && !self.torque && self.deadman_honored {
@@ -145,23 +226,49 @@ impl Servo for Rig {
     }
 
     fn snapshot(&mut self) -> Result<TelemetrySnapshot> {
-        self.silent_ms = 0.0;
+        self.exchange();
         read_snapshot(&mut self.c, self.id)
     }
 
     /// The rows the servo drops land in the table's `tel_drop_count`, where
-    /// [`Servo::stream`] reads them.
+    /// [`Servo::stream`] reads them. The wait for an instant is bus silence.
     fn burst(
         &mut self,
         samples: u16,
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
+        not_before_ms: Option<f64>,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
         if let Some((reg, value)) = goal {
             self.writes.push((reg, value));
         }
+        let line = self.tel_line()?;
+        let timed = self.timed.clone();
+        let mut staged = self.t_ms;
+        if let Some(t) = &timed {
+            let stall = t.stalls.iter().find(|s| s.0 == self.bursts);
+            staged += stall.map_or(0.0, |s| s.1);
+            if goal.is_some() {
+                staged += 2.0 * t.exchange_ms;
+            }
+        }
+        let sent = not_before_ms.map_or(staged, |at| at.max(staged));
+        let r = exchange_tel_burst(&mut self.c, self.id, line, samples, goal, chunks, || ())?;
+        let (frames, mut stats) = r;
+        (stats.staged_ms, stats.sent_ms) = (staged, sent);
+        self.t_ms = sent;
         self.silent_ms = 0.0;
-        let r = exchange_tel_burst(&mut self.c, self.id, samples, goal, chunks)?;
+        self.silence(sent - staged);
+        self.silent_ms = 0.0;
+        if let Some(t) = &timed {
+            let (mean, sd) = t.landing_ms;
+            let landing = (mean + sd * self.normal()).max(0.0);
+            self.landings.push(landing);
+            let ticks_per_ms = osc_servo_core::kernel::TICK_HZ as f64 / 1000.0 * t.tick_ratio;
+            stats.stamp0 = Some(((sent + landing) * ticks_per_ms).round() as u64 as u16);
+            self.t_ms += landing + samples as f64 / ticks_per_ms;
+        }
+        let r = (frames, stats);
         if let Some(f) = self.after_burst.as_mut() {
             f(&mut self.c, self.bursts);
         }
@@ -176,15 +283,11 @@ impl Servo for Rig {
 
     fn sleep(&mut self, ms: u32) {
         self.t_ms += ms as f64;
-        self.silent_ms += ms as f64;
-        let ticks_per_ms = osc_servo_core::kernel::TICK_HZ as f64 / 1000.0;
-        if self.deadman_honored
-            && self.torque
-            && self.deadman_ticks > 0
-            && self.silent_ms * ticks_per_ms >= self.deadman_ticks as f64
-        {
-            self.latch(BIT_DEADMAN, CODE_DEADMAN);
-        }
+        self.silence(ms as f64);
+    }
+
+    fn memo(&mut self) -> &mut Memo {
+        &mut self.memo
     }
 
     fn burst_cap(&mut self) -> Result<BurstCap> {

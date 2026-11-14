@@ -240,7 +240,7 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
 
 def track(out, mode, schedule, tel_chunks=CHUNKS_SERVO, current_cap_ma=None,
           current_cap_ms=None, ntc_max_c=None, guard_lo=None, guard_hi=None,
-          deadman_ms=None, deadman_check=False, center=True):
+          deadman_ms=None, deadman_check=False, center=True, goal_period_ms=None):
     """`osc-lab track` into `out` (track.csv, segments.csv + meta.json): the
     production image's `mode` loop (position, velocity or current) driven
     through `schedule`, the items as the tool takes them (`set:FIELD=VALUE`,
@@ -248,7 +248,10 @@ def track(out, mode, schedule, tel_chunks=CHUNKS_SERVO, current_cap_ma=None,
     string. The watchdog caps, the guard in counts and the dead-man as the
     tool takes them, None for the tool's default. `deadman_check` proves the
     image honors the dead-man first; `center` False leaves the shaft where
-    the last item left it. A refusal (exit 2) or an abort (exit 3) raises."""
+    the last item left it. `goal_period_ms` holds the goals of a train of
+    short goals to a grid of that period on the servo's tick; None lets a
+    goal go out as soon as the host is ready. A refusal (exit 2) or an
+    abort (exit 3) raises."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     if not isinstance(schedule, str):
@@ -257,7 +260,8 @@ def track(out, mode, schedule, tel_chunks=CHUNKS_SERVO, current_cap_ma=None,
             "--tel-chunks", tel_chunks]
     for flag, value in (("--current-cap-ma", current_cap_ma), ("--current-cap-ms", current_cap_ms),
                         ("--ntc-max-c", ntc_max_c), ("--guard-lo", guard_lo),
-                        ("--guard-hi", guard_hi), ("--deadman-ms", deadman_ms)):
+                        ("--guard-hi", guard_hi), ("--deadman-ms", deadman_ms),
+                        ("--goal-period-ms", goal_period_ms)):
         if value is not None:
             args += [flag, value]
     if deadman_check:

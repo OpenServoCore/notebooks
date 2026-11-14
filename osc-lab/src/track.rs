@@ -6,6 +6,11 @@
 //! a tick with a CONFIG take. Nothing here scores: the rows, the segments
 //! and the set the servo ran on land in --out.
 //!
+//! A goal's COMMIT goes out when the host's exchanges around the burst
+//! before it are done, so a train of short goals runs at the host's pace.
+//! With `--goal-period-ms` the goals of a train go out on a grid of that
+//! period, kept on the servo's own tick ([`Pace`]).
+//!
 //! The closed loops keep every firmware protection: no stall permit is ever
 //! written. The host's own guard is the bus dead-man (written before torque
 //! on, fed between bursts) and a watchdog that judges every burst's rows and
@@ -247,6 +252,18 @@ pub struct Args {
     /// move to the middle of the soft range.
     #[arg(long)]
     no_center: bool,
+    /// Hold a train of goals to this period, ms: a `goal:` item right
+    /// after a `goal:` item whose burst is shorter than the period is
+    /// committed on a grid of the period from the train's first goal, on
+    /// the servo's tick, the COMMIT waiting for its grid point behind the
+    /// staged writes. A goal the host has not staged by its point goes out
+    /// at once and is counted late, and the goals after it aim at their
+    /// own points. Inside a train the poll after a goal's burst is the
+    /// poll before the next goal. At most 250 ms, the keepalive's cadence:
+    /// the wait is bus silence [default: none, a goal goes out as soon as
+    /// the host is ready].
+    #[arg(long)]
+    goal_period_ms: Option<f64>,
 }
 
 /// A run refused before anything moved, or a dead-man check that failed:
@@ -523,6 +540,160 @@ pub(crate) struct Cfg {
     pub(crate) deadman_check: bool,
     pub(crate) center: Option<i32>,
     pub(crate) deadband: u16,
+    pub(crate) pace: Option<Pace>,
+}
+
+/// The goal period's grid. The first goal of a train (a `goal:` item with
+/// no `goal:` item right before it, or one whose burst outlasts the
+/// period) goes out when the host is ready, and the grid starts there:
+/// point n is n periods after it. The host aims by its own clock, at n
+/// periods after the instant it sent the first goal, plus a trim. The trim
+/// keeps that grid on the servo's tick: each goal's `stamp0` says where it
+/// landed against point n on the tick, and the trim takes a [`TRIM_GAIN`]
+/// share of that error, less what the host knows it sent late by. So the
+/// two clocks' disagreement is taken out as it grows and never adds up,
+/// and one landing's scatter moves the next aim by an eighth of itself.
+///
+/// A goal staged after its point goes out at once, late. The grid stands:
+/// the goal after it aims at the next point, so a stall is made up at the
+/// rate the period leaves room for. A goal a whole period late or more
+/// has missed the points it went past, and the goal after it aims at the
+/// first point still ahead of it.
+#[derive(Clone, Debug)]
+pub(crate) struct Pace {
+    pub(crate) period_ms: f64,
+    ticks_per_ms: f64,
+    train: Option<Train>,
+    /// Goals aimed at a grid point, and those of them sent late.
+    pub(crate) held: u32,
+    pub(crate) late: u32,
+}
+
+/// The trim's share of a landing's error. The clocks disagree by up to
+/// 0.15 %, which this gain holds to a standing 1.2 % of a period (0.3 ms
+/// of 25.6), constant, so the spacing's mean is the period's; and the
+/// trim's own motion adds under 7 % to the spacing's scatter over what
+/// two landings' scatter alone gives it.
+const TRIM_GAIN: f64 = 0.125;
+
+/// A train as its last goal left it.
+#[derive(Copy, Clone, Debug)]
+struct Train {
+    /// The last goal's burst, ms: one that outlasts the period ends the
+    /// train.
+    burst_ms: u32,
+    /// When the host sent the first goal, ms on the servo's clock.
+    origin_ms: f64,
+    trim_ms: f64,
+    /// The grid point the last goal took, the first goal's 0.
+    point: f64,
+    /// When the host sent the last goal, its stamp, and the ticks from
+    /// the first goal's landing to its own.
+    sent_ms: f64,
+    stamp: u16,
+    ticks: f64,
+    /// The poll after the last goal's burst, judged.
+    poll: Option<Poll>,
+}
+
+/// A goal aimed at a grid point, as it went out.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(crate) struct Held {
+    /// How long before its point the host had it staged, the room the
+    /// period left it; 0 when late.
+    pub(crate) wait_ms: f64,
+    /// How long after its point the COMMIT went out.
+    pub(crate) late_ms: f64,
+    /// The whole periods of that: the grid points it went past.
+    pub(crate) slots_missed: u32,
+}
+
+impl Pace {
+    fn new(period_ms: f64, tick_hz: f64) -> Self {
+        Self {
+            period_ms,
+            ticks_per_ms: tick_hz / 1000.0,
+            train: None,
+            held: 0,
+            late: 0,
+        }
+    }
+
+    /// The instant on the host's clock a train's `point` is aimed at.
+    fn aim(&self, t: &Train, point: f64) -> f64 {
+        t.origin_ms + point * self.period_ms + t.trim_ms
+    }
+
+    /// The instant the next goal's COMMIT is due; None for the first goal
+    /// of a train.
+    fn slot(&self) -> Option<f64> {
+        let t = self
+            .train
+            .filter(|t| (t.burst_ms as f64) < self.period_ms)?;
+        Some(self.aim(&t, t.point + 1.0))
+    }
+
+    /// The poll after the last goal's burst, for the goal that follows it
+    /// in the train.
+    fn take_poll(&mut self) -> Option<Poll> {
+        self.train.as_mut()?.poll.take()
+    }
+
+    fn keep_poll(&mut self, poll: Poll) {
+        if let Some(t) = self.train.as_mut() {
+            t.poll = Some(poll);
+        }
+    }
+
+    /// Anything but a goal ends the train.
+    fn rest(&mut self) {
+        self.train = None;
+    }
+
+    /// A goal's burst is back. Aimed at `slot`, it took the point its
+    /// send fell in the period after, and it is late when its COMMIT went
+    /// out more than a tick after the slot, the least the servo can tell.
+    /// With no slot it starts a train. The stamp is 16 bits of the tick,
+    /// so the ticks since the goal before are the stamps' difference plus
+    /// the whole wraps the host's clock counts between the two sends.
+    fn landed(&mut self, burst_ms: u32, slot: Option<f64>, stats: &BurstStats) -> Option<Held> {
+        let Some(stamp) = stats.stamp0 else {
+            self.train = None;
+            return None;
+        };
+        let (Some(mut t), Some(slot)) = (self.train, slot) else {
+            self.train = Some(Train {
+                burst_ms,
+                origin_ms: stats.sent_ms,
+                trim_ms: 0.0,
+                point: 0.0,
+                sent_ms: stats.sent_ms,
+                stamp,
+                ticks: 0.0,
+                poll: None,
+            });
+            return None;
+        };
+        const WRAP: f64 = 65536.0;
+        let late_ms = stats.sent_ms - slot;
+        let missed = (late_ms / self.period_ms).floor().max(0.0);
+        let ticks = stamp.wrapping_sub(t.stamp) as f64;
+        let host = (stats.sent_ms - t.sent_ms) * self.ticks_per_ms;
+        t.ticks += ticks + WRAP * ((host - ticks) / WRAP).round();
+        t.point += 1.0 + missed;
+        let landed_past = t.ticks / self.ticks_per_ms - t.point * self.period_ms;
+        let sent_past = stats.sent_ms - self.aim(&t, t.point);
+        t.trim_ms -= TRIM_GAIN * (landed_past - sent_past);
+        (t.burst_ms, t.sent_ms, t.stamp, t.poll) = (burst_ms, stats.sent_ms, stamp, None);
+        self.train = Some(t);
+        self.held += 1;
+        self.late += (late_ms * self.ticks_per_ms > 1.0) as u32;
+        Some(Held {
+            wait_ms: (slot - stats.staged_ms).max(0.0),
+            late_ms,
+            slots_missed: missed as u32,
+        })
+    }
 }
 
 /// A `set:` item resolved: its register and value, whether it is a CONFIG
@@ -647,8 +818,7 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
         );
     }
     let chunks = pump::parse_tel_chunks(&a.tel_chunks).context("--tel-chunks")?;
-    let (baud, max) = pump::tel_row_limit(s.client(), id)?;
-    if let Err(e) = pump::admit_tel_chunks(chunks, baud, max) {
+    if let Err(e) = s.tel_line()?.admit(chunks) {
         return refuse(e.to_string());
     }
     s.pwm_period_ticks()?;
@@ -705,6 +875,17 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
     if a.deadman_check && deadman_ticks == 0 {
         return refuse("--deadman-check needs a dead-man: --deadman-ms is 0");
     }
+
+    let pace = match a.goal_period_ms {
+        None => None,
+        Some(ms) if ms > 0.0 && ms <= PERMIT_REFRESH_MS as f64 => Some(Pace::new(ms, tick_hz)),
+        Some(ms) => {
+            return refuse(format!(
+                "--goal-period-ms {ms} is not over 0 and at most {PERMIT_REFRESH_MS} ms, the \
+                 keepalive's cadence: a commit's wait for its slot is bus silence"
+            ));
+        }
+    };
 
     let cap_rows = samples_of_ms(a.current_cap_ms, tick_hz).max(1);
     let cap_polls = a.current_cap_ms.div_ceil(POLL_MS).max(1);
@@ -773,6 +954,7 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
         deadman_check: a.deadman_check,
         center: (!a.no_center).then_some(lo + (hi - lo) / 2),
         deadband,
+        pace,
     })
 }
 
@@ -844,6 +1026,8 @@ pub(crate) struct Seg {
     pub(crate) samples: u32,
     pub(crate) t_start: f64,
     pub(crate) t_end: f64,
+    /// A goal aimed at a grid point; None for an item off the grid.
+    pub(crate) held: Option<Held>,
 }
 
 /// What a run reports beside its segments.
@@ -1059,8 +1243,22 @@ fn run_item<S: Servo>(
 ) -> Result<()> {
     stopped()?;
     lease.keep(s)?;
-    let poll = watch(s, &mut cfg.wd)?;
     let item = cfg.items[k].clone();
+    let slot = match (&item, &mut cfg.pace) {
+        (Item::Goal { .. }, Some(pace)) => pace.slot(),
+        (_, Some(pace)) => {
+            pace.rest();
+            None
+        }
+        (_, None) => None,
+    };
+    // inside a train the poll after the goal before, judged there, is
+    // this goal's
+    let carried = slot.and(cfg.pace.as_mut()).and_then(Pace::take_poll);
+    let poll = match carried {
+        Some(poll) => poll,
+        None => watch(s, &mut cfg.wd)?,
+    };
     let t_start = anchor + s.now_ms() / 1000.0;
     let mut seg = Seg {
         idx: k,
@@ -1072,6 +1270,7 @@ fn run_item<S: Servo>(
         samples: 0,
         t_start,
         t_end: t_start,
+        held: None,
     };
     match &item {
         Item::Set { .. } => {
@@ -1094,7 +1293,10 @@ fn run_item<S: Servo>(
                 _ => None,
             };
             lease.keep(s)?;
-            let (frames, stats) = s.stream(samples, g, cfg.chunks)?;
+            let (frames, stats) = s.stream_at(samples, g, cfg.chunks, slot)?;
+            if let (Some(_), Some(pace)) = (g, &mut cfg.pace) {
+                seg.held = pace.landed(*ms, slot, &stats);
+            }
             ran.rows_dropped = ran.rows_dropped.saturating_add(stats.rows_dropped);
             (seg.frames, seg.stats, seg.samples) = (frames, stats, samples);
             seg.t_end = anchor + s.now_ms() / 1000.0;
@@ -1111,7 +1313,11 @@ fn run_item<S: Servo>(
                 cfg.wd.rows(&seg.frames, poll.current_bias_counts)
             };
             let verdict = match verdict {
-                Ok(()) => watch(s, &mut cfg.wd).map(|_| ()),
+                Ok(()) => watch(s, &mut cfg.wd).map(|after| {
+                    if let (Some(_), Some(pace)) = (g, &mut cfg.pace) {
+                        pace.keep_poll(after);
+                    }
+                }),
                 Err(reason) => trip(reason),
             };
             if let Err(e) = verdict {
@@ -1296,7 +1502,13 @@ pub(crate) fn write_rows(w: &mut impl Write, g: &Seg) -> Result<()> {
 
 /// segments.csv: one row a schedule item, the poll before it last.
 /// `tick0` is the servo's `sample_tick` of the first row, low 16 bits.
-pub(crate) const SEGMENTS_HEADER: &str = "seg,kind,field,value,ms,tick0,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,i_tick_counts,current_bias_counts,fault_code,omega_hat_src";
+/// `slot_wait_ms`, `slot_late_ms` and `slots_missed` are a goal's that
+/// was aimed at a grid point of the period, empty for any other item: how
+/// long before its point the host had it staged, the room the period left
+/// it (0 for a late one); how long after its point its COMMIT went out (0
+/// on time, what the wait itself ran over by, or a late goal's lateness);
+/// and the whole periods of that, the grid points it went past.
+pub(crate) const SEGMENTS_HEADER: &str = "seg,kind,field,value,ms,tick0,slot_wait_ms,slot_late_ms,slots_missed,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,i_tick_counts,current_bias_counts,fault_code,omega_hat_src";
 
 pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
     let (field, value, ms) = match &g.item {
@@ -1305,9 +1517,17 @@ pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
         Item::Hold { ms } | Item::Rest { ms } => ("", String::new(), ms.to_string()),
     };
     let p = &g.poll;
+    let (wait, late, missed) = match &g.held {
+        Some(h) => (
+            format!("{:.3}", h.wait_ms),
+            format!("{:.3}", h.late_ms),
+            h.slots_missed.to_string(),
+        ),
+        None => Default::default(),
+    };
     writeln!(
         w,
-        "{},{},{field},{value},{ms},{},{},{},{:.3},{:.3},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+        "{},{},{field},{value},{ms},{},{wait},{late},{missed},{},{},{:.3},{:.3},{},{},{},{},{},{},{},{},{},{},{},{},{}",
         g.idx,
         g.item.kind(),
         g.stats.stamp0.map(|t| t.to_string()).unwrap_or_default(),
@@ -1333,8 +1553,8 @@ pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
 }
 
 /// The run's meta before it drives: what every recording's opens with,
-/// the row, the mode and schedule, the guard, the watchdog and the
-/// dead-man as asked.
+/// the row, the mode and schedule, the guard, the watchdog, the dead-man
+/// and the goal period as asked.
 fn meta<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<serde_json::Value> {
     let id = s.id();
     let servo = servo_meta(s.client(), id)?;
@@ -1357,6 +1577,11 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<serde_json::Value> {
             "check": serde_json::Value::Null,
         },
         "center": cfg.center,
+        "goal_period": {
+            "ms": cfg.pace.as_ref().map(|p| p.period_ms),
+            "held": 0,
+            "late": 0,
+        },
         "rows_dropped": 0,
         "config": serde_json::Value::Null,
         "control": serde_json::Value::Null,
@@ -1370,10 +1595,15 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<serde_json::Value> {
     Ok(m)
 }
 
-/// The meta once the run ended: the rows dropped, the dead-man check, the
-/// set it ran on and how it ended.
-fn land(meta: &mut serde_json::Value, ran: &Ran, r: &Result<()>) {
+/// The meta once the run ended: the rows dropped, the goals held to the
+/// period and those of them late, the dead-man check, the set it ran on
+/// and how it ended.
+fn land(meta: &mut serde_json::Value, cfg: &Cfg, ran: &Ran, r: &Result<()>) {
     meta["rows_dropped"] = ran.rows_dropped.into();
+    if let Some(p) = &cfg.pace {
+        meta["goal_period"]["held"] = p.held.into();
+        meta["goal_period"]["late"] = p.late.into();
+    }
     meta["deadman"]["check"] = ran.deadman.map_or(serde_json::Value::Null, Into::into);
     if let Some(set) = &ran.set {
         meta["config"] = set["config"].clone();
@@ -1443,7 +1673,7 @@ pub(crate) fn capture<S: Servo>(s: &mut S, a: &Args, out: &Path) -> Result<()> {
         write_segment(&mut segs, g)
     });
     let flushed = rows.flush().and(segs.flush());
-    land(&mut meta, &ran, &r);
+    land(&mut meta, &cfg, &ran, &r);
     write_meta(&meta)?;
     flushed?;
     if ran.rows_dropped > 0 {
@@ -1451,6 +1681,13 @@ pub(crate) fn capture<S: Servo>(s: &mut S, a: &Args, out: &Path) -> Result<()> {
             "warning: the servo dropped {} TEL rows (both stream buffers were waiting for the \
              wire); the files are saved with those rows missing",
             ran.rows_dropped
+        );
+    }
+    if let Some(p) = cfg.pace.as_ref().filter(|p| p.late > 0) {
+        println!(
+            "warning: {} of the {} goals held to the {} ms period went out late \
+             (slot_late_ms in segments.csv)",
+            p.late, p.held, p.period_ms
         );
     }
     r?;
@@ -1471,7 +1708,7 @@ pub fn run(args: &Args, bus: crate::rig::Bus, id: u8) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rig::testkit::Rig;
+    use crate::rig::testkit::{Rig, Timed};
     use osc_client::fake::TelSample;
 
     #[derive(clap::Parser)]
@@ -1656,8 +1893,11 @@ mod tests {
             "800",
             "--deadman-check",
             "--no-center",
+            "--goal-period-ms",
+            "25.6",
         ]);
         assert_eq!(a.mode, Mode::Current);
+        assert_eq!(a.goal_period_ms, Some(25.6));
         assert_eq!((a.current_cap_ma, a.current_cap_ms), (Some(300.0), 20));
         assert_eq!(
             (a.ntc_max_c, a.guard_lo, a.guard_hi),
@@ -2185,6 +2425,541 @@ mod tests {
         assert_eq!(seen.len(), 1);
     }
 
+    /// A train of `n` 20 ms goals, a count apart.
+    fn train(n: i32) -> String {
+        let goals: Vec<_> = (0..n).map(|k| format!("goal:{}@20", 2100 + k)).collect();
+        goals.join(",")
+    }
+
+    /// What a test of the period keeps of a goal.
+    struct Commit {
+        /// The servo's tick it landed on, low 16 bits.
+        tick: u16,
+        staged_ms: f64,
+        sent_ms: f64,
+        held: Option<Held>,
+    }
+
+    /// A run on a rig whose clock its exchanges and bursts move: every
+    /// goal's commit, the run's pace and what each carrier took to land.
+    fn commits(timed: Timed, argv: &[&str]) -> (Vec<Commit>, Option<Pace>, Vec<f64>) {
+        let mut r = rig_at(2029, 0);
+        r.timed = Some(timed);
+        // the stamps wrap inside the run
+        r.t_ms = 3200.0;
+        let mut c = cfg(&mut r, argv);
+        let mut seen = Vec::new();
+        record(&mut r, &mut c, &mut Ran::default(), |g| {
+            if let Item::Goal { .. } = g.item {
+                seen.push(Commit {
+                    tick: g.stats.stamp0.unwrap(),
+                    staged_ms: g.stats.staged_ms,
+                    sent_ms: g.stats.sent_ms,
+                    held: g.held,
+                });
+            }
+            Ok(())
+        })
+        .unwrap();
+        (seen, c.pace, r.landings)
+    }
+
+    /// The servo's tick 0.04 % fast on the host's clock, a carrier landing
+    /// the instant it is sent.
+    const FAST: f64 = 1.0004;
+
+    fn timed(exchange_ms: f64) -> Timed {
+        Timed {
+            exchange_ms,
+            stalls: Vec::new(),
+            tick_ratio: FAST,
+            landing_ms: (0.0, 0.0),
+        }
+    }
+
+    /// Ticks from each commit to the next.
+    fn spacing(seen: &[Commit]) -> Vec<u16> {
+        seen.windows(2)
+            .map(|w| w[1].tick.wrapping_sub(w[0].tick))
+            .collect()
+    }
+
+    /// Ticks each goal of a train landed past its own grid point on the
+    /// servo's tick, the first goal's 0, at `period` ticks a point.
+    fn past_grid(seen: &[Commit], period: f64) -> Vec<f64> {
+        let (mut ticks, mut point) = (0.0, 0.0);
+        let mut past = vec![0.0];
+        for (w, d) in seen.windows(2).zip(spacing(seen)) {
+            ticks += d as f64;
+            point += 1.0 + w[1].held.unwrap().slots_missed as f64;
+            past.push(ticks - point * period);
+        }
+        past
+    }
+
+    fn mean(x: &[f64]) -> f64 {
+        x.iter().sum::<f64>() / x.len() as f64
+    }
+
+    fn sd(x: &[f64]) -> f64 {
+        let m = mean(x);
+        (x.iter().map(|v| (v - m).powi(2)).sum::<f64>() / (x.len() - 1) as f64).sqrt()
+    }
+
+    /// With a period every goal of a train commits one period after the
+    /// goal before it on the servo's tick, whatever the host's exchanges
+    /// take, what a carrier takes to land when that is constant, and
+    /// though the host's clock and the servo's disagree; the train's whole
+    /// span is the periods' sum. The first goal starts the grid and waits
+    /// for nothing.
+    #[test]
+    fn goals_commit_one_period_apart_on_the_servos_tick() {
+        let schedule = train(12);
+        let argv = [
+            "--goal-period-ms",
+            "25.6",
+            "--mode",
+            "position",
+            "--schedule",
+            &schedule,
+        ];
+        for exchange_ms in [0.3, 0.9] {
+            let lands = Timed {
+                landing_ms: (0.7, 0.0),
+                ..timed(exchange_ms)
+            };
+            let (seen, pace, _) = commits(lands, &argv);
+            assert_eq!(seen.len(), 12);
+            assert!(seen[0].held.is_none() && seen[0].sent_ms == seen[0].staged_ms);
+            for (k, ticks) in spacing(&seen).into_iter().enumerate() {
+                assert!(ticks.abs_diff(512) <= 1, "{exchange_ms} ms: {ticks} ticks");
+                let held = seen[k + 1].held.unwrap();
+                assert!(held.wait_ms > 0.0);
+                assert_eq!((held.late_ms, held.slots_missed), (0.0, 0));
+            }
+            let whole = seen[11].tick.wrapping_sub(seen[0].tick);
+            assert!(whole.abs_diff(11 * 512) <= 2, "{whole} ticks");
+            let pace = pace.unwrap();
+            assert_eq!((pace.held, pace.late), (11, 0));
+        }
+    }
+
+    /// Without a period a goal goes out as soon as the host is ready: the
+    /// commits are the burst and the item's five exchanges apart (the poll
+    /// before it, the two staged writes, the drop counter, the poll after
+    /// it), so the train runs at the host's pace.
+    #[test]
+    fn without_a_period_goals_go_out_at_the_hosts_pace() {
+        let schedule = train(12);
+        let argv = [
+            "--deadman-ms",
+            "0",
+            "--mode",
+            "position",
+            "--schedule",
+            &schedule,
+        ];
+        for exchange_ms in [0.3, 0.9] {
+            let (seen, pace, _) = commits(timed(exchange_ms), &argv);
+            assert!(pace.is_none());
+            let ticks_per_ms = TICK_HZ as f64 / 1000.0 * FAST;
+            let want = (400.0 + 5.0 * exchange_ms * ticks_per_ms).round() as u16;
+            for ticks in spacing(&seen) {
+                assert!(ticks.abs_diff(want) <= 1, "{ticks} ticks, not {want}");
+            }
+            assert!(
+                seen.iter()
+                    .all(|g| g.held.is_none() && g.sent_ms == g.staged_ms)
+            );
+        }
+    }
+
+    /// A carrier's time to land scattered by 1 ms sd goal to goal, the
+    /// servo's tick 0.15 % fast on the host's clock, a train of 180 (the
+    /// sim plays a minute a run): the commit spacing on the servo's tick
+    /// scatters by what two landings' scatter alone gives it and the
+    /// trim's 7 % at most, the goals stay on the grid to a landing's own
+    /// scatter about the trim's standing 1.2 % of a period, where the
+    /// clocks alone would walk them 160 ticks off, and stalls of the host
+    /// change none of it: a stalled goal goes out late, the goals after it
+    /// make the stall up at the period's room, and the grid they come back
+    /// to is the one they left.
+    #[test]
+    fn the_grid_stands_through_scattered_landings_and_stalls() {
+        const PERIOD: f64 = 600.0;
+        let schedule = train(180);
+        let argv = [
+            "--goal-period-ms",
+            "30",
+            "--mode",
+            "position",
+            "--schedule",
+            &schedule,
+        ];
+        let scattered = Timed {
+            tick_ratio: 1.0015,
+            landing_ms: (3.0, 1.0),
+            ..timed(0.1)
+        };
+        let ticks_per_ms = TICK_HZ as f64 / 1000.0 * scattered.tick_ratio;
+        let standing = 0.0015 * PERIOD / TRIM_GAIN;
+        let on_grid = |past: &[f64]| {
+            let settled = &past[60..];
+            assert!(
+                (mean(settled) - standing).abs() < 5.0,
+                "{} ticks",
+                mean(settled)
+            );
+            let worst = past[30..].iter().fold(0.0f64, |m, p| m.max(p.abs()));
+            assert!(worst < 100.0, "{worst} ticks");
+        };
+
+        let (seen, pace, landings) = commits(scattered.clone(), &argv);
+        let pace = pace.unwrap();
+        assert_eq!((pace.held, pace.late), (179, 0));
+        let spaced: Vec<f64> = spacing(&seen).into_iter().map(f64::from).collect();
+        let landed: Vec<f64> = landings
+            .windows(2)
+            .map(|w| (w[1] - w[0]) * ticks_per_ms)
+            .collect();
+        assert!((sd(&landings) - 1.0).abs() < 0.1, "{} ms", sd(&landings));
+        assert!(
+            sd(&spaced) < 1.07 * sd(&landed),
+            "{} ticks against the landings' {}",
+            sd(&spaced),
+            sd(&landed)
+        );
+        assert!((mean(&spaced) - PERIOD).abs() < 0.5, "{}", mean(&spaced));
+        on_grid(&past_grid(&seen, PERIOD));
+
+        // own time 23.4 ms a goal, so 6.6 ms of room: a 20 ms stall is
+        // made up within three goals
+        let stalled = Timed {
+            stalls: (1..6).map(|k| (30 * k, 20.0)).collect(),
+            ..scattered
+        };
+        let (seen, pace, _) = commits(stalled.clone(), &argv);
+        for (k, _) in &stalled.stalls {
+            let k = *k as usize;
+            let late = |g: &Commit| g.held.unwrap().late_ms;
+            assert!(
+                (late(&seen[k]) - (20.0 - 6.6)).abs() < 4.0,
+                "{}",
+                late(&seen[k])
+            );
+            assert!(late(&seen[k + 1]) < late(&seen[k]) - 3.0);
+            assert_eq!(late(&seen[k + 3]), 0.0, "goal {k}'s stall made up");
+            assert!(
+                seen[k..k + 4]
+                    .iter()
+                    .all(|g| g.held.unwrap().slots_missed == 0)
+            );
+        }
+        let pace = pace.unwrap();
+        assert!((10..=15).contains(&pace.late), "{} late", pace.late);
+        let past: Vec<f64> = past_grid(&seen, PERIOD)
+            .into_iter()
+            .zip(&seen)
+            .filter(|(_, g)| g.held.is_none_or(|h| h.late_ms == 0.0))
+            .map(|(p, _)| p)
+            .collect();
+        on_grid(&past);
+    }
+
+    /// A goal the host has not staged by its grid point goes out at once
+    /// and is late by what it was staged after the point; the goals after
+    /// it aim at their own points, each late by the period's room less,
+    /// and the first one with room to spare is back on the grid the train
+    /// started. A goal a whole period late or more has missed the points
+    /// it went past, and the goal after it aims at the next one. A stall
+    /// longer than the stamp's wrap is counted by the host's clock.
+    #[test]
+    fn a_stalled_goal_goes_out_late_and_the_grid_stands() {
+        let schedule = train(18);
+        let argv = [
+            "--goal-period-ms",
+            "25.6",
+            "--deadman-ms",
+            "0",
+            "--mode",
+            "position",
+            "--schedule",
+            &schedule,
+        ];
+        // own time 23.4 ms a goal: 2.2 ms of room
+        let room = 2.2;
+        for (stall_ms, missed) in [(10.0, 0u32), (61.0, 2), (3300.0, 128)] {
+            let stalled = Timed {
+                stalls: vec![(4, stall_ms)],
+                tick_ratio: 1.0,
+                ..timed(0.85)
+            };
+            let (seen, pace, _) = commits(stalled, &argv);
+            let first = stall_ms - room - missed as f64 * 25.6;
+            let late = (first / room).ceil() as usize;
+            for (k, g) in seen.iter().enumerate().skip(1) {
+                let held = g.held.unwrap();
+                let (want_late, want_missed) = match k {
+                    4 => (stall_ms - room, missed),
+                    k if k > 4 && k < 4 + late => (first - (k - 4) as f64 * room, 0),
+                    _ => (0.0, 0),
+                };
+                assert!(
+                    (held.late_ms - want_late).abs() < 1e-6,
+                    "goal {k} of a {stall_ms} ms stall: late {} ms",
+                    held.late_ms
+                );
+                assert_eq!(held.slots_missed, want_missed);
+                assert_eq!(held.wait_ms > 0.0, want_late == 0.0);
+            }
+            let k = 4 + late;
+            let points = (k - 3) as u32 + missed;
+            assert_eq!(
+                seen[k].tick.wrapping_sub(seen[3].tick),
+                (512 * points) as u16,
+                "back on the grid after a {stall_ms} ms stall"
+            );
+            assert!(spacing(&seen[k..]).iter().all(|t| *t == 512));
+            let pace = pace.unwrap();
+            assert_eq!((pace.held, pace.late), (17, late as u32));
+        }
+    }
+
+    /// A period the host cannot make says so: every goal goes out late, a
+    /// little later than the one before, and the train runs at the host's
+    /// pace.
+    #[test]
+    fn a_period_the_host_cannot_hold_counts_every_goal_late() {
+        let schedule = train(6);
+        let argv = [
+            "--goal-period-ms",
+            "22",
+            "--deadman-ms",
+            "0",
+            "--mode",
+            "position",
+            "--schedule",
+            &schedule,
+        ];
+        let slow = Timed {
+            tick_ratio: 1.0,
+            ..timed(0.9)
+        };
+        let (seen, pace, _) = commits(slow, &argv);
+        for (k, g) in seen.iter().enumerate().skip(1) {
+            let held = g.held.unwrap();
+            assert!(
+                (held.late_ms - 1.6 * k as f64).abs() < 1e-6,
+                "{}",
+                held.late_ms
+            );
+            assert_eq!((held.wait_ms, held.slots_missed), (0.0, 0));
+        }
+        assert!(spacing(&seen).iter().all(|t| *t == 472));
+        let pace = pace.unwrap();
+        assert_eq!((pace.held, pace.late), (5, 5));
+    }
+
+    /// The grid is a train's: a hold, a rest or a set ends it, and a goal
+    /// whose burst outlasts the period is followed by a first goal. The
+    /// files carry each held goal's room, lateness and missed points, and
+    /// the run's count.
+    #[test]
+    fn the_period_holds_trains_and_the_files_say_how() {
+        let out = std::env::temp_dir().join(format!("osc-lab-track-pace-{}", std::process::id()));
+        let mut r = rig_at(2029, 0);
+        r.timed = Some(Timed {
+            stalls: vec![(2, 20.0)],
+            ..timed(0.5)
+        });
+        let a = parse(&[
+            "--goal-period-ms",
+            "25.6",
+            "--mode",
+            "position",
+            "--schedule",
+            "goal:2100@100,goal:2101@20,goal:2102@20,goal:2103@20,hold@20,goal:2104@20,\
+             goal:2105@20,rest@50,goal:2106@20,set:velocity_limit_cps=777,goal:2107@20",
+        ]);
+        capture(&mut r, &a, &out).unwrap();
+        let segs = std::fs::read_to_string(out.join("segments.csv")).unwrap();
+        let cols: Vec<Vec<&str>> = segs.lines().map(|l| l.split(',').collect()).collect();
+        assert_eq!(
+            cols[0][6..9],
+            ["slot_wait_ms", "slot_late_ms", "slots_missed"]
+        );
+        let held: Vec<bool> = cols[1..].iter().map(|c| !c[8].is_empty()).collect();
+        let t = true;
+        assert_eq!(
+            held,
+            [
+                false, false, t, t, false, false, t, false, false, false, false
+            ]
+        );
+        let ms = |row: usize, col: usize| cols[row][col].parse::<f64>().unwrap();
+        for c in &cols[1..] {
+            assert_eq!(
+                (c[6].is_empty(), c[7].is_empty()),
+                (c[8].is_empty(), c[8].is_empty())
+            );
+        }
+        // own time 22 ms a goal, 3.6 ms of room: the 20 ms stall is 16.4 ms
+        // late, the goal after it 12.8, and a goal on time waits the room
+        assert!(
+            (ms(3, 7) - 16.4).abs() < 0.1 && ms(3, 6) == 0.0,
+            "{}",
+            cols[3][7]
+        );
+        assert!(
+            (ms(4, 7) - 12.8).abs() < 0.1 && ms(4, 6) == 0.0,
+            "{}",
+            cols[4][7]
+        );
+        assert!(
+            (ms(7, 6) - 3.6).abs() < 0.6 && ms(7, 7) == 0.0,
+            "{}",
+            cols[7][6]
+        );
+        assert!(cols[1..].iter().all(|c| c[8].is_empty() || c[8] == "0"));
+        let meta: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(out.join("meta.json")).unwrap()).unwrap();
+        assert_eq!(
+            meta["goal_period"],
+            serde_json::json!({ "ms": 25.6, "held": 3, "late": 2 })
+        );
+        std::fs::remove_dir_all(&out).unwrap();
+    }
+
+    /// A period is over 0 and at most the keepalive's cadence, since the
+    /// wait for a grid point is bus silence: at the longest period and the
+    /// shortest dead-man the wait never trips an image that honors it.
+    #[test]
+    fn the_wait_for_a_grid_point_stays_inside_the_deadman() {
+        let mut r = rig_at(2029, 0);
+        for bad in ["0", "250.5", "NaN"] {
+            let e = refused(
+                &mut r,
+                &[
+                    "--goal-period-ms",
+                    bad,
+                    "--mode",
+                    "position",
+                    "--schedule",
+                    "goal:2100@20",
+                ],
+            );
+            assert!(e.contains("at most 250 ms"), "{e}");
+        }
+        r.deadman_honored = true;
+        r.timed = Some(timed(0.5));
+        let schedule = train(6);
+        let mut c = cfg(
+            &mut r,
+            &[
+                "--goal-period-ms",
+                "250",
+                "--deadman-ms",
+                "500",
+                "--mode",
+                "position",
+                "--schedule",
+                &schedule,
+            ],
+        );
+        let (seen, _, res) = drive(&mut r, &mut c);
+        res.unwrap();
+        assert_eq!(seen.len(), 6);
+        assert_eq!(c.pace.unwrap().held, 5);
+    }
+
+    /// What an item repeats is read once a run: the identity block and the
+    /// window floor at preflight, the drop counter ahead of the first
+    /// burst and after each, so the run itself reads the counter alone.
+    /// Every row the servo dropped is still counted, on the burst it was
+    /// dropped from. Without a period every goal is polled before and
+    /// after; inside a train held to one, once: the poll after a goal's
+    /// burst is the poll before the next goal.
+    #[test]
+    fn an_item_reads_once_what_it_repeats_and_counts_every_drop() {
+        use osc_protocol::table::{BAUD_RATE_IDX, CAPABILITY_FLAGS};
+        let identity = (CAPABILITY_FLAGS, BAUD_RATE_IDX + 1 - CAPABILITY_FLAGS);
+        let floor = (calib::I_WINDOW_MIN_TICKS.addr, 2);
+        let counter = (telemetry::TEL_DROP_COUNT.addr, 2);
+        let count = |reads: &[(u16, u16)], span| reads.iter().filter(|r| **r == span).count();
+        let schedule = train(5);
+        let free = ["--no-center", "--mode", "position", "--schedule", &schedule];
+        let held = [&["--goal-period-ms", "25.6"], &free[..]].concat();
+        // the poll torque comes on at, then the goals' own
+        for (argv, polls) in [(&free[..], 1 + 2 * 5), (&held[..], 1 + 1 + 5)] {
+            let mut r = rig_at(2029, 0);
+            r.reads();
+            let mut c = cfg(&mut r, argv);
+            let preflight = r.reads();
+            assert_eq!(
+                (count(&preflight, identity), count(&preflight, floor)),
+                (1, 1)
+            );
+            r.after_burst = Some(Box::new(|c, k| {
+                c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                    let h = &mut t.telemetry_ext.health;
+                    h.tel_drop_count = h.tel_drop_count.wrapping_add(k as u16 % 2 * 3);
+                });
+            }));
+            let mut dropped = Vec::new();
+            let mut ran = Ran::default();
+            record(&mut r, &mut c, &mut ran, |g| {
+                dropped.push(g.stats.rows_dropped);
+                Ok(())
+            })
+            .unwrap();
+            assert_eq!(dropped, [0, 3, 0, 3, 0]);
+            assert_eq!(ran.rows_dropped, 6);
+            let run = r.reads();
+            assert_eq!((count(&run, identity), count(&run, floor)), (0, 0));
+            assert_eq!(count(&run, counter), 6);
+            assert_eq!(count(&run, (POLL_BASE, POLL_LEN)), polls);
+        }
+    }
+
+    /// Inside a train the watchdog still judges every burst: a fault the
+    /// servo latched in a held goal's burst aborts at that goal, torque
+    /// off next, and the goal after it never goes out.
+    #[test]
+    fn a_fault_inside_a_train_aborts_at_its_goal() {
+        let mut r = rig_at(2029, 0);
+        let schedule = train(4);
+        let mut c = cfg(
+            &mut r,
+            &[
+                "--goal-period-ms",
+                "25.6",
+                "--mode",
+                "position",
+                "--schedule",
+                &schedule,
+            ],
+        );
+        r.after_burst = Some(Box::new(|c, k| {
+            if k == 1 {
+                c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                    t.telemetry.common.fault_flags = 1 << 2;
+                    t.telemetry.mode.fault_code = 3;
+                });
+            }
+        }));
+        let (seen, _, res) = drive(&mut r, &mut c);
+        let e = res.unwrap_err();
+        assert_eq!(e.downcast_ref::<Abort>().unwrap().seg, Some(1), "{e}");
+        assert_eq!(seen.len(), 2);
+        let k = r
+            .writes
+            .iter()
+            .position(|w| *w == (control::GOAL_POSITION, 2101))
+            .unwrap();
+        assert_eq!(r.writes[k + 1], (control::TORQUE_ENABLE, 0));
+        assert!(!r.writes.contains(&(control::GOAL_POSITION, 2102)));
+    }
+
     /// The default end moves to the middle in Position mode, the goal ahead
     /// of the mode change, then torque off; `--no-center` writes no goal.
     #[test]
@@ -2425,11 +3200,11 @@ mod tests {
         assert_eq!(segs[0], SEGMENTS_HEADER);
         assert_eq!(segs.len(), 4);
         let cols: Vec<&str> = segs[1].split(',').collect();
-        assert_eq!(cols.len(), 23);
+        assert_eq!(cols.len(), 26);
         assert_eq!(cols[..5], ["0", "goal", "", "2100", "20"]);
-        assert_eq!((cols[6], cols[7]), ("400", "0"));
-        assert_eq!(cols[18..], ["2029", "0", "2047", "0", "1"]);
-        assert!(segs[2].starts_with("1,rest,,,100,,0,0,"));
+        assert_eq!(cols[6..11], ["", "", "", "400", "0"], "no period, no grid");
+        assert_eq!(cols[21..], ["2029", "0", "2047", "0", "1"]);
+        assert!(segs[2].starts_with("1,rest,,,100,,,,,0,0,"));
         let meta: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(out.join("meta.json")).unwrap()).unwrap();
         for k in [
@@ -2448,6 +3223,7 @@ mod tests {
             "watchdog",
             "deadman",
             "center",
+            "goal_period",
             "config",
             "control",
             "restored",
@@ -2468,6 +3244,10 @@ mod tests {
             serde_json::json!([[0x238, 2], [0x240, 10]])
         );
         assert_eq!(meta["deadman"]["ticks"], 20_000);
+        assert_eq!(
+            meta["goal_period"],
+            serde_json::json!({ "ms": null, "held": 0, "late": 0 })
+        );
         assert_eq!(meta["config"]["pos_min_soft_counts"], 432);
         assert_eq!(
             meta["config"].as_object().unwrap().len(),
