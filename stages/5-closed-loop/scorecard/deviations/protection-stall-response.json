@@ -1,0 +1,4 @@
+{
+  "note": "a press over the continuous current for the stall time yields, the current limit folding to the continuous current until the next command, in place of the stall fault the servo holds: the winding estimate's cutoff is the backstop. A protection step: it moves nothing else",
+  "release": ["stall_response"]
+}

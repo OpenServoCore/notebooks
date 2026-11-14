@@ -530,6 +530,10 @@ def bus(monkeypatch, tmp_path):
     synth.wide_result(wc.result_file(BOARD.key), [(1023, 11)])
     # the rules of the registry's gear fields bind nothing: the fake servo has none of them
     monkeypatch.setattr(cn, "registry_of", lambda pair: {})
+    # nor do the rules of the records a host keeps that the results here would bind, the chip's supply off the
+    # board's terminal chain and the cold resistance off the pair's: it has no vdd_mv and no r0_q12
+    for name in ("vdd_mv", "r0_q12"):
+        monkeypatch.delitem(cn.RULES, name)
     state["servo"] = synth.Bench().stub(monkeypatch, lambda: {"torque_enable": state["torque"]})
     monkeypatch.setattr(sc.osc, "bus_baud", lambda: state["baud"])
     monkeypatch.setattr(sc.osc, "identity", lambda: {"sha1": f"sha1 of {sc.osc.tool()}", "version": None})
