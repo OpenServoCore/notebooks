@@ -189,16 +189,32 @@ def next_label(board):
     return next(f"sweep-{k}" for k in range(1, len(taken) + 2) if f"sweep-{k}" not in taken)
 
 
+def slots_of_file(path):
+    """The 16 slot values of a result file, refused when it holds no 16
+    bytes."""
+    v = json.loads(Path(path).read_text()).get(FIELD)
+    if not isinstance(v, list) or len(v) != SLOTS or not all(isinstance(x, int) and 0 <= x <= SLOT_MAX for x in v):
+        raise settings.Refused(f"{sc.shown(path)}: {FIELD} is not {SLOTS} values 0..{SLOT_MAX}")
+    return bytes(v)
+
+
 def slots_of_record(board):
     """The 16 slot values of the board's result file, refused when it
     holds no 16 bytes."""
     path = result_file(board)
     if not path.exists():
         raise settings.Refused(f"no ADC wide-code result for board {board}: run `find` on a sweep first")
-    v = json.loads(path.read_text()).get(FIELD)
-    if not isinstance(v, list) or len(v) != SLOTS or not all(isinstance(x, int) and 0 <= x <= SLOT_MAX for x in v):
-        raise settings.Refused(f"{sc.shown(path)}: {FIELD} is not {SLOTS} values 0..{SLOT_MAX}")
-    return bytes(v)
+    return slots_of_file(path)
+
+
+def bands_of_record(board):
+    """The bands the board's result file names, none for a board with no
+    result."""
+    path = result_file(board)
+    if not path.exists():
+        return []
+    return [Band(b["stuck_code"], b["skipped"], b["ratio"])
+            for b in json.loads(path.read_text()).get("wide_codes", [])]
 
 
 # --- the readings ---

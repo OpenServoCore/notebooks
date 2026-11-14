@@ -14,27 +14,58 @@ every capture's `meta.json` carries.
 
 ## The three kinds of data
 
-- **The test set**, [scorecard/testset.py](scorecard/testset.py). Three
-  captures per run, each one `osc-lab track` call: `steps` (the first
+- **The test set**, [scorecard/testset.py](scorecard/testset.py). Up to
+  four captures per run, each one `osc-lab track` call: `steps` (the first
   second after torque-on, then moves of 2, 20 and 60 degrees each way from
   the center and back), `follow` (goal ramps as a 50 Hz host sends them,
-  at 1, 3 and 10 % of the no-load speed, up and back down) and `hold` (two
-  three-second holds at the center). It is written in the servo's own
-  terms: degrees through the stage 3 pot-table's counts per degree, speeds
-  as shares of the stage 3 run-up's no-load speed, the center the middle
-  of the servo's soft range. A servo whose soft range cannot fit it is
-  refused. Each capture writes a `plan.json` beside its rows naming every
-  segment.
+  at 1, 3 and 10 % of the no-load speed, up and back down), `hold` (two
+  three-second holds at the center) and `wide` (two-second holds at the
+  middle of each ADC wide code of the board, described below). It is
+  written in the servo's own terms: degrees through the stage 3
+  pot-table's counts per degree, speeds as shares of the stage 3 run-up's
+  no-load speed, the center the middle of the servo's soft range, the
+  wide codes from the board's stage 1 result. A servo whose soft range
+  cannot fit it is refused. Each capture writes a `plan.json` beside its
+  rows naming every segment.
 - **The runs**, under `telemetry/<servo>__<board>/scorecard/<label>/`. A
   rung is one build at one label, `run-1` to `run-K` inside it, and
-  `rung.json` with the label, the commit, the image sha, a note, the time
-  and a hash of the CONFIG it ran on.
+  `rung.json` with the label, the commit, the image sha, a note, the time,
+  a hash of the CONFIG it ran on and the goals of the wide holds.
 - **The results**, one file per rung,
   `scorecard/results/<servo>__<board>/<label>.json`: every score as the
   median over the rung's runs with their range as the bounds.
 
 Every score reads the pot. How each one is taken is in the docstrings of
 `oscnb/scorecard.py`.
+
+The `wide` capture holds the goals the ADC's wide codes make hard. A wide
+code stands for itself and the codes it skips
+([stage 1, wide-codes](../1-board/README.md#wide-codes)), and a goal
+inside that span is never within the deadband of the reading on a
+firmware that takes the code as it comes. For each wide code of the
+board's result that takes a slot, lowest first, the capture holds the
+middle of the skipped codes for two seconds, twice: once after a goal 30
+counts above the span, once after one 30 counts below it. Such an
+approach goal is held as long as a step of its travel, by the set's own
+rule: the hold of the smallest step size at or above the travel from the
+goal before it (the center for the first), 1200, 1500 or 2000 ms, and
+2000 ms for a travel beyond 60 degrees. So the long move from one code
+to the next gets the time of a 60 degree step and the short one back
+across a span that of a 2 degree step. The codes are read from the
+board's result, none typed. A code is held when both of those goals fit
+the soft range with the set's 5 degree margin. A board with no wide-code
+result, or with no such code in reach, has no `wide` capture: its rows
+are then absent from the result and empty in the ladder, not zero. The
+capture runs on every rung, with or without `--wide-codes`, since a rung
+without the slots is the one that shows the defect.
+
+Three rows read it, each over the last 500 ms of the holds.
+`wide_hold_hunting` is the number of holds driven on more than 2 % of
+those rows, the way `landing_tail_driven` counts landings.
+`wide_hold_driven_share` is the share of rows driven and
+`wide_hold_current_rms_ma` the current rms, both over the tails of all
+the holds pooled. A rung recorded before the capture joined the set has
+no such rows.
 
 Two rows read the servo's own reports against the pot,
 `position_report_error_deg` and `speed_report_error_deg_s`. A report is
@@ -93,7 +124,13 @@ A rung passed `--wide-codes` (on `ab`, `--a-wide-codes` or
 board ([stage 1, wide-codes](../1-board/README.md#wide-codes)): written
 after the settings and the table, outside the stamp, the board's result
 file and its sha1 kept in `rung.json`, and the same reboot dropping them
-at the end.
+at the end. `score` reads such a rung's pot as its firmware did: a row
+at a wide code is read as the middle of the span the code stands for,
+with the slots of the result file `rung.json` names, and the raw code is
+kept beside it. Under a live position table that step comes first and
+the table is read at the stepped value. A result file that is no longer
+the one recorded is refused. A rung that names no slots is read as
+before.
 
 The same servo drifts within a session, so a candidate and its control
 are best recorded together. `ab` records two rungs at once, one run of
@@ -184,8 +221,11 @@ Kept:
   `zz-ab-after-wide-codes-2` against `zz-ab-before-wide-codes-2`): the
   speed report on the 1 % ramp reads -5.8 and -5.7 deg/s against -7.2
   and -7.4, and no other row moves the same way beyond the spread in
-  both sets. The set has no hold at a wide-code goal, so the rung's own
-  gain is not one of its rows yet.
+  both sets. The set had no hold at a wide-code goal when the rung was
+  recorded, so the rung's own gain is not one of its rows. Its rows are
+  read through the board's slots, a stuck code as the middle of its
+  span, where `zz-ab-after-wide-codes-2`, whose rows were not kept,
+  stays as scored on the raw pot.
 
 Tried, not kept:
 
@@ -308,7 +348,8 @@ The controls, and what they say about reading the ladder:
   0.26), and the slow follow's current as lower by a fifth with the
   ranges apart only in the first. The speed report on the 3 % ramp
   reads -4.8 and -4.9 deg/s against -4.3 and -4.4, the ranges of three
-  runs apart by a hair in both sets; over the twelve ramps a side, nine
+  runs apart in the second set and overlapping by a hair in the first;
+  over the twelve ramps a side, nine
   of the change's sit between -3.3 and -5.3 deg/s, inside the control's
   -3.2 to -5.4, and three read -7 to -9. A ramp's speed report is one
   poll per goal item, so the row carries a shift of that size only as a

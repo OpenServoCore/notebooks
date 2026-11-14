@@ -7,12 +7,15 @@ numbers.
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard table
 
-`run` records a rung: `--runs` runs of the three captures of the test set
+`run` records a rung: `--runs` runs of the captures of the test set
 (stages/5-closed-loop/scorecard/testset.py) under
-`telemetry/<pair>/scorecard/<label>/run-K/{steps,follow,hold}`, with
-`rung.json` naming the build. With `--settings` the rung runs on a file of
-CONFIG fields applied volatile (oscnb.settings) and rebooted away at the
-end, the fields kept in `rung.json`. With `--pos-table` it runs on the
+`telemetry/<pair>/scorecard/<label>/run-K/{steps,follow,hold,wide}`, with
+`rung.json` naming the build. `wide`, holds at the middle of each ADC
+wide code of the board, is run where the board's wide-code result names
+a code in reach, on every rung, and `rung.json` names its goals. With
+`--settings` the rung runs on a file of CONFIG fields applied volatile
+(oscnb.settings) and rebooted away at the end, the fields kept in
+`rung.json`. With `--pos-table` it runs on the
 pair's position table (oscnb.postable) installed volatile after the
 fields, one stamp over both, the file and its sha1 kept in `rung.json`
 and the same reboot dropping it. With `--wide-codes` it runs on the
@@ -29,8 +32,11 @@ prints the ladder, one column per rung.
 Every score reads the pot, `pos` in counts against the goal in counts,
 turned to degrees by the plan's counts per degree. Under a LIVE position
 table the goals are linearized counts, so the rows' raw pot is read
-through the table the rung ran on first. The rows' `pos` carries
-spikes while the bridge drives, so every peak, slope and settle read goes
+through the table the rung ran on first. On a `--wide-codes` rung the
+servo reads a pot sample at a wide code as the middle of the span the
+code stands for, so the rows' raw pot takes the same step first, with
+the slots of the file the rung names, ahead of the table. The rows' `pos`
+carries spikes while the bridge drives, so every peak, slope and settle read goes
 through a centered rolling median of MEDIAN_ROWS rows, taken within one
 segment; the hold's jitter alone reads the raw pot. A capture's rows go on
 one time axis from the servo's own tick: each segment's `tick0` is the
@@ -87,7 +93,8 @@ UNITS = {
     "two_sided_deg": "deg", "landing_buzz_share": "share", "landing_tail_driven": "landings",
     "landing_drive_ms": "ms", "landing_drive_ms_worst": "ms",
     "hold_jitter_counts": "counts", "hold_buzz_share": "share",
-    "hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
+    "hold_current_rms_ma": "mA", "wide_hold_hunting": "holds", "wide_hold_driven_share": "share",
+    "wide_hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
     "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "crawl_swing_deg": "deg",
     "enable_kick_deg": "deg",
@@ -130,11 +137,17 @@ def file_sha1(path):
     return hashlib.sha1(Path(path).read_bytes()).hexdigest()
 
 
-def rung_table(folder):
-    """The Table a capture's rung names (`rung.json` two levels up), None
-    when it names none; refused when the file is not the one recorded."""
+def rung_named(folder, key):
+    """What a capture's rung names under `key` (`rung.json` two levels
+    up), None when it names nothing there or there is no rung."""
     p = Path(folder).parent.parent / "rung.json"
-    named = json.loads(p.read_text()).get("pos_table") if p.exists() else None
+    return json.loads(p.read_text()).get(key) if p.exists() else None
+
+
+def rung_table(folder):
+    """The Table a capture's rung names, None when it names none; refused
+    when the file is not the one recorded."""
+    named = rung_named(folder, "pos_table")
     if not named:
         return None
     path = results.ROOT / named["file"]
@@ -143,13 +156,28 @@ def rung_table(folder):
     return postable.load_file(path)[0]
 
 
+def rung_wide_slots(folder):
+    """The ADC wide-code slots a capture's rung ran on, None when it names
+    none; refused when the file is not the one recorded."""
+    named = rung_named(folder, "wide_codes")
+    if not named:
+        return None
+    path = results.ROOT / named["file"]
+    if not path.exists() or file_sha1(path) != named["sha1"]:
+        raise ValueError(f"{named['file']} is not the wide-code result the rung ran on (sha1 {named['sha1']})")
+    return widecodes.slots_of_file(path)
+
+
 def load(folder):
     """A capture's rows on its time axis, with its plan, meta and board.
-    Under a LIVE table `pos` is the raw pot read through the rung's table,
-    the raw kept as `pos_raw`. Rows gain `t` (s from the first row),
-    `pos_f` (the median pot) and `i_ma` (the shunt's read current, NaN
-    where the drive window was not read). `polls` is segments.csv by
-    item, each line the poll taken before its item."""
+    On a rung that names wide-code slots `pos` is the raw pot with each
+    stuck code read as the middle of its span (`widecodes.compensated`),
+    as the servo read it. Under a LIVE table `pos` is that reading, or
+    the raw pot on a rung without slots, read through the rung's table.
+    Either way the raw code is kept as `pos_raw`. Rows gain `t` (s from
+    the first row), `pos_f` (the median pot) and `i_ma` (the shunt's read
+    current, NaN where the drive window was not read). `polls` is
+    segments.csv by item, each line the poll taken before its item."""
     folder = Path(folder)
     meta = json.loads((folder / "meta.json").read_text())
     plan = json.loads((folder / "plan.json").read_text())
@@ -169,8 +197,13 @@ def load(folder):
         raise ValueError(f"{folder}: no board entry matches the sense block {meta.get('sense')}")
     rows = pd.read_csv(folder / "track.csv", usecols=[
         "seg", "goal", "tick", "window_valid", "pos", "current_raw", "duty_counts"])
-    if table is not None:
+    slots = rung_wide_slots(folder)
+    if slots is not None or table is not None:
         rows["pos_raw"] = rows["pos"]
+    if slots is not None:
+        middle = widecodes.compensated(rows["pos_raw"].to_numpy(), slots)
+        rows["pos"] = middle if table is None else table.lin(middle)
+    elif table is not None:
         rows["pos"] = postable.interp_q4(rows["pos_raw"].to_numpy(), table.points) / postable.GRID
     polls = pd.read_csv(folder / "segments.csv")
     segs = polls[polls["rows"] > 0]
@@ -434,6 +467,22 @@ def hold_scores(cap):
     }
 
 
+# --- the wide capture ---
+
+def wide_scores(cap):
+    """Over the last REST_MS of every hold at the middle of a wide code:
+    the holds driven over a share above TAIL_DRIVEN_SHARE, the ones that
+    hunt; and over those tails pooled, the share of rows driven and the
+    current rms."""
+    tails = [tail(seg_rows(cap, s["seg"]), REST_MS) for s in plan_segs(cap, "wide-hold")]
+    pooled = pd.concat(tails)
+    return {
+        "wide_hold_hunting": sum(int((t["duty_counts"] != 0).mean() > TAIL_DRIVEN_SHARE) for t in tails),
+        "wide_hold_driven_share": float((pooled["duty_counts"] != 0).mean()),
+        "wide_hold_current_rms_ma": current_rms(pooled["i_ma"]),
+    }
+
+
 # --- the follow capture ---
 
 def ramps(cap):
@@ -529,16 +578,21 @@ def follow_scores(cap):
 # --- a run and a rung ---
 
 def run_complete(run_dir):
+    """Whether every capture of a run ended ok; `wide` counts only where
+    the run has one."""
     run_dir = Path(run_dir)
-    for c in ("steps", "follow", "hold"):
+    for c in ("steps", "follow", "hold", "wide"):
         m = run_dir / c / "meta.json"
+        if c == "wide" and not m.parent.exists():
+            continue
         if not m.exists() or json.loads(m.read_text()).get("ended") != "ok":
             return False
     return True
 
 
 def score_run(run_dir):
-    """Every score of one run, {key: value}."""
+    """Every score of one run, {key: value}; the wide rows only where the
+    run has a `wide` capture."""
     run_dir = Path(run_dir)
     steps = load(run_dir / "steps")
     hold = load(run_dir / "hold")
@@ -553,6 +607,8 @@ def score_run(run_dir):
     out["position_report_error_deg"] = position_report_error_deg(steps)
     out["enable_drive_ms"] = max(enable_drive_ms(steps, "enable"), enable_drive_ms(hold, "hold"))
     out.update(hold_scores(hold))
+    if (run_dir / "wide").exists():
+        out.update(wide_scores(load(run_dir / "wide")))
     out.update(follow_scores(load(run_dir / "follow")))
     return out
 
@@ -666,7 +722,7 @@ def bench_set(servo, board, pair):
     module, its inputs, the soft range read off the servo, the center and
     the captures' segments."""
     ts = testset()
-    inp = ts.inputs(servo, pair)
+    inp = ts.inputs(servo, pair, board.key)
     preflight(servo, board)
     guard = (osc.get("pos_min_soft_counts"), osc.get("pos_max_soft_counts"))
     center, sets = ts.build(guard, inp)
@@ -694,10 +750,13 @@ def applied(r, pair):
 
 
 def record_run(r, k, s):
-    """Run `k` of rung `r` on bench set `s`: the test set's captures in
-    order, and `rung.json` once the rung's first capture lands."""
+    """Run `k` of rung `r` on bench set `s`: the captures the set built,
+    in the test set's order, and `rung.json` once the rung's first capture
+    lands, the wide holds' goals in it."""
     rung, ts = r["dir"], s["ts"]
-    for i, name in enumerate(ts.CAPTURES):
+    wide = [{"stuck_code": g["stuck_code"], "side": g["side"], "goal_counts": g["goal_counts"]}
+            for g in s["sets"].get("wide", []) if g["test"] == "wide-hold"]
+    for i, name in enumerate(c for c in ts.CAPTURES if c in s["sets"]):
         meta = capture(rung / f"run-{k}" / name, name, s["sets"][name], s["center"], s["guard"], s["inp"],
                        deadman_check=i == 0, ts=ts)
         if not (rung / "rung.json").exists():
@@ -706,6 +765,7 @@ def record_run(r, k, s):
                 "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "config_hash": config_hash(meta["config"]), "runs_asked": r["runs"],
                 "settings": r["fields"], "pos_table": r["table"], "wide_codes": r["wide"],
+                "wide_goals": wide or None,
             }, indent=2) + "\n")
 
 
