@@ -5,6 +5,7 @@
  "i_cont_ma": 250.0,
  "stall_release_ma": 90.0,
  "oc_trip_ma": 2200.0,
+ "cutoff_c": 90.0,
  "velocity_limit_deg_s": 79.31,
  "accel_limit_deg_s2": 1586.0,
  "stall_omega_max_deg_s": 26.44,
@@ -13,6 +14,9 @@
  "hold_band_noise_multiple": 2.5,
  "hold_band_floor_counts": 4,
  "sensor_delta_max_counts": 256,
+ "why": {
+  "cutoff_c": "one thermal limit, at 90 C: the owner's decision"
+ },
  "rule": {
   "r_q12": "r.rails_fit",
   "r_bemf_q12": "r_bemf.small_step"

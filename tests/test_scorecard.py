@@ -1731,7 +1731,7 @@ DUMP = ("note: descriptor osc-servo is fw 0.1, servo reports fw 0.2; fields adde
         "0x0000  model_number                 ro  257\n"
         "0x004a  stall_response               rw  Yield (1)\n"
         "0x004b  drive_polarity               rw  on\n"
-        "0x0060  derate_start_cc              rw  -200\n"
+        "0x0060  cutoff_cc                    rw  -200\n"
         "0x00d0  gear_class                   rw  2 (metal)\n"
         "0x00d1  adc_wide_mid_q4              rw  00 00 00 58\n")
 
@@ -1741,7 +1741,7 @@ def test_osc_dump_reads_a_row_a_field_off_the_tools_lines(monkeypatch):
     monkeypatch.setattr(sc.osc, "run", lambda *a, **kw: seen.append((a, kw)) or DUMP)
     assert sc.osc.dump() == [
         (0x00, "model_number", "ro", 257), (0x4A, "stall_response", "rw", "Yield (1)"),
-        (0x4B, "drive_polarity", "rw", "on"), (0x60, "derate_start_cc", "rw", -200),
+        (0x4B, "drive_polarity", "rw", "on"), (0x60, "cutoff_cc", "rw", -200),
         (0xD0, "gear_class", "rw", "2 (metal)"), (0xD1, "adc_wide_mid_q4", "rw", "00 00 00 58")]
     assert seen == [(("dump",), {"capture": True})]
     monkeypatch.setattr(sc.osc, "run", lambda *a, **kw: "note: nothing a field line\n")

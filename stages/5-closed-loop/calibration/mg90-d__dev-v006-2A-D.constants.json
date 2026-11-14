@@ -12,7 +12,7 @@
   "3-servo/resistance": {"file": "stages/3-servo/resistance/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "aeac82cbb9299ae6d23e31753d8010797bc7a25d"},
   "3-servo/run-up": {"file": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "0293b324b5bb7c0030930964dffa4f6856d02283"},
   "3-servo/steps": {"file": "stages/3-servo/steps/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "06987086aefe0619e015c979d9ce1266ed4996ca"},
-  "policy": {"file": "stages/5-closed-loop/calibration/policy.json", "sha1": "747e6c6847cca7067591472ca5997bb461b6c5ff"},
+  "policy": {"file": "stages/5-closed-loop/calibration/policy.json", "sha1": "f37c4051295e486ba88b0ff8f09408f885d37be1"},
   "pos_table": {"file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json", "sha1": "904c4575899f8215f5daec1d2bdd227a1ee9c4c3"},
   "registry": {"board": {"tick_hz": 20000}, "servo": {"gear_ratio": 308.0533, "gear_class": "metal"}}
  },
@@ -55,8 +55,7 @@
   "openloop_decay": {"value": "Slow (0)", "class": "adopted", "origin": "servo-state", "protection": null},
   "openloop_zero_brake": {"value": "off", "class": "adopted", "origin": "servo-state", "protection": null},
   "thermal_tau_s": {"value": 115, "class": "adopted", "origin": "servo-state", "protection": {"looser": "judged"}},
-  "derate_start_cc": {"value": 8000, "class": "adopted", "origin": "servo-state", "protection": {"looser": "up"}},
-  "cutoff_cc": {"value": 10000, "class": "adopted", "origin": "servo-state", "protection": {"looser": "up"}},
+  "cutoff_cc": {"value": 9000, "class": "policy", "inputs": ["policy:cutoff_c"], "pos_unit": 0, "protection": {"looser": "up"}, "q": 0, "rule": "cutoff.policy", "rule_rev": 1, "unit": "cC"},
   "v_undervolt_counts": {"value": 720, "class": "adopted", "origin": "servo-state", "protection": {"looser": "down"}},
   "thermal_tau2_s": {"value": 0, "class": "adopted", "origin": "servo-state", "protection": {"looser": "judged"}},
   "pos_error_time_ticks": {"value": 10000, "class": "adopted", "origin": "servo-state", "protection": {"looser": "up"}},
@@ -90,6 +89,6 @@
   "vdd_mv": {"value": 3300, "class": "adopted", "origin": "servo-state", "protection": null},
   "gear_class": {"value": "2 (metal)", "class": "measured", "inputs": ["registry:gear_class"], "pos_unit": 0, "protection": null, "q": 0, "rule": "gear_class.registry", "rule_rev": 1, "unit": "class"}
  },
- "hash": {"plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662", "protection": "f47b995e938f6d25df3f8b69961b662e8552654ce220ac6952decc53ee4aab34", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "62368e9771885c793d301da99bd6b0f23e6b15bb3067125b33adfca734a617eb"},
- "previous": {"plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662", "protection": "f47b995e938f6d25df3f8b69961b662e8552654ce220ac6952decc53ee4aab34", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "62368e9771885c793d301da99bd6b0f23e6b15bb3067125b33adfca734a617eb"}
+ "hash": {"plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662", "protection": "757fe262dcc1911f4f9324771a031370a93a75a52581c5b42007db7bb877bb74", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "297f3cb4a5445c4918d07dbcfba748c966f13a40a2a3a40eb7e598340fc23a46"},
+ "previous": {"plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662", "protection": "757fe262dcc1911f4f9324771a031370a93a75a52581c5b42007db7bb877bb74", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "297f3cb4a5445c4918d07dbcfba748c966f13a40a2a3a40eb7e598340fc23a46"}
 }

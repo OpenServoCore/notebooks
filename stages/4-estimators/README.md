@@ -144,7 +144,7 @@ Run: no capture of its own.
 | current loop's feedback | `current-zero`: the zero's error and its start-up time | no rail, reference or temperature channel in the rows |
 | velocity loop's feedback | `velocity`: noise against delay, the rest verdict, the crawl | the brush term's form under load; the blend and the rest verdict's form are open |
 | position loop's feedback | `position`: noise against delay, the held-out residual, the lash as a bound | the grade at speed is bounded by the stamp lead |
-| thermal derate and cutoff | `winding-temperature` | no thermal capture |
+| the one thermal limit | `winding-temperature` | no thermal capture |
 | valid flags for the faults | `speed`, `velocity` | the tap floor's rung is open; stage 3's dropout rate flag was not run |
 
 The `compensation` notebook lists every gap with the capture that would

@@ -63,6 +63,11 @@ const CENTER_TOL: i32 = 20;
 const CENTER_STILL: u32 = 4;
 const CENTER_POLLS: u32 = 200;
 
+/// The NTC watchdog's default sits this far under the servo's `cutoff_cc`,
+/// centi-C: the cutoff is the servo's one thermal limit and latches a
+/// fault, so the host ends a run 10 C short of it.
+const NTC_MARGIN_CC: i16 = 1000;
+
 /// The closed loop a run drives.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
 pub(crate) enum Mode {
@@ -229,7 +234,7 @@ pub struct Args {
     #[arg(long, default_value_t = 50)]
     current_cap_ms: u32,
     /// Watchdog: abort on the board NTC over this, degrees C, through the
-    /// servo's own NTC curve [default: its derate_start_cc].
+    /// servo's own NTC curve [default: its cutoff_cc less 10 C].
     #[arg(long)]
     ntc_max_c: Option<f64>,
     /// Watchdog: abort on the shaft under this, linearized counts
@@ -855,7 +860,7 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
     }
     let ntc_max_cc = match a.ntc_max_c {
         Some(c) => (c * 100.0).round().clamp(i16::MIN as f64, i16::MAX as f64) as i16,
-        None => read_u16(c, id, config::DERATE_START_CC)? as i16,
+        None => (read_u16(c, id, config::CUTOFF_CC)? as i16).saturating_sub(NTC_MARGIN_CC),
     };
     let deadband = read_u16(c, id, config::POS_DEADBAND_COUNTS)?;
 
@@ -1971,7 +1976,7 @@ mod tests {
     }
 
     /// The bench servo's defaults: the guard is its soft limits, the cap a
-    /// quarter over its limit, the NTC cap its derate start, the dead-man
+    /// quarter over its limit, the NTC cap its cutoff less 10 C, the dead-man
     /// 20000 ticks and the middle of the soft range the end.
     #[test]
     fn a_run_takes_its_defaults_from_the_servo() {
@@ -1983,6 +1988,7 @@ mod tests {
         assert_eq!(c.wd.guard, (432, 3626));
         assert_eq!(c.wd.cap, 350.0);
         assert_eq!((c.wd.cap_rows, c.wd.cap_polls), (1000, 1));
+        assert_eq!(c.wd.ntc_max_cc, 8000, "10 C under the 90 C cutoff");
         assert_eq!(c.deadman_ticks, 20_000);
         assert_eq!(c.center, Some(2029));
         assert_eq!(c.wd.lin(2029), 2029, "the identity table");

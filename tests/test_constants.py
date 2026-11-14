@@ -590,15 +590,19 @@ def test_a_looser_limit_needs_loosen(stored, bench, tmp_path):
     ("th_rise_q016", 1143, 494, True), ("v_undervolt_counts", 720, 800, False),
     ("stall_response", "Fault (0)", "Yield (1)", True), ("stall_response", "Yield (1)", "Fault (0)", True),
     ("i_cont_counts", 277, 0, True), ("i_cont_counts", 277, 200, True), ("rail_fold_q8", 1430, 0, True),
-    ("ntc_k1_q88", 563, 212, True), ("cutoff_cc", 10000, "9000", True),
+    ("ntc_k1_q88", 563, 212, True), ("cutoff_cc", 10000, "9000", True), ("cutoff_cc", 10000, 9000, False),
+    ("derate_start_cc", 8000, 9000, True),
 ])
 def test_looser_reads_a_direction_and_takes_what_it_cannot_read_as_less(name, on_servo, wanted, less):
     assert cn.looser(name, on_servo, wanted) is less
 
 
 def test_every_protection_field_has_one_way_to_protect_less():
-    assert cn.PROTECTION == set(cn.LOOSER) and set(cn.LOOSER.values()) == {"up", "down", "judged"}
-    assert len(cn.PROTECTION) == 26 and not cn.PROTECTION & {*cn.COMMS, cn.STAMP, wc.FIELD}
+    assert cn.PROTECTION == {*cn.LOOSER, *cn.RETIRED} and set(cn.LOOSER.values()) == {"up", "down", "judged"}
+    assert len(cn.LOOSER) == 25 and not cn.PROTECTION & {*cn.COMMS, cn.STAMP, wc.FIELD}
+    # a field the firmware no longer names keeps the way it had, for the sets written while it stood: it is
+    # no field of the table now, and nothing binds it
+    assert cn.RETIRED == {"derate_start_cc": "up"} and not set(cn.RETIRED) & {*cn.LOOSER, *cn.RULES}
 
 
 def test_a_refusal_after_the_first_write_reboots(stored, bench, tmp_path):
@@ -818,13 +822,14 @@ NO_BLOCK = [
     *NO_COUNTS,
     *(f"{n}: left out, 1-board/ntc-curve has no result for board" for n in ("ntc_t_ref_cc", "ntc_k1_q88",
                                                                            "ntc_k2_q24")),
-    *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("i_cont", "stall_release", "oc_trip"))]
+    *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("i_cont", "stall_release", "oc_trip")),
+    "cutoff_cc: left out, policy.json has no cutoff_c"]
 # the registry with the board's tick rate, and the policy entries the rules of the motor block and of the
 # protection fields read
 BOARD_REG = {**REG, "board": {"tick_hz": 20_000}}
 LIMITS_MA = {"current_limit_ma": 500.0, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
 BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_q12": "r.rails_fit", "r_bemf_q12": "r_bemf.small_step"},
-                **LIMITS_MA}
+                **LIMITS_MA, "cutoff_c": 90.0}
 # the policy entries the rules of the fields in counts of position read, and the pot's noise at rest
 COUNT_POLICY = {"velocity_limit_deg_s": 75.0, "accel_limit_deg_s2": 1500.0, "stall_omega_max_deg_s": 25.0,
                 "pos_error_deg": 20.0, "soft_margin_share": 0.0625, "hold_band_noise_multiple": 2.5,
@@ -837,7 +842,8 @@ BLOCK_SAID = [
     *NO_RANGE, "current_limit_counts: carried at 554, it would be 500: name it with --protection", NO_STALL,
     *NO_COUNTS,
     *(f"{n}: left out, name it with --protection" for n in (
-        "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts", "oc_trip_counts"))]
+        "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts", "oc_trip_counts",
+        "cutoff_cc"))]
 PLANT = {
     "1-board/current-scale": {"counts_per_a": (1000.0, 990.0, 1010.0)},
     "1-board/ntc-curve": {"design_t_ref_cc": (2600.0,), "design_k1_q88": (200.0,), "design_k2_q24": (30000.0,)},
@@ -1209,6 +1215,40 @@ def test_one_build_moves_one_hash(first, limited, tmp_path):
         cn.build(PAIR, None, protection=["current_limit_counts"], root=tmp_path, registry=REG)
 
 
+def test_a_field_the_firmware_no_longer_names_leaves_in_the_build_that_names_it(first, geared, tmp_path):
+    inputs(tmp_path)
+    plain, _ = built_on(first, tmp_path)
+    # a set written while the firmware had the field: it holds it under the protection hash, and loads
+    old = copy.deepcopy(plain)
+    old["fields"]["derate_start_cc"] = {"value": 8000, **ADOPTED, "protection": cn.protection_of("derate_start_cc")}
+    old["hash"] = cn.hashes(old)
+    assert old["fields"]["derate_start_cc"]["protection"] == {"looser": "up"}
+    assert moved_hashes(plain, old) == ["protection"] and cn.load(cn.write(old, tmp_path / "old.constants.json")) == old
+    # a build of the plant carries it as it stood, like any protection field, and says what names it
+    doc, notes = built_on(old, tmp_path)
+    assert doc["fields"]["derate_start_cc"] == old["fields"]["derate_start_cc"] and doc["hash"] == old["hash"]
+    assert ("derate_start_cc: carried at 8000, the firmware names no such field: name it with --protection to "
+            "leave it out") in notes
+    # named, it leaves, and the protection hash moves alone
+    named, notes = built_on(old, tmp_path, protection=["derate_start_cc"])
+    assert "derate_start_cc" not in named["fields"] and moved_hashes(old, named) == ["protection"]
+    assert "derate_start_cc: left out, the firmware names no such field" in notes
+    assert cn.changes(old, named)[0] == "derate_start_cc: 8000 -> not in the set"
+    assert named["hash"] == plain["hash"] and cn.load(cn.write(named, tmp_path / "x.constants.json")) == named
+    # no build after brings it back, named or not, and no pin types it in
+    again, notes = built_on(named, tmp_path, protection=["derate_start_cc"])
+    assert again["hash"] == named["hash"] and not any(n.startswith("derate_start_cc") for n in notes)
+    pins = cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pins.json")
+    pins.write_text(json.dumps({"derate_start_cc": pin(8000)}))
+    with pytest.raises(ValueError, match="the firmware names no derate_start_cc"):
+        built_on(named, tmp_path)
+    pins.unlink()
+    # the older set is refused by a servo whose table has no such field, before anything is written
+    with pytest.raises(settings.Refused, match="the servo's descriptor lets a host write no derate_start_cc"):
+        cn.install(old, root=tmp_path)
+    assert geared.wrote() == []
+
+
 def test_a_result_that_read_a_file_since_moved_is_stale(first, limited, tmp_path):
     inputs(tmp_path)
     limited(250, {WIDE: "0" * 40})
@@ -1246,6 +1286,9 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     assert isinstance(policy["angle_cw_stop_deg"], float) and isinstance(policy["hold"], dict)
     assert set(policy["hold"]) <= set(cn.RULES)
     assert isinstance(policy["observer_hz"], float) and all(policy["hold"].values())
+    # a choice that is the owner's says so, under `why`, by the entry's name
+    assert policy["why"] == {"cutoff_c": "one thermal limit, at 90 C: the owner's decision"}
+    assert set(policy["why"]) <= set(policy) and policy["cutoff_c"] == 90.0
     # where a field has several rules the policy names one of them, and names none for a field with one
     assert {n: policy["rule"][n] in of for n, of in cn.RULES.items() if len(of) > 1} == {
         "r_q12": True, "r_bemf_q12": True}
@@ -1731,6 +1774,17 @@ def test_the_protection_rules_bind_in_a_build_that_names_them(first, tmp_path):
         "ntc_t_ref_cc": (2600, 0), "ntc_k1_q88": (200, 8), "ntc_k2_q24": (30000, 24)}
     # the reference count has no rule yet: the result names it as design_raw_ref
     assert "ntc_raw_ref" not in cn.RULES and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
+    # the one thermal limit waits for its own name: the policy's temperature, centi-C as the field holds it
+    assert "cutoff_cc" not in f
+    hot, _ = cn.build(PAIR, doc, protection=["cutoff_cc"], root=tmp_path, registry=BOARD_REG)
+    assert moved_hashes(doc, hot) == ["protection"] and hot["fields"]["cutoff_cc"] == {
+        "value": 9000, "class": "policy", "rule": "cutoff.policy", "rule_rev": 1, "unit": "cC", "q": 0,
+        "pos_unit": 0, "inputs": ["policy:cutoff_c"], "protection": {"looser": "up"}}
+    # on a servo that holds a higher one it protects more: its install names it, and not to loosen
+    state = {"fields": {**{n: e["value"] for n, e in hot["fields"].items()}, "cutoff_cc": 10000}}
+    assert cn.gate(hot, state) == ["cutoff_cc: servo 10000, set 9000, protects more (less is up): name it with "
+                                   "--protection cutoff_cc"]
+    assert cn.gate(hot, state, protection=["cutoff_cc"]) == []
     # a scale that moves moves the limits with it, and the set that stood is stale by the fields that read it
     plant(tmp_path, {"1-board/current-scale": {"counts_per_a": (1100.0,)}})
     lines, stale = cn.status(doc, tmp_path, BOARD_REG)
@@ -1876,12 +1930,11 @@ def test_what_the_stored_curve_and_the_curve_of_record_read_on_the_bench_board()
     reads = {t: (ntc.reads_c(board, stored, t), ntc.reads_c(board, record, t)) for t in (25, 40, 60, 80, 100)}
     assert reads == {25: (25.0, 24.3), 40: (40.19, 40.64), 60: (57.31, 65.14), 80: (68.53, 83.54),
                      100: (75.08, 94.95)}
-    # the true temperature at which each reaches the derate and the cutoff as the set holds them
-    derate, cutoff = f["derate_start_cc"]["value"], f["cutoff_cc"]["value"]
-    assert (derate, cutoff) == (8000, 10000)
-    reaches = [[ntc.reaches_c(board, curve, at) for at in (derate, cutoff)] for curve in (stored, record)]
-    assert reaches == [[pytest.approx(130.3, abs=0.05), None],
-                       [pytest.approx(75.4, abs=0.05), pytest.approx(114.2, abs=0.05)]]
+    # the true temperature at which each reaches the cutoff, the one thermal limit, as the set holds it
+    cutoff = f["cutoff_cc"]["value"]
+    assert cutoff == 9000
+    reaches = [ntc.reaches_c(board, curve, cutoff) for curve in (stored, record)]
+    assert reaches == [None, pytest.approx(90.1, abs=0.05)]
     # the stored curve tops out under the cutoff: short of the rail check no board temperature reads it
     counts = range(ntc.RAIL_COUNTS + 1, ntc.ADC_FULL - 1 - ntc.RAIL_COUNTS)
     assert max(ntc.ntc_cc(r, *stored) for r in counts) == 8416
@@ -1896,6 +1949,21 @@ def test_what_the_stored_curve_and_the_curve_of_record_read_on_the_bench_board()
     lowest = min(counts, key=lambda r: ntc.ntc_cc(r, *record))
     assert (ntc.ntc_cc(lowest, *record), round(float(board.ntc_c_beta(lowest)), 1)) == (1707, 8.3)
     assert (ntc.reads_c(board, record, 0), ntc.reads_c(board, stored, 0)) == (18.37, 4.84)
+
+
+def test_the_bench_pairs_thermal_limit_is_the_policys_and_the_only_one():
+    doc, c, _ = of_the_bench_pair()
+    f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    e = cn.evaluate(cn.rule_of(c, "cutoff_cc"), c)
+    assert (e["value"], e["inputs"]) == (100 * policy["cutoff_c"], ["policy:cutoff_c"]) == (9000, ["policy:cutoff_c"])
+    assert (f["cutoff_cc"]["value"], f["cutoff_cc"]["class"], f["cutoff_cc"].get("would_be")) == (9000, "policy", None)
+    # no field of the set is one the firmware no longer names
+    assert not set(cn.RETIRED) & set(f) and sum(n in cn.PROTECTION for n in f) == 25
+    # against a servo at the 100 C it held before, the set's limit protects more: named, and not to loosen
+    state = {"fields": {**{n: x["value"] for n, x in f.items()}, "cutoff_cc": 10000}}
+    assert cn.gate(doc, state) == ["cutoff_cc: servo 10000, set 9000, protects more (less is up): name it with "
+                                   "--protection cutoff_cc"]
+    assert cn.gate(doc, state, protection=["cutoff_cc"]) == []
 
 
 def test_the_protection_steps_of_record_name_what_their_install_needs():
@@ -2066,7 +2134,7 @@ def test_the_bench_pairs_fields_in_counts_are_held_beside_what_they_were_typed_f
     # what is left with no source at a scale nothing recorded: the velocity loop's two gains
     assert [n for n, e in f.items() if e["class"] == "adopted" and e.get("scale") == "unknown"] == [
         "v_kp_q88", "v_ki_q412"]
-    assert cn.described(doc)[0] == ("63 fields: 6 measured, 10 policy, 0 pinned, 13 held, 34 adopted (no source); "
+    assert cn.described(doc)[0] == ("62 fields: 6 measured, 11 policy, 0 pinned, 13 held, 32 adopted (no source); "
                                     "10 per-count at an unknown scale")
 
 

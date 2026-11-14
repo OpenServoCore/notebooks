@@ -567,9 +567,10 @@ itself, 2 of 6 of the first half and 1 of 6 of the second: it lands on
 a stuck code's gap and flips from run to run on the set of record
 alone.
 
-Two groups of protection fields have rules. The NTC curve's is held,
-so the set shows what the record gives beside what protects the servo
-now; the current limits' is bound.
+Two groups of protection fields and the thermal limit have rules. The
+NTC curve's is held, so the set shows what the record gives beside what
+protects the servo now; the current limits' and the thermal limit's
+are bound.
 
 The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
@@ -592,23 +593,35 @@ the truth:
 | the stored curve reads | 25.0 | 40.2 | 57.3 | 68.5 | 75.1 |
 | the curve of record reads | 24.3 | 40.6 | 65.1 | 83.5 | 95.0 |
 
-| reaches | the derate at 80 C | the cutoff at 100 C |
-|---|---|---|
-| the stored curve | at a true 130.3 C | never: it tops out at 84.2 C |
-| the curve of record | at a true 75.4 C | at a true 114.2 C |
+| reaches | the cutoff at 90 C |
+|---|---|
+| the stored curve | never: it tops out at 84.2 C |
+| the curve of record | at a true 90.1 C |
 
-So the board term of the thermal protection is far looser than its
-numbers on the stored curve. The curve of record is pinned at a true
-90 C, where its reading passes 90.00 C at a true 90.1 C, so against
-the limits as the set holds them it reaches the derate 4.6 C early and
-leaves the cutoff 14 C late: below its pin it reads over the part's
-equation, 3.5 C at a true 80 C, and past its pin under it, 5 C at a
-true 100 C and further behind past that. Two more things about the
-curve of record. Between a true 21.8 and 38.2 C it reads under the
-stored curve, by up to 1.1 C at 29.9 C, so over that stretch it
-protects less. And it turns at a true 8 C: below that it reads warmer
-as the board cools, 18.4 C at a true 0 C where the stored curve reads
-4.8 C.
+So on the stored curve the board term of the thermal protection never
+reads its limit, and the curve of record, pinned at a true 90 C, puts
+the limit on its number: its reading passes 90.00 C at a true 90.1 C.
+Below its pin it reads over the part's equation, 3.5 C at a true 80 C,
+which is the protective side, and past its pin under it, 5 C at a true
+100 C and further behind past that. Two more things about the curve of
+record. Between a true 21.8 and 38.2 C it reads under the stored curve,
+by up to 1.1 C at 29.9 C, so over that stretch it protects less. And it
+turns at a true 8 C: below that it reads warmer as the board cools,
+18.4 C at a true 0 C where the stored curve reads 4.8 C.
+
+The thermal protection is designed to one limit: the winding estimate
+at or over `cutoff_cc` is an overtemperature fault, and nothing folds
+the current limit under it. The field's rule is the policy's
+`cutoff_c` in centi-C, 90 C, of class `policy`, and `policy.json` says
+under `why` whose choice the number is: the owner's. The servo held a
+cutoff at 100 C behind a derate from 80 C. The set's 90 C is under that
+cutoff, which protects more, so its install names `cutoff_cc` as
+`--protection` and not as `--loosen`. `derate_start_cc` has left the
+set with the table: the module lists it as retired, with the way it
+moved to protect less, so a set written while it stood, the copy a
+rung of record ran on, still loads as it was written. A build carries a
+retired field until one names it with `--protection`, which leaves it
+out and moves the protection hash alone.
 
 The current limits are each a policy entry in mA, taken to shunt
 counts by the board's measured counts per amp, the scale the set
