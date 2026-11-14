@@ -250,9 +250,45 @@ def test_a_ramp_reads_its_lag_and_its_real_speed(tmp_path):
     assert f["lag_deg_1pct"] == pytest.approx(1.5)
     assert f["follow_error_sd_deg_1pct"] == pytest.approx(0.0, abs=1e-9)
     assert f["ramp_speed_deg_s_1pct"] == pytest.approx(10 / 0.0256 / CPD)
+    # the lag as a time: 30 counts behind goals that run 10 counts a 25.6 ms item
+    assert f["lag_ms_1pct"] == pytest.approx(3 * 25.6)
     assert f["follow_reversals_per_s_1pct"] == 0
     assert np.isfinite(f["crawl_speed_ripple_pct"])
     assert f["crawl_swing_deg"] == pytest.approx(0.0, abs=1e-9)
+
+
+def trailing(lag_s, period_ticks, n=50, tick_hz=20_000):
+    """ramp_rows' goals sent a goal every `period_ticks`, the shaft on
+    the goals' own line `lag_s` behind it, as a servo that follows a
+    ramp with one time constant does whatever the pace."""
+    step = 10 / (period_ticks / tick_hz)        # counts/s the goals run at
+
+    def path(goal, direction, j):
+        return goal + direction * step * (np.arange(400) / tick_hz - lag_s)
+
+    return ramp_paths(path, n)
+
+
+def test_the_same_plan_at_another_pace_reads_another_lag_in_degrees_and_the_same_lag_as_a_time(tmp_path):
+    """One plan on a host whose exchanges take 4 ms an item and on one
+    where they take 6: the ramp runs 8 % apart, a servo with the same
+    30 ms of lag trails by 8 % more degrees on the faster one, and the
+    lag over the ramp's own speed is the same on both."""
+    scores = {}
+    for name, hole in (("quick", 80), ("slow", 120)):
+        segs, rows = trailing(0.030, 400 + hole)
+        synth.write(tmp_path / name, rows, CENTER, GUARD, gap_ticks=hole, plan=plan(segs))
+        scores[name] = sc.follow_scores(sc.load(tmp_path / name))
+    quick, slow = scores["quick"], scores["slow"]
+    assert quick["ramp_speed_deg_s_1pct"] / slow["ramp_speed_deg_s_1pct"] == pytest.approx(520 / 480)
+    # to the half percent the tail's cut through an item leaves
+    assert quick["lag_deg_1pct"] / slow["lag_deg_1pct"] == pytest.approx(520 / 480, rel=5e-3)
+    assert quick["lag_ms_1pct"] == pytest.approx(slow["lag_ms_1pct"], rel=5e-3)
+    # the goal in force is the item's own, 10 ms of rows behind the goals' line on average: the lag read
+    # is the servo's less that, in both units
+    assert slow["lag_ms_1pct"] == pytest.approx(30.0 - 10.0, abs=0.2)
+    assert all(s["lag_ms_1pct"] == pytest.approx(1000 * s["lag_deg_1pct"] / s["ramp_speed_deg_s_1pct"])
+               for s in scores.values())
 
 
 def test_the_crawl_swing_reads_the_items_that_swing_about_their_own_line(tmp_path):
@@ -546,7 +582,7 @@ def test_a_rung_end_to_end(bus):
     expected = {f"{b}_{n}deg" for b in ("overshoot_deg", "settle_ms", "move_current_rms_ma",
                                         "move_reversals_per_s", "move_duty_rms_pct")
                 for n in TS.STEP_SIZES_DEG}
-    expected |= {f"{b}_{p}pct" for b in ("lag_deg", "follow_error_sd_deg", "follow_current_rms_ma",
+    expected |= {f"{b}_{p}pct" for b in ("lag_deg", "lag_ms", "follow_error_sd_deg", "follow_current_rms_ma",
                                          "follow_reversals_per_s", "follow_duty_rms_pct",
                                          "ramp_speed_deg_s", "speed_report_error_deg_s")
                  for p in TS.FOLLOW_SPEED_PCT}
