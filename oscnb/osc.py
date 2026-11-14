@@ -3,7 +3,7 @@
 `osc-lab` is the capture instrument: `sweep()`, `bursts()` and `track()` run
 it. It installs with `cargo install --locked --path osc-lab` from this repo,
 and is found on the PATH or named by the OSC_LAB environment variable. Every
-other call (get, set, read, write, status, ping, baud, flash) runs `osc`, on
+other call (get, set, dump, read, write, status, ping, baud, flash) runs `osc`, on
 the PATH (`cargo install --path tools/osc` in the firmware repo) or named by
 the OSC environment variable. Every call addresses one servo id, OSC_ID or 1.
 The tools print their connection status on stderr and their output on
@@ -50,17 +50,34 @@ def require_3m():
         raise SystemExit(f"the bus is at {baud} baud; TEL needs 3000000 (osc baud 3000000, then osc save)")
 
 
+def value(text):
+    """A value as the tool prints it: an integer when it reads as one, else
+    its words."""
+    try:
+        return int(text, 0)
+    except ValueError:
+        return text
+
+
 def get(field):
     """One register's decoded value, as the tool prints it after `=`."""
     out = run("get", field, capture=True)
     m = re.search(rf"^{re.escape(field)} = (\S+)", out, re.M)
     if not m:
         raise RuntimeError(f"osc get {field}: unexpected output {out!r}")
-    v = m.group(1)
-    try:
-        return int(v, 0)
-    except ValueError:
-        return v
+    return value(m.group(1))
+
+
+def dump():
+    """`osc dump`: the whole control table, one (addr, name, access, value)
+    a field of the servo's own descriptor, in table order. A value is the
+    tool's whole text for it: an enum with its number, bytes as hex."""
+    out = run("dump", capture=True)
+    rows = [(int(m.group(1), 16), m.group(2), m.group(3), value(m.group(4)))
+            for m in re.finditer(r"^(0x[0-9a-f]+)\s+(\S+)\s+(r[ow])\s+(.*\S)\s*$", out, re.M)]
+    if not rows:
+        raise RuntimeError(f"osc dump: unexpected output {out!r}")
+    return rows
 
 
 def field(name):
@@ -84,12 +101,20 @@ def write(addr, data):
     run("write", f"0x{addr:x}", bytes(data).hex())
 
 
+READ_MAX = 252          # B, the most one status frame carries (protocol sec 5.1)
+
+
 def read(addr, n):
-    """`osc read`: `n` raw bytes from a table address, off its hex dump."""
-    out = run("read", f"0x{addr:x}", n, capture=True)
-    data = b"".join(bytes.fromhex(m.group(1)) for m in re.finditer(r"^0x[0-9a-f]+\s+(.+)$", out, re.M))
-    if len(data) != n:
-        raise RuntimeError(f"osc read 0x{addr:x} {n}: unexpected output {out!r}")
+    """`osc read`: `n` raw bytes from a table address, off its hex dump,
+    READ_MAX a call."""
+    data = b""
+    while len(data) < n:
+        at, k = addr + len(data), min(READ_MAX, n - len(data))
+        out = run("read", f"0x{at:x}", k, capture=True)
+        got = b"".join(bytes.fromhex(m.group(1)) for m in re.finditer(r"^0x[0-9a-f]+\s+(.+)$", out, re.M))
+        if len(got) != k:
+            raise RuntimeError(f"osc read 0x{at:x} {k}: unexpected output {out!r}")
+        data += got
     return data
 
 

@@ -3,7 +3,7 @@ interpolation on hand-computed points, the hold band's gain, the
 servo's two rules, the build from a small synthetic lookup, the
 held-out grade through it, the board's wide-code step ahead of the
 table in every grade, the install plan's wire steps and the install
-itself on a fake window."""
+itself on a fake window, and the table read back off it."""
 import json
 
 import numpy as np
@@ -423,6 +423,19 @@ def test_install_raises_a_read_back_that_differs_with_its_page(window):
     with pytest.raises(pt.settings.Refused, match="page 5 reads back"):
         pt.install(PAIR)
     assert sum(c[0] == "read" for c in w.log) == 6
+
+
+def test_the_table_reads_back_off_the_servo_with_its_state_by_fetches_alone(window):
+    w = window()
+    t = pt.install(PAIR)
+    w.log.clear()
+    state, points = pt.on_servo()
+    assert state == "LIVE" and w.regs["pos_lut_state"] == pt.STATES.index("LIVE")
+    np.testing.assert_array_equal(np.frombuffer(points, "<i2"), t.points)
+    fetches = [c for p in range(pt.PAGES)
+               for c in (("write", bytes([p, pt.FETCH]).hex()), ("read", pt.POINTS_ADDR, 64))]
+    assert w.log == [("get", "pos_lut_state"), *fetches]
+    assert pt.fetch(2) == pt.page_bytes(t.points, 2)
 
 
 def test_osc_read_parses_the_hex_dump(monkeypatch):

@@ -10,7 +10,9 @@ position table, its install's place in the runner, its rows read
 through the table, its set planned at the table's scale and center, its
 position report gated on the servo's band, an identity rung's plan
 rebuilt byte for byte and a table rung of record scored as recorded; an A/B of two rungs, its flashes, settings and
-refusals, and the flash's command line; the wide capture the set builds
+refusals, and the flash's command line; the servo's constant state
+beside every run, each side's own on an A/B, a run that reads another
+refused by name, and a rung without it scored the same; the wide capture the set builds
 from a board's wide-code result, its three rows, a rung with and without
 it, and a wide-codes rung's rows read through the board's slots."""
 import hashlib
@@ -404,13 +406,14 @@ def test_inputs_come_through_the_chain():
 @pytest.fixture
 def bus(monkeypatch, tmp_path):
     """A servo at rest on a 3 Mbps bus at 5 V, every call logged; osc-lab
-    track answered by the fake servo."""
+    track answered by the fake servo, and the reads of its constant state
+    by `servo`."""
     state = {"baud": 3_000_000, "torque": "off", "vsys": 5.05, "shaft": 1950.0,
              "lo": 314, "hi": 3560, "log": []}
 
-    def get(field):
+    def regs():
         return {"torque_enable": state["torque"], "pos_min_soft_counts": state["lo"],
-                "pos_max_soft_counts": state["hi"]}[field]
+                "pos_max_soft_counts": state["hi"]}
 
     def track(out, mode, schedule, **kw):
         state["log"].append((Path(out).name, mode, kw))
@@ -418,7 +421,7 @@ def bus(monkeypatch, tmp_path):
         return out
 
     monkeypatch.setattr(sc.osc, "bus_baud", lambda: state["baud"])
-    monkeypatch.setattr(sc.osc, "get", get)
+    state["servo"] = synth.Servo().stub(monkeypatch, regs)
     monkeypatch.setattr(sc.bench, "read_vsys", lambda board=None: state["vsys"])
     monkeypatch.setattr(sc.osc, "track", track)
     monkeypatch.setattr(sc, "rung_dir", lambda pair, label: tmp_path / "telemetry" / pair / "scorecard" / label)
@@ -639,11 +642,17 @@ def flashed(image):
     return [("flash", image), ("boot",), ("status",)]
 
 
+def ran(label, k):
+    """A run's events: the status read that closes the read of the servo's
+    constant state, then its first capture."""
+    return [("status",), ("run", label, f"run-{k}")]
+
+
 def test_ab_alternates_the_runs_flashing_before_each_when_the_images_differ(ab_bench):
     a, b = sc.ab(side(ab_bench, "10-a", "a"), side(ab_bench, "10-b", "b"), rounds=3, servo=SERVO, board=BOARD)
     expected = []
     for k in (1, 2, 3):
-        expected += [*flashed("a.bin"), ("run", "10-a", f"run-{k}"), *flashed("b.bin"), ("run", "10-b", f"run-{k}")]
+        expected += [*flashed("a.bin"), *ran("10-a", k), *flashed("b.bin"), *ran("10-b", k)]
     assert ab_bench["events"] == expected
     assert (a.name, b.name) == ("10-a", "10-b")
 
@@ -655,8 +664,8 @@ def test_ab_on_one_image_flashes_once_and_applies_each_sides_settings_around_its
           rounds=3, servo=SERVO, board=BOARD)
     expected = flashed("a.bin")
     for k in (1, 2, 3):
-        expected += [("apply", {"p_kp_q88": 5026}, True), ("run", "11-a", f"run-{k}"), ("restore",),
-                     ("apply", {"p_kp_q88": 6000}, True), ("run", "11-b", f"run-{k}"), ("restore",)]
+        expected += [("apply", {"p_kp_q88": 5026}, True), *ran("11-a", k), ("restore",),
+                     ("apply", {"p_kp_q88": 6000}, True), *ran("11-b", k), ("restore",)]
     assert ab_bench["events"] == expected
 
 
@@ -671,9 +680,9 @@ def test_ab_installs_the_table_on_its_side_alone_and_reboots_it_away_before_the_
     pair = sc.pair_of(SERVO, BOARD)
     expected = flashed("a.bin")
     for k in (1, 2):
-        expected += [("apply", {"p_kp_q88": 5026}, True), ("run", "12-a", f"run-{k}"), ("restore",),
+        expected += [("apply", {"p_kp_q88": 5026}, True), *ran("12-a", k), ("restore",),
                      ("apply", {"p_kp_q88": 5026}, False), ("install", pair), ("stamp",),
-                     ("run", "12-b", f"run-{k}"), ("restore",)]
+                     *ran("12-b", k), ("restore",)]
     assert events == expected
     assert json.loads((a / "rung.json").read_text())["pos_table"] is None
     assert json.loads((b / "rung.json").read_text())["pos_table"] == table_of_record()
@@ -715,8 +724,8 @@ def test_ab_restores_a_sides_settings_after_an_abort_in_its_run(ab_bench, bus, m
     with pytest.raises(RuntimeError, match="aborted"):
         sc.ab(side(ab_bench, "14-a", "a"), side(ab_bench, "14-b", "b", settings_file=fb),
               servo=SERVO, board=BOARD)
-    assert ab_bench["events"] == [*flashed("a.bin"), ("run", "14-a", "run-1"), *flashed("b.bin"),
-                                  ("apply", {"p_kp_q88": 6000}, True), ("restore",)]
+    assert ab_bench["events"] == [*flashed("a.bin"), *ran("14-a", 1), *flashed("b.bin"),
+                                  ("apply", {"p_kp_q88": 6000}, True), ("status",), ("restore",)]
     assert sc.run_complete(sc.rung_dir(sc.pair_of(SERVO, BOARD), "14-a") / "run-1")
 
 
@@ -766,6 +775,216 @@ def test_ab_rungs_are_the_rungs_run_records(ab_bench, tmp_path):
         out = json.loads(sc.result_path(sc.pair_of(SERVO, BOARD), rung.name).read_text())
         assert out["runs"] == ["run-1", "run-2", "run-3"] and out["skipped"] == []
     assert json.loads((rungs[1] / "rung.json").read_text())["settings"] == {"p_kp_q88": 6000}
+
+
+# --- the servo's constant state beside a run ---
+
+SLOTS = bytes([0, 0, 0, 88] + [0] * 12)     # the fake servo's stored wide-code slots
+NO_POINTS = hashlib.sha1(bytes(512)).hexdigest()
+
+
+def constants(rung, k):
+    return json.loads((rung / f"run-{k}" / "servo.json").read_text())
+
+
+def test_a_run_records_the_servos_constant_state(bus):
+    servo = bus["servo"]
+    rung = sc.run("00-baseline", "abc123", "f" * 40, runs=2, servo=SERVO, board=BOARD)
+    doc = constants(rung, 1)
+    assert constants(rung, 2) == doc
+    assert list(doc) == ["addr", "raw", "fields", "pos_table", "wide_codes", "stamp", "data_state", "hash"]
+    # CONFIG and CALIB end where the servo's own descriptor places torque_enable, 0xc0 on the fake
+    assert doc["addr"] == 0 and bytes.fromhex(doc["raw"]) == bytes(servo.table[:0xC0])
+    assert doc["raw"][2 * 0x40:2 * 0x44] == "149d0400" and bytes.fromhex(doc["raw"])[0x91:0xA1] == SLOTS
+    assert doc["fields"] == {"model_number": 257, "p_kp_q88": 40212, "pos_deadband_counts": 4,
+                             "drive_polarity": "on", "r_q12": 17100, "plant_stamp": 0x9C45,
+                             wc.FIELD: SLOTS.hex(" ")}
+    assert doc["pos_table"] == {"state": "IDENTITY", "points_sha1": NO_POINTS}
+    assert doc["wide_codes"] == SLOTS.hex()
+    assert (doc["stamp"], doc["data_state"]) == ("0x9c45 = live set", "clean")
+    assert json.loads((rung / "rung.json").read_text())["constants_hash"] == doc["hash"]
+    assert sorted(p.name for p in (rung / "run-1").iterdir()) == ["follow", "hold", "servo.json", "steps", "wide"]
+
+
+def test_the_constant_state_is_read_once_a_run_after_the_rung_is_on_and_before_its_first_capture(
+        bus, monkeypatch, tmp_path):
+    calls = pos_table_stubs(bus, monkeypatch)
+    monkeypatch.setattr(sc.widecodes, "install", lambda board: calls.append(("wide", board)))
+    bus["servo"].log = calls
+    track = sc.osc.track
+
+    def tracked(out, mode, schedule, **kw):
+        calls.append(("capture", Path(out).parent.name, Path(out).name))
+        return track(out, mode, schedule, **kw)
+
+    monkeypatch.setattr(sc.osc, "track", tracked)
+    f = settings_file(tmp_path, "gains", {"p_kp_q88": 5026})
+    sc.run("04-all", "abc123", "f" * 40, runs=2, settings_file=f, pos_table=True, wide_codes=True,
+           servo=SERVO, board=BOARD)
+    # the fields and the bytes under them, the table's state and its 8 pages, the slots, the status: 21 calls,
+    # the bytes one `osc read` more on a servo whose CONFIG and CALIB outrun a status frame
+    read = [("dump",), ("read", 0, 0xC0), ("get", "pos_lut_state")]
+    for page in range(postable.PAGES):
+        read += [("write", postable.WINDOW_ADDR, bytes([page, postable.FETCH])),
+                 ("read", postable.POINTS_ADDR, 64)]
+    read += [("field", wc.FIELD), ("status",)]
+    assert len(read) == 21
+    expected = [("apply", {"p_kp_q88": 5026}, False), ("install", sc.pair_of(SERVO, BOARD)), ("stamp",),
+                ("wide", BOARD.key)]
+    for k in (1, 2):
+        expected += [*read, *(("capture", f"run-{k}", name) for name in TS.CAPTURES)]
+    assert calls == [*expected, ("restore", 8)]
+
+
+def test_ab_records_each_sides_own_constant_state_every_round(ab_bench, bus, monkeypatch, tmp_path):
+    """Two sides on one image, a side's settings landing on the fake servo
+    and its reboot taking them off: one moves a CONFIG gain, the other a
+    CALIB constant alone."""
+    servo = bus["servo"]
+    monkeypatch.setattr(sc.settings, "apply",
+                        lambda fields, note="", stamp=True: [servo.set(n, v) for n, v in fields.items()])
+    monkeypatch.setattr(sc.settings, "restore", servo.reboot)
+    fa = settings_file(tmp_path, "fa", {"p_kp_q88": 5026})
+    fb = settings_file(tmp_path, "fb", {"r_q12": 16000})
+    rungs = sc.ab(side(ab_bench, "17-a", "a", settings_file=fa), side(ab_bench, "17-b", "a", settings_file=fb),
+                  rounds=2, servo=SERVO, board=BOARD)
+    hashes = []
+    for rung, kp, r in zip(rungs, (5026, 40212), (17100, 16000)):
+        doc = constants(rung, 1)
+        assert constants(rung, 2) == doc
+        assert (doc["fields"]["p_kp_q88"], doc["fields"]["r_q12"]) == (kp, r)
+        assert json.loads((rung / "rung.json").read_text())["constants_hash"] == doc["hash"]
+        hashes.append(doc["hash"])
+    assert hashes[0] != hashes[1]
+
+
+def test_a_constant_changed_between_runs_is_refused_with_the_field_named(bus, monkeypatch):
+    servo = bus["servo"]
+    track = sc.osc.track
+
+    def tracked(out, mode, schedule, **kw):
+        track(out, mode, schedule, **kw)
+        if (Path(out).parent.name, Path(out).name) == ("run-1", TS.CAPTURES[-1]):
+            servo.set("r_q12", 16000)
+        return out
+
+    monkeypatch.setattr(sc.osc, "track", tracked)
+    with pytest.raises(SystemExit) as e:
+        sc.run("00-baseline", "abc123", "f" * 40, runs=3, servo=SERVO, board=BOARD)
+    assert str(e.value).endswith("00-baseline: run-2 reads a constant state other than the one the rung's "
+                                 "first run recorded: r_q12: 17100 -> 16000")
+    # nothing of run-2 is recorded or driven, and run-1 stands
+    rung = sc.rung_dir(sc.pair_of(SERVO, BOARD), "00-baseline")
+    assert [name for name, _, _ in bus["log"]] == list(TS.CAPTURES)
+    assert sorted(p.name for p in rung.iterdir()) == ["run-1", "rung.json"]
+    assert sc.run_complete(rung / "run-1") and constants(rung, 1)["fields"]["r_q12"] == 17100
+
+
+PAGE_3 = b"\x01" + bytes(63)
+
+
+def a_table_point(servo):
+    servo.pages[3] = PAGE_3
+
+
+def an_unnamed_byte(servo):
+    servo.table[servo.UNNAMED] = 0xA5
+
+
+@pytest.mark.parametrize("change, named", [
+    (lambda s: s.set("p_kp_q88", 5026), "p_kp_q88: 40212 -> 5026"),
+    (lambda s: s.set("drive_polarity", 0), "drive_polarity: on -> off"),
+    (lambda s: s.set(wc.FIELD, bytes(16)),
+     f"{wc.FIELD}: {SLOTS.hex(' ')} -> {bytes(16).hex(' ')}; wide-code slots: {SLOTS.hex()} -> {bytes(16).hex()}"),
+    (lambda s: s.set("pos_lut_state", 2), "position table state: IDENTITY -> LIVE"),
+    (a_table_point, f"position table points sha1: {NO_POINTS} -> "
+                    f"{hashlib.sha1(bytes(3 * 64) + PAGE_3 + bytes(4 * 64)).hexdigest()}"),
+    (lambda s: setattr(s, "stamp", "0x9c45 != live set 0x1234"),
+     "stamp: 0x9c45 = live set -> 0x9c45 != live set 0x1234"),
+    (lambda s: setattr(s, "data", "STAMP_MISMATCH"), "data state: clean -> STAMP_MISMATCH"),
+    (an_unnamed_byte, "byte 0x007f: 00 -> a5"),
+], ids=["a config field", "a bool", "the slots", "the table's state", "a table point", "the stamp",
+        "the data state", "a byte no field names"])
+def test_what_a_later_run_reads_differently_is_named(bus, tmp_path, change, named):
+    r = {"dir": tmp_path / "rung"}
+    sc.record_constants(r, 1)
+    sc.record_constants(r, 2)
+    change(bus["servo"])
+    with pytest.raises(SystemExit) as e:
+        sc.record_constants(r, 3)
+    assert str(e.value).endswith(f"run-3 reads a constant state other than the one the rung's first run "
+                                 f"recorded: {named}")
+    assert sorted(p.name for p in r["dir"].iterdir()) == ["run-1", "run-2"]
+    assert constants(r["dir"], 2) == constants(r["dir"], 1) == r["constants"]
+
+
+def test_a_servo_whose_descriptor_names_no_slots_records_none(bus, monkeypatch, tmp_path):
+    monkeypatch.setattr(sc.osc, "field", lambda name: None)
+    r = {"dir": tmp_path / "rung"}
+    sc.record_constants(r, 1)
+    assert constants(r["dir"], 1)["wide_codes"] is None
+
+
+def test_a_dump_that_names_no_control_field_is_refused(bus, monkeypatch, tmp_path):
+    monkeypatch.setattr(sc.osc, "dump", lambda: [(0, "model_number", "ro", 257)])
+    with pytest.raises(SystemExit, match="names no torque_enable"):
+        sc.record_constants({"dir": tmp_path / "rung"}, 1)
+    assert not (tmp_path / "rung").exists()
+
+
+def test_a_rung_recorded_without_the_constant_state_scores_the_same(bus):
+    rung = sc.run("00-baseline", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
+    path = sc.result_path(sc.pair_of(SERVO, BOARD), "00-baseline")
+    sc.score("00-baseline", servo=SERVO, board=BOARD)
+    with_state = json.loads(path.read_text())
+    # the rung as one recorded before: no servo.json beside its captures, no hash in rung.json
+    (rung / "run-1" / "servo.json").unlink()
+    doc = json.loads((rung / "rung.json").read_text())
+    (rung / "rung.json").write_text(json.dumps({k: v for k, v in doc.items() if k != "constants_hash"}))
+    sc.score("00-baseline", servo=SERVO, board=BOARD)
+    without = json.loads(path.read_text())
+    assert "constants_hash" not in without and without["runs"] == ["run-1"]
+    assert without == {k: v for k, v in with_state.items() if k != "constants_hash"}
+    buf = io.StringIO()
+    sc.table(servo=SERVO, board=BOARD, file=buf)
+    assert "00-baseline" in buf.getvalue().splitlines()[0]
+
+
+DUMP = ("note: descriptor osc-servo is fw 0.1, servo reports fw 0.2; fields added since are unnamed\n"
+        "0x0000  model_number                 ro  257\n"
+        "0x004a  stall_response               rw  Yield (1)\n"
+        "0x004b  drive_polarity               rw  on\n"
+        "0x0060  derate_start_cc              rw  -200\n"
+        "0x00d0  gear_class                   rw  2 (metal)\n"
+        "0x00d1  adc_wide_mid_q4              rw  00 00 00 58\n")
+
+
+def test_osc_dump_reads_a_row_a_field_off_the_tools_lines(monkeypatch):
+    seen = []
+    monkeypatch.setattr(sc.osc, "run", lambda *a, **kw: seen.append((a, kw)) or DUMP)
+    assert sc.osc.dump() == [
+        (0x00, "model_number", "ro", 257), (0x4A, "stall_response", "rw", "Yield (1)"),
+        (0x4B, "drive_polarity", "rw", "on"), (0x60, "derate_start_cc", "rw", -200),
+        (0xD0, "gear_class", "rw", "2 (metal)"), (0xD1, "adc_wide_mid_q4", "rw", "00 00 00 58")]
+    assert seen == [(("dump",), {"capture": True})]
+    monkeypatch.setattr(sc.osc, "run", lambda *a, **kw: "note: nothing a field line\n")
+    with pytest.raises(RuntimeError, match="unexpected output"):
+        sc.osc.dump()
+
+
+def test_osc_read_takes_a_long_span_a_status_frame_at_a_time(monkeypatch):
+    table = bytes(i % 251 for i in range(0x180))
+    seen = []
+
+    def run(*a, **kw):
+        seen.append(a)
+        addr, n = int(a[1], 16), a[2]
+        return "".join(f"{addr + i:#06x}  {table[addr + i:addr + min(i + 16, n)].hex(' ')}\n"
+                       for i in range(0, n, 16))
+
+    monkeypatch.setattr(sc.osc, "run", run)
+    assert sc.osc.read(0, 0x180) == table
+    assert seen == [("read", "0x0", 252), ("read", "0xfc", 132)]
 
 
 STOPS = (82, 3792)

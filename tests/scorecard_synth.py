@@ -1,7 +1,8 @@
 """Synthetic `osc-lab track` captures for the scorecard's tests: the files
 the tool writes (track.csv, segments.csv, meta.json) and the plan.json the
 runner puts beside them, from rows a test chooses or from a fake servo
-that answers a schedule, and a board's wide-code result file.
+that answers a schedule, a board's wide-code result file, and the
+constant state a fake servo answers `osc` with.
 
 A test fixture, not a model of record. `fake_track` runs each goal as a
 first-order approach at a speed cap, its duty the error's sign at a fixed
@@ -14,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from oscnb import boards, scorecard, widecodes
+from oscnb import boards, postable, scorecard, widecodes
 
 HEADER = ("seg,goal,tick,window_valid,pos,current,current_trough,duty_counts,vdiff,vbus,"
           "current_raw,vmotor_a,vmotor_b,vbus_raw,ntc_raw,vref_raw").split(",")
@@ -120,3 +121,90 @@ def wide_result(path, codes, root=None):
         widecodes.FIELD: list(widecodes.slots(bands))}))
     return {"file": str(path.relative_to(root) if root else path),
             "sha1": hashlib.sha1(path.read_bytes()).hexdigest()}
+
+
+class Servo:
+    """The constant state a fake servo answers `osc` with: a few CONFIG
+    and CALIB fields where its descriptor places them, a byte no field
+    names among them, the first fields of CONTROL after them, the
+    position table behind its window and the status report. The places
+    are not a real servo's, CONTROL starting at 0xc0, so a span read off
+    this servo comes from its descriptor alone."""
+
+    # name: (addr, width, access, kind), in table order
+    FIELDS = {"model_number": (0x00, 2, "ro", "uint"), "p_kp_q88": (0x40, 2, "rw", "uint"),
+              "pos_deadband_counts": (0x42, 2, "rw", "uint"), "drive_polarity": (0x4b, 1, "rw", "bool"),
+              "r_q12": (0x80, 2, "rw", "uint"), "plant_stamp": (0x8a, 2, "rw", "uint"),
+              widecodes.FIELD: (0x91, 16, "rw", "bytes"),
+              "torque_enable": (0xc0, 1, "rw", "bool"), "pos_lut_state": (0xde, 1, "ro", "uint")}
+    STORED = {"model_number": 257, "p_kp_q88": 40212, "pos_deadband_counts": 4, "drive_polarity": 1,
+              "r_q12": 17100, "plant_stamp": 0x9c45, widecodes.FIELD: bytes([0, 0, 0, 88] + [0] * 12)}
+    UNNAMED = 0x7f
+
+    def __init__(self):
+        self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
+        self.window = bytes(2 * postable.PAGE_POINTS)
+        self.stamp, self.data = "0x9c45 = live set", "clean"
+        self.table = bytearray(0x100)
+        self.log = []
+        self.reboot()
+
+    def reboot(self):
+        """The stored fields back, as `osc reboot` brings them."""
+        for name, v in self.STORED.items():
+            self.set(name, v)
+
+    def set(self, name, v):
+        addr, width, _, kind = self.FIELDS[name]
+        self.table[addr:addr + width] = v if kind == "bytes" else int(v).to_bytes(width, "little")
+
+    def decoded(self, name):
+        addr, width, _, kind = self.FIELDS[name]
+        raw = bytes(self.table[addr:addr + width])
+        if kind == "bytes":
+            return raw.hex(" ")
+        v = int.from_bytes(raw, "little")
+        return ("on" if v else "off") if kind == "bool" else v
+
+    def get(self, name):
+        self.log.append(("get", name))
+        return self.decoded(name)
+
+    def dump(self):
+        self.log.append(("dump",))
+        return [(addr, name, access, self.decoded(name)) for name, (addr, _, access, _) in self.FIELDS.items()]
+
+    def field(self, name):
+        self.log.append(("field", name))
+        if name not in self.FIELDS:
+            return None
+        addr, width = self.FIELDS[name][:2]
+        return addr, width, bytes(self.table[addr:addr + width])
+
+    def write(self, addr, data):
+        self.log.append(("write", addr, bytes(data)))
+        assert addr == postable.WINDOW_ADDR and data[1] == postable.FETCH, "the fake window only fetches"
+        self.window = self.pages[data[0]]
+
+    def read(self, addr, n):
+        self.log.append(("read", addr, n))
+        if addr == postable.POINTS_ADDR:
+            return self.window[:n]
+        return bytes(self.table[addr:addr + n])
+
+    def status(self):
+        self.log.append(("status",))
+        return f"id 1: model 0x0101\n      data  {self.data}\n      stamp {self.stamp}\n"
+
+    def stub(self, monkeypatch, regs=dict):
+        """`osc`'s reads and its window write answered by this servo;
+        `get` reads `regs()` first, a fixture's own registers. Returns the
+        servo."""
+        def get(name):
+            own = regs()
+            return own[name] if name in own else self.get(name)
+
+        monkeypatch.setattr(scorecard.osc, "get", get)
+        for name in ("dump", "field", "write", "read", "status"):
+            monkeypatch.setattr(scorecard.osc, name, getattr(self, name))
+        return self
