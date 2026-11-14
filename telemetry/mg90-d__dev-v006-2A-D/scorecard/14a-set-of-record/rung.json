@@ -1,0 +1,85 @@
+{
+  "label": "14a-set-of-record",
+  "fw": "624e29d3",
+  "image_sha": "9622544587a33c40815b167db700252ac9a6c201",
+  "tool": {
+    "sha1": "5954be908936eb3207f7697dcbe91681c724b229",
+    "version": null
+  },
+  "note": "the set of record with the viscous friction term and the feedforward Ke bound, the goals of a ramp held to the period: the reference for rungs on the set",
+  "utc": "2026-11-14T14:45:25+00:00",
+  "config_hash": "a433f89fcbe17f4f77da10563f60cfeab96ce14b1b095f6555b4a3b5c131f06c",
+  "constants_hash": "577955f9aa227086e38088a975f1680adedb955fc88de8669802bd734eeb20b1",
+  "runs_asked": 3,
+  "set": {
+    "file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.constants.json",
+    "hash": {
+      "plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662",
+      "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04",
+      "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead",
+      "set": "1c7982a583f4e348bdd75f255cad6b76fe4237a53332db45363765d6f1d2d61f"
+    },
+    "classes": {
+      "measured": 6,
+      "policy": 6,
+      "pinned": 0,
+      "held": 17,
+      "adopted": 34
+    }
+  },
+  "deviation": null,
+  "protection": {
+    "hash": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04",
+    "moved": {}
+  },
+  "wide_goals": [
+    {
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    },
+    {
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    }
+  ]
+}

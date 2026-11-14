@@ -1,0 +1,34 @@
+{
+  "capture": "hold",
+  "center_counts": 1916,
+  "guard_counts": [
+    314,
+    3560
+  ],
+  "counts_per_deg": 20.126631678008682,
+  "no_load_deg_s": 623.7219681271883,
+  "goal_period_s": 0.0256,
+  "sources": {
+    "counts_per_deg": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json target counts_per_deg, the table's linearized counts per deg",
+    "no_load_deg_s": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json no_load_speed_rev_s / servos mg90-d gear_ratio x 360",
+    "current_cap_ma": "servos mg90-d lock_hold_a",
+    "wide_codes": "stages/1-board/wide-codes/results/dev-v006-2A-D.json wide_codes, the codes that take a slot",
+    "center_counts": "the raw middle of the soft range read through stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json"
+  },
+  "segments": [
+    {
+      "seg": 0,
+      "item": "hold@3000",
+      "test": "hold",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 1,
+      "item": "hold@3000",
+      "test": "hold",
+      "goal_counts": null,
+      "goal_deg": null
+    }
+  ]
+}

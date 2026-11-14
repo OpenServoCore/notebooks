@@ -783,7 +783,10 @@ gate.
 On mg90-d with board dev-v006-2A-D, a free horn. From
 `12a-pos-table-live` on, the rungs run on the pair's position table.
 From `13a-wide-step-on-table` on, the rows of a
-rung on the table are in degrees of the table's own scale. A rung is
+rung on the table are in degrees of the table's own scale. From
+`14a-set-of-record` on, a rung runs on the pair's set of record, or on
+that set with one named deviation, and holds the goals of a ramp to the
+period. A rung is
 kept when the
 rows it aims at gain by more than the baseline's own spread over its three
 runs and no other row loses. A rung that is not kept leaves its result
@@ -1052,6 +1055,42 @@ Kept:
   raw pot spanning 2285 to 2329 there. One run of this rung has a
   second landing driven in its tail, the 60 degree return to the center
   from above.
+- `14a-set-of-record`: firmware 624e29d3 on the pair's set of record,
+  the first rung that names a constant set and the first whose ramps
+  hold their goals to the period. The set is what `13a` ran on with the
+  viscous friction term and the feedforward Ke at what their rules give
+  ([The constant set](#the-constant-set)), and the servo has it saved,
+  so a run installs nothing a reboot would not return. 624e29d3 differs
+  from `13a`'s f933a4a7 in how a commit of an all-zero position table
+  lands and in where the drive check starts a leg, neither of which is
+  in what the loops command. The rung is kept as the reference for
+  rungs on the set, not on its rows: a later rung compares with this
+  one and not with `13a`.
+  Its ramps ran at 6.204, 18.59 and 61.67 deg/s, each the same in the
+  three runs to 0.02 %, with no goal late, where `13a`'s ran 6.28 to
+  6.59, 18.76 to 19.47 and 62.28 to 64.48. The 10 % ramp's speed is its
+  goals' 62.1 deg/s less the shorter last step of each ramp.
+  As the median of three runs and their range, against `13a`: the lag
+  at the 10 % ramp reads 1.983 [1.948, 2.000] deg against 2.033 [2.019,
+  2.119], and as a time 32.16 [31.59, 32.43] ms against 32.41 [31.85,
+  32.87], the ranges of the time overlapping; the follow error's sd at
+  the 1 % and the 3 % ramp is lower, 0.107 [0.102, 0.108] deg against
+  0.118 [0.114, 0.129] and 0.151 [0.147, 0.153] against 0.172 [0.163,
+  0.174]; the 2 degree overshoot is lower, 0.323 [0.267, 0.332] deg
+  against 0.373 [0.373, 0.435]. Two sittings and four changes lie
+  between the two rungs (the firmware, the two constants, the saved
+  state, the held period), and no row of this comparison is given to
+  one of them: the two constants were alternated against the set
+  without them, as told under the constant set, and moved no row.
+  The 20 degree landing above the center, open under `13a`, settles in
+  all three runs here, 302 [302, 303] ms with an overshoot of 0.106
+  [0.016, 0.174] deg, where it hunted in all three of `13a`. It flipped
+  the same way between `13a`'s own control sides, and on the control
+  sides of the two motor steps that preceded this rung
+  (`zz-ab-before-motor-rest`, `zz-ab-before-motor-split` and their
+  `-2`) it hunted to the end of its hold in 2 of 12 runs. The rows that
+  take that landing in move with it: the 20 degree move's current, 113
+  [113, 118] mA against 193 [190, 211], its duty, the landing rows.
 
 Tried, not kept:
 
