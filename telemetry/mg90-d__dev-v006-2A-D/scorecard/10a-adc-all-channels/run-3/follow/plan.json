@@ -1,0 +1,4068 @@
+{
+  "capture": "follow",
+  "center_counts": 1937,
+  "guard_counts": [
+    314,
+    3560
+  ],
+  "counts_per_deg": 18.913054076268125,
+  "no_load_deg_s": 623.7219681271883,
+  "goal_period_s": 0.0256,
+  "sources": {
+    "counts_per_deg": "stages/3-servo/pot-table/results/mg90-d__dev-v006-2A-D.json pot_scale_counts_per_deg",
+    "no_load_deg_s": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json no_load_speed_rev_s / servos mg90-d gear_ratio x 360",
+    "current_cap_ma": "servos mg90-d lock_hold_a",
+    "wide_codes": "stages/1-board/wide-codes/results/dev-v006-2A-D.json wide_codes, the codes that take a slot"
+  },
+  "segments": [
+    {
+      "seg": 0,
+      "item": "goal:1937@500",
+      "test": "lead",
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 1,
+      "item": "goal:1940@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1940,
+      "goal_deg": 0.1586206007714198
+    },
+    {
+      "seg": 2,
+      "item": "goal:1943@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1943,
+      "goal_deg": 0.3172412015428396
+    },
+    {
+      "seg": 3,
+      "item": "goal:1946@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1946,
+      "goal_deg": 0.4758618023142594
+    },
+    {
+      "seg": 4,
+      "item": "goal:1949@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1949,
+      "goal_deg": 0.6344824030856792
+    },
+    {
+      "seg": 5,
+      "item": "goal:1952@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1952,
+      "goal_deg": 0.793103003857099
+    },
+    {
+      "seg": 6,
+      "item": "goal:1955@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1955,
+      "goal_deg": 0.9517236046285188
+    },
+    {
+      "seg": 7,
+      "item": "goal:1958@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1958,
+      "goal_deg": 1.1103442053999386
+    },
+    {
+      "seg": 8,
+      "item": "goal:1961@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1961,
+      "goal_deg": 1.2689648061713583
+    },
+    {
+      "seg": 9,
+      "item": "goal:1964@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1964,
+      "goal_deg": 1.4275854069427782
+    },
+    {
+      "seg": 10,
+      "item": "goal:1967@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1967,
+      "goal_deg": 1.586206007714198
+    },
+    {
+      "seg": 11,
+      "item": "goal:1970@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1970,
+      "goal_deg": 1.7448266084856177
+    },
+    {
+      "seg": 12,
+      "item": "goal:1973@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1973,
+      "goal_deg": 1.9034472092570376
+    },
+    {
+      "seg": 13,
+      "item": "goal:1976@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1976,
+      "goal_deg": 2.0620678100284575
+    },
+    {
+      "seg": 14,
+      "item": "goal:1979@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1979,
+      "goal_deg": 2.220688410799877
+    },
+    {
+      "seg": 15,
+      "item": "goal:1982@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1982,
+      "goal_deg": 2.379309011571297
+    },
+    {
+      "seg": 16,
+      "item": "goal:1985@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1985,
+      "goal_deg": 2.5379296123427166
+    },
+    {
+      "seg": 17,
+      "item": "goal:1988@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1988,
+      "goal_deg": 2.6965502131141363
+    },
+    {
+      "seg": 18,
+      "item": "goal:1991@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1991,
+      "goal_deg": 2.8551708138855565
+    },
+    {
+      "seg": 19,
+      "item": "goal:1994@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1994,
+      "goal_deg": 3.013791414656976
+    },
+    {
+      "seg": 20,
+      "item": "goal:1997@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 1997,
+      "goal_deg": 3.172412015428396
+    },
+    {
+      "seg": 21,
+      "item": "goal:2000@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2000,
+      "goal_deg": 3.3310326161998156
+    },
+    {
+      "seg": 22,
+      "item": "goal:2003@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2003,
+      "goal_deg": 3.4896532169712353
+    },
+    {
+      "seg": 23,
+      "item": "goal:2006@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2006,
+      "goal_deg": 3.648273817742655
+    },
+    {
+      "seg": 24,
+      "item": "goal:2009@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2009,
+      "goal_deg": 3.806894418514075
+    },
+    {
+      "seg": 25,
+      "item": "goal:2012@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2012,
+      "goal_deg": 3.965515019285495
+    },
+    {
+      "seg": 26,
+      "item": "goal:2016@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2016,
+      "goal_deg": 4.177009153647388
+    },
+    {
+      "seg": 27,
+      "item": "goal:2019@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2019,
+      "goal_deg": 4.335629754418807
+    },
+    {
+      "seg": 28,
+      "item": "goal:2022@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2022,
+      "goal_deg": 4.4942503551902275
+    },
+    {
+      "seg": 29,
+      "item": "goal:2025@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2025,
+      "goal_deg": 4.652870955961648
+    },
+    {
+      "seg": 30,
+      "item": "goal:2028@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2028,
+      "goal_deg": 4.811491556733067
+    },
+    {
+      "seg": 31,
+      "item": "goal:2031@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2031,
+      "goal_deg": 4.970112157504487
+    },
+    {
+      "seg": 32,
+      "item": "goal:2034@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2034,
+      "goal_deg": 5.128732758275906
+    },
+    {
+      "seg": 33,
+      "item": "goal:2037@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2037,
+      "goal_deg": 5.2873533590473265
+    },
+    {
+      "seg": 34,
+      "item": "goal:2040@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2040,
+      "goal_deg": 5.445973959818747
+    },
+    {
+      "seg": 35,
+      "item": "goal:2043@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2043,
+      "goal_deg": 5.604594560590166
+    },
+    {
+      "seg": 36,
+      "item": "goal:2046@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2046,
+      "goal_deg": 5.763215161361586
+    },
+    {
+      "seg": 37,
+      "item": "goal:2049@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2049,
+      "goal_deg": 5.921835762133005
+    },
+    {
+      "seg": 38,
+      "item": "goal:2052@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2052,
+      "goal_deg": 6.0804563629044255
+    },
+    {
+      "seg": 39,
+      "item": "goal:2055@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2055,
+      "goal_deg": 6.239076963675845
+    },
+    {
+      "seg": 40,
+      "item": "goal:2058@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2058,
+      "goal_deg": 6.397697564447265
+    },
+    {
+      "seg": 41,
+      "item": "goal:2061@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2061,
+      "goal_deg": 6.556318165218685
+    },
+    {
+      "seg": 42,
+      "item": "goal:2064@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2064,
+      "goal_deg": 6.714938765990104
+    },
+    {
+      "seg": 43,
+      "item": "goal:2067@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2067,
+      "goal_deg": 6.8735593667615245
+    },
+    {
+      "seg": 44,
+      "item": "goal:2070@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2070,
+      "goal_deg": 7.032179967532944
+    },
+    {
+      "seg": 45,
+      "item": "goal:2073@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2073,
+      "goal_deg": 7.190800568304364
+    },
+    {
+      "seg": 46,
+      "item": "goal:2076@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2076,
+      "goal_deg": 7.349421169075784
+    },
+    {
+      "seg": 47,
+      "item": "goal:2079@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2079,
+      "goal_deg": 7.508041769847203
+    },
+    {
+      "seg": 48,
+      "item": "goal:2082@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2082,
+      "goal_deg": 7.666662370618623
+    },
+    {
+      "seg": 49,
+      "item": "goal:2085@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2085,
+      "goal_deg": 7.825282971390043
+    },
+    {
+      "seg": 50,
+      "item": "goal:2088@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2088,
+      "goal_deg": 7.983903572161463
+    },
+    {
+      "seg": 51,
+      "item": "goal:2091@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2091,
+      "goal_deg": 8.142524172932882
+    },
+    {
+      "seg": 52,
+      "item": "goal:2094@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2094,
+      "goal_deg": 8.301144773704303
+    },
+    {
+      "seg": 53,
+      "item": "goal:2097@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2097,
+      "goal_deg": 8.459765374475722
+    },
+    {
+      "seg": 54,
+      "item": "goal:2100@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2100,
+      "goal_deg": 8.618385975247142
+    },
+    {
+      "seg": 55,
+      "item": "goal:2103@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2103,
+      "goal_deg": 8.777006576018563
+    },
+    {
+      "seg": 56,
+      "item": "goal:2106@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2106,
+      "goal_deg": 8.935627176789982
+    },
+    {
+      "seg": 57,
+      "item": "goal:2109@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2109,
+      "goal_deg": 9.094247777561401
+    },
+    {
+      "seg": 58,
+      "item": "goal:2112@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2112,
+      "goal_deg": 9.25286837833282
+    },
+    {
+      "seg": 59,
+      "item": "goal:2115@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2115,
+      "goal_deg": 9.411488979104242
+    },
+    {
+      "seg": 60,
+      "item": "goal:2118@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2118,
+      "goal_deg": 9.57010957987566
+    },
+    {
+      "seg": 61,
+      "item": "goal:2121@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2121,
+      "goal_deg": 9.72873018064708
+    },
+    {
+      "seg": 62,
+      "item": "goal:2124@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2124,
+      "goal_deg": 9.887350781418501
+    },
+    {
+      "seg": 63,
+      "item": "goal:2127@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2127,
+      "goal_deg": 10.04597138218992
+    },
+    {
+      "seg": 64,
+      "item": "goal:2130@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2130,
+      "goal_deg": 10.20459198296134
+    },
+    {
+      "seg": 65,
+      "item": "goal:2133@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2133,
+      "goal_deg": 10.36321258373276
+    },
+    {
+      "seg": 66,
+      "item": "goal:2136@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2136,
+      "goal_deg": 10.52183318450418
+    },
+    {
+      "seg": 67,
+      "item": "goal:2139@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2139,
+      "goal_deg": 10.6804537852756
+    },
+    {
+      "seg": 68,
+      "item": "goal:2142@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2142,
+      "goal_deg": 10.839074386047018
+    },
+    {
+      "seg": 69,
+      "item": "goal:2145@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2145,
+      "goal_deg": 10.99769498681844
+    },
+    {
+      "seg": 70,
+      "item": "goal:2148@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2148,
+      "goal_deg": 11.156315587589859
+    },
+    {
+      "seg": 71,
+      "item": "goal:2151@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2151,
+      "goal_deg": 11.314936188361278
+    },
+    {
+      "seg": 72,
+      "item": "goal:2154@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2154,
+      "goal_deg": 11.473556789132699
+    },
+    {
+      "seg": 73,
+      "item": "goal:2157@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2157,
+      "goal_deg": 11.632177389904118
+    },
+    {
+      "seg": 74,
+      "item": "goal:2160@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2160,
+      "goal_deg": 11.790797990675538
+    },
+    {
+      "seg": 75,
+      "item": "goal:2163@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2163,
+      "goal_deg": 11.949418591446959
+    },
+    {
+      "seg": 76,
+      "item": "goal:2167@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2167,
+      "goal_deg": 12.160912725808851
+    },
+    {
+      "seg": 77,
+      "item": "goal:2170@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2170,
+      "goal_deg": 12.31953332658027
+    },
+    {
+      "seg": 78,
+      "item": "goal:2173@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2173,
+      "goal_deg": 12.47815392735169
+    },
+    {
+      "seg": 79,
+      "item": "goal:2176@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2176,
+      "goal_deg": 12.63677452812311
+    },
+    {
+      "seg": 80,
+      "item": "goal:2179@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2179,
+      "goal_deg": 12.79539512889453
+    },
+    {
+      "seg": 81,
+      "item": "goal:2182@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2182,
+      "goal_deg": 12.954015729665949
+    },
+    {
+      "seg": 82,
+      "item": "goal:2185@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2185,
+      "goal_deg": 13.11263633043737
+    },
+    {
+      "seg": 83,
+      "item": "goal:2188@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2188,
+      "goal_deg": 13.27125693120879
+    },
+    {
+      "seg": 84,
+      "item": "goal:2191@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2191,
+      "goal_deg": 13.429877531980209
+    },
+    {
+      "seg": 85,
+      "item": "goal:2194@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2194,
+      "goal_deg": 13.58849813275163
+    },
+    {
+      "seg": 86,
+      "item": "goal:2197@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2197,
+      "goal_deg": 13.747118733523049
+    },
+    {
+      "seg": 87,
+      "item": "goal:2200@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2200,
+      "goal_deg": 13.905739334294468
+    },
+    {
+      "seg": 88,
+      "item": "goal:2203@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2203,
+      "goal_deg": 14.064359935065887
+    },
+    {
+      "seg": 89,
+      "item": "goal:2206@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2206,
+      "goal_deg": 14.222980535837308
+    },
+    {
+      "seg": 90,
+      "item": "goal:2209@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2209,
+      "goal_deg": 14.381601136608728
+    },
+    {
+      "seg": 91,
+      "item": "goal:2212@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2212,
+      "goal_deg": 14.540221737380147
+    },
+    {
+      "seg": 92,
+      "item": "goal:2215@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2215,
+      "goal_deg": 14.698842338151568
+    },
+    {
+      "seg": 93,
+      "item": "goal:2218@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2218,
+      "goal_deg": 14.857462938922987
+    },
+    {
+      "seg": 94,
+      "item": "goal:2221@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2221,
+      "goal_deg": 15.016083539694407
+    },
+    {
+      "seg": 95,
+      "item": "goal:2224@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2224,
+      "goal_deg": 15.174704140465828
+    },
+    {
+      "seg": 96,
+      "item": "goal:2227@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2227,
+      "goal_deg": 15.333324741237247
+    },
+    {
+      "seg": 97,
+      "item": "goal:2230@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2230,
+      "goal_deg": 15.491945342008666
+    },
+    {
+      "seg": 98,
+      "item": "goal:2233@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2233,
+      "goal_deg": 15.650565942780085
+    },
+    {
+      "seg": 99,
+      "item": "goal:2236@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2236,
+      "goal_deg": 15.809186543551506
+    },
+    {
+      "seg": 100,
+      "item": "goal:2239@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2239,
+      "goal_deg": 15.967807144322926
+    },
+    {
+      "seg": 101,
+      "item": "goal:2242@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2242,
+      "goal_deg": 16.126427745094347
+    },
+    {
+      "seg": 102,
+      "item": "goal:2245@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2245,
+      "goal_deg": 16.285048345865764
+    },
+    {
+      "seg": 103,
+      "item": "goal:2248@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2248,
+      "goal_deg": 16.443668946637185
+    },
+    {
+      "seg": 104,
+      "item": "goal:2251@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2251,
+      "goal_deg": 16.602289547408606
+    },
+    {
+      "seg": 105,
+      "item": "goal:2254@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2254,
+      "goal_deg": 16.760910148180024
+    },
+    {
+      "seg": 106,
+      "item": "goal:2257@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2257,
+      "goal_deg": 16.919530748951445
+    },
+    {
+      "seg": 107,
+      "item": "goal:2260@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2260,
+      "goal_deg": 17.078151349722866
+    },
+    {
+      "seg": 108,
+      "item": "goal:2263@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2263,
+      "goal_deg": 17.236771950494283
+    },
+    {
+      "seg": 109,
+      "item": "goal:2266@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2266,
+      "goal_deg": 17.395392551265704
+    },
+    {
+      "seg": 110,
+      "item": "goal:2269@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2269,
+      "goal_deg": 17.554013152037125
+    },
+    {
+      "seg": 111,
+      "item": "goal:2272@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2272,
+      "goal_deg": 17.712633752808543
+    },
+    {
+      "seg": 112,
+      "item": "goal:2275@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2275,
+      "goal_deg": 17.871254353579964
+    },
+    {
+      "seg": 113,
+      "item": "goal:2278@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2278,
+      "goal_deg": 18.02987495435138
+    },
+    {
+      "seg": 114,
+      "item": "goal:2281@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2281,
+      "goal_deg": 18.188495555122802
+    },
+    {
+      "seg": 115,
+      "item": "goal:2284@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2284,
+      "goal_deg": 18.347116155894224
+    },
+    {
+      "seg": 116,
+      "item": "goal:2287@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2287,
+      "goal_deg": 18.50573675666564
+    },
+    {
+      "seg": 117,
+      "item": "goal:2290@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2290,
+      "goal_deg": 18.664357357437062
+    },
+    {
+      "seg": 118,
+      "item": "goal:2291@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": 1,
+      "ramp": 0,
+      "goal_counts": 2291,
+      "goal_deg": 18.717230891027537
+    },
+    {
+      "seg": 119,
+      "item": "hold@500",
+      "test": "pause",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 120,
+      "item": "goal:2288@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2288,
+      "goal_deg": 18.558610290256116
+    },
+    {
+      "seg": 121,
+      "item": "goal:2285@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2285,
+      "goal_deg": 18.399989689484695
+    },
+    {
+      "seg": 122,
+      "item": "goal:2282@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2282,
+      "goal_deg": 18.241369088713277
+    },
+    {
+      "seg": 123,
+      "item": "goal:2279@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2279,
+      "goal_deg": 18.082748487941856
+    },
+    {
+      "seg": 124,
+      "item": "goal:2276@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2276,
+      "goal_deg": 17.924127887170435
+    },
+    {
+      "seg": 125,
+      "item": "goal:2273@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2273,
+      "goal_deg": 17.765507286399018
+    },
+    {
+      "seg": 126,
+      "item": "goal:2270@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2270,
+      "goal_deg": 17.606886685627597
+    },
+    {
+      "seg": 127,
+      "item": "goal:2267@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2267,
+      "goal_deg": 17.448266084856176
+    },
+    {
+      "seg": 128,
+      "item": "goal:2264@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2264,
+      "goal_deg": 17.289645484084758
+    },
+    {
+      "seg": 129,
+      "item": "goal:2261@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2261,
+      "goal_deg": 17.131024883313337
+    },
+    {
+      "seg": 130,
+      "item": "goal:2258@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2258,
+      "goal_deg": 16.972404282541916
+    },
+    {
+      "seg": 131,
+      "item": "goal:2255@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2255,
+      "goal_deg": 16.8137836817705
+    },
+    {
+      "seg": 132,
+      "item": "goal:2252@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2252,
+      "goal_deg": 16.655163080999078
+    },
+    {
+      "seg": 133,
+      "item": "goal:2249@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2249,
+      "goal_deg": 16.49654248022766
+    },
+    {
+      "seg": 134,
+      "item": "goal:2246@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2246,
+      "goal_deg": 16.33792187945624
+    },
+    {
+      "seg": 135,
+      "item": "goal:2243@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2243,
+      "goal_deg": 16.179301278684818
+    },
+    {
+      "seg": 136,
+      "item": "goal:2240@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2240,
+      "goal_deg": 16.0206806779134
+    },
+    {
+      "seg": 137,
+      "item": "goal:2237@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2237,
+      "goal_deg": 15.86206007714198
+    },
+    {
+      "seg": 138,
+      "item": "goal:2234@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2234,
+      "goal_deg": 15.70343947637056
+    },
+    {
+      "seg": 139,
+      "item": "goal:2231@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2231,
+      "goal_deg": 15.54481887559914
+    },
+    {
+      "seg": 140,
+      "item": "goal:2228@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2228,
+      "goal_deg": 15.38619827482772
+    },
+    {
+      "seg": 141,
+      "item": "goal:2225@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2225,
+      "goal_deg": 15.2275776740563
+    },
+    {
+      "seg": 142,
+      "item": "goal:2222@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2222,
+      "goal_deg": 15.06895707328488
+    },
+    {
+      "seg": 143,
+      "item": "goal:2219@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2219,
+      "goal_deg": 14.91033647251346
+    },
+    {
+      "seg": 144,
+      "item": "goal:2216@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2216,
+      "goal_deg": 14.751715871742041
+    },
+    {
+      "seg": 145,
+      "item": "goal:2212@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2212,
+      "goal_deg": 14.540221737380147
+    },
+    {
+      "seg": 146,
+      "item": "goal:2209@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2209,
+      "goal_deg": 14.381601136608728
+    },
+    {
+      "seg": 147,
+      "item": "goal:2206@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2206,
+      "goal_deg": 14.222980535837308
+    },
+    {
+      "seg": 148,
+      "item": "goal:2203@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2203,
+      "goal_deg": 14.064359935065887
+    },
+    {
+      "seg": 149,
+      "item": "goal:2200@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2200,
+      "goal_deg": 13.905739334294468
+    },
+    {
+      "seg": 150,
+      "item": "goal:2197@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2197,
+      "goal_deg": 13.747118733523049
+    },
+    {
+      "seg": 151,
+      "item": "goal:2194@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2194,
+      "goal_deg": 13.58849813275163
+    },
+    {
+      "seg": 152,
+      "item": "goal:2191@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2191,
+      "goal_deg": 13.429877531980209
+    },
+    {
+      "seg": 153,
+      "item": "goal:2188@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2188,
+      "goal_deg": 13.27125693120879
+    },
+    {
+      "seg": 154,
+      "item": "goal:2185@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2185,
+      "goal_deg": 13.11263633043737
+    },
+    {
+      "seg": 155,
+      "item": "goal:2182@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2182,
+      "goal_deg": 12.954015729665949
+    },
+    {
+      "seg": 156,
+      "item": "goal:2179@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2179,
+      "goal_deg": 12.79539512889453
+    },
+    {
+      "seg": 157,
+      "item": "goal:2176@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2176,
+      "goal_deg": 12.63677452812311
+    },
+    {
+      "seg": 158,
+      "item": "goal:2173@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2173,
+      "goal_deg": 12.47815392735169
+    },
+    {
+      "seg": 159,
+      "item": "goal:2170@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2170,
+      "goal_deg": 12.31953332658027
+    },
+    {
+      "seg": 160,
+      "item": "goal:2167@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2167,
+      "goal_deg": 12.160912725808851
+    },
+    {
+      "seg": 161,
+      "item": "goal:2164@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2164,
+      "goal_deg": 12.002292125037432
+    },
+    {
+      "seg": 162,
+      "item": "goal:2161@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2161,
+      "goal_deg": 11.84367152426601
+    },
+    {
+      "seg": 163,
+      "item": "goal:2158@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2158,
+      "goal_deg": 11.685050923494591
+    },
+    {
+      "seg": 164,
+      "item": "goal:2155@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2155,
+      "goal_deg": 11.526430322723172
+    },
+    {
+      "seg": 165,
+      "item": "goal:2152@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2152,
+      "goal_deg": 11.367809721951751
+    },
+    {
+      "seg": 166,
+      "item": "goal:2149@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2149,
+      "goal_deg": 11.209189121180332
+    },
+    {
+      "seg": 167,
+      "item": "goal:2146@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2146,
+      "goal_deg": 11.050568520408913
+    },
+    {
+      "seg": 168,
+      "item": "goal:2143@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2143,
+      "goal_deg": 10.891947919637493
+    },
+    {
+      "seg": 169,
+      "item": "goal:2140@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2140,
+      "goal_deg": 10.733327318866072
+    },
+    {
+      "seg": 170,
+      "item": "goal:2137@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2137,
+      "goal_deg": 10.574706718094653
+    },
+    {
+      "seg": 171,
+      "item": "goal:2134@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2134,
+      "goal_deg": 10.416086117323234
+    },
+    {
+      "seg": 172,
+      "item": "goal:2131@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2131,
+      "goal_deg": 10.257465516551813
+    },
+    {
+      "seg": 173,
+      "item": "goal:2128@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2128,
+      "goal_deg": 10.098844915780393
+    },
+    {
+      "seg": 174,
+      "item": "goal:2125@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2125,
+      "goal_deg": 9.940224315008974
+    },
+    {
+      "seg": 175,
+      "item": "goal:2122@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2122,
+      "goal_deg": 9.781603714237553
+    },
+    {
+      "seg": 176,
+      "item": "goal:2119@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2119,
+      "goal_deg": 9.622983113466134
+    },
+    {
+      "seg": 177,
+      "item": "goal:2116@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2116,
+      "goal_deg": 9.464362512694715
+    },
+    {
+      "seg": 178,
+      "item": "goal:2113@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2113,
+      "goal_deg": 9.305741911923295
+    },
+    {
+      "seg": 179,
+      "item": "goal:2110@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2110,
+      "goal_deg": 9.147121311151874
+    },
+    {
+      "seg": 180,
+      "item": "goal:2107@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2107,
+      "goal_deg": 8.988500710380455
+    },
+    {
+      "seg": 181,
+      "item": "goal:2104@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2104,
+      "goal_deg": 8.829880109609036
+    },
+    {
+      "seg": 182,
+      "item": "goal:2101@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2101,
+      "goal_deg": 8.671259508837615
+    },
+    {
+      "seg": 183,
+      "item": "goal:2098@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2098,
+      "goal_deg": 8.512638908066195
+    },
+    {
+      "seg": 184,
+      "item": "goal:2095@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2095,
+      "goal_deg": 8.354018307294776
+    },
+    {
+      "seg": 185,
+      "item": "goal:2092@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2092,
+      "goal_deg": 8.195397706523355
+    },
+    {
+      "seg": 186,
+      "item": "goal:2089@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2089,
+      "goal_deg": 8.036777105751936
+    },
+    {
+      "seg": 187,
+      "item": "goal:2086@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2086,
+      "goal_deg": 7.878156504980517
+    },
+    {
+      "seg": 188,
+      "item": "goal:2083@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2083,
+      "goal_deg": 7.7195359042090965
+    },
+    {
+      "seg": 189,
+      "item": "goal:2080@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2080,
+      "goal_deg": 7.560915303437676
+    },
+    {
+      "seg": 190,
+      "item": "goal:2077@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2077,
+      "goal_deg": 7.402294702666257
+    },
+    {
+      "seg": 191,
+      "item": "goal:2074@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2074,
+      "goal_deg": 7.243674101894837
+    },
+    {
+      "seg": 192,
+      "item": "goal:2071@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2071,
+      "goal_deg": 7.085053501123418
+    },
+    {
+      "seg": 193,
+      "item": "goal:2068@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2068,
+      "goal_deg": 6.9264329003519975
+    },
+    {
+      "seg": 194,
+      "item": "goal:2065@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2065,
+      "goal_deg": 6.767812299580577
+    },
+    {
+      "seg": 195,
+      "item": "goal:2061@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2061,
+      "goal_deg": 6.556318165218685
+    },
+    {
+      "seg": 196,
+      "item": "goal:2058@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2058,
+      "goal_deg": 6.397697564447265
+    },
+    {
+      "seg": 197,
+      "item": "goal:2055@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2055,
+      "goal_deg": 6.239076963675845
+    },
+    {
+      "seg": 198,
+      "item": "goal:2052@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2052,
+      "goal_deg": 6.0804563629044255
+    },
+    {
+      "seg": 199,
+      "item": "goal:2049@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2049,
+      "goal_deg": 5.921835762133005
+    },
+    {
+      "seg": 200,
+      "item": "goal:2046@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2046,
+      "goal_deg": 5.763215161361586
+    },
+    {
+      "seg": 201,
+      "item": "goal:2043@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2043,
+      "goal_deg": 5.604594560590166
+    },
+    {
+      "seg": 202,
+      "item": "goal:2040@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2040,
+      "goal_deg": 5.445973959818747
+    },
+    {
+      "seg": 203,
+      "item": "goal:2037@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2037,
+      "goal_deg": 5.2873533590473265
+    },
+    {
+      "seg": 204,
+      "item": "goal:2034@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2034,
+      "goal_deg": 5.128732758275906
+    },
+    {
+      "seg": 205,
+      "item": "goal:2031@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2031,
+      "goal_deg": 4.970112157504487
+    },
+    {
+      "seg": 206,
+      "item": "goal:2028@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2028,
+      "goal_deg": 4.811491556733067
+    },
+    {
+      "seg": 207,
+      "item": "goal:2025@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2025,
+      "goal_deg": 4.652870955961648
+    },
+    {
+      "seg": 208,
+      "item": "goal:2022@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2022,
+      "goal_deg": 4.4942503551902275
+    },
+    {
+      "seg": 209,
+      "item": "goal:2019@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2019,
+      "goal_deg": 4.335629754418807
+    },
+    {
+      "seg": 210,
+      "item": "goal:2016@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2016,
+      "goal_deg": 4.177009153647388
+    },
+    {
+      "seg": 211,
+      "item": "goal:2013@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2013,
+      "goal_deg": 4.018388552875968
+    },
+    {
+      "seg": 212,
+      "item": "goal:2010@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2010,
+      "goal_deg": 3.8597679521045483
+    },
+    {
+      "seg": 213,
+      "item": "goal:2007@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2007,
+      "goal_deg": 3.7011473513331286
+    },
+    {
+      "seg": 214,
+      "item": "goal:2004@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2004,
+      "goal_deg": 3.542526750561709
+    },
+    {
+      "seg": 215,
+      "item": "goal:2001@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 2001,
+      "goal_deg": 3.3839061497902887
+    },
+    {
+      "seg": 216,
+      "item": "goal:1998@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1998,
+      "goal_deg": 3.225285549018869
+    },
+    {
+      "seg": 217,
+      "item": "goal:1995@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1995,
+      "goal_deg": 3.0666649482474493
+    },
+    {
+      "seg": 218,
+      "item": "goal:1992@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1992,
+      "goal_deg": 2.9080443474760296
+    },
+    {
+      "seg": 219,
+      "item": "goal:1989@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1989,
+      "goal_deg": 2.74942374670461
+    },
+    {
+      "seg": 220,
+      "item": "goal:1986@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1986,
+      "goal_deg": 2.59080314593319
+    },
+    {
+      "seg": 221,
+      "item": "goal:1983@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1983,
+      "goal_deg": 2.43218254516177
+    },
+    {
+      "seg": 222,
+      "item": "goal:1980@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1980,
+      "goal_deg": 2.2735619443903503
+    },
+    {
+      "seg": 223,
+      "item": "goal:1977@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1977,
+      "goal_deg": 2.1149413436189306
+    },
+    {
+      "seg": 224,
+      "item": "goal:1974@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1974,
+      "goal_deg": 1.9563207428475107
+    },
+    {
+      "seg": 225,
+      "item": "goal:1971@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1971,
+      "goal_deg": 1.797700142076091
+    },
+    {
+      "seg": 226,
+      "item": "goal:1968@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1968,
+      "goal_deg": 1.6390795413046713
+    },
+    {
+      "seg": 227,
+      "item": "goal:1965@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1965,
+      "goal_deg": 1.4804589405332513
+    },
+    {
+      "seg": 228,
+      "item": "goal:1962@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1962,
+      "goal_deg": 1.3218383397618316
+    },
+    {
+      "seg": 229,
+      "item": "goal:1959@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1959,
+      "goal_deg": 1.163217738990412
+    },
+    {
+      "seg": 230,
+      "item": "goal:1956@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1956,
+      "goal_deg": 1.004597138218992
+    },
+    {
+      "seg": 231,
+      "item": "goal:1953@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1953,
+      "goal_deg": 0.8459765374475722
+    },
+    {
+      "seg": 232,
+      "item": "goal:1950@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1950,
+      "goal_deg": 0.6873559366761525
+    },
+    {
+      "seg": 233,
+      "item": "goal:1947@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1947,
+      "goal_deg": 0.5287353359047327
+    },
+    {
+      "seg": 234,
+      "item": "goal:1944@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1944,
+      "goal_deg": 0.37011473513331283
+    },
+    {
+      "seg": 235,
+      "item": "goal:1941@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1941,
+      "goal_deg": 0.21149413436189304
+    },
+    {
+      "seg": 236,
+      "item": "goal:1938@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1938,
+      "goal_deg": 0.05287353359047326
+    },
+    {
+      "seg": 237,
+      "item": "goal:1937@20",
+      "test": "ramp",
+      "speed_pct": 1,
+      "direction": -1,
+      "ramp": 1,
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 238,
+      "item": "hold@500",
+      "test": "pause",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 239,
+      "item": "goal:1946@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 1946,
+      "goal_deg": 0.4758618023142594
+    },
+    {
+      "seg": 240,
+      "item": "goal:1955@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 1955,
+      "goal_deg": 0.9517236046285188
+    },
+    {
+      "seg": 241,
+      "item": "goal:1964@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 1964,
+      "goal_deg": 1.4275854069427782
+    },
+    {
+      "seg": 242,
+      "item": "goal:1973@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 1973,
+      "goal_deg": 1.9034472092570376
+    },
+    {
+      "seg": 243,
+      "item": "goal:1982@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 1982,
+      "goal_deg": 2.379309011571297
+    },
+    {
+      "seg": 244,
+      "item": "goal:1991@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 1991,
+      "goal_deg": 2.8551708138855565
+    },
+    {
+      "seg": 245,
+      "item": "goal:2000@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2000,
+      "goal_deg": 3.3310326161998156
+    },
+    {
+      "seg": 246,
+      "item": "goal:2009@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2009,
+      "goal_deg": 3.806894418514075
+    },
+    {
+      "seg": 247,
+      "item": "goal:2019@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2019,
+      "goal_deg": 4.335629754418807
+    },
+    {
+      "seg": 248,
+      "item": "goal:2028@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2028,
+      "goal_deg": 4.811491556733067
+    },
+    {
+      "seg": 249,
+      "item": "goal:2037@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2037,
+      "goal_deg": 5.2873533590473265
+    },
+    {
+      "seg": 250,
+      "item": "goal:2046@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2046,
+      "goal_deg": 5.763215161361586
+    },
+    {
+      "seg": 251,
+      "item": "goal:2055@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2055,
+      "goal_deg": 6.239076963675845
+    },
+    {
+      "seg": 252,
+      "item": "goal:2064@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2064,
+      "goal_deg": 6.714938765990104
+    },
+    {
+      "seg": 253,
+      "item": "goal:2073@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2073,
+      "goal_deg": 7.190800568304364
+    },
+    {
+      "seg": 254,
+      "item": "goal:2082@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2082,
+      "goal_deg": 7.666662370618623
+    },
+    {
+      "seg": 255,
+      "item": "goal:2091@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2091,
+      "goal_deg": 8.142524172932882
+    },
+    {
+      "seg": 256,
+      "item": "goal:2100@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2100,
+      "goal_deg": 8.618385975247142
+    },
+    {
+      "seg": 257,
+      "item": "goal:2109@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2109,
+      "goal_deg": 9.094247777561401
+    },
+    {
+      "seg": 258,
+      "item": "goal:2118@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2118,
+      "goal_deg": 9.57010957987566
+    },
+    {
+      "seg": 259,
+      "item": "goal:2127@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2127,
+      "goal_deg": 10.04597138218992
+    },
+    {
+      "seg": 260,
+      "item": "goal:2136@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2136,
+      "goal_deg": 10.52183318450418
+    },
+    {
+      "seg": 261,
+      "item": "goal:2145@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2145,
+      "goal_deg": 10.99769498681844
+    },
+    {
+      "seg": 262,
+      "item": "goal:2154@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2154,
+      "goal_deg": 11.473556789132699
+    },
+    {
+      "seg": 263,
+      "item": "goal:2163@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2163,
+      "goal_deg": 11.949418591446959
+    },
+    {
+      "seg": 264,
+      "item": "goal:2173@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2173,
+      "goal_deg": 12.47815392735169
+    },
+    {
+      "seg": 265,
+      "item": "goal:2182@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2182,
+      "goal_deg": 12.954015729665949
+    },
+    {
+      "seg": 266,
+      "item": "goal:2191@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2191,
+      "goal_deg": 13.429877531980209
+    },
+    {
+      "seg": 267,
+      "item": "goal:2200@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2200,
+      "goal_deg": 13.905739334294468
+    },
+    {
+      "seg": 268,
+      "item": "goal:2209@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2209,
+      "goal_deg": 14.381601136608728
+    },
+    {
+      "seg": 269,
+      "item": "goal:2218@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2218,
+      "goal_deg": 14.857462938922987
+    },
+    {
+      "seg": 270,
+      "item": "goal:2227@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2227,
+      "goal_deg": 15.333324741237247
+    },
+    {
+      "seg": 271,
+      "item": "goal:2236@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2236,
+      "goal_deg": 15.809186543551506
+    },
+    {
+      "seg": 272,
+      "item": "goal:2245@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2245,
+      "goal_deg": 16.285048345865764
+    },
+    {
+      "seg": 273,
+      "item": "goal:2254@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2254,
+      "goal_deg": 16.760910148180024
+    },
+    {
+      "seg": 274,
+      "item": "goal:2263@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2263,
+      "goal_deg": 17.236771950494283
+    },
+    {
+      "seg": 275,
+      "item": "goal:2272@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2272,
+      "goal_deg": 17.712633752808543
+    },
+    {
+      "seg": 276,
+      "item": "goal:2281@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2281,
+      "goal_deg": 18.188495555122802
+    },
+    {
+      "seg": 277,
+      "item": "goal:2290@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2290,
+      "goal_deg": 18.664357357437062
+    },
+    {
+      "seg": 278,
+      "item": "goal:2299@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2299,
+      "goal_deg": 19.14021915975132
+    },
+    {
+      "seg": 279,
+      "item": "goal:2308@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2308,
+      "goal_deg": 19.61608096206558
+    },
+    {
+      "seg": 280,
+      "item": "goal:2318@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2318,
+      "goal_deg": 20.144816297970312
+    },
+    {
+      "seg": 281,
+      "item": "goal:2327@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2327,
+      "goal_deg": 20.62067810028457
+    },
+    {
+      "seg": 282,
+      "item": "goal:2336@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2336,
+      "goal_deg": 21.09653990259883
+    },
+    {
+      "seg": 283,
+      "item": "goal:2345@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2345,
+      "goal_deg": 21.57240170491309
+    },
+    {
+      "seg": 284,
+      "item": "goal:2354@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2354,
+      "goal_deg": 22.04826350722735
+    },
+    {
+      "seg": 285,
+      "item": "goal:2363@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2363,
+      "goal_deg": 22.52412530954161
+    },
+    {
+      "seg": 286,
+      "item": "goal:2372@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2372,
+      "goal_deg": 22.99998711185587
+    },
+    {
+      "seg": 287,
+      "item": "goal:2381@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2381,
+      "goal_deg": 23.47584891417013
+    },
+    {
+      "seg": 288,
+      "item": "goal:2390@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2390,
+      "goal_deg": 23.95171071648439
+    },
+    {
+      "seg": 289,
+      "item": "goal:2399@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2399,
+      "goal_deg": 24.427572518798648
+    },
+    {
+      "seg": 290,
+      "item": "goal:2408@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2408,
+      "goal_deg": 24.903434321112908
+    },
+    {
+      "seg": 291,
+      "item": "goal:2417@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2417,
+      "goal_deg": 25.379296123427167
+    },
+    {
+      "seg": 292,
+      "item": "goal:2426@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2426,
+      "goal_deg": 25.855157925741427
+    },
+    {
+      "seg": 293,
+      "item": "goal:2435@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2435,
+      "goal_deg": 26.331019728055686
+    },
+    {
+      "seg": 294,
+      "item": "goal:2444@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2444,
+      "goal_deg": 26.806881530369946
+    },
+    {
+      "seg": 295,
+      "item": "goal:2453@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2453,
+      "goal_deg": 27.282743332684205
+    },
+    {
+      "seg": 296,
+      "item": "goal:2462@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2462,
+      "goal_deg": 27.758605134998465
+    },
+    {
+      "seg": 297,
+      "item": "goal:2472@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2472,
+      "goal_deg": 28.287340470903196
+    },
+    {
+      "seg": 298,
+      "item": "goal:2481@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2481,
+      "goal_deg": 28.763202273217455
+    },
+    {
+      "seg": 299,
+      "item": "goal:2490@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2490,
+      "goal_deg": 29.239064075531715
+    },
+    {
+      "seg": 300,
+      "item": "goal:2499@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2499,
+      "goal_deg": 29.714925877845975
+    },
+    {
+      "seg": 301,
+      "item": "goal:2504@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": 1,
+      "ramp": 2,
+      "goal_counts": 2504,
+      "goal_deg": 29.979293545798342
+    },
+    {
+      "seg": 302,
+      "item": "hold@500",
+      "test": "pause",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 303,
+      "item": "goal:2495@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2495,
+      "goal_deg": 29.503431743484082
+    },
+    {
+      "seg": 304,
+      "item": "goal:2486@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2486,
+      "goal_deg": 29.027569941169823
+    },
+    {
+      "seg": 305,
+      "item": "goal:2477@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2477,
+      "goal_deg": 28.551708138855563
+    },
+    {
+      "seg": 306,
+      "item": "goal:2468@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2468,
+      "goal_deg": 28.075846336541304
+    },
+    {
+      "seg": 307,
+      "item": "goal:2459@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2459,
+      "goal_deg": 27.599984534227044
+    },
+    {
+      "seg": 308,
+      "item": "goal:2450@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2450,
+      "goal_deg": 27.124122731912784
+    },
+    {
+      "seg": 309,
+      "item": "goal:2441@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2441,
+      "goal_deg": 26.648260929598525
+    },
+    {
+      "seg": 310,
+      "item": "goal:2432@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2432,
+      "goal_deg": 26.172399127284265
+    },
+    {
+      "seg": 311,
+      "item": "goal:2422@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2422,
+      "goal_deg": 25.643663791379534
+    },
+    {
+      "seg": 312,
+      "item": "goal:2413@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2413,
+      "goal_deg": 25.167801989065275
+    },
+    {
+      "seg": 313,
+      "item": "goal:2404@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2404,
+      "goal_deg": 24.691940186751015
+    },
+    {
+      "seg": 314,
+      "item": "goal:2395@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2395,
+      "goal_deg": 24.216078384436756
+    },
+    {
+      "seg": 315,
+      "item": "goal:2386@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2386,
+      "goal_deg": 23.740216582122496
+    },
+    {
+      "seg": 316,
+      "item": "goal:2377@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2377,
+      "goal_deg": 23.264354779808237
+    },
+    {
+      "seg": 317,
+      "item": "goal:2368@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2368,
+      "goal_deg": 22.788492977493977
+    },
+    {
+      "seg": 318,
+      "item": "goal:2359@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2359,
+      "goal_deg": 22.312631175179718
+    },
+    {
+      "seg": 319,
+      "item": "goal:2350@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2350,
+      "goal_deg": 21.836769372865458
+    },
+    {
+      "seg": 320,
+      "item": "goal:2341@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2341,
+      "goal_deg": 21.3609075705512
+    },
+    {
+      "seg": 321,
+      "item": "goal:2332@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2332,
+      "goal_deg": 20.88504576823694
+    },
+    {
+      "seg": 322,
+      "item": "goal:2323@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2323,
+      "goal_deg": 20.40918396592268
+    },
+    {
+      "seg": 323,
+      "item": "goal:2314@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2314,
+      "goal_deg": 19.93332216360842
+    },
+    {
+      "seg": 324,
+      "item": "goal:2305@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2305,
+      "goal_deg": 19.45746036129416
+    },
+    {
+      "seg": 325,
+      "item": "goal:2296@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2296,
+      "goal_deg": 18.9815985589799
+    },
+    {
+      "seg": 326,
+      "item": "goal:2287@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2287,
+      "goal_deg": 18.50573675666564
+    },
+    {
+      "seg": 327,
+      "item": "goal:2278@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2278,
+      "goal_deg": 18.02987495435138
+    },
+    {
+      "seg": 328,
+      "item": "goal:2268@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2268,
+      "goal_deg": 17.50113961844665
+    },
+    {
+      "seg": 329,
+      "item": "goal:2259@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2259,
+      "goal_deg": 17.02527781613239
+    },
+    {
+      "seg": 330,
+      "item": "goal:2250@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2250,
+      "goal_deg": 16.54941601381813
+    },
+    {
+      "seg": 331,
+      "item": "goal:2241@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2241,
+      "goal_deg": 16.073554211503872
+    },
+    {
+      "seg": 332,
+      "item": "goal:2232@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2232,
+      "goal_deg": 15.597692409189612
+    },
+    {
+      "seg": 333,
+      "item": "goal:2223@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2223,
+      "goal_deg": 15.121830606875353
+    },
+    {
+      "seg": 334,
+      "item": "goal:2214@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2214,
+      "goal_deg": 14.645968804561095
+    },
+    {
+      "seg": 335,
+      "item": "goal:2205@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2205,
+      "goal_deg": 14.170107002246835
+    },
+    {
+      "seg": 336,
+      "item": "goal:2196@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2196,
+      "goal_deg": 13.694245199932576
+    },
+    {
+      "seg": 337,
+      "item": "goal:2187@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2187,
+      "goal_deg": 13.218383397618316
+    },
+    {
+      "seg": 338,
+      "item": "goal:2178@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2178,
+      "goal_deg": 12.742521595304057
+    },
+    {
+      "seg": 339,
+      "item": "goal:2169@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2169,
+      "goal_deg": 12.266659792989797
+    },
+    {
+      "seg": 340,
+      "item": "goal:2160@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2160,
+      "goal_deg": 11.790797990675538
+    },
+    {
+      "seg": 341,
+      "item": "goal:2151@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2151,
+      "goal_deg": 11.314936188361278
+    },
+    {
+      "seg": 342,
+      "item": "goal:2142@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2142,
+      "goal_deg": 10.839074386047018
+    },
+    {
+      "seg": 343,
+      "item": "goal:2133@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2133,
+      "goal_deg": 10.36321258373276
+    },
+    {
+      "seg": 344,
+      "item": "goal:2123@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2123,
+      "goal_deg": 9.834477247828028
+    },
+    {
+      "seg": 345,
+      "item": "goal:2114@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2114,
+      "goal_deg": 9.358615445513768
+    },
+    {
+      "seg": 346,
+      "item": "goal:2105@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2105,
+      "goal_deg": 8.882753643199509
+    },
+    {
+      "seg": 347,
+      "item": "goal:2096@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2096,
+      "goal_deg": 8.40689184088525
+    },
+    {
+      "seg": 348,
+      "item": "goal:2087@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2087,
+      "goal_deg": 7.93103003857099
+    },
+    {
+      "seg": 349,
+      "item": "goal:2078@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2078,
+      "goal_deg": 7.45516823625673
+    },
+    {
+      "seg": 350,
+      "item": "goal:2069@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2069,
+      "goal_deg": 6.979306433942471
+    },
+    {
+      "seg": 351,
+      "item": "goal:2060@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2060,
+      "goal_deg": 6.503444631628211
+    },
+    {
+      "seg": 352,
+      "item": "goal:2051@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2051,
+      "goal_deg": 6.027582829313952
+    },
+    {
+      "seg": 353,
+      "item": "goal:2042@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2042,
+      "goal_deg": 5.551721026999693
+    },
+    {
+      "seg": 354,
+      "item": "goal:2033@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2033,
+      "goal_deg": 5.075859224685433
+    },
+    {
+      "seg": 355,
+      "item": "goal:2024@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2024,
+      "goal_deg": 4.599997422371174
+    },
+    {
+      "seg": 356,
+      "item": "goal:2015@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2015,
+      "goal_deg": 4.124135620056915
+    },
+    {
+      "seg": 357,
+      "item": "goal:2006@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 2006,
+      "goal_deg": 3.648273817742655
+    },
+    {
+      "seg": 358,
+      "item": "goal:1997@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1997,
+      "goal_deg": 3.172412015428396
+    },
+    {
+      "seg": 359,
+      "item": "goal:1988@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1988,
+      "goal_deg": 2.6965502131141363
+    },
+    {
+      "seg": 360,
+      "item": "goal:1979@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1979,
+      "goal_deg": 2.220688410799877
+    },
+    {
+      "seg": 361,
+      "item": "goal:1969@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1969,
+      "goal_deg": 1.6919530748951443
+    },
+    {
+      "seg": 362,
+      "item": "goal:1960@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1960,
+      "goal_deg": 1.216091272580885
+    },
+    {
+      "seg": 363,
+      "item": "goal:1951@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1951,
+      "goal_deg": 0.7402294702666257
+    },
+    {
+      "seg": 364,
+      "item": "goal:1942@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1942,
+      "goal_deg": 0.2643676679523663
+    },
+    {
+      "seg": 365,
+      "item": "goal:1937@20",
+      "test": "ramp",
+      "speed_pct": 3,
+      "direction": -1,
+      "ramp": 3,
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 366,
+      "item": "hold@500",
+      "test": "pause",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 367,
+      "item": "goal:1967@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 1967,
+      "goal_deg": 1.586206007714198
+    },
+    {
+      "seg": 368,
+      "item": "goal:1997@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 1997,
+      "goal_deg": 3.172412015428396
+    },
+    {
+      "seg": 369,
+      "item": "goal:2028@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2028,
+      "goal_deg": 4.811491556733067
+    },
+    {
+      "seg": 370,
+      "item": "goal:2058@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2058,
+      "goal_deg": 6.397697564447265
+    },
+    {
+      "seg": 371,
+      "item": "goal:2088@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2088,
+      "goal_deg": 7.983903572161463
+    },
+    {
+      "seg": 372,
+      "item": "goal:2118@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2118,
+      "goal_deg": 9.57010957987566
+    },
+    {
+      "seg": 373,
+      "item": "goal:2148@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2148,
+      "goal_deg": 11.156315587589859
+    },
+    {
+      "seg": 374,
+      "item": "goal:2179@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2179,
+      "goal_deg": 12.79539512889453
+    },
+    {
+      "seg": 375,
+      "item": "goal:2209@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2209,
+      "goal_deg": 14.381601136608728
+    },
+    {
+      "seg": 376,
+      "item": "goal:2239@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2239,
+      "goal_deg": 15.967807144322926
+    },
+    {
+      "seg": 377,
+      "item": "goal:2269@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2269,
+      "goal_deg": 17.554013152037125
+    },
+    {
+      "seg": 378,
+      "item": "goal:2299@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2299,
+      "goal_deg": 19.14021915975132
+    },
+    {
+      "seg": 379,
+      "item": "goal:2330@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2330,
+      "goal_deg": 20.779298701055993
+    },
+    {
+      "seg": 380,
+      "item": "goal:2360@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2360,
+      "goal_deg": 22.365504708770192
+    },
+    {
+      "seg": 381,
+      "item": "goal:2390@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2390,
+      "goal_deg": 23.95171071648439
+    },
+    {
+      "seg": 382,
+      "item": "goal:2420@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2420,
+      "goal_deg": 25.53791672419859
+    },
+    {
+      "seg": 383,
+      "item": "goal:2450@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2450,
+      "goal_deg": 27.124122731912784
+    },
+    {
+      "seg": 384,
+      "item": "goal:2481@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2481,
+      "goal_deg": 28.763202273217455
+    },
+    {
+      "seg": 385,
+      "item": "goal:2504@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": 1,
+      "ramp": 4,
+      "goal_counts": 2504,
+      "goal_deg": 29.979293545798342
+    },
+    {
+      "seg": 386,
+      "item": "hold@500",
+      "test": "pause",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 387,
+      "item": "goal:2474@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2474,
+      "goal_deg": 28.393087538084142
+    },
+    {
+      "seg": 388,
+      "item": "goal:2444@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2444,
+      "goal_deg": 26.806881530369946
+    },
+    {
+      "seg": 389,
+      "item": "goal:2413@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2413,
+      "goal_deg": 25.167801989065275
+    },
+    {
+      "seg": 390,
+      "item": "goal:2383@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2383,
+      "goal_deg": 23.581595981351075
+    },
+    {
+      "seg": 391,
+      "item": "goal:2353@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2353,
+      "goal_deg": 21.99538997363688
+    },
+    {
+      "seg": 392,
+      "item": "goal:2323@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2323,
+      "goal_deg": 20.40918396592268
+    },
+    {
+      "seg": 393,
+      "item": "goal:2293@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2293,
+      "goal_deg": 18.822977958208483
+    },
+    {
+      "seg": 394,
+      "item": "goal:2262@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2262,
+      "goal_deg": 17.183898416903812
+    },
+    {
+      "seg": 395,
+      "item": "goal:2232@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2232,
+      "goal_deg": 15.597692409189612
+    },
+    {
+      "seg": 396,
+      "item": "goal:2202@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2202,
+      "goal_deg": 14.011486401475414
+    },
+    {
+      "seg": 397,
+      "item": "goal:2172@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2172,
+      "goal_deg": 12.425280393761216
+    },
+    {
+      "seg": 398,
+      "item": "goal:2142@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2142,
+      "goal_deg": 10.839074386047018
+    },
+    {
+      "seg": 399,
+      "item": "goal:2111@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2111,
+      "goal_deg": 9.199994844742347
+    },
+    {
+      "seg": 400,
+      "item": "goal:2081@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2081,
+      "goal_deg": 7.61378883702815
+    },
+    {
+      "seg": 401,
+      "item": "goal:2051@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2051,
+      "goal_deg": 6.027582829313952
+    },
+    {
+      "seg": 402,
+      "item": "goal:2021@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 2021,
+      "goal_deg": 4.441376821599754
+    },
+    {
+      "seg": 403,
+      "item": "goal:1991@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 1991,
+      "goal_deg": 2.8551708138855565
+    },
+    {
+      "seg": 404,
+      "item": "goal:1960@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 1960,
+      "goal_deg": 1.216091272580885
+    },
+    {
+      "seg": 405,
+      "item": "goal:1937@20",
+      "test": "ramp",
+      "speed_pct": 10,
+      "direction": -1,
+      "ramp": 5,
+      "goal_counts": 1937,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 406,
+      "item": "hold@500",
+      "test": "pause",
+      "goal_counts": null,
+      "goal_deg": null
+    }
+  ]
+}

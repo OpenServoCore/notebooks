@@ -156,7 +156,8 @@ file, its settings file and one line here, not its rows.
 
 Kept:
 
-- `00-baseline`: the servo's stored settings.
+- `00-baseline`: the servo's stored settings. Its rows are those of the
+  set stored on the servo when it was recorded.
 - `01b-gains-3hz-50hz`: softer loop gains, the position gain an eighth and
   the velocity gains a quarter of the stored set. The current of a move
   and of a slow follow falls to between a third and a half, the settle
@@ -226,6 +227,37 @@ Kept:
   read through the board's slots, a stuck code as the middle of its
   span, where `zz-ab-after-wide-codes-2`, whose rows were not kept,
   stays as scored on the raw pot.
+- `10a-adc-all-channels`: `01b`'s settings on firmware 97f819c9, on the
+  board's slots. It reads a sample at one of the ADC's wide codes as the
+  middle of the span that code stands for on every channel it consumes,
+  not the pot alone: the drive window's shunt sample and both window
+  taps, the trough shunt sample the zero is tracked from, the rail and
+  the temperature channel. Alternated with firmware 194bf988 in two sets
+  of three rounds with the order of the sides swapped (this rung against
+  `zz-ab-before-adc-all`, `zz-ab-adc-all-2` against
+  `zz-ab-before-adc-all-2`): the crawl's speed ripple reads 22.4 and
+  25.2 % against 42.1 and 33.4, the ranges of three runs apart in both
+  sets, in the second by a hair (up to 29.91 against 29.93 and up), and
+  no other row moves the same way beyond the spread in both sets. The
+  `wide` capture is new with these sets: eight holds a run, at the
+  middle of the four wide codes of the board that take a slot. As the
+  median of three runs and their range, 0 [0, 0] and 0 [0, 2] holds
+  hunt against 0 [0, 1] and 1 [0, 1]. Every hold that hunts on the
+  slots, on either firmware, is at code 2559: five holds over the twelve
+  runs, two on 97f819c9 in one run and three on 194bf988 in three runs,
+  three of the five approached from below. That is an open point about
+  that code's slot, not a result of the change.
+  `zz-ab-before-adc-all-nomap` is firmware 194bf988 with no slots
+  installed, recorded right after: 3 [3, 4] of 8 holds hunt, on 0.31 of
+  the tails' rows at 114 mA rms, both holds at 1023 in every run, the
+  hold at 2559 approached from below in every run and the one from
+  above in one, and none at 511 or 2047. It is what the `wide` rows read
+  without the correction. Open on it: all four sides of the two sets
+  read the 20 degree settle at the length of its hold (1480 to 1500 ms),
+  2 or 3 landings of 13 driven in their tail and a worst drive after an
+  arrival of 1220 ms, against 438 ms, 0 and 227 ms on `09a`. The four
+  `zz-rev-ikp` sides, recorded before them on `09a`'s firmware, read
+  1480 to 1500 ms, 1 to 4 landings and 1210 to 1230 ms.
 
 Tried, not kept:
 
@@ -354,3 +386,57 @@ The controls, and what they say about reading the ladder:
   -3.2 to -5.4, and three read -7 to -9. A ramp's speed report is one
   poll per goal item, so the row carries a shift of that size only as a
   pointer.
+- `zz-ab-before-adc-all`, `zz-ab-adc-all-2` and `zz-ab-before-adc-all-2`
+  are the other three sides of `10a`'s two sets. Beside the crawl's
+  ripple, every row whose ranges of three runs come apart does so in one
+  set only and overlaps in the other. In the first set the change reads
+  lower on the 2 degree move's current (136 against 155 mA), the 60
+  degree move's duty (22.4 against 23.1 %, apart by a hair), the lag on
+  the 3 % ramp (0.313 against 0.316 deg) and the speed of the 10 % ramp
+  (62.5 against 63.8 deg/s). In the second, the order of the sides
+  swapped, it reads higher on the 20 degree move's current and duty (258
+  against 213 mA, 30.0 against 26.3 %) and the 2 degree move's reversals
+  (467 against 296 per second), three rows where that control side reads
+  lower than any of the other three sides, higher on the hold jitter
+  (1.38 against 1.25 counts) and lower on the reversals of the 1 % ramp
+  (338 against 362 per second).
+- `zz-ab-before-zero-period`, `zz-ab-after-zero-period`,
+  `zz-ab-before-zero-period-2` and `zz-ab-after-zero-period-2` are `01b`
+  on the board's slots on firmware c15722d6 and on 194bf988, which feeds
+  the shunt zero's tracker one sample a control period where c15722d6
+  feeds it one every tick. Two alternated sets of three rounds, the
+  order of the sides swapped. No row moves the same way beyond the
+  spread in both sets. In the first set alone 194bf988 reads worse on
+  the 60 degree settle (984 against 829 ms) and the rest error (0.32
+  against 0.27 deg) and slower on the 10 % ramp (61.0 against 61.2
+  deg/s); in the second alone its duty reverses more often on the 3 %
+  and the 10 % ramp (385 against 352 and 629 against 544 per second).
+  The landing rows read worse on 194bf988 by the median in both sets,
+  short of that rule: the landings driven in their tail 1 [0, 2] and 1
+  [1, 1] of 13 against 0 [0, 0] and 0 [0, 1], the worst drive after an
+  arrival 769 and 1221 ms against 584 and 628 with the ranges
+  overlapping, and the rest error again in the second set, 0.37 against
+  0.30 deg with the ranges overlapping. Their telemetry was not kept.
+- `zz-rev-ikp-full`, `zz-rev-ikp-half`, `zz-rev-ikp-full-2` and
+  `zz-rev-ikp-half-2` are a diagnostic, not a candidate: `01b` on
+  firmware c15722d6 on the board's slots, against the same with
+  `i_kp_q88` at 137, half of the stored 275. Two alternated sets of
+  three rounds, the order of the sides swapped. Every row that counts
+  the duty's reversals falls on the half side, the ranges apart in both
+  sets: on the follow 86 and 98 per second against 334 and 318 at 1 %,
+  104 and 116 against 313 and 387 at 3 %, 187 and 210 against 561 and
+  598 at 10 %, and on the moves 121 and 129 against 378 and 328 at 2
+  degrees, 188 and 189 against 584 and 460 at 20, 220 and 223 against
+  721 and 580 at 60. No other row moves the same way beyond the spread
+  in both sets. The first set alone reads the half side slower on the 2
+  degree settle (279 against 107 ms, where the second reads 539 against
+  1050 with the ranges overlapping) and higher on the 3 % ramp's current
+  and speed (86 against 84 mA, 18.32 against 18.26 deg/s). The second
+  set alone reads it better on the 60 degree move's overshoot, settle,
+  current and duty (0.21 against 0.95 deg, 845 against 1650 ms, 129
+  against 159 mA, 22.0 against 23.2 %) and on the landing buzz share
+  (0.07 against 0.17), and worse on the two-sided error (0.417 against
+  0.228 deg) and the position report error (0.072 against 0.056 deg). So
+  most of the reversal count at these gains follows the current loop's
+  proportional gain, in both sets; a halved gain is not kept as a
+  setting.
