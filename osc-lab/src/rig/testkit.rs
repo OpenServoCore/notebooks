@@ -10,7 +10,7 @@ use osc_protocol::tel::Chunks;
 use osc_servo_core::kernel::phases::loops::faults::{BIT_DEADMAN, CODE_DEADMAN};
 
 use super::pump::{BurstCap, BurstStats, exchange_tel_burst, read_snapshot, write_reg};
-use super::servo::{Memo, Servo};
+use super::servo::{Between, Memo, Servo};
 use crate::instrument::frame::{TelFrame, TelemetrySnapshot};
 use crate::instrument::regs::{Reg, calib, config, control};
 
@@ -77,6 +77,16 @@ pub(crate) struct Timed {
     pub(crate) landing_ms: (f64, f64),
 }
 
+/// An instruction the host put on the wire: a READ's span, the address of
+/// a WRITE or of one staged under HOLD, a COMMIT.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum Sent {
+    Read(u16, u16),
+    Write(u16),
+    Hold(u16),
+    Commit,
+}
+
 /// The scatter's seed: any odd constant, the same run after run.
 const SEED: u64 = 0x9e37_79b9_7f4a_7c15;
 
@@ -141,21 +151,35 @@ impl Rig {
         });
     }
 
-    /// The span, address and length, of every READ the host put on the
-    /// wire since the last call, in order: one exchange each.
-    pub(crate) fn reads(&mut self) -> Vec<(u16, u16)> {
+    /// Every instruction the host put on the wire since the last call, in
+    /// order: one exchange each.
+    pub(crate) fn sent(&mut self) -> Vec<Sent> {
         let frames = self.c.pipe_mut().take_frames();
-        let read = |b: &[u8]| match b {
-            // the break's ring byte, ID, LEN, INST, then the span
-            [_, _, _, inst, a0, a1, n0, n1, ..] if Inst(*inst).opcode() == Some(Opcode::Read) => {
-                Some((
-                    u16::from_le_bytes([*a0, *a1]),
-                    u16::from_le_bytes([*n0, *n1]),
-                ))
+        let sent = |b: &[u8]| {
+            // the break's ring byte, ID, LEN, INST, then the payload
+            let [_, _, _, inst, payload @ ..] = b else {
+                return None;
+            };
+            let inst = Inst(*inst);
+            let at = |k: usize| Some(u16::from_le_bytes([*payload.get(k)?, *payload.get(k + 1)?]));
+            match inst.opcode()? {
+                Opcode::Read => Some(Sent::Read(at(0)?, at(2)?)),
+                Opcode::Write if inst.0 & Inst::FLAG_HOLD != 0 => Some(Sent::Hold(at(0)?)),
+                Opcode::Write => Some(Sent::Write(at(0)?)),
+                Opcode::Commit => Some(Sent::Commit),
+                _ => None,
             }
+        };
+        frames.iter().filter_map(|f| sent(&f.bytes)).collect()
+    }
+
+    /// The span, address and length, of every READ among [`Rig::sent`].
+    pub(crate) fn reads(&mut self) -> Vec<(u16, u16)> {
+        let read = |s: Sent| match s {
+            Sent::Read(addr, len) => Some((addr, len)),
             _ => None,
         };
-        frames.iter().filter_map(|f| read(&f.bytes)).collect()
+        self.sent().into_iter().filter_map(read).collect()
     }
 
     /// One exchange's time on a timed rig's clock.
@@ -238,6 +262,7 @@ impl Servo for Rig {
         goal: Option<(Reg, i32)>,
         chunks: Chunks,
         not_before_ms: Option<f64>,
+        between: Option<Between<'_, FakePipe>>,
     ) -> Result<(Vec<TelFrame>, BurstStats)> {
         if let Some((reg, value)) = goal {
             self.writes.push((reg, value));
@@ -251,9 +276,14 @@ impl Servo for Rig {
             if goal.is_some() {
                 staged += 2.0 * t.exchange_ms;
             }
+            if between.is_some() {
+                staged += t.exchange_ms;
+            }
         }
         let sent = not_before_ms.map_or(staged, |at| at.max(staged));
-        let r = exchange_tel_burst(&mut self.c, self.id, line, samples, goal, chunks, || ())?;
+        let r = exchange_tel_burst(&mut self.c, self.id, line, samples, goal, chunks, |c| {
+            between.map_or(Ok(()), |between| between(c))
+        })?;
         let (frames, mut stats) = r;
         (stats.staged_ms, stats.sent_ms) = (staged, sent);
         self.t_ms = sent;
