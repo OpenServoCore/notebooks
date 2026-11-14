@@ -1834,11 +1834,11 @@ def of_the_bench_pair():
     return doc, c, boards.BOARDS[pair.partition("__")[2]]
 
 
-def test_the_bench_pairs_current_limits_are_held_beside_the_ma_they_were_typed_for():
+def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_measured_scale():
     doc, c, board = of_the_bench_pair()
     f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     nominal, measured = board.counts_per_a, doc["scales"][cn.CURRENT]["value"]
-    # field: (what the servo holds, the policy's entry, what the rule gives)
+    # field: (what the servo held before the set, the policy's entry, what the rule gives)
     limits = {"current_limit_counts": (554, "current_limit_ma", 568), "i_cont_counts": (277, "i_cont_ma", 284),
               "stall_release_counts": (100, "stall_release_ma", 102), "oc_trip_counts": (2439, "oc_trip_ma", 2497)}
     assert tuple(limits) == LIMITS == cn.GROUPS["current scale"]
@@ -1848,10 +1848,11 @@ def test_the_bench_pairs_current_limits_are_held_beside_the_ma_they_were_typed_f
         assert typed == [policy[key]], name
         e = cn.evaluate(cn.rule_of(c, name), c)
         assert e["value"] == gives == raw(policy[key] * measured / 1000), name
-        assert (f[name]["value"], f[name]["class"], f[name]["would_be"]) == (stored, "held", gives), name
-        # more counts on the same mA: every one of them moves the way that protects less, or is judged
+        # bound: the set holds each at the policy's mA through the measured scale
+        assert (f[name]["value"], f[name]["class"], f[name].get("would_be")) == (gives, "policy", None), name
+        # more counts on the same mA: every one of them moved the way that protects less, or is judged
         assert gives > stored and cn.LOOSER[name] in ("up", "judged"), name
-    # what the servo's counts are at the measured scale, and how far the rule's are over them, mA
+    # what the servo's earlier counts were at the measured scale, and how far the rule's are over them, mA
     now = {n: round(1000 * stored / measured, 1) for n, (stored, _, _) in limits.items()}
     assert now == {"current_limit_counts": 488.1, "i_cont_counts": 244.0, "stall_release_counts": 88.1,
                    "oc_trip_counts": 2148.9}
@@ -1901,7 +1902,7 @@ def test_the_protection_steps_of_record_name_what_their_install_needs():
     doc, _, _ = of_the_bench_pair()
     state = {"fields": {n: e["value"] for n, e in doc["fields"].items()}}
     folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
-    for name, fields in (("protection-ntc-curve", CURVE), ("protection-current-scale", LIMITS)):
+    for name, fields in (("protection-ntc-curve", CURVE),):
         derived, _ = cn.derive(doc, folder / f"{name}.json")
         assert tuple(derived["deviation"]["fields"]) == fields, name
         assert [k for k in ("plant", "protection") if derived["hash"][k] != doc["hash"][k]] == ["protection"]
@@ -2065,7 +2066,7 @@ def test_the_bench_pairs_fields_in_counts_are_held_beside_what_they_were_typed_f
     # what is left with no source at a scale nothing recorded: the velocity loop's two gains
     assert [n for n, e in f.items() if e["class"] == "adopted" and e.get("scale") == "unknown"] == [
         "v_kp_q88", "v_ki_q412"]
-    assert cn.described(doc)[0] == ("63 fields: 6 measured, 6 policy, 0 pinned, 17 held, 34 adopted (no source); "
+    assert cn.described(doc)[0] == ("63 fields: 6 measured, 10 policy, 0 pinned, 13 held, 34 adopted (no source); "
                                     "10 per-count at an unknown scale")
 
 
