@@ -150,10 +150,12 @@ the edges are in timer ticks after the commanded edge, about 0.02 us each.
   rig's two effects are out it reads within 0.2 C of the thermocouple,
   inside the meter's class, and the refitted 4331 K is a correction toward
   a thermocouple that reads low. A fixed-point quadratic through the beta
-  equation misses it by up to 5.5 C over 20 to 100 C and 0.7 C over 20 to
-  60 C. The current gain falls 0.27 % from 28 to 63 C and comes back, with
-  high confidence, and the shunt likely owns about two thirds of it, from
-  two sittings a day apart.
+  equation, pinned to read it exactly at a true 90 C, the true temperature
+  at which a protection limit is to land, reads no more than 1.0 C under it
+  and up to 5.5 C over it from 15 to 90 C, and up to 3.3 C over it from 15
+  to 50 C. The current gain falls 0.27 % from 28 to 63 C and comes back,
+  with high confidence, and the shunt likely owns about two thirds of it,
+  from two sittings a day apart.
 - The current channel's zero is two numbers and a shape. The awake zero,
   with the driver on and no winding current, sits 2.5, 5.9 and 9.4 counts
   (2.2, 5.2 and 8.3 mA) over the asleep zero at 3.7, 5 and 7.4 V, concave

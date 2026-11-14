@@ -1729,7 +1729,7 @@ def test_the_protection_rules_bind_in_a_build_that_names_them(first, tmp_path):
         "pos_unit": 0, "inputs": ["1-board/ntc-curve:design_k1_q88"], "protection": {"looser": "judged"}}
     assert {n: (f[n]["value"], f[n]["q"]) for n in CURVE} == {
         "ntc_t_ref_cc": (2600, 0), "ntc_k1_q88": (200, 8), "ntc_k2_q24": (30000, 24)}
-    # the reference count has no rule: the result names none for its design curve
+    # the reference count has no rule yet: the result names it as design_raw_ref
     assert "ntc_raw_ref" not in cn.RULES and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
     # a scale that moves moves the limits with it, and the set that stood is stale by the fields that read it
     plant(tmp_path, {"1-board/current-scale": {"counts_per_a": (1100.0,)}})
@@ -1768,8 +1768,8 @@ def steps(first, tmp_path):
     why = "it moves on a protection step of its own"
     inputs(tmp_path, policy={**BLOCK_POLICY, "current_limit_ma": 512.0, "i_cont_ma": 256.0, "stall_release_ma": 92.0,
                              "oc_trip_ma": 2250.0, "hold": dict.fromkeys((*CURVE, *LIMITS), why)})
-    plant(tmp_path, {"1-board/ntc-curve": {"design_t_ref_cc": (2584.0,), "design_k1_q88": (212.0,),
-                                           "design_k2_q24": (28463.0,)}})
+    plant(tmp_path, {"1-board/ntc-curve": {"design_t_ref_cc": (2430.0,), "design_k1_q88": (474.0,),
+                                           "design_k2_q24": (19934.0,)}})
     doc, _ = cn.build(PAIR, bound, root=tmp_path, registry=BOARD_REG)
     cn.write(doc, cn.set_path(PAIR, tmp_path))
     assert doc["hash"] == bound["hash"] and all(doc["fields"][n]["class"] == "held" for n in (*CURVE, *LIMITS))
@@ -1782,8 +1782,8 @@ def test_a_deviation_moves_the_protection_fields_of_one_step_and_releases_its_ho
 
     # the curve's three words are one curve, and the limits one scale: each group is released whole
     curve = derived("curve", note="the curve of record", release=list(CURVE))
-    assert curve["deviation"]["fields"] == {"ntc_t_ref_cc": [2600, 2584], "ntc_k1_q88": [200, 212],
-                                            "ntc_k2_q24": [30000, 28463]}
+    assert curve["deviation"]["fields"] == {"ntc_t_ref_cc": [2600, 2430], "ntc_k1_q88": [200, 474],
+                                            "ntc_k2_q24": [30000, 19934]}
     limits = derived("limits", release=list(LIMITS))
     assert limits["deviation"]["fields"] == {"current_limit_counts": [500, 512], "i_cont_counts": [250, 256],
                                              "stall_release_counts": [90, 92], "oc_trip_counts": [2200, 2250]}
@@ -1869,33 +1869,33 @@ def test_what_the_stored_curve_and_the_curve_of_record_read_on_the_bench_board()
     assert cn.GROUPS["ntc curve"] == ("ntc_raw_ref", *CURVE)
     stored = tuple(f[n]["value"] for n in cn.GROUPS["ntc curve"])
     record = (stored[0], *(cn.evaluate(cn.rule_of(c, n), c)["value"] for n in CURVE))
-    assert stored == (2048, 2500, 563, 5779) and record == (2048, 2584, 212, 28463)
+    assert stored == (2048, 2500, 563, 5779) and record == (2048, 2430, 474, 19934)
     assert all((f[n]["class"], f[n]["would_be"]) == ("held", v) for n, v in zip(CURVE, record[1:]))
     assert f["ntc_raw_ref"]["class"] == "adopted"
     # the temperature each reports with the board at a true one, the part's nominal equation as the truth
     reads = {t: (ntc.reads_c(board, stored, t), ntc.reads_c(board, record, t)) for t in (25, 40, 60, 80, 100)}
-    assert reads == {25: (25.0, 25.84), 40: (40.19, 37.75), 60: (57.31, 61.79), 80: (68.53, 81.64),
-                     100: (75.08, 94.39)}
+    assert reads == {25: (25.0, 24.3), 40: (40.19, 40.64), 60: (57.31, 65.14), 80: (68.53, 83.54),
+                     100: (75.08, 94.95)}
     # the true temperature at which each reaches the derate and the cutoff as the set holds them
     derate, cutoff = f["derate_start_cc"]["value"], f["cutoff_cc"]["value"]
     assert (derate, cutoff) == (8000, 10000)
     reaches = [[ntc.reaches_c(board, curve, at) for at in (derate, cutoff)] for curve in (stored, record)]
     assert reaches == [[pytest.approx(130.3, abs=0.05), None],
-                       [pytest.approx(78.0, abs=0.05), pytest.approx(113.8, abs=0.05)]]
+                       [pytest.approx(75.4, abs=0.05), pytest.approx(114.2, abs=0.05)]]
     # the stored curve tops out under the cutoff: short of the rail check no board temperature reads it
     counts = range(ntc.RAIL_COUNTS + 1, ntc.ADC_FULL - 1 - ntc.RAIL_COUNTS)
     assert max(ntc.ntc_cc(r, *stored) for r in counts) == 8416
     assert float(board.ntc_c_beta(ntc.RAIL_COUNTS)) == pytest.approx(290.2, abs=0.05)
     # where the curve of record reads under the stored one, which is where it protects less
     under = [r for r in counts if ntc.ntc_cc(r, *record) < ntc.ntc_cc(r, *stored)]
-    assert [round(float(board.ntc_c_beta(r)), 1) for r in (under[-1], under[0])] == [26.5, 49.4]
+    assert [round(float(board.ntc_c_beta(r)), 1) for r in (under[-1], under[0])] == [21.8, 38.2]
     worst = min(under, key=lambda r: ntc.ntc_cc(r, *record) - ntc.ntc_cc(r, *stored))
     assert (ntc.ntc_cc(worst, *record) - ntc.ntc_cc(worst, *stored), round(float(board.ntc_c_beta(worst)), 1)) == (
-        -264, 37.4)
-    # and the cold side of the quadratic: it turns at a true 20 C and reads warmer as the board cools below it
+        -107, 29.9)
+    # and the cold side of the quadratic: it turns at a true 8 C and reads warmer as the board cools below it
     lowest = min(counts, key=lambda r: ntc.ntc_cc(r, *record))
-    assert (ntc.ntc_cc(lowest, *record), round(float(board.ntc_c_beta(lowest)), 1)) == (2482, 20.2)
-    assert (ntc.reads_c(board, record, 0), ntc.reads_c(board, stored, 0)) == (37.51, 4.84)
+    assert (ntc.ntc_cc(lowest, *record), round(float(board.ntc_c_beta(lowest)), 1)) == (1707, 8.3)
+    assert (ntc.reads_c(board, record, 0), ntc.reads_c(board, stored, 0)) == (18.37, 4.84)
 
 
 def test_the_protection_steps_of_record_name_what_their_install_needs():

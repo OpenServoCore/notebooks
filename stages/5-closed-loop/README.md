@@ -575,14 +575,14 @@ The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
 `ntc_k1_q88` and `ntc_k2_q24` as that result holds them, the
 fixed-point quadratic in the count fitted through the part's nominal
-beta equation over 20 to 100 C. The thermocouple run graded that
+beta equation and pinned to read it exactly at a true 90 C, no more
+than 1.0 C under it from 15 to 90 C. The thermocouple run graded that
 equation and found it inside the meter's class once the rig's two
 effects are taken out. The result's `refit_*` curve and its
 fitted beta are fits against a thermocouple shown to read low and are
-not design constants. `ntc_raw_ref` has no rule and stays as the servo
-holds it: the result names a reference count for its refit and none
-for its design curve, which the notebook fits about the same count,
-2048, and has to publish. The servo holds another curve, the host's
+not design constants. `ntc_raw_ref` has no rule yet and stays as the
+servo holds it, 2048, which is also the count the result names for its
+design curve (`design_raw_ref`). The servo holds another curve, the host's
 tangent form about 25 C. What each reads on the bench board, through
 the kernel's own conversion and with the part's nominal equation as
 the truth:
@@ -590,23 +590,25 @@ the truth:
 | board at a true | 25 C | 40 C | 60 C | 80 C | 100 C |
 |---|---|---|---|---|---|
 | the stored curve reads | 25.0 | 40.2 | 57.3 | 68.5 | 75.1 |
-| the curve of record reads | 25.8 | 37.8 | 61.8 | 81.6 | 94.4 |
+| the curve of record reads | 24.3 | 40.6 | 65.1 | 83.5 | 95.0 |
 
 | reaches | the derate at 80 C | the cutoff at 100 C |
 |---|---|---|
 | the stored curve | at a true 130.3 C | never: it tops out at 84.2 C |
-| the curve of record | at a true 78.0 C | at a true 113.8 C |
+| the curve of record | at a true 75.4 C | at a true 114.2 C |
 
 So the board term of the thermal protection is far looser than its
-numbers on the stored curve, and the curve of record brings the derate
-to within 2 C of its number and leaves the cutoff 14 C late, which is
-the form's own error: the quadratic reads 5.6 C low at a true 100 C,
-the end of the range it was fitted over, and falls further behind past
-it. Two more things about the curve of
-record. Between a true 26.5 and 49.4 C it reads under the stored curve,
-by up to 2.6 C at 37.4 C, so over that stretch it protects less. And
-it turns at a true 20 C: below that it reads warmer as the board
-cools, 37.5 C at a true 0 C where the stored curve reads 4.8 C.
+numbers on the stored curve. The curve of record is pinned at a true
+90 C, where its reading passes 90.00 C at a true 90.1 C, so against
+the limits as the set holds them it reaches the derate 4.6 C early and
+leaves the cutoff 14 C late: below its pin it reads over the part's
+equation, 3.5 C at a true 80 C, and past its pin under it, 5 C at a
+true 100 C and further behind past that. Two more things about the
+curve of record. Between a true 21.8 and 38.2 C it reads under the
+stored curve, by up to 1.1 C at 29.9 C, so over that stretch it
+protects less. And it turns at a true 8 C: below that it reads warmer
+as the board cools, 18.4 C at a true 0 C where the stored curve reads
+4.8 C.
 
 The current limits are each a policy entry in mA, taken to shunt
 counts by the board's measured counts per amp, the scale the set

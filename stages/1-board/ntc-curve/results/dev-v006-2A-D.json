@@ -1,34 +1,68 @@
 {
   "capture": "telemetry/dev-v006-2A-D/ntc-curve/capture-1",
-  "notes": "board NTC polled on a printer bed with the thermocouple taped to the top surface beside it, no paste; t_c is the thermocouple after its stage 0 correction; the nominal beta (registry R25 and beta) is graded against it and is inside the meter's class once the rig's two effects are out, the tip's loss through its tape (press-1 pad test) and the bed gradient; design_* is the fixed-point quadratic in the count fitted through the nominal beta equation over design_range_c with no thermocouple data in it, design_form_error_c its largest residual against the beta equation (lo/hi the residual's range); beta_fit and the refit_* quadratic are fits through the measured points, the plateaus (the last 90 s before the mark that ends each) and the cool-down, against a thermocouple shown to read low, so they correct the NTC toward a low reading and are NOT design constants; beta_fit's bracket is the spread over the row choices (cool-down alone, whole run); gradient_c_per_c is the gap per C the bed sits over the board, the thermocouple reading under the NTC's copper; curve_slope_c_per_c is the nominal beta's gap per C of board with the bed at or below the board, which the pad test attributes to the tip's loss; pad_rise_c is the towel's rise over the bare tip on the bed (lo the whole padded stretch, hi its highest), tip_loss_fraction that rise over the bed's excess over the room, bed_c_during_pad_test the bed's own thermistor (lo/hi its cycling)",
+  "notes": "board NTC polled on a printer bed with the thermocouple taped to the top surface beside it, no paste; t_c is the thermocouple after its stage 0 correction; the nominal beta (registry R25 and beta) is graded against it and is inside the meter's class once the rig's two effects are out, the tip's loss through its tape (press-1 pad test) and the bed gradient; design_* is the fixed-point quadratic in the count about design_raw_ref, fitted through the nominal beta equation with no thermocouple data in it by a linear program, so that it reads the equation exactly at a true design_pin_c, the true temperature at which a protection limit is to land, its residual is never under design_floor_c over design_range_c and inside that its largest over-read over design_low_range_c is as small as it can be; design_form_error_c is its largest residual against the beta equation at every whole count of design_range_c (lo/hi the residual's range) and design_low_error_c the same over design_low_range_c; the least-squares fits the notebook prints beside it are priced and not published; beta_fit and the refit_* quadratic are fits through the measured points, the plateaus (the last 90 s before the mark that ends each) and the cool-down, against a thermocouple shown to read low, so they correct the NTC toward a low reading and are NOT design constants; beta_fit's bracket is the spread over the row choices (cool-down alone, whole run); gradient_c_per_c is the gap per C the bed sits over the board, the thermocouple reading under the NTC's copper; curve_slope_c_per_c is the nominal beta's gap per C of board with the bed at or below the board, which the pad test attributes to the tip's loss; pad_rise_c is the towel's rise over the bare tip on the bed (lo the whole padded stretch, hi its highest), tip_loss_fraction that rise over the bed's excess over the room, bed_c_during_pad_test the bed's own thermistor (lo/hi its cycling)",
+  "inputs": {
+    "stages/0-instruments/dmm/results.json": "a3b5111749ecbdac451724e0e83c6f0a47e20ec1",
+    "stages/0-instruments/thermocouple/results.json": "6795f0a500f47d287cd45cdb3555f9e4a5bd83d8"
+  },
   "design_t_ref_cc": {
-    "value": 2584.0,
+    "value": 2430.0,
     "lo": null,
     "hi": null,
     "unit": "cC"
   },
   "design_k1_q88": {
-    "value": 212.0,
+    "value": 474.0,
     "lo": null,
     "hi": null,
     "unit": "Q8.8"
   },
   "design_k2_q24": {
-    "value": 28463.0,
+    "value": 19934.0,
     "lo": null,
     "hi": null,
     "unit": "Q24"
   },
   "design_range_c": {
-    "value": 100.0,
-    "lo": 20.0,
-    "hi": 100.0,
+    "value": 90.0,
+    "lo": 15.0,
+    "hi": 90.0,
     "unit": "C"
   },
   "design_form_error_c": {
-    "value": 5.539661813732366,
-    "lo": -5.539661813732366,
-    "hi": 4.811193675814373,
+    "value": 5.498122490754298,
+    "lo": -1.0196808462391687,
+    "hi": 5.498122490754298,
+    "unit": "C"
+  },
+  "design_raw_ref": {
+    "value": 2048.0,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "design_pin_c": {
+    "value": 90.0,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "design_floor_c": {
+    "value": -1.0,
+    "lo": null,
+    "hi": null,
+    "unit": "C"
+  },
+  "design_low_range_c": {
+    "value": 50.0,
+    "lo": 15.0,
+    "hi": 50.0,
+    "unit": "C"
+  },
+  "design_low_error_c": {
+    "value": 3.2727511838134618,
+    "lo": -1.0196808462391687,
+    "hi": 3.2727511838134618,
     "unit": "C"
   },
   "beta_nominal": {

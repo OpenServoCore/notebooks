@@ -936,8 +936,8 @@ def sensor_delta(c):
 # ntc-curve result, the fixed-point form the kernel carries (core
 # estimator/thermal.rs ntc_cc): the centi-C at the reference count, the
 # slope there and the curvature, as that result holds them. The
-# reference count itself has no rule: the result names none for its
-# design curve.
+# reference count itself has no rule yet: the result names it as
+# design_raw_ref.
 NTC = "1-board/ntc-curve"
 
 

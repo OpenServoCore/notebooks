@@ -3,7 +3,7 @@
  "pair": "mg90-d__dev-v006-2A-D",
  "inputs": {
   "1-board/current-scale": {"file": "stages/1-board/current-scale/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "5fbdb93bd77174824fffb47a5b58e6d50e8d66e1"},
-  "1-board/ntc-curve": {"file": "stages/1-board/ntc-curve/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "6e12b0336b7eae1e6fca97aa97f3636263c47d31"},
+  "1-board/ntc-curve": {"file": "stages/1-board/ntc-curve/results/dev-v006-2A-D.json", "sha1": "bbc7941d1137b2ed3bba5758b1f80393ac915d93"},
   "1-board/terminal-chain": {"file": "stages/1-board/terminal-chain/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "e1249f71a80bcad5c4c1d64301560f66c0bd8582"},
   "1-board/wide-codes": {"file": "stages/1-board/wide-codes/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "68f01864e8cba762cf8c680f3078df4ecd4b77fc"},
   "3-servo/friction": {"file": "stages/3-servo/friction/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "39c90cfb713782bd4285dbf6b14257d8e0650c4e"},
@@ -77,9 +77,9 @@
   "th_rise_q016": {"value": 1143, "class": "adopted", "origin": "servo-state", "protection": {"looser": "down"}},
   "th_rise2_q016": {"value": 0, "class": "adopted", "origin": "servo-state", "protection": {"looser": "down"}},
   "ntc_raw_ref": {"value": 2048, "class": "adopted", "origin": "servo-state", "protection": {"looser": "judged"}},
-  "ntc_t_ref_cc": {"value": 2500, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C", "inputs": ["1-board/ntc-curve:design_t_ref_cc"], "protection": {"looser": "judged"}, "rule": "ntc_t_ref.design", "would_be": 2584},
-  "ntc_k1_q88": {"value": 563, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C", "inputs": ["1-board/ntc-curve:design_k1_q88"], "protection": {"looser": "judged"}, "rule": "ntc_k1.design", "would_be": 212},
-  "ntc_k2_q24": {"value": 5779, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C", "inputs": ["1-board/ntc-curve:design_k2_q24"], "protection": {"looser": "judged"}, "rule": "ntc_k2.design", "would_be": 28463},
+  "ntc_t_ref_cc": {"value": 2500, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C", "inputs": ["1-board/ntc-curve:design_t_ref_cc"], "protection": {"looser": "judged"}, "rule": "ntc_t_ref.design", "would_be": 2430},
+  "ntc_k1_q88": {"value": 563, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C", "inputs": ["1-board/ntc-curve:design_k1_q88"], "protection": {"looser": "judged"}, "rule": "ntc_k1.design", "would_be": 474},
+  "ntc_k2_q24": {"value": 5779, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C", "inputs": ["1-board/ntc-curve:design_k2_q24"], "protection": {"looser": "judged"}, "rule": "ntc_k2.design", "would_be": 19934},
   "ke_uvs_per_rad": {"value": 0, "class": "adopted", "origin": "servo-state", "protection": null},
   "fric_breakaway_counts": {"value": 0, "class": "adopted", "origin": "servo-state", "protection": null},
   "raw_min": {"value": 82, "class": "adopted", "origin": "servo-state", "protection": null},
@@ -91,5 +91,5 @@
   "gear_class": {"value": "2 (metal)", "class": "measured", "inputs": ["registry:gear_class"], "pos_unit": 0, "protection": null, "q": 0, "rule": "gear_class.registry", "rule_rev": 1, "unit": "class"}
  },
  "hash": {"plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662", "protection": "f47b995e938f6d25df3f8b69961b662e8552654ce220ac6952decc53ee4aab34", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "62368e9771885c793d301da99bd6b0f23e6b15bb3067125b33adfca734a617eb"},
- "previous": {"plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "1c7982a583f4e348bdd75f255cad6b76fe4237a53332db45363765d6f1d2d61f"}
+ "previous": {"plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662", "protection": "f47b995e938f6d25df3f8b69961b662e8552654ce220ac6952decc53ee4aab34", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "62368e9771885c793d301da99bd6b0f23e6b15bb3067125b33adfca734a617eb"}
 }
