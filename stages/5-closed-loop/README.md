@@ -90,6 +90,39 @@ read in counts when it was recorded. The currents counted outside the
 scorecard's rows, named as such where they are quoted, were counted at
 the nominal parts and are quoted times the same ratio.
 
+The follow rows read a stream of goals, one `goal:V@20` item each. An
+item is the 20 ms burst of rows, which the servo times, and the host's
+exchanges around it: a poll before and after, the reads ahead of the
+arm, the goal and the arm staged, the commit that starts the burst, and
+the servo's drop count read on both sides of it. The plan sizes a
+ramp's steps for an item of 25.6 ms (`GOAL_PERIOD_S` in the test set).
+The burst is 400 rows in every item. The rest is the host's and is not
+constant: it moves an item's time by a millisecond or two from run to
+run, so over the runs of the rungs whose rows are kept one plan ran the
+10 % ramp at 59.5 to 64.7 deg/s for an asked 62.4, moving with the
+host's state and not with the build. `ramp_speed_deg_s` is the speed a ramp ran at:
+the goals' travel over the time from its first commit to its last, on
+the servo's own tick, which a segment's `tick0` gives to one tick and
+which agrees with the host's clock to 0.15 % over a capture.
+
+`lag_deg` is the shaft behind the goal in force. On the 10 % ramp it
+grows with the speed the ramp ran at, 0.7 % of lag for 1 % of speed
+across the runs of each kept rung, so a lag in degrees there is
+comparable only between runs at one ramp speed. `lag_ms` is the lag as
+a time, `lag_deg` over the run's own `ramp_speed_deg_s`, and is the row
+to compare on that ramp: across the runs of a rung it scatters by 1.7 %
+where the degrees scatter by 1.9 %, and between two rungs it takes out
+the difference of their speeds, which reaches 6 %. On the 3 % ramp the
+lag in degrees does not move with the speed (the plan fixes the step of
+each item, and only the time between items moves), so there `lag_deg`
+is the row to compare and `lag_ms` carries the speed's scatter, 3.1 %
+against 2.2 %. On the 1 % ramp the lag is a few hundredths of a degree
+and scatters by 19 % either way. The rungs
+whose rows are kept (`00-baseline`, `01b`, `05a`, `07a` and `09a` to
+`13a`) are scored again and hold `lag_ms`; every other result recorded
+before has the lag in degrees only, and its `ramp_speed_deg_s` beside
+it says what speed that was at.
+
 The `wide` capture holds the goals the ADC's wide codes make hard. A wide
 code stands for itself and the codes it skips
 ([stage 1, wide-codes](../1-board/README.md#wide-codes)), and a goal

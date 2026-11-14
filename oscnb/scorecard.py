@@ -157,7 +157,7 @@ UNITS = {
     # the hold's jitter as a result scored before the row was in degrees holds it, for the ladder
     "hold_jitter_counts": "counts",
     "hold_current_rms_ma": "mA", "wide_hold_hunting": "holds", "wide_hold_driven_share": "share",
-    "wide_hold_current_rms_ma": "mA", "lag_deg": "deg", "follow_error_sd_deg": "deg",
+    "wide_hold_current_rms_ma": "mA", "lag_deg": "deg", "lag_ms": "ms", "follow_error_sd_deg": "deg",
     "follow_current_rms_ma": "mA", "follow_reversals_per_s": "1/s",
     "ramp_speed_deg_s": "deg/s", "crawl_speed_ripple_pct": "%", "crawl_swing_deg": "deg",
     "enable_kick_deg": "deg",
@@ -695,7 +695,11 @@ def follow_scores(cap):
     the lag (mean of goal - pos along the travel, the goal the one in force
     at each row), its sd, the current rms, the duty reversals per second
     and the duty rms;
-    the goals' real speed, the mean of the two; the reported speed's error
+    the goals' real speed, the mean of the two, and the lag as a time, the
+    lag over that speed: a goal item takes as long as the host's exchanges
+    around its burst take, so the same plan runs a few percent faster or
+    slower from one sitting to the next, and a lag in degrees is
+    comparable only at one ramp speed; the reported speed's error
     (speed_report_error_deg_s), the median ramp; and on the slowest speed
     the crawl ripple over CRAWL_WINDOW_MS windows, the worse ramp, and the
     crawl swing, the CRAWL_SWING_PCTL-th percentile of item_swings over
@@ -711,12 +715,14 @@ def follow_scores(cap):
                               for (segs, _), t in zip(rs, tails)]) / cap["cpd"]
         span_s = sum(t["t"].iloc[-1] - t["t"].iloc[0] for t in tails)
         tag = f"{pct}pct"
+        speed = float(np.mean([ramp_speed_deg_s(cap, s, g) for s, g in rs]))
         out[f"lag_deg_{tag}"] = float(err.mean())
+        out[f"lag_ms_{tag}"] = 1000 * out[f"lag_deg_{tag}"] / speed
         out[f"follow_error_sd_deg_{tag}"] = float(err.std(ddof=1))
         out[f"follow_current_rms_ma_{tag}"] = current_rms(pd.concat(tails)["i_ma"])
         out[f"follow_reversals_per_s_{tag}"] = sum(reversals(t["duty_counts"]) for t in tails) / span_s
         out[f"follow_duty_rms_pct_{tag}"] = duty_rms_pct(cap, pd.concat(tails)["duty_counts"])
-        out[f"ramp_speed_deg_s_{tag}"] = float(np.mean([ramp_speed_deg_s(cap, s, g) for s, g in rs]))
+        out[f"ramp_speed_deg_s_{tag}"] = speed
         out[f"speed_report_error_deg_s_{tag}"] = float(np.median([speed_report_error_deg_s(cap, s, g)
                                                                   for s, g in rs]))
         if pct == slowest:
