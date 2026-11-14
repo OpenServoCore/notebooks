@@ -95,7 +95,7 @@ never touches the supply and never prompts; it refuses to start otherwise.
 
 ```
 uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--settings FILE] [--pos-table] [--wide-codes]
-uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
+uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-settings FILE] [--a-pos-table] [--a-wide-codes] [--a-note TEXT] --b-label L --b-fw REV --b-image PATH [--b-settings FILE] [--b-pos-table] [--b-wide-codes] [--b-note TEXT] [--rounds 3]
 uv run python -m oscnb.scorecard score 00-baseline
 uv run python -m oscnb.scorecard table
 ```
@@ -149,7 +149,9 @@ LX-16A) where a row has one, for scale only.
 
 ## The ladder
 
-On mg90-d with board dev-v006-2A-D, a free horn. A rung is kept when the
+On mg90-d with board dev-v006-2A-D, a free horn. From
+`12a-pos-table-live` on, the rungs run on the pair's position table,
+passed `--pos-table`. A rung is kept when the
 rows it aims at gain by more than the baseline's own spread over its three
 runs and no other row loses. A rung that is not kept leaves its result
 file, its settings file and one line here, not its rows.
@@ -291,6 +293,59 @@ Kept:
   (`zz-rev-ikp-half`, 86 to 116 per second at 1 and 3 %). What remains
   of the reversal count is not the first reading. Readings the loop
   takes at references near zero are a candidate, not measured here.
+- `12a-pos-table-live`: `01b`'s settings on firmware 7ef0554f, on the
+  board's slots, with the pair's position table live. The pot's code is
+  read as the angle the stage 4 lookup gives it
+  ([stage 4, position](../4-estimators/README.md#position)), through the
+  table built and installed as described under [Running it](#running-it).
+  It is the table of `03a-pos-table` rebuilt from a lookup fitted on pot
+  readings that carry the board's wide-code step, on a firmware that
+  corrects the wide codes. The table gives the shaft's true angle, as
+  graded against the camera in stage 4, and the raw pot does not, so the
+  rung is kept as the correct reading, not on its rows. Its rows are
+  mixed and are recorded as such, the losses as open points. Alternated
+  with the same build, settings and slots on the raw pot, with no table
+  live, in two sets of three rounds with the order of the sides swapped
+  (this rung against `zz-ab-before-pos-table-live`,
+  `zz-ab-pos-table-live-2` against `zz-ab-before-pos-table-live-2`), the
+  table side reads better in both sets, the ranges of three runs apart,
+  on three rows of the 60 degree move: its current 117 and 121 mA
+  against 132 and 134, its duty 21.0 and 21.6 % against 22.8 and 23.7,
+  and its reversals 499 and 491 per second against 567 and 588, in the
+  first set by a hair (up to 531.6 against 532.8 and up). It reads
+  better the same way on the reversals of the 3 % follow, 223 and 207
+  per second against 244 and 241, and on the current and duty of the
+  10 % follow, 137 and 149 mA against 151 and 165, 22.5 and 24.1 %
+  against 24.7 and 26.5. It reads worse in both sets, the ranges apart,
+  on the follow error sd at 1 %, 0.133 and 0.135 deg against 0.111 and
+  0.116. In one set only it reads worse on the 2 degree move's
+  overshoot, current and duty in the second (0.658 against 0.529 deg,
+  167 against 143 mA, 21.8 against 19.6 %), on the 1 % follow's
+  current, duty and reversals in the first (78.7 against 72.1 mA, 9.29
+  against 8.88 %, 168 against 157 per second) and on the enable kick in
+  the first (0.086 against 0.053 deg). In one set only it reads better
+  on the 60 degree settle and the speed ripple of a move in the first
+  (842 against 896 ms, 32.3 against 36.3 %) and on the lag of the 10 %
+  ramp in the second (1.98 against 2.02 deg). The landing rows read
+  worse by the median in both sets with the ranges overlapping: the 20
+  degree settle 1092 and 1394 ms against 582 and 668, the landings
+  driven in their tail 1 and 1 of 13 against 0 and 0, and the worst
+  drive after an arrival 870 and 1168 ms against 423 and 620. No other
+  row moves beyond the spread in either set.
+  A row in degrees or counts is in the table's counts on the table side
+  and in raw pot counts on the other, both taken to degrees through the
+  same stage 3 counts per degree. Where the pot's local scale differs
+  from its mean, a position error or a jitter is then not the same
+  quantity on the two sides. The hold jitter reads 1.04 and 1.04 counts
+  against 1.47 and 1.51, the ranges apart, and the hold sits where the
+  pot is steep, so that row is not a gain. The follow error sd is a row
+  of the same kind. The position report error has no value on a rung
+  that ran on the table, where the report is in linearized counts. The
+  speed report on the 10 % ramp changes sign, -1.09 and -2.70 deg/s
+  against 0.57 and 7.59, the ranges apart in both sets. Open on it: the
+  follow error sd at 1 %, the one-set losses on the 2 degree move, the
+  1 % follow and the enable kick, the landing rows, and a position
+  report row for a rung on the table, an open point of the scorer.
 
 Tried, not kept:
 
@@ -493,3 +548,23 @@ The controls, and what they say about reading the ladder:
   `zz-ab-before-first-reading`'s 20 degree settle still reaches 1500 ms
   in one run of three. This is an observation next to `10a`'s open
   point, not explained here.
+- `zz-ab-before-pos-table-live`, `zz-ab-pos-table-live-2` and
+  `zz-ab-before-pos-table-live-2` are the other three sides of `12a`'s
+  two sets. The rows whose ranges of three runs come apart in one set
+  only are listed under `12a`. The two control sides are `11a`'s build,
+  settings and slots on the raw pot, the same set as `11a`'s own two
+  sides, recorded about half an hour after them. The first reads inside
+  the ranges of `11a`'s sides on every row. The second reads higher than
+  both of them, the ranges apart, on the 10 % follow's current, duty and
+  error sd (164.8 against 139.9 and 149.7 mA, 26.5 against 23.1 and
+  24.4 %, 0.473 against 0.451 and 0.461 deg, the last by a hair), on the
+  3 % follow's current, duty and lag (89.3 against 84.9 and 87.7 mA,
+  12.8 against 11.6 and 12.3 %, 0.376 against 0.340 and 0.352 deg) and
+  on the 60 degree move's duty (23.7 against 22.2 and 23.0 %). The table
+  side of that set reads 149.4 mA and 24.1 % on the 10 % follow, inside
+  the ranges of `11a`'s sides, so the second set's gain on that follow
+  is measured against a control that reads above them. The speed report
+  on the 10 % ramp reads 0.57 and 7.59 deg/s on the two controls, -2.71
+  and -1.99 on `11a`'s sides with the ranges overlapping, and -1.09 and
+  -2.70 on the table sides. This is an observation next to `12a`'s rows,
+  not explained here.

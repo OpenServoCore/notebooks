@@ -1,0 +1,163 @@
+{
+  "capture": "wide",
+  "center_counts": 1937,
+  "guard_counts": [
+    314,
+    3560
+  ],
+  "counts_per_deg": 18.913054076268125,
+  "no_load_deg_s": 623.7219681271883,
+  "goal_period_s": 0.0256,
+  "sources": {
+    "counts_per_deg": "stages/3-servo/pot-table/results/mg90-d__dev-v006-2A-D.json pot_scale_counts_per_deg",
+    "no_load_deg_s": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json no_load_speed_rev_s / servos mg90-d gear_ratio x 360",
+    "current_cap_ma": "servos mg90-d lock_hold_a",
+    "wide_codes": "stages/1-board/wide-codes/results/dev-v006-2A-D.json wide_codes, the codes that take a slot"
+  },
+  "segments": [
+    {
+      "seg": 0,
+      "item": "goal:547@2000",
+      "test": "wide-approach",
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 547,
+      "goal_deg": -73.49421169075784
+    },
+    {
+      "seg": 1,
+      "item": "goal:515@2000",
+      "test": "wide-hold",
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 515,
+      "goal_deg": -75.18616476565298
+    },
+    {
+      "seg": 2,
+      "item": "goal:481@1200",
+      "test": "wide-approach",
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 481,
+      "goal_deg": -76.98386490772907
+    },
+    {
+      "seg": 3,
+      "item": "goal:515@2000",
+      "test": "wide-hold",
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 515,
+      "goal_deg": -75.18616476565298
+    },
+    {
+      "seg": 4,
+      "item": "goal:1063@2000",
+      "test": "wide-approach",
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 1063,
+      "goal_deg": -46.21146835807363
+    },
+    {
+      "seg": 5,
+      "item": "goal:1029@2000",
+      "test": "wide-hold",
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 1029,
+      "goal_deg": -48.00916850014973
+    },
+    {
+      "seg": 6,
+      "item": "goal:993@1200",
+      "test": "wide-approach",
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 993,
+      "goal_deg": -49.91261570940676
+    },
+    {
+      "seg": 7,
+      "item": "goal:1029@2000",
+      "test": "wide-hold",
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 1029,
+      "goal_deg": -48.00916850014973
+    },
+    {
+      "seg": 8,
+      "item": "goal:2088@2000",
+      "test": "wide-approach",
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2088,
+      "goal_deg": 7.983903572161463
+    },
+    {
+      "seg": 9,
+      "item": "goal:2053@2000",
+      "test": "wide-hold",
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2053,
+      "goal_deg": 6.133329896494899
+    },
+    {
+      "seg": 10,
+      "item": "goal:2017@1200",
+      "test": "wide-approach",
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2017,
+      "goal_deg": 4.229882687237861
+    },
+    {
+      "seg": 11,
+      "item": "goal:2053@2000",
+      "test": "wide-hold",
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2053,
+      "goal_deg": 6.133329896494899
+    },
+    {
+      "seg": 12,
+      "item": "goal:2595@2000",
+      "test": "wide-approach",
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2595,
+      "goal_deg": 34.79078510253141
+    },
+    {
+      "seg": 13,
+      "item": "goal:2563@2000",
+      "test": "wide-hold",
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2563,
+      "goal_deg": 33.09883202763626
+    },
+    {
+      "seg": 14,
+      "item": "goal:2529@1200",
+      "test": "wide-approach",
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2529,
+      "goal_deg": 31.30113188556017
+    },
+    {
+      "seg": 15,
+      "item": "goal:2563@2000",
+      "test": "wide-hold",
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2563,
+      "goal_deg": 33.09883202763626
+    }
+  ]
+}
