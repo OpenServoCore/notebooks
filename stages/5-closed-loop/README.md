@@ -43,7 +43,7 @@ every capture's `meta.json` carries.
   state read off it before the run's first capture, with the rung's
   settings, table and slots on: the bytes of CONFIG and CALIB with every
   field there by name and the writable ones named, the position table's
-  state and the sha1 of its points as the servo holds them, the ADC
+  state and its points as the servo holds them with their sha1, the ADC
   wide-code slots, the plant stamp and the data state. `rung.json` keeps
   the hash of the first run's, and a later run that reads another state
   is refused, the fields that differ named.
@@ -204,6 +204,7 @@ the slots, and `set` over the two.
 uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
 uv run python -m oscnb.constants status
 uv run python -m oscnb.constants check
+uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
 ```
 
 `adopt` writes the first set of a servo that already runs, and only the
@@ -214,6 +215,25 @@ state the way a run records it and prints a line for every field of the
 set, the table and the slots where the servo holds something else, then
 the writable fields the servo has outside the set. It exits 1 on a
 difference and refuses a servo whose data state is not clean.
+
+`install` makes the servo equal the set, volatile, torque off, and
+writes only what differs: the slots, the stops, the table (a LIVE table
+from the pair's table file, which must hold the set's points and be
+built against the set's stops), then the other fields in table order,
+each read back, a write the servo refuses tried once more after the
+rest. It then reads the whole state back, and only when that is the set
+does it stamp it, no save, and require the data state clean. A servo
+that already holds the set gets no write. Before anything is written it
+refuses a set with a moved input file, a field the servo lets no host
+write, and a protection change that is not named: a protection field
+the install would change is passed as `--protection NAME`, and again as
+`--loosen NAME` when the set's value protects less than the one on the
+servo. Which way protects less is one table by field name in the
+module; a field no one direction says it for (the stall policy, the NTC
+curve, the heat time constants, the two where 0 means off) always needs
+both. A refusal after the first write reboots the servo, which returns
+its saved state. The scorecard's own `--settings`, `--pos-table` and
+`--wide-codes` do not go through the set yet.
 
 ## The ladder
 

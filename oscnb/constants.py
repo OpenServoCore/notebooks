@@ -26,6 +26,7 @@ a limit and a change of the plant never share a hash.
     uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
     uv run python -m oscnb.constants status
     uv run python -m oscnb.constants check
+    uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
 
 `adopt` writes the first set of a servo that already runs, every field
 `adopted`, from a record of its state (`oscnb.scorecard.servo_state`,
@@ -38,12 +39,31 @@ page of the table into the window (protocol sec 5.7): each field of the
 set by name, the table and the slots against the servo's, a line a
 difference, exit 1 when there is one, and refused when the servo's data
 state is not clean.
+
+`install` makes the servo equal the set, volatile, and writes only what
+differs. Torque must be off. It is refused before anything is written
+when an input file of the set moved, when the servo's descriptor lets a
+host write no field the set holds, when the table cannot be installed,
+or by the protection gate: a protection field the install would change
+has to be named with `--protection`, and named again with `--loosen`
+when the set's value protects less than the servo's (LOOSER; a field
+no one direction says it for is always taken as protecting less). Then,
+in the order a count is defined: the slots, the stops, the table
+(`postable`'s own steps, every page read back), the other fields in
+table order, each read back, a write the servo refuses tried once more
+after the rest. The whole state is then read back, and only when it is
+the set does `osc stamp` bless it, no save, after which the data state
+must read clean. A refusal after the first write reboots the servo,
+which returns its saved state.
 """
 import argparse
+import hashlib
 import json
+import re
+import subprocess
 from pathlib import Path
 
-from . import postable, results, settings, widecodes
+from . import osc, postable, results, settings, widecodes
 from . import scorecard as sc
 
 FORMAT = 1
@@ -57,20 +77,31 @@ COMMS = ("id", "baud_rate_idx", "response_deadline_us")
 STAMP = "plant_stamp"
 
 # The fields whose change is a change of what protects the motor, the
-# train and the rail, by the descriptor's names.
-PROTECTION = frozenset((
-    "current_limit_counts", "stall_tau_trip_counts",                # the current limit and trip
-    "i_cont_counts", "stall_release_counts",                        # the continuous current and its release
-    "stall_response", "stall_time_ticks", "stall_omega_max_cps",    # the stall policy, its time and its speed
-    "oc_trip_counts", "oc_trip_ticks",                              # the overcurrent pair
-    "duty_max_q15",                                                 # the duty ceiling
-    "derate_start_cc", "cutoff_cc",                                 # the derate and the cutoff
-    "v_undervolt_counts", "rail_fold_q8",                           # the undervolt floor and the rail fold
-    "pos_error_counts", "pos_error_time_ticks",                     # the position-error fault
-    "sensor_delta_max", "sensor_bad_count",                         # the sensor screen
-    "ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24",      # the NTC curve
-    "thermal_tau_s", "thermal_tau2_s", "th_rise_q016", "th_rise2_q016",     # the thermal model
-))
+# train and the rail, by the descriptor's names, each with the way its
+# value moves to protect less: "up", "down", or "judged" where no one
+# direction says it. Read off the kernel's use of each field (core
+# kernel/phases/loops/limits.rs and faults.rs, kernel/phases/rail.rs,
+# slow.rs and fast.rs, estimator/thermal.rs).
+LOOSER = {
+    # the cap of the current band; the collision trip over the disturbance torque
+    "current_limit_counts": "up", "stall_tau_trip_counts": "up",
+    # the press arms over the continuous current and folds to it, and 0 reads as the cap; it lets go under the release
+    "i_cont_counts": "judged", "stall_release_counts": "up",
+    # fold or fault, neither the tighter one; the time a press takes; the speed a press is stalled under
+    "stall_response": "judged", "stall_time_ticks": "up", "stall_omega_max_cps": "down",
+    "oc_trip_counts": "up", "oc_trip_ticks": "up",
+    "duty_max_q15": "up",
+    "derate_start_cc": "up", "cutoff_cc": "up",
+    # the fault under the floor; the slope of the fold over it, where 0 turns the fold off
+    "v_undervolt_counts": "down", "rail_fold_q8": "judged",
+    "pos_error_counts": "up", "pos_error_time_ticks": "up",
+    "sensor_delta_max": "up", "sensor_bad_count": "up",
+    # one curve of four words: a coefficient moves the reading up on one side of the reference, down on the other
+    "ntc_raw_ref": "judged", "ntc_t_ref_cc": "judged", "ntc_k1_q88": "judged", "ntc_k2_q24": "judged",
+    # a longer leak heats later and cools later, and a body time of 0 drops the body node; a rise adds to the estimate
+    "thermal_tau_s": "judged", "thermal_tau2_s": "judged", "th_rise_q016": "down", "th_rise2_q016": "down",
+}
+PROTECTION = frozenset(LOOSER)
 
 # The fields whose value is per position count, or a position in counts:
 # a table that changes what a count means changes what they mean.
@@ -86,6 +117,7 @@ TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "fields
 BLOCKS = ("inputs", "origins", "fields")    # written an entry a line
 LEAD = ("value", "slots", "state", "points_sha1", "class")
 TABLE_STATE, TABLE_POINTS, SLOTS = "position table state", "position table points sha1", "wide-code slots"
+STOPS = ("raw_min", "raw_max")      # the stops a table is taken against, written ahead of it
 
 
 def set_path(pair, root=results.ROOT):
@@ -205,7 +237,7 @@ def adopted(record, pair, origin):
     if "writable" not in record:
         raise ValueError("the record names no writable fields: record the servo's state again "
                          "(`scorecard.servo_state`)")
-    if record.get("hash") != sc.config_hash({k: record[k] for k in sc.HASHED}):
+    if record.get("hash") != sc.state_hash(record):
         raise ValueError("the record's hash is not that of its content")
     if record["data_state"] != "clean":
         raise ValueError(f"the record's data state is {record['data_state']}: a set is adopted from a state the "
@@ -339,6 +371,180 @@ def check(doc, state=None):
     return out
 
 
+# --- install ---
+
+class Rejected(settings.Refused):
+    """The servo refused a write: nothing landed."""
+
+
+def plain(value):
+    """A value as `osc set` takes it: `osc dump`'s text less the note in
+    parentheses it prints after an enum's name or a class's number."""
+    return re.sub(r"\s*\(.*\)$", "", str(value))
+
+
+def looser(name, on_servo, wanted):
+    """Whether moving protection field `name` from the servo's value to
+    the set's protects less: by its direction on two integers, and
+    always for a judged field or a value that is no integer."""
+    way = LOOSER[name]
+    if way == "judged" or not all(type(v) is int for v in (on_servo, wanted)):
+        return True
+    return wanted > on_servo if way == "up" else wanted < on_servo
+
+
+def gate(doc, state, protection=(), loosen=()):
+    """The protection gate against the servo's `state`: a line for every
+    name that is no protection field of the set, and for every
+    protection field the set would change that `protection` does not
+    name, or, where the change protects less, `loosen` does not name as
+    well. Empty when the install may go on."""
+    out = [f"{n} is not a protection field of the set" for n in dict.fromkeys([*protection, *loosen])
+           if n not in PROTECTION or n not in doc["fields"]]
+    out += [f"{n} is named to loosen and not as a protection change: name it with --protection too"
+            for n in loosen if n not in protection]
+    for name, e in doc["fields"].items():
+        got = state["fields"][name]
+        if name not in PROTECTION or got == e["value"]:
+            continue
+        way = LOOSER[name]
+        less = looser(name, got, e["value"])
+        said = ("judged, taken as protecting less" if way == "judged"
+                else f"protects {'less' if less else 'more'} (less is {way})")
+        need = [f for f, names, wanted in (("--protection", protection, True), ("--loosen", loosen, less))
+                if wanted and name not in names]
+        if need:
+            out.append(f"{name}: servo {got}, set {e['value']}, {said}: name it with "
+                       f"{' and '.join(f'{f} {name}' for f in need)}")
+    return out
+
+
+def points_sha1(points):
+    """The sha1 of a table's 256 points as the servo holds them, i16 LE
+    in a row: what a state record names its points by."""
+    return hashlib.sha1(b"".join(postable.page_bytes(points, p) for p in range(postable.PAGES))).hexdigest()
+
+
+def table_to_write(doc, state, root=results.ROOT):
+    """The Table an install has to write, None when the servo holds the
+    set's. Only a LIVE table can be written, from the pair's table file,
+    which must hold the set's points and be built against the set's
+    stops."""
+    want, have = doc["pos_table"], state["pos_table"]
+    if all(have[k] == want[k] for k in ("state", "points_sha1")):
+        return None
+    if want["state"] != "LIVE":
+        raise settings.Refused(f"the set's table is {want['state']} (points sha1 {want['points_sha1']}) and the "
+                               f"servo's {have['state']} ({have['points_sha1']}): an install writes a LIVE table "
+                               f"only")
+    path = set_path(doc["pair"], root).with_name(postable.out_path(doc["pair"]).name)
+    if not path.exists():
+        raise settings.Refused(f"the set's table is LIVE and the pair has no table file ({sc.shown(path)})")
+    t, _ = postable.load_file(path)
+    if points_sha1(t.points) != want["points_sha1"]:
+        raise settings.Refused(f"{sc.shown(path)} holds points of sha1 {points_sha1(t.points)}, the set's table "
+                               f"is {want['points_sha1']}")
+    stops = [doc["fields"][n]["value"] if n in doc["fields"] else state["fields"].get(n) for n in STOPS]
+    if stops != [t.raw_min, t.raw_max]:
+        raise settings.Refused(f"{sc.shown(path)} was built against stops {t.raw_min} and {t.raw_max}, the set's "
+                               f"are {stops[0]} and {stops[1]}")
+    return t
+
+
+def install(doc, protection=(), loosen=(), root=results.ROOT):
+    """Make the servo equal the set, volatile; prints each write as it
+    lands and returns what was written, by name, in order. Nothing is
+    written unless torque is off, no input file of the set moved, the
+    servo lets a host write every field the set holds, the table can be
+    installed (`table_to_write`) and the protection gate passes
+    (`gate`). The writes are the slots, the stops, the table, then the
+    other fields that differ in table order, each read back, a field the
+    servo refuses tried once more after the rest. The state read back
+    whole must then be the set, and only then is it stamped, no save,
+    and its data state required clean. A refusal after the first write
+    reboots the servo onto its saved state and says so."""
+    torque = osc.get("torque_enable")
+    if not settings.same("off", torque):
+        raise settings.Refused(f"torque_enable reads {torque}: a set is installed with torque off")
+    stale = moved(doc, root)
+    if stale:
+        raise settings.Refused(f"the set is stale, {', '.join(name for name, *_ in stale)} moved: `status` names "
+                               f"the fields")
+    state = sc.servo_state()
+    slots = doc["wide_codes"]
+    missing = [n for n in doc["fields"] if n not in state["writable"]]
+    if slots is not None and state["wide_codes"] is None:
+        missing.append(widecodes.FIELD)
+    if missing:
+        raise settings.Refused(f"the servo's descriptor lets a host write no {', '.join(missing)}")
+    refused = gate(doc, state, protection, loosen)
+    if refused:
+        raise settings.Refused("the protection gate:\n  " + "\n  ".join(refused))
+    table = table_to_write(doc, state, root)
+    differ = [n for n, e in doc["fields"].items() if state["fields"][n] != e["value"]]
+    wrote = []
+
+    def put(name):
+        arg = plain(doc["fields"][name]["value"])
+        try:
+            osc.set_(name, arg)
+        except subprocess.CalledProcessError:
+            raise Rejected(f"{name}: the servo refused {arg}") from None
+        wrote.append(name)
+        back = osc.get(name)
+        if not settings.same(arg, back):
+            raise settings.Refused(f"{name}: wrote {arg}, read back {back}")
+        print(f"{name}: {state['fields'][name]} -> {doc['fields'][name]['value']}")
+
+    try:
+        if slots is not None and bytes.fromhex(state["wide_codes"]) != bytes(slots["slots"]):
+            wrote.append(SLOTS)
+            data, old = widecodes.write_slots(bytes(slots["slots"]))
+            print(f"{SLOTS}: {old.hex(' ')} -> {data.hex(' ')}")
+        for name in (n for n in STOPS if n in differ):
+            put(name)
+        if table is not None:
+            wrote.append("position table")
+            postable.install_table(table)
+            print(f"position table: {state['pos_table']['state']} -> LIVE, {postable.PAGES} pages read back")
+        pending = [n for n in differ if n not in STOPS]
+        for last in (False, True):
+            again = []
+            for name in pending:
+                try:
+                    put(name)
+                except Rejected:
+                    if last:
+                        raise
+                    again.append(name)
+            pending = again
+        if wrote:
+            state = sc.servo_state()
+            left = differences(doc, state)
+            if left:
+                raise settings.Refused(f"the state read back is not the set: {'; '.join(left)}")
+        if wrote or state["data_state"] != "clean":
+            wrote.append("stamp")
+            stamp = settings.plant_stamp(settings.stamp_live())
+            print(f"stamped: data state clean, stamp {stamp}")
+    except (settings.Refused, subprocess.CalledProcessError, RuntimeError) as e:
+        if not wrote:
+            raise
+        raise settings.Refused(f"{e}; {rebooted()}") from None
+    return wrote
+
+
+def rebooted():
+    """Reboot the servo off a half-written set; what became of it, in
+    words."""
+    try:
+        osc.run("reboot")
+        settings.await_boot()
+    except (settings.Refused, subprocess.CalledProcessError):
+        return "the reboot did not answer: the servo holds a half-written set until it is power cycled"
+    return "rebooted: the servo is back on its saved state"
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m oscnb.constants", description=__doc__.split("\n\n")[0])
     ap.add_argument("--pair", default=postable.default_pair(), help="servo__board, the default pair if omitted")
@@ -349,6 +555,11 @@ def main(argv=None):
     ad.add_argument("--origin", default=BEFORE, help="where the record came from, in words the set keeps")
     sub.add_parser("status", help="offline: the set's input files against the files now")
     sub.add_parser("check", help="the servo read against the set, a line a difference; changes nothing")
+    ins = sub.add_parser("install", help="make the servo equal the set, volatile, verified, then stamped")
+    ins.add_argument("--protection", nargs="+", default=[], metavar="NAME",
+                     help="the protection fields the install may change")
+    ins.add_argument("--loosen", nargs="+", default=[], metavar="NAME",
+                     help="of those, the ones it may set to protect less than the servo's value")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "adopt":
@@ -359,8 +570,15 @@ def main(argv=None):
             print("\n".join(lines))
             if stale:
                 raise SystemExit(1)
-        elif check(of_record(a.pair)):
-            raise SystemExit(1)
+        elif a.cmd == "check":
+            if check(of_record(a.pair)):
+                raise SystemExit(1)
+        else:
+            doc = of_record(a.pair)
+            wrote = install(doc, a.protection, a.loosen)
+            print("\n".join([*described(doc),
+                             "the servo holds the set: nothing written" if not wrote
+                             else "volatile, not saved: `osc reboot` returns the saved state"]))
     except (ValueError, settings.Refused) as e:
         raise SystemExit(f"refused: {e}")
 

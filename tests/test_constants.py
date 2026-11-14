@@ -1,10 +1,13 @@
 """The constant set of a pair with `osc` stubbed by a fake servo: the
 first set adopted from a record of its state, the file's bytes and its
-three hashes, what `load` refuses, the set against its input files, and
-the servo read against the set."""
+three hashes, what `load` refuses, the set against its input files, the
+servo read against the set, and the set installed on it: the order of
+the writes, the protection gate, the read-back ahead of the stamp and
+the reboot after a refusal."""
 import copy
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -154,7 +157,7 @@ def test_a_pair_without_a_set_is_refused(tmp_path):
 
 def unclean(state):
     state["data_state"] = "STAMP_MISMATCH"
-    state["hash"] = sc.config_hash({k: state[k] for k in sc.HASHED})
+    state["hash"] = sc.state_hash(state)
 
 
 @pytest.mark.parametrize("change, match", [
@@ -384,3 +387,382 @@ def test_status_of_a_stale_set_exits_1(cli, tmp_path, monkeypatch, capsys):
     with pytest.raises(SystemExit) as e:
         cli("status")
     assert e.value.code == 1 and capsys.readouterr().out.splitlines()[-1] == "stale: an input"
+
+
+# --- install ---
+
+class Bench(Servo):
+    """The fake servo with the writes an install makes: `osc set` by
+    name, refused where it would put the low soft limit at or past the
+    high one, the table's STORE and COMMIT behind the window, the slots,
+    the stamp and the reboot. A write of a CONFIG or CALIB field or a
+    COMMIT leaves the data state STAMP_MISMATCH until a stamp. `drop`
+    names fields whose write is answered and not taken, `drift` a field
+    whose write moves another too."""
+
+    FIELDS = {"model_number": (0x00, 2, "ro", "uint"), "id": (0x10, 1, "rw", "uint"),
+              "pos_min_soft_counts": (0x28, 4, "rw", "uint"), "pos_max_soft_counts": (0x2c, 4, "rw", "uint"),
+              "p_kp_q88": (0x40, 2, "rw", "uint"), "pos_deadband_counts": (0x42, 2, "rw", "uint"),
+              "current_limit_counts": (0x48, 2, "rw", "uint"), "stall_response": (0x4a, 1, "rw", "enum"),
+              "drive_polarity": (0x4b, 1, "rw", "bool"), "stall_omega_max_cps": (0x50, 2, "rw", "uint"),
+              "r_q12": (0x80, 2, "rw", "uint"), "recip_ke_q": (0x82, 2, "rw", "uint"),
+              "plant_stamp": (0x8a, 2, "rw", "uint"), wc.FIELD: (0x91, 16, "rw", "bytes"),
+              "tick_hz": (0xa2, 2, "ro", "uint"), "raw_min": (0xa4, 2, "rw", "uint"),
+              "raw_max": (0xa6, 2, "rw", "uint"),
+              "torque_enable": (0xc0, 1, "rw", "bool"), "pos_lut_page": (0xdc, 1, "rw", "uint"),
+              "pos_lut_state": (0xde, 1, "ro", "uint")}
+    STORED = {**Servo.STORED, "pos_min_soft_counts": 314, "stall_response": 0, "raw_min": 82, "raw_max": 3792}
+    VARIANTS = ("Fault", "Yield")
+
+    def __init__(self):
+        self.drop, self.drift = set(), {}
+        super().__init__()
+
+    def reboot(self):
+        super().reboot()
+        self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
+        self.set("pos_lut_state", 0)
+        self.stamp, self.data = "0x9c45 = live set", "clean"
+
+    def decoded(self, name):
+        if self.FIELDS[name][3] != "enum":
+            return super().decoded(name)
+        v = self.table[self.FIELDS[name][0]]
+        return f"{self.VARIANTS[v]} ({v})"
+
+    def get(self, name):
+        # `osc get` is read up to the first space, an enum as its name
+        v = super().get(name)
+        return v.split()[0] if self.FIELDS[name][3] == "enum" else v
+
+    def set_(self, name, value):
+        self.log.append(("set", name, value))
+        kind = self.FIELDS[name][3]
+        v = (self.VARIANTS.index(value) if kind == "enum" else {"on": 1, "off": 0}[value] if kind == "bool"
+             else int(value))
+        soft = {n: self.decoded(n) for n in ("pos_min_soft_counts", "pos_max_soft_counts")}
+        if name in soft and {**soft, name: v}["pos_min_soft_counts"] >= {**soft, name: v}["pos_max_soft_counts"]:
+            raise subprocess.CalledProcessError(1, ["osc", "set", name, value])
+        if name not in self.drop:
+            self.set(name, v)
+        if name in self.drift:
+            self.set(*self.drift[name])
+        self.data, self.stamp = "STAMP_MISMATCH", "0x9c45 != live set 0x1234"
+
+    def write(self, addr, data):
+        self.log.append(("write", addr, bytes(data)))
+        if addr == self.FIELDS[wc.FIELD][0]:
+            self.table[addr:addr + len(data)] = data
+            return
+        assert addr == postable.WINDOW_ADDR
+        page, cmd = data[0], data[1]
+        if cmd == postable.STORE:
+            self.pages[page] = bytes(data[2:])
+            self.set("pos_lut_state", postable.STATES.index("LOADING"))
+        elif cmd == postable.COMMIT:
+            self.set("pos_lut_state", postable.STATES.index("LIVE"))
+            self.data = "STAMP_MISMATCH"
+        else:
+            self.window = self.pages[page]
+
+    def run(self, *args, **kw):
+        self.log.append(("run", *args))
+        if args[0] == "stamp":
+            self.stamp, self.data = "0x1234 = live set", "clean"
+        elif args[0] == "reboot":
+            self.reboot()
+
+    def bus_baud(self):
+        return 3_000_000
+
+    def stub(self, monkeypatch, regs=dict):
+        super().stub(monkeypatch, regs)
+        for name in ("set_", "run", "bus_baud"):
+            monkeypatch.setattr(sc.osc, name, getattr(self, name))
+        monkeypatch.setattr(settings.time, "sleep", lambda s: None)
+        return self
+
+    def wrote(self):
+        """The calls that change the servo, the FETCH of a page left out."""
+        return [c for c in self.log if c[0] in ("set", "run")
+                or (c[0] == "write" and not (c[1] == postable.WINDOW_ADDR and c[2][1] == postable.FETCH))]
+
+
+POINTS = [0] * 100 + [3] + [0] * 155
+NEW_STOPS = (90, 3780)
+NEW_SLOTS = bytes([0, 0, 0, 48] + [0] * 12)
+TARGET = {"pos_min_soft_counts": 3600, "pos_max_soft_counts": 3700, "p_kp_q88": 5026, "current_limit_counts": 500,
+          "stall_response": 1, "r_q12": 16000, "raw_min": NEW_STOPS[0], "raw_max": NEW_STOPS[1]}
+
+
+def table_file(root, points=POINTS, stops=NEW_STOPS):
+    """The pair's table file as `postable.load_file` reads one."""
+    path = cn.set_path(PAIR, root).with_name(f"{PAIR}.pos_lut.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "inputs": {"stops": {"raw_min": stops[0], "raw_max": stops[1]}},
+        "target": {"theta_at_stops_deg": [-90.0, 90.0]},
+        "points_by_page": [points[32 * p:32 * (p + 1)] for p in range(postable.PAGES)]}))
+    return path
+
+
+@pytest.fixture
+def bench(monkeypatch):
+    return Bench().stub(monkeypatch)
+
+
+@pytest.fixture
+def stored(bench, tmp_path):
+    """The set adopted from the fake servo as it boots: an identity table."""
+    doc, _ = cn.adopt(PAIR, record(tmp_path), root=tmp_path)
+    bench.log.clear()
+    return doc
+
+
+@pytest.fixture
+def target(bench, tmp_path):
+    """A set that differs from the servo as it boots in the slots, the
+    stops, the table and six fields, two of them protection fields: the
+    set adopted from the servo brought to that state by hand, the pair's
+    table file beside it, and the servo rebooted off it."""
+    for name, v in TARGET.items():
+        bench.set(name, v)
+    bench.set(wc.FIELD, NEW_SLOTS)
+    bench.pages = [postable.page_bytes(POINTS, p) for p in range(postable.PAGES)]
+    bench.set("pos_lut_state", postable.STATES.index("LIVE"))
+    doc, _ = cn.adopt(PAIR, record(tmp_path), root=tmp_path)
+    table_file(tmp_path)
+    bench.reboot()
+    bench.log.clear()
+    return doc
+
+
+def deviated(doc, **values):
+    """`doc` with other values in the named fields, as a set of its own."""
+    other = copy.deepcopy(doc)
+    for name, v in values.items():
+        other["fields"][name]["value"] = v
+    return {**other, "hash": cn.hashes(other)}
+
+
+NAMED = {"protection": ["current_limit_counts", "stall_response"], "loosen": ["stall_response"]}
+
+
+def test_install_from_blank_equals_the_set(target, bench, tmp_path, capsys):
+    assert len(cn.differences(target, sc.servo_state())) == 11
+    bench.log.clear()
+    wrote = cn.install(target, **NAMED, root=tmp_path)
+    # the order a count is defined in, then the rest in table order; the low soft limit, refused while
+    # the high one stood under it, once more after the rest
+    assert wrote == ["wide-code slots", "raw_min", "raw_max", "position table", "pos_max_soft_counts", "p_kp_q88",
+                     "current_limit_counts", "stall_response", "r_q12", "pos_min_soft_counts", "stamp"]
+    changed = bench.wrote()
+    assert changed[0] == ("write", 0x91, NEW_SLOTS)
+    assert changed[1:3] == [("set", "raw_min", "90"), ("set", "raw_max", "3780")]
+    # the table by postable's own steps: 8 STOREs, the COMMIT, and every page fetched back
+    stores = [postable.page_bytes(POINTS, p) for p in range(postable.PAGES)]
+    assert changed[3:12] == [*(("write", postable.WINDOW_ADDR, bytes([p, postable.STORE]) + stores[p])
+                              for p in range(postable.PAGES)),
+                             ("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT]))]
+    assert changed[12:] == [("set", "pos_min_soft_counts", "3600"), ("set", "pos_max_soft_counts", "3700"),
+                            ("set", "p_kp_q88", "5026"), ("set", "current_limit_counts", "500"),
+                            ("set", "stall_response", "Yield"), ("set", "r_q12", "16000"),
+                            ("set", "pos_min_soft_counts", "3600"), ("run", "stamp")]
+    state = sc.servo_state()
+    assert cn.differences(target, state) == []
+    assert (state["data_state"], state["stamp"]) == ("clean", "0x1234 = live set")
+    assert state["pos_table"]["state"] == "LIVE" and state["pos_table"]["points_sha1"] == cn.points_sha1(POINTS)
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == f"wide-code slots: {SLOTS.hex(' ')} -> {NEW_SLOTS.hex(' ')}"
+    assert "stall_response: Fault (0) -> Yield (1)" in out
+    assert "position table: IDENTITY -> LIVE, 8 pages read back" in out
+    assert out[-1] == "stamped: data state clean, stamp 0x1234 = live set"
+    assert cn.check(target) == []
+    # the servo now holds the set: the same install, unnamed, writes nothing
+    bench.log.clear()
+    assert cn.install(target, root=tmp_path) == [] and bench.wrote() == []
+
+
+def test_install_on_an_equal_servo_writes_nothing(stored, bench, tmp_path):
+    assert cn.install(stored, root=tmp_path) == [] and bench.wrote() == []
+    # it reads the torque and the state, and no more
+    assert bench.log[0] == ("get", "torque_enable") and len(bench.log) == 22
+    # a set that differs in two fields is two writes, the read-back and the stamp
+    two = deviated(stored, p_kp_q88=4000, r_q12=15000)
+    assert cn.install(two, root=tmp_path) == ["p_kp_q88", "r_q12", "stamp"]
+    assert bench.wrote() == [("set", "p_kp_q88", "4000"), ("set", "r_q12", "15000"), ("run", "stamp")]
+    bench.log.clear()
+    assert cn.install(two, root=tmp_path) == [] and bench.wrote() == []
+    # an equal servo whose data state is not clean is stamped, nothing else written
+    bench.data = "STAMP_MISMATCH"
+    assert cn.install(two, root=tmp_path) == ["stamp"] and bench.wrote() == [("run", "stamp")]
+
+
+def test_a_protection_change_needs_its_name(stored, bench, tmp_path):
+    tighter = deviated(stored, current_limit_counts=500, p_kp_q88=5026)
+    with pytest.raises(settings.Refused) as e:
+        cn.install(tighter, root=tmp_path)
+    assert str(e.value) == ("the protection gate:\n  current_limit_counts: servo 554, set 500, protects more "
+                            "(less is up): name it with --protection current_limit_counts")
+    # nothing was written, the plant field beside it neither, and nothing rebooted
+    assert bench.wrote() == []
+    # a name that is no protection field of the set is refused too
+    with pytest.raises(settings.Refused, match="p_kp_q88 is not a protection field of the set"):
+        cn.install(tighter, protection=["current_limit_counts", "p_kp_q88"], root=tmp_path)
+    with pytest.raises(settings.Refused, match="cutoff_cc is not a protection field of the set"):
+        cn.install(tighter, protection=["current_limit_counts", "cutoff_cc"], root=tmp_path)
+    assert bench.wrote() == []
+    assert cn.install(tighter, protection=["current_limit_counts"], root=tmp_path) == [
+        "p_kp_q88", "current_limit_counts", "stamp"]
+    # named and already there is no refusal: the same command runs twice
+    assert cn.install(tighter, protection=["current_limit_counts"], root=tmp_path) == []
+
+
+def test_a_looser_limit_needs_loosen(stored, bench, tmp_path):
+    higher = deviated(stored, current_limit_counts=600)
+    line = "current_limit_counts: servo 554, set 600, protects less (less is up): name it with "
+    for names, need in (({}, "--protection current_limit_counts and --loosen current_limit_counts"),
+                        ({"protection": ["current_limit_counts"]}, "--loosen current_limit_counts")):
+        with pytest.raises(settings.Refused) as e:
+            cn.install(higher, **names, root=tmp_path)
+        assert str(e.value) == f"the protection gate:\n  {line}{need}"
+    # the second name does not stand in for the first
+    with pytest.raises(settings.Refused, match="named to loosen and not as a protection change"):
+        cn.install(higher, loosen=["current_limit_counts"], root=tmp_path)
+    # a field that protects less downward, and one no direction says it for
+    slower = deviated(stored, stall_omega_max_cps=400, stall_response="Yield (1)")
+    with pytest.raises(settings.Refused) as e:
+        cn.install(slower, protection=["stall_omega_max_cps", "stall_response"], root=tmp_path)
+    assert str(e.value).splitlines()[1:] == [
+        "  stall_response: servo Fault (0), set Yield (1), judged, taken as protecting less: name it with "
+        "--loosen stall_response",
+        "  stall_omega_max_cps: servo 500, set 400, protects less (less is down): name it with "
+        "--loosen stall_omega_max_cps"]
+    assert bench.wrote() == []
+    assert cn.install(higher, protection=["current_limit_counts"], loosen=["current_limit_counts"],
+                      root=tmp_path) == ["current_limit_counts", "stamp"]
+    assert bench.decoded("current_limit_counts") == 600
+
+
+@pytest.mark.parametrize("name, on_servo, wanted, less", [
+    ("current_limit_counts", 554, 600, True), ("current_limit_counts", 554, 500, False),
+    ("stall_omega_max_cps", 500, 400, True), ("stall_omega_max_cps", 500, 600, False),
+    ("th_rise_q016", 1143, 494, True), ("v_undervolt_counts", 720, 800, False),
+    ("stall_response", "Fault (0)", "Yield (1)", True), ("stall_response", "Yield (1)", "Fault (0)", True),
+    ("i_cont_counts", 277, 0, True), ("i_cont_counts", 277, 200, True), ("rail_fold_q8", 1430, 0, True),
+    ("ntc_k1_q88", 563, 212, True), ("cutoff_cc", 10000, "9000", True),
+])
+def test_looser_reads_a_direction_and_takes_what_it_cannot_read_as_less(name, on_servo, wanted, less):
+    assert cn.looser(name, on_servo, wanted) is less
+
+
+def test_every_protection_field_has_one_way_to_protect_less():
+    assert cn.PROTECTION == set(cn.LOOSER) and set(cn.LOOSER.values()) == {"up", "down", "judged"}
+    assert len(cn.PROTECTION) == 26 and not cn.PROTECTION & {*cn.COMMS, cn.STAMP, wc.FIELD}
+
+
+def test_a_refusal_after_the_first_write_reboots(stored, bench, tmp_path):
+    two = deviated(stored, p_kp_q88=5026, r_q12=16000)
+    bench.drop = {"r_q12"}
+    with pytest.raises(settings.Refused) as e:
+        cn.install(two, root=tmp_path)
+    assert str(e.value) == "r_q12: wrote 16000, read back 17100; rebooted: the servo is back on its saved state"
+    assert bench.wrote() == [("set", "p_kp_q88", "5026"), ("set", "r_q12", "16000"), ("run", "reboot")]
+    assert bench.decoded("p_kp_q88") == 40212 and bench.data == "clean"
+    assert cn.differences(stored, sc.servo_state()) == []
+    # a write the servo refuses twice, after one that landed
+    bench.log.clear()
+    with pytest.raises(settings.Refused) as e:
+        cn.install(deviated(stored, pos_min_soft_counts=3600, p_kp_q88=5026), root=tmp_path)
+    assert str(e.value) == ("pos_min_soft_counts: the servo refused 3600; rebooted: the servo is back on its "
+                            "saved state")
+    assert bench.wrote() == [("set", "pos_min_soft_counts", "3600"), ("set", "p_kp_q88", "5026"),
+                             ("set", "pos_min_soft_counts", "3600"), ("run", "reboot")]
+    # a refused write with nothing landed before it reboots nothing
+    bench.log.clear()
+    with pytest.raises(settings.Refused) as e:
+        cn.install(deviated(stored, pos_min_soft_counts=3600), root=tmp_path)
+    assert str(e.value) == "pos_min_soft_counts: the servo refused 3600"
+    assert bench.wrote() == [("set", "pos_min_soft_counts", "3600")] * 2
+
+
+def test_a_reboot_that_does_not_answer_is_said(stored, bench, tmp_path, monkeypatch):
+    bench.drop = {"r_q12"}
+
+    def silent():
+        raise RuntimeError("no servo answers")
+
+    monkeypatch.setattr(sc.osc, "bus_baud", silent)
+    with pytest.raises(settings.Refused, match="read back 17100; the reboot did not answer: the servo holds a "
+                                               "half-written set until it is power cycled"):
+        cn.install(deviated(stored, r_q12=16000), root=tmp_path)
+
+
+def test_the_stamp_is_written_only_after_the_read_back_matches(stored, bench, tmp_path):
+    two = deviated(stored, p_kp_q88=5026, r_q12=16000)
+    cn.install(two, root=tmp_path)
+    kinds = [c[0] if c[0] != "run" else c[1] for c in bench.log]
+    # every write, then the state whole, then the stamp, then the status that must read clean
+    assert kinds.index("dump", kinds.index("set")) > max(i for i, k in enumerate(kinds) if k == "set")
+    back = max(i for i, k in enumerate(kinds) if k == "dump")
+    assert kinds[back + 21:] == ["stamp", "status"] and kinds.count("stamp") == 1
+    assert bench.data == "clean"
+    # a write that lands and reads back, while the state whole is not the set: no stamp, a reboot
+    bench.reboot()
+    bench.log.clear()
+    bench.drift = {"r_q12": ("p_kp_q88", 1)}
+    with pytest.raises(settings.Refused) as e:
+        cn.install(two, root=tmp_path)
+    assert str(e.value) == ("the state read back is not the set: p_kp_q88: servo 1, set 5026 [adopted]; rebooted: "
+                            "the servo is back on its saved state")
+    assert [c for c in bench.wrote() if c[0] == "run"] == [("run", "reboot")]
+
+
+def stale(doc, root):
+    doc["inputs"]["3-servo/ladder"] = {"file": "stages/3-servo/ladder/results/gone.json", "sha1": "0" * 40}
+
+
+def unnamed(doc, root):
+    doc["fields"]["ke_vpc_q"] = {"value": 355, **ADOPTED}
+    doc["fields"]["tick_hz"] = {"value": 20000, **ADOPTED}
+
+
+@pytest.mark.parametrize("change, match", [
+    (lambda doc, root: None, "torque_enable reads on: a set is installed with torque off"),
+    (stale, "the set is stale, 3-servo/ladder moved"),
+    (unnamed, "the servo's descriptor lets a host write no ke_vpc_q, tick_hz"),
+    (lambda doc, root: doc["pos_table"].update(state="IDENTITY", points_sha1=NO_POINTS),
+     "the set's table is IDENTITY .* and the servo's LIVE .*: an install writes a LIVE table only"),
+    (lambda doc, root: table_file(root).unlink(), "the set's table is LIVE and the pair has no table file"),
+    (lambda doc, root: table_file(root, [0] * 256), "holds points of sha1 .*, the set's table is"),
+    (lambda doc, root: table_file(root, stops=(82, 3792)),
+     "was built against stops 82 and 3792, the set's are 90 and 3780"),
+], ids=["torque on", "a stale set", "fields the servo has none of or lets no host write", "an identity table",
+        "no table file", "a table file of other points", "a table built against other stops"])
+def test_install_refuses_before_anything_is_written(target, bench, tmp_path, monkeypatch, change, match):
+    if "torque" in match:
+        bench.set("torque_enable", 1)
+    if "IDENTITY" in match:
+        bench.set("pos_lut_state", postable.STATES.index("LIVE"))
+    change(target, tmp_path)
+    with pytest.raises(settings.Refused, match=match):
+        cn.install(target, **NAMED, root=tmp_path)
+    assert bench.wrote() == []
+
+
+def test_install_as_a_command(cli, bench, tmp_path, capsys):
+    cli("adopt", "--from", str(record(tmp_path)))
+    path = cn.set_path(PAIR)
+    path.write_text(cn.render(deviated(cn.load(path), current_limit_counts=600, p_kp_q88=5026)))
+    capsys.readouterr()
+    with pytest.raises(SystemExit) as e:
+        cli("install")
+    assert str(e.value).startswith("refused: the protection gate:\n  current_limit_counts: servo 554, set 600")
+    cli("install", "--protection", "current_limit_counts", "--loosen", "current_limit_counts")
+    out = capsys.readouterr().out.splitlines()
+    assert out[:3] == ["p_kp_q88: 40212 -> 5026", "current_limit_counts: 554 -> 600",
+                       "stamped: data state clean, stamp 0x1234 = live set"]
+    assert out[3].startswith("12 fields: ") and out[-1] == "volatile, not saved: `osc reboot` returns the saved state"
+    cli("install")
+    assert capsys.readouterr().out.splitlines()[-1] == "the servo holds the set: nothing written"
+    cli("check")
