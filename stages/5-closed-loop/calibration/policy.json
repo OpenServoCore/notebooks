@@ -5,6 +5,7 @@
  "i_cont_ma": 250.0,
  "stall_release_ma": 90.0,
  "oc_trip_ma": 2200.0,
+ "collision_trip": "off",
  "cutoff_c": 90.0,
  "velocity_limit_deg_s": 79.31,
  "accel_limit_deg_s2": 1586.0,
@@ -15,7 +16,23 @@
  "hold_band_floor_counts": 4,
  "sensor_delta_max_counts": 256,
  "why": {
-  "cutoff_c": "one thermal limit, at 90 C: the owner's decision"
+  "cutoff_c": "one thermal limit, at 90 C: the owner's decision",
+  "i_cont_ma": "interim, until the lock hold gives this motor's plateau: the owner's decision",
+  "stall_release_ma": "it moves with the continuous current, interim with it: the owner's decision",
+  "collision_trip": "the collision trip stays off: the owner's decision",
+  "hold_band_floor_counts": "the hold band is 4 counts, a bit of hunting after a landing is fine while it dies down quickly: the owner's decision",
+  "gear_ratio_centi": "the family's tooth count, to be confirmed by counting this unit's teeth: the owner's decision",
+  "v_kp_q88": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision",
+  "v_ki_q412": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision"
+ },
+ "undecided": {
+  "observer_hz": {"reason": "an old tool's default target restated, no decision", "needs": "a decision: 15 Hz with its why, or a sweep rung on the scorecard"},
+  "oc_trip_ma": {"reason": "boot default restated, no decision", "needs": "a decision: the default's reason taken as policy with its why, or another level"},
+  "sensor_delta_max_counts": {"reason": "boot default restated, no decision", "needs": "a decision: the default taken as policy with its why, or another screen"},
+  "velocity_limit_deg_s": {"reason": "boot default restated at the raw pot's scale, no decision", "needs": "a decision on the speed in deg/s, with the same test under a load, then the motion limits on a rung"},
+  "accel_limit_deg_s2": {"reason": "boot default restated at the raw pot's scale, no decision", "needs": "a decision with the speed limit, then the motion limits on a rung"},
+  "stall_omega_max_deg_s": {"reason": "boot default restated at the raw pot's scale, no decision", "needs": "a decision on the speed in deg/s, then its protection step"},
+  "pos_error_deg": {"reason": "boot default restated at the raw pot's scale, no decision", "needs": "a decision on the angle, then its protection step"}
  },
  "rule": {
   "r_q12": "r.rails_fit",
