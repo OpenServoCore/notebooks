@@ -111,15 +111,19 @@ Run: no capture of its own.
 ## winding-temperature
 
 Targets: the winding's temperature from the NTC and the dissipated power,
-graded on the resistance reads stage 3 already holds.
+graded on the resistance reads stage 3 already holds, and one model of the
+winding over the NTC, the fast node measured here and the slower terms
+quoted from earlier work.
 
-Needs: stage 3's resistance and sag results, and the thermal constants of
-earlier work on the family.
+Needs: stage 3's resistance and sag results, stage 2's rest-resistance and
+teardown results, and the thermal constants of earlier work on the family.
 
 How: the I2t model over the board NTC run down each sitting's rows, scored
 where a stall or a locked read gives the winding's own resistance. What the
 stage 3 data can and cannot grade is stated, since no sitting was a thermal
-one.
+one. The earlier work's chain is turned into the estimate's parallel form
+and held beside the fast node, and the plateau is given as two readings, a
+low one and a high one, neither graded on this pair.
 
 Run: no capture of its own.
 
@@ -144,7 +148,7 @@ Run: no capture of its own.
 | current loop's feedback | `current-zero`: the zero's error and its start-up time | no rail, reference or temperature channel in the rows |
 | velocity loop's feedback | `velocity`: noise against delay, the rest verdict, the crawl | the brush term's form under load; the blend and the rest verdict's form are open |
 | position loop's feedback | `position`: noise against delay, the held-out residual, the lash as a bound | the grade at speed is bounded by the stamp lead |
-| the one thermal limit | `winding-temperature` | no thermal capture |
+| the one thermal limit | `winding-temperature`: the fast node measured, the slow terms the family's | the plateau and the cooling are not graded on mg90-d; one lock hold closes it |
 | valid flags for the faults | `speed`, `velocity` | the tap floor's rung is open; stage 3's dropout rate flag was not run |
 
 The `compensation` notebook lists every gap with the capture that would

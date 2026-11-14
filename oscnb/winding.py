@@ -18,6 +18,11 @@ the winding current (the crest sample less the zero and the reading term,
 as oscnb.speed forms it). A step may be any dt: a control tick, a
 decimated block (mean of i_w^2 over it), or a gap with i_w = 0.
 
+`parallel_of` turns a two-node chain (winding to can to air) into two
+such parallel terms. `leak_s`, `rise_per_count2`, `gain_of_rise` and
+`stored_rise_c` are the same estimate as a servo stores and runs it, in
+its fields' rounding and its integers.
+
 The grading runs over a pair's folder (oscnb.sweeps), every constant an
 argument (oscnb.speed's `Chain` and `Motor`, the board, the stage 1
 scales):
@@ -138,6 +143,106 @@ def speed_error_rev_s(r_error_frac, i_w_a, r_ohm, ke_v_per_rev_s):
     """What a relative error in R costs the back-EMF speed estimate:
     R i / Ke times the error."""
     return r_error_frac * r_ohm * i_w_a / ke_v_per_rev_s
+
+
+def parallel_of(r_wc, c_w, r_ca, c_c):
+    """A two-node chain as the two parallel terms of this module's form.
+
+    The chain: heat into the winding (heat capacity c_w, J/C), r_wc (C/W)
+    from the winding to the can (c_c), r_ca from the can to the air. The
+    winding's step response to a watt is two first-order rises, the
+    chain's two modes. Returns [(gain C/W, tau s), (gain, tau)], the
+    faster first. The gains sum to r_wc + r_ca. A branch resistance of
+    the chain is not a parallel term's gain: r_ca is the can's own rise,
+    and the winding's slow term is larger."""
+    a = np.array([[-1 / (r_wc * c_w), 1 / (r_wc * c_w)],
+                  [1 / (r_wc * c_c), -(1 / r_wc + 1 / r_ca) / c_c]])
+    b = np.array([1 / c_w, 0.0])        # a watt into the winding node
+    lam, vec = np.linalg.eig(a)
+    coef = np.linalg.solve(vec, b)      # the input in the modes
+    out = []
+    for k in range(2):
+        gain = -coef[k] * vec[0, k] / lam[k]    # the winding's row
+        out.append((float(np.real(gain)), float(np.real(-1 / lam[k]))))
+    return sorted(out, key=lambda term: term[1])
+
+
+# The estimate as a servo stores and runs it: two parallel nodes on one
+# input, each a rise in centi-C per count squared in Q0.16 and a leak in
+# whole seconds, stepped in integers once a period. The rounding below
+# mirrors the firmware's (core kernel/scheduler/table.rs for the period,
+# kernel/phases/loops/limits.rs tau_shift and heat, estimator/thermal.rs
+# warm_q16 and rise_cc), so a notebook can say what a set of fields
+# would read before any servo holds it.
+STORED_PERIOD_S = 0.016         # s, the period the stored estimate steps at
+LEAK_SHIFT_MAX = 15             # a leak is at most 2^15 periods, 524 s
+HEAT_GUARD = 5                  # guard bits under a heat, so a leak moves
+HEAT_MAX = (2 ** 31 - 1) >> HEAT_GUARD      # counts^2, a heat's ceiling
+ALPHA_Q26 = 2637                # copper's rise per centi-C, Q26
+RISE_FEEDBACK_MAX_CC = 15_000   # centi-C, the rise the warm input stops at
+RISE_MAX_CC = 2 ** 15 - 1       # centi-C, where a stored rise saturates
+
+
+def leak_shift(tau_s):
+    """The shift a written leak of tau_s whole seconds runs at: the
+    nearest power of two of periods, rounded up only above 1.5 x 2^k, 0
+    under two periods, capped at LEAK_SHIFT_MAX."""
+    periods = int(tau_s) * 1000 // round(STORED_PERIOD_S * 1000)
+    if periods < 2:
+        return 0
+    k = periods.bit_length() - 1
+    if periods - (1 << k) > (1 << k) >> 1:
+        k += 1
+    return min(k, LEAK_SHIFT_MAX)
+
+
+def leak_s(tau_s):
+    """The time constant (s) a written leak of tau_s whole seconds runs
+    at: a power of two of the period, so up to 1.5 times shorter or 1.33
+    times longer than written."""
+    return STORED_PERIOD_S * (1 << leak_shift(tau_s))
+
+
+def rise_per_count2(gain_c_per_w, r_ohm, counts_per_a):
+    """A node's gain as a stored rise, centi-C per count squared, before
+    its Q0.16 rounding: 100 x G x R / (counts per A)^2, the copper loss
+    at r_ohm with the current in counts."""
+    return 100.0 * gain_c_per_w * r_ohm / counts_per_a ** 2
+
+
+def gain_of_rise(rise_q016, r_ohm, counts_per_a):
+    """The gain (C/W) a stored Q0.16 rise means on a winding of r_ohm
+    read at counts_per_a, `rise_per_count2` inverted."""
+    return rise_q016 / 65536 / (100.0 * r_ohm / counts_per_a ** 2)
+
+
+def stored_rise_c(fields, profile):
+    """The rise over the NTC (C) a stored set reads through `profile`, a
+    list of (seconds, held current in counts), one value per period,
+    from the zero state. `fields` is (leak s, rise Q0.16, second leak s,
+    second rise Q0.16); a second leak of 0 drops the second node. The
+    arithmetic is the stored estimate's own integers: the input is the
+    current squared, warmed by the last rise through copper's slope, and
+    each heat leaks toward it by a shift."""
+    tau1, rise1, tau2, rise2 = (int(v) for v in fields)
+    gains = (rise1, rise2 if tau2 else 0)
+    shifts = (leak_shift(tau1), leak_shift(tau2))
+    heats = [0, 0]                      # counts^2 with the guard bits
+    rise = 0                            # centi-C, the last published
+    out = []
+    for seconds, counts in profile:
+        square = min(int(counts) * int(counts), HEAT_MAX)
+        for _ in range(int(round(seconds / STORED_PERIOD_S))):
+            warm = (min(rise, RISE_FEEDBACK_MAX_CC) * ALPHA_Q26) >> 10
+            x = min(square + (((square >> 10) * warm) >> 6), HEAT_MAX)
+            rise = 0
+            for n in range(2):
+                heats[n] += ((x << HEAT_GUARD) - heats[n]) >> shifts[n]
+                rise += min(((heats[n] >> HEAT_GUARD) * gains[n]) >> 16,
+                            RISE_MAX_CC)
+            rise = min(rise, RISE_MAX_CC)
+            out.append(rise / 100)
+    return np.array(out)
 
 
 def probes(pair_dir, board, scales):
