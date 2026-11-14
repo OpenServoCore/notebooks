@@ -76,7 +76,7 @@ or dropped on them.
 ### 6. Safety design
 
 Folder `stages/6-safety/`. Targets the limits and the faults. The current ceiling, the stall and
-position-error faults, the thermal derate and cutoff, the stop-hold limits.
+position-error faults, the one thermal limit, the stop-hold limits.
 
 Derived from stages 3 to 5, with the acceptance each limit and fault has
 to meet in stage 7, including on a sagging supply.
@@ -91,7 +91,7 @@ The closed-loop image runs each mode against the stage 0 instruments and
 the acceptance the design stages pre-registered: position, with its step,
 hold and tracking error against the tag; velocity, from a crawl to full
 speed against the tag, smooth at the crawl; torque and the current ceiling
-against the DMM; the thermal estimate and derate against the winding's own
+against the DMM; the thermal estimate and its limit against the winding's own
 resistance read at rest; the faults and the stop-hold limits, and all of it on a sagging supply.
 A mode passes or fails against its number, and a failure goes back to the
 stage that designed it. This is the bench gate for a release, and it is

@@ -78,7 +78,10 @@ since is stale, and refused; one written before results named what
 they read is said, not refused. One build moves one hash: the plant by
 default, every protection field carried with what its rule would give
 beside it (`would_be`), or with `--protection` the fields named and
-nothing of the plant.
+nothing of the plant. A protection field a firmware change took out of
+the table (RETIRED) is carried the same way until a build names it with
+`--protection`, which leaves it out; a set written while the field
+stood loads as it was written.
 
 A deviation is one change to a set, for a rung: a file of policy
 entries, pins and holds to release, `{"policy": {...}, "pins": {field:
@@ -186,7 +189,8 @@ LOOSER = {
     "stall_response": "judged", "stall_time_ticks": "up", "stall_omega_max_cps": "down",
     "oc_trip_counts": "up", "oc_trip_ticks": "up",
     "duty_max_q15": "up",
-    "derate_start_cc": "up", "cutoff_cc": "up",
+    # the one thermal limit: the overtemperature fault latches while the winding estimate reads it or more
+    "cutoff_cc": "up",
     # the fault under the floor; the slope of the fold over it, where 0 turns the fold off
     "v_undervolt_counts": "down", "rail_fold_q8": "judged",
     "pos_error_counts": "up", "pos_error_time_ticks": "up",
@@ -196,7 +200,17 @@ LOOSER = {
     # a longer leak heats later and cools later, and a body time of 0 drops the body node; a rise adds to the estimate
     "thermal_tau_s": "judged", "thermal_tau2_s": "judged", "th_rise_q016": "down", "th_rise2_q016": "down",
 }
-PROTECTION = frozenset(LOOSER)
+
+# The protection fields a firmware change took out of the table, each
+# with the way it moved to protect less while it stood. A set written
+# before holds one under the protection hash, so the set a rung of
+# record ran on loads as it was written. A build carries one until it is
+# named with `--protection`, and then leaves it out.
+RETIRED = {
+    # where the winding estimate began to fold the current limit, under the cutoff
+    "derate_start_cc": "up",
+}
+PROTECTION = frozenset((*LOOSER, *RETIRED))
 
 # The protection fields that are one step together: the four words of
 # the NTC curve, which are one curve, and the current limits, which one
@@ -250,11 +264,18 @@ def group_of(name):
     return next(((g, fields) for g, fields in GROUPS.items() if name in fields), (name, (name,)))
 
 
+def way(name):
+    """The way protection field `name` moves to protect less: LOOSER's,
+    or RETIRED's for a field the firmware no longer names."""
+    return LOOSER[name] if name in LOOSER else RETIRED[name]
+
+
 def protection_of(name):
     """What a field's entry says of protection: None for a field of the
     plant, the way its value moves to protect less for a protection
-    field. LOOSER is the source; the file repeats it to be read."""
-    return {"looser": LOOSER[name]} if name in PROTECTION else None
+    field. LOOSER and RETIRED are the source; the file repeats it to be
+    read."""
+    return {"looser": way(name)} if name in PROTECTION else None
 
 
 def hashes(doc):
@@ -559,6 +580,9 @@ class Context:
         loose = [n for n, pin in self.pins.items() if not all(k in pin for k in ("value", "why", "rung"))]
         if loose:
             raise ValueError(f"the pins of {pair}: {', '.join(loose)} lacks its value, its why or its rung")
+        gone = [n for n in self.pins if n in RETIRED]
+        if gone:
+            raise ValueError(f"the pins of {pair}: the firmware names no {', '.join(gone)}")
 
     def file(self, name, rel):
         """The document of an input file, None when there is none; the
@@ -977,6 +1001,15 @@ for _field, _key, _mirrors in (
          mirrors=_mirrors)(limit_counts(_key))
 
 
+# The one thermal limit: the policy's temperature in C, which the kernel
+# compares in centi-C against its winding estimate, the overtemperature
+# fault latching while the estimate reads it or more.
+@rule("cutoff_cc", "cutoff.policy", kind="i16", unit="cC", cls="policy",
+      mirrors="core kernel/phases/slow.rs cutoff")
+def cutoff(c):
+    return 100 * c.policy("cutoff_c")
+
+
 # --- build ---
 
 def held(what, rule_name, carried, why, previous, would_be=None):
@@ -1126,7 +1159,9 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     or pin gives another value. A held field stands as held on either
     side, its value the one that stood. With `protection` it moves the fields
     named there and carries everything else, the slots, the table and
-    the scale with it. A set with nothing before it is built whole.
+    the scale with it. A protection field the firmware no longer names
+    (RETIRED) is such a change: carried as it stood until it is named,
+    then left out. A set with nothing before it is built whole.
     `deviation` is a deviation file the build reads over the policy and
     the pins (`derive`)."""
     wrong = [n for n in protection if n not in PROTECTION]
@@ -1154,6 +1189,14 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     before = previous["fields"] if previous else {}
     fields = {}
     for name in dict.fromkeys([*before, *RULES, *c.pins]):
+        if name in RETIRED:
+            if name in before and name not in protection:
+                fields[name] = copy.deepcopy(before[name])
+                c.notes.append(f"{name}: carried at {before[name]['value']}, the firmware names no such field: "
+                               f"name it with --protection to leave it out")
+            elif name in before:
+                c.notes.append(f"{name}: left out, the firmware names no such field")
+            continue
         e = bound(c, name, before.get(name), previous)
         moves = (name in protection) if name in PROTECTION else not protection
         # a held entry stands on either side: its value is the one that stood, so it moves no hash
@@ -1452,10 +1495,10 @@ def looser(name, on_servo, wanted):
     """Whether moving protection field `name` from the servo's value to
     the set's protects less: by its direction on two integers, and
     always for a judged field or a value that is no integer."""
-    way = LOOSER[name]
-    if way == "judged" or not all(type(v) is int for v in (on_servo, wanted)):
+    less = way(name)
+    if less == "judged" or not all(type(v) is int for v in (on_servo, wanted)):
         return True
-    return wanted > on_servo if way == "up" else wanted < on_servo
+    return wanted > on_servo if less == "up" else wanted < on_servo
 
 
 def gate(doc, state, protection=(), loosen=()):
@@ -1472,10 +1515,9 @@ def gate(doc, state, protection=(), loosen=()):
         got = state["fields"][name]
         if name not in PROTECTION or got == e["value"]:
             continue
-        way = LOOSER[name]
         less = looser(name, got, e["value"])
-        said = ("judged, taken as protecting less" if way == "judged"
-                else f"protects {'less' if less else 'more'} (less is {way})")
+        said = ("judged, taken as protecting less" if way(name) == "judged"
+                else f"protects {'less' if less else 'more'} (less is {way(name)})")
         need = [f for f, names, wanted in (("--protection", protection, True), ("--loosen", loosen, less))
                 if wanted and name not in names]
         if need:

@@ -34,8 +34,9 @@ pub mod config {
     /// The collision trip on the disturbance estimate; `u16::MAX` (the boot
     /// value) trips nothing.
     pub const STALL_TAU_TRIP_COUNTS: Reg = reg(0x0056, 2);
-    /// Centi-C where the winding estimate's derate begins.
-    pub const DERATE_START_CC: Reg = reg(0x0060, 2);
+    /// Centi-C where the winding estimate latches the overtemperature
+    /// fault: the one thermal limit.
+    pub const CUTOFF_CC: Reg = reg(0x0060, 2);
 }
 
 pub mod calib {
@@ -69,7 +70,7 @@ pub mod control {
 
     pub const TORQUE_ENABLE: Reg = reg(0x0180, 1);
     /// Deliberate stall: drops the stall trip and the endstop band, keeps the
-    /// current limit and the thermal derate. RAM only, cleared by a reboot.
+    /// current limit and the thermal cutoff. RAM only, cleared by a reboot.
     /// Firmware that leases it grants about a second per write of true with
     /// torque on, and drops it on torque off
     /// ([`crate::instrument::limits::PermitLease`]).
@@ -176,7 +177,7 @@ mod tests {
         ("pos_min_phys_counts", config::POS_MIN_PHYS_COUNTS),
         ("pos_min_soft_counts", config::POS_MIN_SOFT_COUNTS),
         ("pos_deadband_counts", config::POS_DEADBAND_COUNTS),
-        ("derate_start_cc", config::DERATE_START_CC),
+        ("cutoff_cc", config::CUTOFF_CC),
         ("ntc_raw_ref", calib::NTC_RAW_REF),
         ("ntc_t_ref_cc", calib::NTC_T_REF_CC),
         ("ntc_k1_q88", calib::NTC_K1_Q88),
