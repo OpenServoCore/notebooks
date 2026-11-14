@@ -18,7 +18,9 @@ a code in reach, on every rung, and `rung.json` names its goals. With
 `rung.json`. With `--pos-table` it runs on the
 pair's position table (oscnb.postable) installed volatile after the
 fields, one stamp over both, the file and its sha1 kept in `rung.json`
-and the same reboot dropping it. With `--wide-codes` it runs on the
+and the same reboot dropping it, its set planned in the table's counts
+at the table's scale, centered on the raw center read through it
+(testset.py). With `--wide-codes` it runs on the
 board's ADC wide-code slots (oscnb.widecodes) written volatile after the
 rest, outside the stamp, the board's result file and its sha1 kept in
 `rung.json` and the same reboot dropping them. `ab` records two such rungs at once, one
@@ -435,19 +437,27 @@ def position_report_error_deg(cap):
     """Over the polls of the steps capture that close a goal item (a poll
     is recorded on the next item's line): the reported position less the
     mean median pot over the last REPORT_POT_MS of the item it closes,
-    where that pot spans no more than the capture's deadband; the worst
-    |error|. NaN under a position table: the report is then in linearized
-    counts, not raw pot counts."""
+    where that pot spans no more than the servo's hold band there; the
+    worst |error|. The report is `theta_hat_q16` in the counts the servo
+    ran in and the pot as `load` reads it, in the same counts: under a
+    LIVE table both are linearized, and the band is the capture's
+    deadband times the table's band gain at the median raw code of that
+    pot (`postable.Table.band_gain`), as the servo scales it; without a
+    table the band is the deadband."""
     p = polls_of(cap, "theta_hat_q16")
-    band = cap["meta"].get("config", {}).get("pos_deadband_counts")
-    if p is None or band is None or cap["table"] is not None:
+    db = cap["meta"].get("config", {}).get("pos_deadband_counts")
+    if p is None or db is None:
         return np.nan
     errs = []
     for s in goal_segs(cap):
         g = seg_rows(cap, s["seg"])
         if s["seg"] + 1 not in p.index or g.empty:
             continue
-        pot = tail(g, REPORT_POT_MS)["pos_f"]
+        last = tail(g, REPORT_POT_MS)
+        pot = last["pos_f"]
+        band = db
+        if cap["table"] is not None:
+            band = db * float(cap["table"].band_gain(round(last["pos_raw"].median())))
         if pot.max() - pot.min() <= band:
             errs.append(p.loc[s["seg"] + 1, "theta_hat_q16"] / Q16 - pot.mean())
     return float(np.max(np.abs(errs))) / cap["cpd"] if errs else np.nan
@@ -691,16 +701,19 @@ def config_hash(config):
 
 def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     """One capture: its plan.json, then `osc-lab track`, then the check
-    that the servo ran the range the plan was built for."""
+    that the servo ran the range the plan was built for: the guard and
+    the middle of it `osc-lab track` centers to at the end, which on a
+    table rung is not the plan's own center."""
     out.mkdir(parents=True, exist_ok=True)
     (out / "plan.json").write_text(json.dumps(ts.plan_doc(name, segs, center, guard, inp), indent=2) + "\n")
     osc.track(out, "position", [s["item"] for s in segs],
               current_cap_ma=inp["current_cap_ma"], current_cap_ms=inp["current_cap_ms"],
               deadman_check=deadman_check)
     meta = json.loads((out / "meta.json").read_text())
-    if tuple(meta["guard"]) != tuple(guard) or meta["center"] != center:
+    middle = ts.center_of(guard)
+    if tuple(meta["guard"]) != tuple(guard) or meta["center"] != middle:
         raise SystemExit(f"{shown(out)}: the servo ran guard {meta['guard']} center {meta['center']}, "
-                         f"the plan was built for {list(guard)} center {center}")
+                         f"the plan was built for {list(guard)} center {middle}")
     return meta
 
 
@@ -730,16 +743,20 @@ def new_rung(pair, label, fw, image_sha, runs, note="", settings_file=None, pos_
             "runs": runs, "fields": fields, "table": table, "wide": wide, "board": board_key}
 
 
-def bench_set(servo, board, pair):
-    """The test set built for the servo at hand, after the preflight: the
-    module, its inputs, the soft range read off the servo, the center and
-    the captures' segments."""
+def bench_sets(servo, board, pair, rungs):
+    """The test set built for the servo at hand for each of `rungs`, after
+    one preflight: the module, the rung's inputs, the soft range read off
+    the servo, the center and the captures' segments. A rung on the
+    pair's table gets the set planned in the table's counts."""
     ts = testset()
-    inp = ts.inputs(servo, pair, board.key)
+    inps = [ts.inputs(servo, pair, board.key, pos_table=bool(r["table"])) for r in rungs]
     preflight(servo, board)
     guard = (osc.get("pos_min_soft_counts"), osc.get("pos_max_soft_counts"))
-    center, sets = ts.build(guard, inp)
-    return {"ts": ts, "inp": inp, "guard": guard, "center": center, "sets": sets}
+    out = []
+    for inp in inps:
+        center, sets = ts.build(guard, inp)
+        out.append({"ts": ts, "inp": inp, "guard": guard, "center": center, "sets": sets})
+    return out
 
 
 @contextmanager
@@ -767,7 +784,8 @@ def record_run(r, k, s):
     in the test set's order, and `rung.json` once the rung's first capture
     lands, the wide holds' goals in it."""
     rung, ts = r["dir"], s["ts"]
-    wide = [{"stuck_code": g["stuck_code"], "side": g["side"], "goal_counts": g["goal_counts"]}
+    wide = [{"stuck_code": g["stuck_code"], "side": g["side"], "goal_counts": g["goal_counts"],
+             **({"raw_counts": g["raw_counts"]} if "raw_counts" in g else {})}
             for g in s["sets"].get("wide", []) if g["test"] == "wide-hold"]
     for i, name in enumerate(c for c in ts.CAPTURES if c in s["sets"]):
         meta = capture(rung / f"run-{k}" / name, name, s["sets"][name], s["center"], s["guard"], s["inp"],
@@ -788,7 +806,7 @@ def run(label, fw, image_sha, runs=3, note="", settings_file=None, pos_table=Fal
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
     r = new_rung(pair, label, fw, image_sha, runs, note, settings_file, pos_table, wide_codes, board.key)
-    s = bench_set(servo, board, pair)
+    s, = bench_sets(servo, board, pair, [r])
     with applied(r, pair):
         for k in range(1, runs + 1):
             if k > 1:
@@ -814,7 +832,9 @@ def ab(a, b, rounds=3, servo=None, board=None):
     file's. A side's image is flashed, the bus awaited and the stamp
     verified before its run whenever the servo holds the other side's,
     and before the first run always; its settings, the pair's table and
-    the board's wide-code slots are applied around its own runs alone. Returns the two rungs' folders."""
+    the board's wide-code slots are applied around its own runs alone,
+    and a side on the table runs the set planned in the table's counts.
+    Returns the two rungs' folders."""
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
@@ -828,12 +848,12 @@ def ab(a, b, rounds=3, servo=None, board=None):
                      board_key=board.key)
         r["image"] = Path(side["image"])
         sides.append(r)
-    s = bench_set(servo, board, pair)
+    sets = bench_sets(servo, board, pair, sides)
     on_servo = None
     flashing = None
     try:
         for k in range(1, rounds + 1):
-            for r in sides:
+            for r, s in zip(sides, sets):
                 if on_servo is None or on_servo["image_sha"] != r["image_sha"]:
                     on_servo, flashing = None, r
                     osc.flash(r["image"])

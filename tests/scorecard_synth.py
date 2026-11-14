@@ -77,9 +77,11 @@ def rows_of(ms, tick_hz):
 def fake_track(out, schedule, start, tick_hz=2_000, tau_s=0.03, max_cps=1500.0,
                duty_counts=600, deadband=4):
     """A servo that answers `schedule` from `start` counts; writes the
-    capture (no plan) and returns where the shaft ended."""
+    capture (no plan) and returns where the shaft ended. Its meta names
+    the middle of the guard as the center, as `osc-lab track` does."""
     plan = json.loads((Path(out) / "plan.json").read_text())
-    center, guard = plan["center_counts"], plan["guard_counts"]
+    guard = plan["guard_counts"]
+    center = guard[0] + (guard[1] - guard[0]) // 2
     dt = 1 / tick_hz
     pos = float(start)
     goal = round(start)

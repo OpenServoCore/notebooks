@@ -29,12 +29,22 @@ segment: its test, size or speed share, direction and goal in counts and
 in degrees from the center, and for a hold at a wide code its stuck code
 and the side it is approached from.
 
+A set for a rung on the pair's position table is planned in linearized
+counts. Under a live table they are the counts of the goals, of the
+servo's soft limits and of `osc-lab track`'s guard, so the soft range
+read off the servo is taken as it is and the fit compares like with
+like. Counts per degree is the table's own scale, constant over the
+travel, and the center is the raw middle of the soft range read through
+the table, the place an identity set centers on. A wide code's goals are
+the table's reading of the raw goals, each segment keeping its raw goal
+as `raw_counts`.
+
 The file is not a `plan.py`: it runs under `python -m oscnb.scorecard`,
 never in a sitting.
 """
 import math
 
-from oscnb import results, scorecard, widecodes
+from oscnb import postable, results, scorecard, widecodes
 
 STEP_SIZES_DEG = (2, 20, 60)
 STEP_HOLD_MS = (1200, 1500, 2000)   # per size, the settle and the 500 ms rest window
@@ -59,11 +69,14 @@ CAP_MS = 100                        # the watchdog's current cap holds this long
 CAPTURES = ("steps", "follow", "hold", "wide")   # in run order; `wide` only where the set built one
 
 
-def inputs(servo, pair, board=None):
+def inputs(servo, pair, board=None, pos_table=False):
     """The constants the set is built from, with where each came from.
     `board` is the registry key of the board whose ADC wide codes the
     `wide` capture holds at: the ones its result of record gives a slot.
-    Without a board, or for one with no result, there are none."""
+    Without a board, or for one with no result, there are none. With
+    `pos_table` the set is for a rung on the pair's position table: its
+    counts per degree is the table's scale, and `table` is the Table
+    `build` reads the center and the wide goals through."""
     pot = results.read("3-servo", "pot-table", pair)
     runup = results.read("3-servo", "run-up", pair)
     rev_s = runup["no_load_speed_rev_s"]["value"]
@@ -86,6 +99,13 @@ def inputs(servo, pair, board=None):
                              for b in sorted(slotted, key=lambda b: b.stuck)]
         inp["sources"]["wide_codes"] = (f"{scorecard.shown(widecodes.result_file(board))} wide_codes, "
                                         f"the codes that take a slot")
+    if pos_table:
+        table = postable.load(pair)[0]
+        f = results.rel(postable.out_path(pair))
+        inp["table"] = table
+        inp["counts_per_deg"] = table.scale
+        inp["sources"]["counts_per_deg"] = f"{f} target counts_per_deg, the table's linearized counts per deg"
+        inp["sources"]["center_counts"] = f"the raw middle of the soft range read through {f}"
     return inp
 
 
@@ -93,6 +113,12 @@ def center_of(guard):
     """The middle of the soft range, as `osc-lab track` centers to it."""
     lo, hi = guard
     return lo + (hi - lo) // 2
+
+
+def through(table, raw):
+    """Raw counts `raw` as a goal in the counts the set runs in: unchanged
+    without a table, else the table's reading of it to the count."""
+    return raw if table is None else round(float(table.lin(raw)))
 
 
 def _goal(center, cpd, counts, ms, test, **fields):
@@ -168,24 +194,27 @@ def approach_ms(travel_deg):
     return next((ms for size, ms in zip(STEP_SIZES_DEG, STEP_HOLD_MS) if travel_deg <= size), STEP_HOLD_MS[-1])
 
 
-def wide(center, cpd, guard, codes):
+def wide(center, cpd, guard, codes, table=None):
     """The wide capture's segments, in order: per wide code whose goals
     fit the soft range, lowest first, its middle held after the approach
     from above, then after the one from below, each approach held for
     its travel from the goal before it, the first from the center. Empty
-    when no code fits."""
+    when no code fits. With a `table` the goals are its reading of the
+    raw goals, each segment's raw goal kept as `raw_counts`."""
     segs = []
     at = center
     for code in sorted(codes, key=lambda c: c["stuck_code"]):
-        above, middle, below = wide_goals(code)
-        if not fits((above, below), guard, cpd):
+        raw = dict(zip(("above", "middle", "below"), wide_goals(code)))
+        goal = {k: through(table, r) for k, r in raw.items()}
+        if not fits((goal["above"], goal["below"]), guard, cpd):
             continue
-        for approach, side in ((above, "above"), (below, "below")):
+        for side in ("above", "below"):
             fields = {"stuck_code": code["stuck_code"], "side": side}
-            ms = approach_ms(abs(approach - at) / cpd)
-            segs.append(_goal(center, cpd, approach, ms, "wide-approach", **fields))
-            segs.append(_goal(center, cpd, middle, WIDE_HOLD_MS, "wide-hold", **fields))
-            at = middle
+            for k, ms, test in ((side, approach_ms(abs(goal[side] - at) / cpd), "wide-approach"),
+                                ("middle", WIDE_HOLD_MS, "wide-hold")):
+                kept = {} if table is None else {"raw_counts": raw[k]}
+                segs.append(_goal(center, cpd, goal[k], ms, test, **fields, **kept))
+            at = goal["middle"]
     return segs
 
 
@@ -206,13 +235,15 @@ def check_fits(segs, guard, cpd):
 def build(guard, inp):
     """Every capture's segments for a servo with soft range `guard`,
     refused when one does not fit; `wide` is among them only when a wide
-    code of the inputs is in reach."""
+    code of the inputs is in reach. With a table in the inputs the center
+    is the raw middle of the soft range read through it."""
     cpd = inp["counts_per_deg"]
-    center = center_of(guard)
+    table = inp.get("table")
+    center = through(table, center_of(guard))
     sets = {"steps": steps(center, cpd),
             "follow": follow(center, cpd, inp["no_load_deg_s"]),
             "hold": hold()}
-    wide_segs = wide(center, cpd, guard, inp.get("wide_codes", ()))
+    wide_segs = wide(center, cpd, guard, inp.get("wide_codes", ()), table)
     if wide_segs:
         sets["wide"] = wide_segs
     for segs in sets.values():

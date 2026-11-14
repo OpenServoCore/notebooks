@@ -1,8 +1,9 @@
 """The position table in the format of protocol sec 5.7, offline: the
-interpolation on hand-computed points, the servo's two rules, the build
-from a small synthetic lookup, the held-out grade through it, the
-board's wide-code step ahead of the table in every grade, the install
-plan's wire steps and the install itself on a fake window."""
+interpolation on hand-computed points, the hold band's gain, the
+servo's two rules, the build from a small synthetic lookup, the
+held-out grade through it, the board's wide-code step ahead of the
+table in every grade, the install plan's wire steps and the install
+itself on a fake window."""
 import json
 
 import numpy as np
@@ -48,6 +49,14 @@ def test_interpolation_at_hand_computed_points():
                       (1608, 1613 * 16 - 8 * 8), (1615, 1620 * 16 - 8 * 15),
                       (1616, 1613 * 16), (1624, 1621 * 16 + 3 * 8)):
         assert pt.interp_q4(raw, k) == want, raw
+
+
+def test_the_band_gain_is_the_intervals_clamped_as_the_servo_clamps_it():
+    # intervals 99 to 102: Q4 gains 21, 8, 81 and 1
+    t = pt.Table(table(k100=5, k101=-3, k102=62, k103=47), *STOPS, -90.0, 90.0)
+    assert t.band_gain(16 * np.arange(99, 103) + 7).tolist() == [21 / 16, 0.5, 4.0, 0.5]
+    assert t.band_gain(1599) == 21 / 16 and t.band_gain(1600) == 0.5
+    assert t.band_gain(2000) == 1.0
 
 
 def test_interpolation_wraps_like_a_u16_and_masks_to_12_bits():
