@@ -22,6 +22,14 @@ c[k] = L(theta(16 k)) - 16 k rounded to the count, zero at and beyond the
 stops. Past the lookup's knots the angle runs on its end lines, which stage
 4 carries as extrapolation.
 
+The servo takes the board's ADC wide-code step in raw counts ahead of the
+table (protocol sec 5.7, `oscnb.widecodes`): a pot sample stuck on a wide
+code enters the table at the code plus its slot / 16. Stage 4 fits the
+lookup on readings that carry that step, so the table holds the pot alone,
+and every grade here reads the pot the same way: the sitting's frames
+loaded with the step on, and a raw code read through the table at the
+compensated raw (`Table.lin` of `widecodes.compensated`).
+
     uv run python -m oscnb.postable build --stops RAW_MIN RAW_MAX
     uv run python -m oscnb.postable check
     uv run python -m oscnb.postable plan
@@ -42,7 +50,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from . import boards, osc, results, servos, settings
+from . import boards, osc, results, servos, settings, widecodes
 from . import position as pe
 
 ADC_BITS = 12
@@ -261,13 +269,14 @@ def rms(x):
     return float(np.sqrt(np.mean(x ** 2))) if len(x) else float("nan")
 
 
-def format_cost(t, lk):
+def format_cost(t, lk, slots):
     """How far the table reads from the lookup it came from, every raw
-    code: (deg rms, deg max, counts rms, counts max) inside the lookup's
+    code read as the servo reads it, the board's wide-code `slots` ahead
+    of both: (deg rms, deg max, counts rms, counts max) inside the lookup's
     knots, then the same from stop to stop."""
     out = []
     for a, b in ((lk.c[0], lk.c[-1]), (t.raw_min, t.raw_max)):
-        r = np.arange(int(np.ceil(a)), int(b) + 1)
+        r = widecodes.compensated(np.arange(int(np.ceil(a)), int(b) + 1), slots)
         e = t.angle(r) - lk.angle(r)
         out += [rms(e), float(np.abs(e).max()), rms(e * t.scale),
                 float(np.abs(e * t.scale).max())]
@@ -285,11 +294,22 @@ def tag_speed(host, deg):
     return v
 
 
+def sitting(pair):
+    """(frames, slots) of a pair's camera sitting the way stage 4 loads it:
+    every chain's pot carrying the board's wide-code step, and the 16
+    slots of record its meta names."""
+    from .potframes import load as load_frames
+    pf = load_frames(results.ROOT / "telemetry" / pair, wide_codes=True)
+    return pf, widecodes.slots_of_meta(next(iter(pf.sweeps.values()))[1])
+
+
 def stage4_sets(pf):
     """(moving, rest, scored) of stage 3's frames the way stage 4 split and
     scored them: a fold per chain by the parity of its rank in its clip
     kind; scored = the frames inside the moving span with tag speed over
-    MOVE_DEG_S, the pot re-read on the camera's clock (pos_cam)."""
+    MOVE_DEG_S, the pot re-read on the camera's clock (pos_cam). `pf` is
+    `sitting`'s, its pot carrying the board's wide-code step; frames loaded
+    on raw codes are refused."""
     from .potframes import kind_of
     fold, seen = {}, {}
     for clip, k in zip(pf.chains["clip"], pf.chains["k"]):
@@ -306,6 +326,10 @@ def stage4_sets(pf):
     fc["tag_speed"] = np.nan
     for (clip, k), g in fc.groupby(["clip", "k"]):
         rows = pf.rows(clip, k)[0]
+        if "pos_raw" not in rows:
+            raise ValueError(f"{clip}/{k}: its rows carry the raw pot code, the table is "
+                             "graded on readings with the board's wide-code step "
+                             "(potframes.load with wide_codes)")
         dt = float(np.median(np.diff(rows["host"].to_numpy()[:2000])))
         w = max(1, int(round(BOX_S / dt)))
         for seg, gs in g.groupby("seg"):
@@ -325,7 +349,9 @@ def heldout(moving, rest, scored, raw_min, raw_max, pitch):
     """Stage 4's two-fold grade through the lookup and through the table
     built from it: per fold the lookup is fitted on the other fold, its
     table built against the stops, and the fold's scored frames inside the
-    knots read through both. Returns {source: (deg rms, counts rms) with
+    knots read through both. The sets are `stage4_sets`', their pot
+    carrying the board's wide-code step, so the table is read at the
+    compensated raw. Returns {source: (deg rms, counts rms) with
     each segment's offset out, then (deg rms, counts rms) with nothing
     out}, pooled over both folds."""
     errs = {"lookup": [], "table": []}
@@ -350,29 +376,31 @@ def heldout(moving, rest, scored, raw_min, raw_max, pitch):
 
 def check(pair):
     """Print the table's verdict, its format cost against the lookup of
-    record and stage 4's held-out grade read through it."""
-    from .potframes import load as load_frames
+    record and stage 4's held-out grade read through it, every reading
+    with the board's wide-code step."""
     t, doc = load(pair)
     lk, _, res = lookup_of_record(pair)
     print(f"{results.rel(out_path(pair))}: LIVE against stops {t.raw_min} "
           f"and {t.raw_max}; {t.scale:.3f} linearized counts/deg, local gain "
           f"{doc['local_gain'][0]:.2f} to {doc['local_gain'][1]:.2f}")
-    fc = format_cost(t, lk)
-    print(f"against the lookup of record, every raw code inside its knots: "
+    pf, slots = sitting(pair)
+    fc = format_cost(t, lk, slots)
+    print(f"against the lookup of record, every raw code inside its knots, "
+          "the board's wide-code step ahead of both: "
           f"{fc[0]:.4f} deg rms, {fc[1]:.4f} max ({fc[2]:.3f} / {fc[3]:.3f} "
           f"counts); stop to stop {fc[4]:.4f} deg rms, {fc[5]:.4f} max")
     for (a, b), (da, db) in zip(doc["extrapolated_counts"],
                                 ((t.theta_min, lk.a[0]), (lk.a[-1], t.theta_max))):
         print(f"on an end line, no knot: {a:g} to {b:g} counts, {db - da:.2f} deg")
-    pf = load_frames(results.ROOT / "telemetry" / pair)
     moving, rest, scored = stage4_sets(pf)
     g = heldout(moving, rest, scored, t.raw_min, t.raw_max,
                 res["lookup_pitch_counts"]["value"])
     q = {k: res[k]["value"] for k in ("table_term_heldout_deg_rms",
                                       "table_term_heldout_counts_rms",
                                       "heldout_lead_applied_deg_rms")}
-    print(f"held out, two folds, {len(scored)} scored frames, each fold's "
-          "table built against the same stops:")
+    print(f"held out, two folds, {len(scored)} scored frames on readings "
+          "with the board's wide-code step, each fold's table built against "
+          "the same stops:")
     print(f"  stage 4 quotes {q['table_term_heldout_deg_rms']:.4f} deg / "
           f"{q['table_term_heldout_counts_rms']:.3f} counts, segment offsets "
           f"out; {q['heldout_lead_applied_deg_rms']:.4f} deg nothing out")

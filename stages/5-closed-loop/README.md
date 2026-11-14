@@ -73,8 +73,14 @@ A rung of settings runs on a file of CONFIG fields, `{"fields": {...}}`,
 passed as `--settings`: the fields are written volatile and stamped
 (`oscnb/settings.py`), and a reboot brings the stored set back when the
 runs end. The pot's position table in the servo's format is built and
-graded offline by `oscnb/postable.py` into [calibration/](calibration),
-and `uv run python -m oscnb.postable install` writes it to the servo
+graded offline by `oscnb/postable.py` into [calibration/](calibration).
+It is built from the stage 4 lookup, which is fitted on pot readings
+that carry the board's ADC wide-code step
+([stage 1, wide-codes](../1-board/README.md#wide-codes)), so the table
+holds the pot alone. Its grades read the pot the same way: the camera
+sitting's frames loaded with the step on, and a raw code read through
+the table at the code plus its slot, the step ahead of the table.
+`uv run python -m oscnb.postable install` writes the table to the servo
 volatile and reads every page back. A rung passed `--pos-table` runs on
 the pair's table: installed after the settings, one stamp over both, the
 file and its sha1 kept in `rung.json`, and the same reboot dropping it at
@@ -211,7 +217,8 @@ Tried, not kept:
   and the two-sided error to 0.5 to 0.6 deg against 0.3. A trade of
   accuracy for speed and quiet, not a gain: held for a decision, and for
   the same test under a load, where the play is taken up.
-- `03a-pos-table`, `01b` on the pair's position table: the rest error
+- `03a-pos-table`, `01b` on the pair's position table as built before
+  the lookup carried the board's wide-code step: the rest error
   and the two-sided error fall (0.19 and 0.15 deg against 0.25 and 0.30),
   the speed ripple of a move does not change (46.5 %), and the crawl's
   ripple, the overshoot and the follow's current are worse. Every score

@@ -1,7 +1,8 @@
 """The position table in the format of protocol sec 5.7, offline: the
 interpolation on hand-computed points, the servo's two rules, the build
 from a small synthetic lookup, the held-out grade through it, the
-install plan's wire steps and the install itself on a fake window."""
+board's wide-code step ahead of the table in every grade, the install
+plan's wire steps and the install itself on a fake window."""
 import json
 
 import numpy as np
@@ -11,6 +12,7 @@ import pytest
 from oscnb import position as pe
 from oscnb import postable as pt
 from oscnb import results
+from oscnb import widecodes as wc
 
 PAIR = "synth__board"
 STOPS = (82, 3792)
@@ -219,6 +221,87 @@ def test_heldout_through_the_table_matches_the_lookup():
     assert abs(g["table"][0] - g["lookup"][0]) < 0.005
     assert abs(g["table"][2] - g["lookup"][2]) < 0.005
     assert g["lookup"][2] > g["lookup"][0]
+
+
+def test_heldout_on_the_synthetic_set_grades_as_before_the_step():
+    """The sets carry no wide code, the case of an all-zero map: the grade
+    is the one the function gave before the readings carried the step."""
+    g = pt.heldout(*synthetic_sets(), *STOPS, 32)
+    assert g["lookup"] == pytest.approx((0.05608246882328809, 1.166487788285159,
+                                         0.16173837401104388, 3.1939896694756533), rel=1e-9)
+    assert g["table"] == pytest.approx((0.056972532273649824, 1.1806920953057745,
+                                        0.16283969303151805, 3.2136365183210294), rel=1e-9)
+
+
+def test_format_cost_under_an_all_zero_map_is_the_cost_on_raw_codes(repo):
+    write_lookup(repo)
+    t, _ = pt.build(PAIR, *STOPS)
+    lk, _, _ = pt.lookup_of_record(PAIR)
+    # what the function gave on raw codes, before it took the slots
+    assert pt.format_cost(t, lk, bytes(wc.SLOTS)) == pytest.approx(
+        [0.012050673362341623, 0.02472723382565789, 0.242929806271126, 0.4984768852552037,
+         0.011697402050989271, 0.02472723382565789, 0.2358082016397897, 0.4984768852552037],
+        rel=1e-9)
+
+
+def tent():
+    """A table 8 counts up at raw 1024 and a pot on its line, 20 counts/deg:
+    the interval under 1024 gains 1.5, the one over it 0.5, and the table
+    reads tent-shaped off the pot, 0 at 1008 and 1040, in counts."""
+    t = pt.Table(table(k64=8), *STOPS, -180.0, 5.5)
+    assert t.scale == 20.0
+    line = pe.Lookup("counts", [384, 3488], [-164.9, -9.7])
+    return t, line
+
+
+def test_a_wide_code_is_graded_through_the_table_at_the_compensated_raw():
+    t, line = tent()
+    slots = bytearray(wc.SLOTS)
+    slots[1023 >> 8] = 80               # 1023 stands for 1028
+    # 4 counts into the interval over 1024, gain 0.5
+    assert t.lin(1023 + 80 / 16) == 1028 + 8 - 8 * 4 / 16 == 1034.0
+    assert t.lin(1023) == 1023 + 7.5
+    # squared counts off the pot's line over every code of the tent
+    raw = 2 * sum((j / 2) ** 2 for j in range(16)) + 8 ** 2
+    stepped = raw - 7.5 ** 2 + (float(t.lin(1023 + 80 / 16)) - (1023 + 80 / 16)) ** 2
+    for first, n in ((0, 3488 - 384 + 1), (4, STOPS[1] - STOPS[0] + 1)):
+        zero = pt.format_cost(t, line, bytes(wc.SLOTS))[first:first + 4]
+        assert zero == pytest.approx([(raw / n) ** 0.5 / 20, 8 / 20, (raw / n) ** 0.5, 8])
+        got = pt.format_cost(t, line, bytes(slots))[first:first + 4]
+        assert got == pytest.approx([(stepped / n) ** 0.5 / 20, 8 / 20, (stepped / n) ** 0.5, 8])
+    assert stepped == 684 - 56.25 + 36
+
+
+def test_the_sitting_is_loaded_with_the_boards_step_and_names_its_slots(repo, monkeypatch):
+    from oscnb import potframes
+    meta = {"sense": "the board's"}
+    seen = []
+
+    class Frames:
+        sweeps = {("pass-1", 0): (None, meta, None)}
+
+    def load(pair_dir, manifest=None, wide_codes=False):
+        seen.append((pair_dir, wide_codes))
+        return Frames()
+
+    monkeypatch.setattr(potframes, "load", load)
+    monkeypatch.setattr(pt.widecodes, "slots_of_meta", lambda m: ("the slots of", m))
+    pf, slots = pt.sitting(PAIR)
+    assert seen == [(repo / "telemetry" / PAIR, True)]
+    assert isinstance(pf, Frames) and slots == ("the slots of", meta)
+
+
+def test_frames_loaded_on_raw_codes_are_refused():
+    class Raw:
+        chains = pd.DataFrame({"clip": ["pass-1"], "k": [0]})
+        frames = pd.DataFrame({"clip": ["pass-1"], "k": [0], "seg": [1], "host": [0.0],
+                               "image_deg": [0.0]})
+
+        def rows(self, clip, k):
+            return pd.DataFrame({"seg": [1], "host": [0.0], "pos": [1000]}), {}, None
+
+    with pytest.raises(ValueError, match="pass-1/0: its rows carry the raw pot code"):
+        pt.stage4_sets(Raw())
 
 
 class FakeWindow:
