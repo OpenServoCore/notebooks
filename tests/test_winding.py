@@ -117,6 +117,112 @@ def test_speed_error_of_a_resistance_error():
         0.02 / 7e-3, rel=1e-15)
 
 
+# A two-node chain as earlier work on the family prints it, another MG90:
+# name: (R_wc C/W, C_w J/C, R_ca C/W, C_c J/C), then the seconds it
+# prints for a hard stall to reach 130 C (7.43 V over 4.74 ohm from 27 C).
+CHAINS = {
+    "anchored": ((28.00, 1.30, 31.97, 2.22), 17.4),
+    "r_wc 40": ((40.00, 1.00, 31.39, 2.34), 12.5),
+    "r_wc 25": ((25.00, 0.90, 32.13, 3.12), 12.7),
+}
+
+
+def test_a_chain_s_parallel_terms_are_its_modes_and_sum_to_its_branches():
+    (g_fast, tau_fast), (g_slow, tau_slow) = wd.parallel_of(
+        *CHAINS["anchored"][0])
+    # the chain's source prints its modes at 20.05 and 128.92 s and the
+    # winding over the air at 60.0 C/W
+    assert tau_fast == pytest.approx(20.0, abs=0.1)
+    assert tau_slow == pytest.approx(128.9, abs=0.1)
+    assert g_fast + g_slow == pytest.approx(60.0, abs=0.05)
+    assert g_fast + g_slow == pytest.approx(28.00 + 31.97, rel=1e-12)
+    # the slow term is the winding's, not the can's branch
+    assert g_slow == pytest.approx(52.8, abs=0.05)
+    assert g_fast == pytest.approx(7.2, abs=0.05)
+
+
+def test_the_parallel_terms_step_as_the_chain_does():
+    r_wc, c_w, r_ca, c_c = CHAINS["anchored"][0]
+    terms = wd.parallel_of(r_wc, c_w, r_ca, c_c)
+    t_w = t_c = 0.0                     # the chain itself, a watt in
+    dt = 1e-3
+    for k in range(1, 300_001):
+        flow = (t_w - t_c) / r_wc
+        t_w += dt * (1.0 - flow) / c_w
+        t_c += dt * (flow - t_c / r_ca) / c_c
+        if k in (5_000, 60_000, 300_000):
+            t = k * dt
+            parallel = sum(g * (1 - math.exp(-t / tau)) for g, tau in terms)
+            assert t_w == pytest.approx(parallel, rel=2e-4)
+
+
+def stall_seconds(terms, volts=7.43, r_ohm=4.74, start_c=27.0, limit_c=130.0):
+    """Seconds for the winding to reach limit_c at constant volts, the
+    current volts / R(T_w), copper's line taken at start_c."""
+    gains, taus = [g for g, _ in terms], [tau for _, tau in terms]
+    alpha = 1 / (234.5 + start_c)
+    x = wd.start_state(len(terms))
+    dt, t = 1e-3, 0.0
+    while wd.estimate(x, start_c) < limit_c:
+        i = volts / wd.r_of_t(wd.estimate(x, start_c), r_ohm, start_c, alpha)
+        x, _ = wd.step(x, i * i, start_c, dt, gains, taus, r_ohm, start_c,
+                       alpha)
+        t += dt
+    return t
+
+
+@pytest.mark.parametrize("name", list(CHAINS))
+def test_the_parallel_terms_reproduce_a_chain_s_stall_time(name):
+    row, printed_s = CHAINS[name]
+    assert stall_seconds(wd.parallel_of(*row)) == pytest.approx(
+        printed_s, abs=0.05)
+
+
+def test_a_written_leak_runs_at_the_nearest_octave_of_the_period():
+    # 16 ms periods: 1 s is 62, over 1.5 x 32, so it runs at 64
+    assert wd.leak_shift(0) == 0
+    assert wd.leak_shift(1) == 6
+    assert wd.leak_s(1) == pytest.approx(1.024)
+    assert wd.leak_s(2) == wd.leak_s(3) == pytest.approx(2.048)
+    assert wd.leak_s(20) == pytest.approx(16.384)
+    assert wd.leak_s(115) == wd.leak_s(129) == pytest.approx(131.072)
+    assert wd.leak_s(60_000) == pytest.approx(0.016 * 2 ** 15)
+
+
+def test_a_stored_rise_means_its_gain_back():
+    r_ohm, counts_per_a = 4.0, 1100.0
+    rise = wd.rise_per_count2(25.0, r_ohm, counts_per_a)
+    # 25 C/W x 4 ohm = 100 C per A^2, in centi-C per count squared
+    assert rise == pytest.approx(100 * 100.0 / counts_per_a ** 2, rel=1e-15)
+    assert wd.gain_of_rise(rise * 65536, r_ohm, counts_per_a) == (
+        pytest.approx(25.0, rel=1e-12))
+
+
+def test_the_stored_integers_follow_the_float_estimate():
+    r_ohm, counts_per_a, counts = 4.0, 1100.0, 550
+    fields = (2, 450, 129, 700)         # leak s, rise, leak s, rise
+    gains = [wd.gain_of_rise(fields[1], r_ohm, counts_per_a),
+             wd.gain_of_rise(fields[3], r_ohm, counts_per_a)]
+    taus = [wd.leak_s(fields[0]), wd.leak_s(fields[2])]
+    stored = wd.stored_rise_c(fields, [(600.0, counts)])
+    assert len(stored) == round(600.0 / wd.STORED_PERIOD_S)
+    x = wd.start_state(2)
+    alpha = wd.ALPHA_Q26 / 2 ** 26 * 100    # the stored copper slope, per C
+    for k in range(1, len(stored) + 1):
+        x, _ = wd.step(x, (counts / counts_per_a) ** 2, 25.0,
+                       wd.STORED_PERIOD_S, gains, taus, r_ohm, 25.0, alpha)
+        if k in (63, 188, 625, 3750, 37500):    # 1, 3, 10, 60, 600 s
+            assert stored[k - 1] == pytest.approx(sum(x), abs=0.3)
+    assert stored[-1] > 60.0            # the warm input is in the plateau
+
+
+def test_a_second_leak_of_zero_drops_the_second_node():
+    one = wd.stored_rise_c((115, 1143, 0, 0), [(60.0, 568), (60.0, 0)])
+    two = wd.stored_rise_c((115, 1143, 0, 999), [(60.0, 568), (60.0, 0)])
+    assert (one == two).all()
+    assert one[3749] > one[-1] > 0.0    # it cools once the current stops
+
+
 def write_manifest(pair):
     d = pair / "sittings"
     d.mkdir(parents=True)

@@ -1,6 +1,21 @@
 {
   "capture": "telemetry/mg90-d__dev-v006-2A-D",
-  "notes": "stage 4 winding-temperature of mg90-d on dev-v006-2A-D, no capture of its own: stage 3's sittings, 521 sweeps over four days. One servo, one board. Reads: 20 ms sub-windows of streamed driven segments of the stopped-rotor sweeps through oscnb.winding.gate, R = (V_c - V0) / i_w under oscnb.speed.construct with stage 1's in-drive offset; blocks of 100 ms at read_current_floor_a or more, bridged seats (under 0.9 of R0) out. Floors: same seat = a sub-window's sd about its window's line, median and 10 to 90 %; across seats = pooled sd of the first read of repeated stop, rail and duty chains, median and range over stop-1, rails-7, meter-8. Heat: oscnb.winding.heat, joules at R0, bounds from its named constants. Estimate: oscnb.winding.run from a zero state over every piece; residual ln R - ln R(T_w), seat-referenced (group mean out, weights 0.10 % same seat, 0.70 % across seats); fit sittings 1, 6, 9, held out 2, 3, 5, 10. one_node_*: value the fit sittings, lo/hi over the fit, the swap, all and the unstreamed heat at its bounds, fold_lo/hi over the three fits, stat_factor the fit's se as a factor. two_node_slow_c: tau2 / gain2 over tau2 35 to 263 s on the fit sittings and on all, median and range; the slow gain and tau are not graded. load anchored: each load block's residual less its group's reads under 0.25 A, across seats; speed = residual x R0 i / Ke. Candidates: a_ntc the NTC alone, b_one one node, c_two two nodes.",
+  "notes": "stage 4 winding-temperature of mg90-d on dev-v006-2A-D, no capture of its own: stage 3's sittings, 521 sweeps over four days. One servo, one board. Reads: 20 ms sub-windows of streamed driven segments of the stopped-rotor sweeps through oscnb.winding.gate, R = (V_c - V0) / i_w under oscnb.speed.construct with stage 1's in-drive offset; blocks of 100 ms at read_current_floor_a or more, bridged seats (under 0.9 of R0) out. Floors: same seat = a sub-window's sd about its window's line, median and 10 to 90 %; across seats = pooled sd of the first read of repeated stop, rail and duty chains, median and range over stop-1, rails-7, meter-8. Heat: oscnb.winding.heat, joules at R0, bounds from its named constants. Estimate: oscnb.winding.run from a zero state over every piece; residual ln R - ln R(T_w), seat-referenced (group mean out, weights 0.10 % same seat, 0.70 % across seats); fit sittings 1, 6, 9, held out 2, 3, 5, 10. one_node_*: value the fit sittings, lo/hi over the fit, the swap, all and the unstreamed heat at its bounds, fold_lo/hi over the three fits, stat_factor the fit's se as a factor. two_node_slow_c: tau2 / gain2 over tau2 35 to 263 s on the fit sittings and on all, median and range; the slow gain and tau are not graded. load anchored: each load block's residual less its group's reads under 0.25 A, across seats; speed = residual x R0 i / Ke. Candidates: a_ntc the NTC alone, b_one one node, c_two two nodes. family_* and the slow share of every joined_* key: quoted from earlier work on another MG90 (mg90-a on dev-v006 rev 2A board #1, the firmware repo's notebooks 17 to 21), read from earlier-work.json beside the notebook with its provenance. None of that work's data is loaded and no grade is read against it. family_parallel_*: the earlier two-node chain's rows as parallel terms (oscnb.winding.parallel_of), the anchored row's value, the range over its rows. Candidates: d_low and e_high the fast gain fitted at the leaks a stored set runs (oscnb.winding.leak_s) beside one slow node, the can's rise or both modes; f_one_slow one node on the slow leak, a pair a servo of the family has carried that no notebook prints (the rise is the earlier 43.3 C/W over about 4.95 ohm at the nominal scale, the 115 s leak has no notebook source), 53.8 C/W at the 131.07 s leak on this pair's R0 and counts per A; g_family the earlier model's two modes alone; literal, three_terms and as_fitted_plus_modes run beside them. joined_fields: whole seconds and Q0.16 through oscnb.constants.encode, no rule registered. joined_fields_vs_one_slow_node_c: oscnb.winding.stored_rise_c, estimates; the plateau and the cooling are not graded on this pair.",
+  "inputs": {
+    "stages/1-board/bridge-states/results/dev-v006-2A-D.json": "d5e050edaf991630ba778cb78f44f3073b8f40cb",
+    "stages/1-board/current-scale/results/dev-v006-2A-D.json": "5fbdb93bd77174824fffb47a5b58e6d50e8d66e1",
+    "stages/1-board/sample-timing/results/dev-v006-2A-D.json": "6de39d5aa7818cba119048a5ef59028760a03420",
+    "stages/1-board/terminal-chain/results/dev-v006-2A-D.json": "e1249f71a80bcad5c4c1d64301560f66c0bd8582",
+    "stages/2-motor/rest-resistance/results/mg90-b.json": "7b9af951c5c45e89969364e7261e5ae5807d52da",
+    "stages/2-motor/rest-resistance/results/mg90-c.json": "f03ef9cf100e91219236ddb2218f0b8a7d14ab34",
+    "stages/2-motor/teardown/results/mg90-b.json": "cd593f49f39f26b5a222328e6b99e633c96326d5",
+    "stages/3-servo/inductance/results/mg90-d__dev-v006-2A-D.json": "89124e02f9b3303723bfb0dc0570a9d04948e318",
+    "stages/3-servo/ladder/results/mg90-d__dev-v006-2A-D.json": "02128bc470f487be558053bc7cc8b1af63dab685",
+    "stages/3-servo/load/results/mg90-d__dev-v006-2A-D.json": "7f90adee099ce200694dfd7f957481fe60acdf79",
+    "stages/3-servo/pot-table/results/mg90-d__dev-v006-2A-D.json": "4ba5ac0c3a66672a2182d25c4f0001fcfd6c2292",
+    "stages/3-servo/resistance/results/mg90-d__dev-v006-2A-D.json": "aeac82cbb9299ae6d23e31753d8010797bc7a25d",
+    "stages/4-estimators/winding-temperature/earlier-work.json": "f2acdf18a3ffc89d1b9269d6a720438b7b82c1d7"
+  },
   "reads_n": {
     "value": 4476.0,
     "lo": null,
@@ -677,6 +692,30 @@
       "lo": null,
       "hi": null,
       "unit": "%"
+    },
+    "d_low": {
+      "value": 1.0423855680191787,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "e_high": {
+      "value": 1.0091556559505088,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "f_one_slow": {
+      "value": 1.148003921290034,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
+    },
+    "g_family": {
+      "value": 1.0997754542592382,
+      "lo": null,
+      "hi": null,
+      "unit": "%"
     }
   },
   "heldout_as_used_pct": {
@@ -707,30 +746,50 @@
       "a_ntc": 1.007616088038776,
       "b_one": 0.5822563143261299,
       "c_two": 0.1398454226667507,
+      "d_low": 0.4267524540430122,
+      "e_high": 0.28419444159913515,
+      "f_one_slow": 0.692587597665084,
+      "g_family": 0.5569349681528187,
       "n": 2
     },
     "load across seats": {
       "a_ntc": 1.5168133611997632,
       "b_one": 1.2499958756421483,
       "c_two": 1.1882119762473171,
+      "d_low": 1.234658126137621,
+      "e_high": 1.1956885067902596,
+      "f_one_slow": 1.3461441667824439,
+      "g_family": 1.2897537318737105,
       "n": 394
     },
     "load same seat": {
       "a_ntc": 0.30290474923220645,
       "b_one": 0.30360577674436634,
       "c_two": 0.20438550558004628,
+      "d_low": 0.31945525472997627,
+      "e_high": 0.27983325407855064,
+      "f_one_slow": 0.28815303792784736,
+      "g_family": 0.2837314700356215,
       "n": 16
     },
     "locked-4": {
       "a_ntc": 0.6043804433370887,
       "b_one": 0.15690796997387887,
       "c_two": 0.1567721422159734,
+      "d_low": 0.1515761756586752,
+      "e_high": 0.1515103545415085,
+      "f_one_slow": 0.5810477132261188,
+      "g_family": 0.5608029557478836,
       "n": 36
     },
     "rails-7": {
       "a_ntc": 0.21506856311906816,
       "b_one": 0.0811764976452745,
       "c_two": 0.0799213075020603,
+      "d_low": 0.08059159814422942,
+      "e_high": 0.08030539524157021,
+      "f_one_slow": 0.20065968703549536,
+      "g_family": 0.1888039353169689,
       "n": 108
     }
   },
@@ -740,30 +799,50 @@
         "a_ntc": -0.8477925983155844,
         "b_one": -0.16543633889930828,
         "c_two": 0.12075883076651708,
+        "d_low": -0.08873827986170066,
+        "e_high": -0.0684933569929098,
+        "f_one_slow": -0.7334714158288698,
+        "g_family": -0.6938580238193134,
         "n": 258
       },
       "[0.25, 0.35)": {
         "a_ntc": 0.7161856922447413,
         "b_one": 0.23141461510033284,
         "c_two": -0.05166238965295018,
+        "d_low": 0.17163930615033227,
+        "e_high": 0.14125563523265527,
+        "f_one_slow": 0.6061751363859968,
+        "g_family": 0.5730119515109066,
         "n": 174
       },
       "[0.35, 0.45)": {
         "a_ntc": 0.7875069571969986,
         "b_one": 0.11379967488084229,
         "c_two": -0.15470696869880482,
+        "d_low": 0.029060084956446686,
+        "e_high": 0.023504146899160305,
+        "f_one_slow": 0.6992329472944787,
+        "g_family": 0.6689621066946412,
         "n": 73
       },
       "[0.45, 0.6)": {
         "a_ntc": 2.441744802630326,
         "b_one": -0.39272959051585704,
         "c_two": -0.7248609215423504,
+        "d_low": -0.6061432845106404,
+        "e_high": -0.57486647666333,
+        "f_one_slow": 2.1811430933458653,
+        "g_family": 2.031803786251753,
         "n": 15
       },
       "[0.6, 0.8)": {
         "a_ntc": -1.0485439677015367e-16,
         "b_one": -9.868649107779169e-17,
         "c_two": -2.929755203871941e-17,
+        "d_low": -1.0485439677015367e-16,
+        "e_high": -7.709882115452476e-18,
+        "f_one_slow": -1.634495008475925e-16,
+        "g_family": -1.5419764230904951e-16,
         "n": 36
       }
     },
@@ -772,30 +851,50 @@
         "a_ntc": 1.3902258523495243,
         "b_one": 0.9924357128730374,
         "c_two": 1.0370479558763837,
+        "d_low": 0.9614296690920507,
+        "e_high": 0.9414076617390349,
+        "f_one_slow": 1.231135438772669,
+        "g_family": 1.1903631884847197,
         "n": 258
       },
       "[0.25, 0.35)": {
         "a_ntc": 1.0647166170942342,
         "b_one": 1.369168510482506,
         "c_two": 1.2062291629051938,
+        "d_low": 1.3744052448391026,
+        "e_high": 1.3220718631704986,
+        "f_one_slow": 0.9456308171998069,
+        "g_family": 0.8948680640628551,
         "n": 174
       },
       "[0.35, 0.45)": {
         "a_ntc": 1.288023144911347,
         "b_one": 0.4762524974004144,
         "c_two": 0.3853697991315687,
+        "d_low": 0.4308653092174989,
+        "e_high": 0.41164843736379575,
+        "f_one_slow": 1.1464775844875787,
+        "g_family": 1.0951121130454746,
         "n": 73
       },
       "[0.45, 0.6)": {
         "a_ntc": 2.5557471639441776,
         "b_one": 1.2008884329259968,
         "c_two": 1.038755295243478,
+        "d_low": 1.227101884679038,
+        "e_high": 1.161865381004133,
+        "f_one_slow": 2.280502911664852,
+        "g_family": 2.140132539769032,
         "n": 15
       },
       "[0.6, 0.8)": {
         "a_ntc": 0.6043804433370887,
         "b_one": 0.15690796997387887,
         "c_two": 0.1567721422159734,
+        "d_low": 0.1515761756586752,
+        "e_high": 0.1515103545415085,
+        "f_one_slow": 0.5810477132261188,
+        "g_family": 0.5608029557478836,
         "n": 36
       }
     }
@@ -805,30 +904,50 @@
       "a_ntc": 1.380283166766982,
       "b_one": 0.34591038312380795,
       "c_two": 0.30450586220882875,
+      "d_low": 0.28515285156539855,
+      "e_high": 0.27669541237986967,
+      "f_one_slow": 1.226471348690253,
+      "g_family": 1.1631013313056582,
       "n": 49
     },
     "[0.4, 1.2)": {
       "a_ntc": 1.0975705252599852,
       "b_one": 0.865747862344091,
       "c_two": 1.1049917882695777,
+      "d_low": 0.8829389231172884,
+      "e_high": 0.8979672338863819,
+      "f_one_slow": 0.9806159453050688,
+      "g_family": 0.9567173243021092,
       "n": 118
     },
     "[1.2, 4.5)": {
       "a_ntc": 1.348367023281137,
       "b_one": 1.174273621789038,
       "c_two": 1.0381842619965453,
+      "d_low": 1.1552605366750746,
+      "e_high": 1.1081282128595864,
+      "f_one_slow": 1.196968350041009,
+      "g_family": 1.1439053369395056,
       "n": 380
     },
     "[4.5, 9.0)": {
       "a_ntc": 0.30290474923220645,
       "b_one": 0.30360577674436634,
       "c_two": 0.2043855055800462,
+      "d_low": 0.31945525472997616,
+      "e_high": 0.2798332540785507,
+      "f_one_slow": 0.2881530379278473,
+      "g_family": 0.28373147003562144,
       "n": 8
     },
     "[9.0, 60.0)": {
       "a_ntc": 1.007616088038776,
       "b_one": 0.5822563143261299,
       "c_two": 0.1398454226667507,
+      "d_low": 0.4267524540430122,
+      "e_high": 0.2841944415991352,
+      "f_one_slow": 0.6925875976650842,
+      "g_family": 0.5569349681528187,
       "n": 1
     }
   },
@@ -837,18 +956,30 @@
       "a_ntc": 1.8656969084593737,
       "b_one": 0.4729611897273324,
       "c_two": 0.6033033723182528,
+      "d_low": 0.37342295208693843,
+      "e_high": 0.3628032031405378,
+      "f_one_slow": 1.6198397321755298,
+      "g_family": 1.533974857709255,
       "n": 36
     },
     "[30.0, 70.0)": {
       "a_ntc": 1.236823317133034,
       "b_one": 1.0888347489970247,
       "c_two": 1.0276298013964815,
+      "d_low": 1.078354365324843,
+      "e_high": 1.0440671327848152,
+      "f_one_slow": 1.1042582272496473,
+      "g_family": 1.0599786830051163,
       "n": 515
     },
     "[600.0, 1000000000000.0)": {
       "a_ntc": 1.7324634421923004,
       "b_one": 0.3885652815500679,
       "c_two": 0.5648301426490268,
+      "d_low": 0.22128079696294783,
+      "e_high": 0.14136706421019565,
+      "f_one_slow": 1.4363852433563455,
+      "g_family": 1.3523164006859811,
       "n": 5
     }
   },
@@ -1093,8 +1224,8 @@
   "stage56_table": [
     {
       "quantity": "form",
-      "value": "T_w = T_ntc + x; x += (G P - x)(1 - exp(-dt / tau)); P = i_w^2 R(T_w); R(T) = R0 (1 + alpha (T - T0))",
-      "note": "one node; oscnb.winding step, run, estimate"
+      "value": "T_w = T_ntc + x_1 + x_2; x_k += (G_k P - x_k)(1 - exp(-dt / tau_k)); P = i_w^2 R(T_w); R(T) = R0 (1 + alpha (T - T0))",
+      "note": "two nodes in parallel on one input; oscnb.winding step, run, estimate"
     },
     {
       "quantity": "state",
@@ -1102,9 +1233,29 @@
       "note": "zero after a power cycle"
     },
     {
-      "quantity": "constants",
+      "quantity": "fast node, alone",
       "value": "G 23.2 C/W (14.3 to 23.9), tau 2.38 s (1.20 to 3.23), C 0.102 J/C (0.063 to 0.135)",
-      "note": "fit sittings 1, 6, 9"
+      "note": "measured on this pair, fit sittings 1, 6, 9"
+    },
+    {
+      "quantity": "fast node, beside a slow node",
+      "value": "G 21.7 C/W (16.4 to 21.7 over the folds) in the low reading, 20.4 C/W (15.6 to 20.4 over the folds) in the high reading, tau 2.048 s",
+      "note": "measured on this pair, the slow node held"
+    },
+    {
+      "quantity": "slow node",
+      "value": "tau 128.92 s, run at 131.07 s; G 32 C/W (low reading) or 60.0 C/W (high reading)",
+      "note": "earlier work, another MG90; not measured on this pair"
+    },
+    {
+      "quantity": "plateau",
+      "value": "53.7 C/W (low reading) or 80.4 C/W (high reading), 48 to 95 C/W over both brackets",
+      "note": "not graded on this pair"
+    },
+    {
+      "quantity": "as the constants rule would store them",
+      "value": "thermal_tau_s / th_rise_q016 / thermal_tau2_s / th_rise2_q016: low reading 2 / 461 / 129 / 680, high reading 2 / 434 / 129 / 1274",
+      "note": "the leaks run at 2.048 and 131.07 s"
     },
     {
       "quantity": "reference",
@@ -1118,7 +1269,7 @@
     },
     {
       "quantity": "error at one seat",
-      "value": "0.08 to 0.16 % of R rms (0.2 to 0.4 C), held out",
+      "value": "0.08 to 0.16 % of R rms (0.2 to 0.4 C), held out, every set with the fast node",
       "note": "drives up to 3 s from a rest of about 45 s"
     },
     {
@@ -1129,15 +1280,15 @@
     {
       "quantity": "bias under load",
       "value": "within 0.48 % of R, against +2.00 to +3.86 % for the NTC alone",
-      "note": "0.29 to 0.48 A after 3 s"
+      "note": "0.29 to 0.48 A after 3 s, one node"
     },
     {
       "quantity": "speed",
       "value": "1.84 to 3.19 rev/s rms at 0.3 to 0.5 A, against 3.61 to 10.93 for the NTC alone",
-      "note": "held out, across seats"
+      "note": "held out, across seats, one node"
     },
     {
-      "quantity": "second node, as a ceiling",
+      "quantity": "this pair's own slower term, as a ceiling",
       "value": "C2 0.51 J/C, tau2 at least 35 s",
       "note": "its gain and tau not graded"
     }
@@ -1187,6 +1338,1962 @@
       "gap": "between the windows of a hold",
       "why": "holds are unstreamed between their windows",
       "capture": "stream the hold at a low rate, or holds of 1 and 2 s"
+    },
+    {
+      "gap": "the total, winding to NTC",
+      "why": "48 to 95 C/W by the family's two readings (earlier work, another MG90), not graded on this pair",
+      "capture": "the lock hold of the first row at 0.25 A first, where the readings predict 14.7 against 22.6 C over the NTC at 10 min, and 0.4 A only with a stop on the capture's own thermometer"
+    }
+  ],
+  "family_slow_tau_s": {
+    "value": 128.92,
+    "lo": 121.0,
+    "hi": 135.0,
+    "unit": "s",
+    "status": "pinned",
+    "source": "earlier work, another MG90: notebook 18, section 4, fit table (cell 23 output); range cell 24"
+  },
+  "family_can_to_air_c_per_w": {
+    "value": 31.97,
+    "lo": 30.89,
+    "hi": 32.38,
+    "unit": "C/W",
+    "status": "pinned",
+    "source": "earlier work, another MG90: notebook 18, cells 0, 24, 32; bracket notebook 19, section 6 (cell 26)"
+  },
+  "family_winding_to_can_c_per_w": {
+    "value": 28.0,
+    "lo": 28.0,
+    "hi": 45.0,
+    "unit": "C/W",
+    "status": "bracketed",
+    "source": "earlier work, another MG90: notebook 18, section 4 (cell 24)"
+  },
+  "family_winding_to_can_direct_c_per_w": {
+    "value": null,
+    "lo": 13.0,
+    "hi": 21.0,
+    "unit": "C/W",
+    "status": "read directly",
+    "source": "earlier work, another MG90: notebook 21, sections 3 and 6 (cells 11, 12, 23 outputs)"
+  },
+  "family_winding_over_air_c_per_w": {
+    "value": 60.0,
+    "lo": 57.1,
+    "hi": 71.4,
+    "unit": "C/W",
+    "status": "bracketed",
+    "source": "earlier work, another MG90: notebook 18, section 4, what the model predicts (cell 28)"
+  },
+  "family_winding_over_room_direct_c_per_w": {
+    "value": 43.3,
+    "lo": 40.4,
+    "hi": 45.6,
+    "unit": "C/W",
+    "status": "read directly",
+    "source": "earlier work, another MG90: notebook 21, sections 3 and 6 (cells 11, 12, 23 outputs); bracket notebook 21, sections 3 and 7 (cells 13, 27; cell 23 output)"
+  },
+  "family_parallel_fast_gain_c_per_w": {
+    "value": 7.214169321053796,
+    "lo": 5.6267668114611995,
+    "hi": 13.120274947066607,
+    "unit": "C/W",
+    "source": "formed from the quoted rows by parallel_of; earlier work, another MG90"
+  },
+  "family_parallel_fast_tau_s": {
+    "value": 20.04356436400082,
+    "lo": 16.71395855360206,
+    "hi": 24.392759592342383,
+    "unit": "s",
+    "source": "formed from the quoted rows by parallel_of; earlier work, another MG90"
+  },
+  "family_parallel_slow_gain_c_per_w": {
+    "value": 52.755830678946204,
+    "lo": 44.00972505293338,
+    "hi": 60.70323318853876,
+    "unit": "C/W",
+    "source": "formed from the quoted rows by parallel_of; earlier work, another MG90"
+  },
+  "family_parallel_slow_tau_s": {
+    "value": 128.89083563599917,
+    "lo": 120.44984040765758,
+    "hi": 134.94864144639797,
+    "unit": "s",
+    "source": "formed from the quoted rows by parallel_of; earlier work, another MG90"
+  },
+  "joined_fast_by_slow_held": [
+    {
+      "held": "nothing",
+      "set": "fit",
+      "gain": 23.238778454241114,
+      "tau_s": 2.3752191114749404,
+      "c_j_per_c": 0.10220929280564052,
+      "gain_x/": 1.0115935536661866,
+      "tau_x/": 1.0438603338228598,
+      "chi2": 735.8218943402555,
+      "dof": 335,
+      "rise_3s": 16.66702293812845
+    },
+    {
+      "held": "nothing",
+      "set": "swap",
+      "gain": 14.272707625718965,
+      "tau_s": 1.3995549121769497,
+      "c_j_per_c": 0.09805812245848827,
+      "gain_x/": 1.0500821247524215,
+      "tau_x/": 1.0801934941991627,
+      "chi2": 1474.4688324811311,
+      "dof": 505,
+      "rise_3s": 12.599386182065563
+    },
+    {
+      "held": "nothing",
+      "set": "all",
+      "gain": 23.106726894084655,
+      "tau_s": 2.6985483361714335,
+      "c_j_per_c": 0.11678626525257736,
+      "gain_x/": 1.0149976543242296,
+      "tau_x/": 1.0391579298768372,
+      "chi2": 2314.2374062869294,
+      "dof": 842,
+      "rise_3s": 15.504699624839521
+    },
+    {
+      "held": "32 C/W at 129 s",
+      "set": "fit",
+      "gain": 21.695752559628197,
+      "tau_s": 2.259580796313337,
+      "c_j_per_c": 0.10414853276479569,
+      "gain_x/": 1.0117288263437967,
+      "tau_x/": 1.0431984007353545,
+      "chi2": 711.823803070705,
+      "dof": 335,
+      "rise_3s": 15.944391059985469
+    },
+    {
+      "held": "32 C/W at 129 s",
+      "set": "swap",
+      "gain": 12.99365045573872,
+      "tau_s": 1.2812152307440683,
+      "c_j_per_c": 0.09860317815292717,
+      "gain_x/": 1.0468708813229546,
+      "tau_x/": 1.0734637744312803,
+      "chi2": 1299.6171431430598,
+      "dof": 505,
+      "rise_3s": 11.74391254858066
+    },
+    {
+      "held": "32 C/W at 129 s",
+      "set": "all",
+      "gain": 21.321394777176664,
+      "tau_s": 2.5303839375965955,
+      "c_j_per_c": 0.1186781617263251,
+      "gain_x/": 1.0143215523331164,
+      "tau_x/": 1.0378472153353713,
+      "chi2": 2158.2273008796597,
+      "dof": 842,
+      "rise_3s": 14.806310245796944
+    },
+    {
+      "held": "modes, anchored fit",
+      "set": "fit",
+      "gain": 18.797284794583923,
+      "tau_s": 2.0191614105591613,
+      "c_j_per_c": 0.10741771658111729,
+      "gain_x/": 1.01331873693036,
+      "tau_x/": 1.0424619234137498,
+      "chi2": 697.6741020769022,
+      "dof": 335,
+      "rise_3s": 14.542912993811825
+    },
+    {
+      "held": "modes, anchored fit",
+      "set": "swap",
+      "gain": 11.228631085359243,
+      "tau_s": 1.1471570255955423,
+      "c_j_per_c": 0.1021635689047879,
+      "gain_x/": 1.0460661001600713,
+      "tau_x/": 1.069194233575291,
+      "chi2": 1151.0367770336286,
+      "dof": 505,
+      "rise_3s": 10.407189016546187
+    },
+    {
+      "held": "modes, anchored fit",
+      "set": "all",
+      "gain": 18.09896575193449,
+      "tau_s": 2.207611449236891,
+      "c_j_per_c": 0.12197445309829003,
+      "gain_x/": 1.0142234085893878,
+      "tau_x/": 1.0366310199822408,
+      "chi2": 2039.5394358560584,
+      "dof": 842,
+      "rise_3s": 13.44872028686866
+    },
+    {
+      "held": "modes, R_wc 40 held (bursts)",
+      "set": "fit",
+      "gain": 17.54929459283768,
+      "tau_s": 1.906222863646162,
+      "c_j_per_c": 0.1086210533171026,
+      "gain_x/": 1.0146287764286752,
+      "tau_x/": 1.041983250492087,
+      "chi2": 693.2459962511316,
+      "dof": 335,
+      "rise_3s": 13.912070206718344
+    },
+    {
+      "held": "modes, R_wc 40 held (bursts)",
+      "set": "swap",
+      "gain": 10.550398296187462,
+      "tau_s": 1.1006577904750174,
+      "c_j_per_c": 0.10432381409455944,
+      "gain_x/": 1.0463608308641494,
+      "tau_x/": 1.0683071734385161,
+      "chi2": 1098.870605021616,
+      "dof": 505,
+      "rise_3s": 9.859304140230595
+    },
+    {
+      "held": "modes, R_wc 40 held (bursts)",
+      "set": "all",
+      "gain": 16.741582774383243,
+      "tau_s": 2.059097994376091,
+      "c_j_per_c": 0.12299303011700743,
+      "gain_x/": 1.0145591093485264,
+      "tau_x/": 1.03589648290615,
+      "chi2": 1991.6141218854184,
+      "dof": 842,
+      "rise_3s": 12.841698100200906
+    },
+    {
+      "held": "modes, R_wc 25 held (hold)",
+      "set": "fit",
+      "gain": 17.172888198426442,
+      "tau_s": 1.8760987806400669,
+      "c_j_per_c": 0.10924771412720048,
+      "gain_x/": 1.0152174587652403,
+      "tau_x/": 1.0423447598491633,
+      "chi2": 704.1497598456028,
+      "dof": 335,
+      "rise_3s": 13.702491361407763
+    },
+    {
+      "held": "modes, R_wc 25 held (hold)",
+      "set": "swap",
+      "gain": 10.377833999226388,
+      "tau_s": 1.0883478098748782,
+      "c_j_per_c": 0.10487234715413725,
+      "gain_x/": 1.0478708515137682,
+      "tau_x/": 1.07017848893344,
+      "chi2": 1151.3096781421689,
+      "dof": 505,
+      "rise_3s": 9.718680979730696
+    },
+    {
+      "held": "modes, R_wc 25 held (hold)",
+      "set": "all",
+      "gain": 16.35880046222437,
+      "tau_s": 2.0240919207115557,
+      "c_j_per_c": 0.12373107217644563,
+      "gain_x/": 1.0150023704024478,
+      "tau_x/": 1.0364935450396118,
+      "chi2": 2049.386233998078,
+      "dof": 842,
+      "rise_3s": 12.642904287164868
+    },
+    {
+      "held": "one node on the slow leak",
+      "set": "fit",
+      "gain": 20.71464482194689,
+      "tau_s": 2.184660516818145,
+      "c_j_per_c": 0.10546454141967843,
+      "gain_x/": 1.0120104106756398,
+      "tau_x/": 1.0428297019313555,
+      "chi2": 698.4206300124721,
+      "dof": 335,
+      "rise_3s": 15.467784508676331
+    },
+    {
+      "held": "one node on the slow leak",
+      "set": "swap",
+      "gain": 12.287358204555872,
+      "tau_s": 1.226474146436437,
+      "c_j_per_c": 0.09981593488352024,
+      "gain_x/": 1.0456623024886462,
+      "tau_x/": 1.0704926371494878,
+      "chi2": 1203.213439751397,
+      "dof": 505,
+      "rise_3s": 11.222826619153727
+    },
+    {
+      "held": "one node on the slow leak",
+      "set": "all",
+      "gain": 20.21367857105023,
+      "tau_s": 2.4302513861866193,
+      "c_j_per_c": 0.12022806129247518,
+      "gain_x/": 1.0140801509159545,
+      "tau_x/": 1.037215249142307,
+      "chi2": 2072.0948207690967,
+      "dof": 842,
+      "rise_3s": 14.331546253623083
+    }
+  ],
+  "joined_low_fast_gain_c_per_w": {
+    "value": 21.69980008875541,
+    "lo": 16.4372029750122,
+    "hi": 21.69980008875541,
+    "unit": "C/W",
+    "stat_factor": 1.0115902571784516,
+    "tau_s": 2.048,
+    "slow_gain_c_per_w": 32.0,
+    "slow_tau_s": 131.072
+  },
+  "joined_high_fast_gain_c_per_w": {
+    "value": 20.44571009950305,
+    "lo": 15.587687221699019,
+    "hi": 20.44571009950305,
+    "unit": "C/W",
+    "stat_factor": 1.0121030175675507,
+    "tau_s": 2.048,
+    "slow_gain_c_per_w": 59.97,
+    "slow_tau_s": 131.072
+  },
+  "joined_low_total_c_per_w": {
+    "value": 53.69980008875541,
+    "lo": null,
+    "hi": null,
+    "unit": "C/W"
+  },
+  "joined_high_total_c_per_w": {
+    "value": 80.41571009950304,
+    "lo": null,
+    "hi": null,
+    "unit": "C/W"
+  },
+  "joined_total_c_per_w": {
+    "value": null,
+    "lo": 48.34023316691037,
+    "hi": 95.25184369046072,
+    "unit": "C/W",
+    "low_reading": [
+      48.34023316691037,
+      69.45184369046072
+    ],
+    "high_reading": [
+      68.03295028131117,
+      95.25184369046072
+    ]
+  },
+  "joined_chi2": {
+    "a_ntc": {
+      "fit": 17396.711945661595,
+      "held_out": 4014.3700698455414,
+      "all": 21411.082015507138
+    },
+    "b_one": {
+      "fit": 735.8218943402555,
+      "held_out": 1631.4564280879688,
+      "all": 2367.278322428224
+    },
+    "f_one_slow": {
+      "fit": 14042.042079752297,
+      "held_out": 3336.1403810387624,
+      "all": 17378.18246079106
+    },
+    "g_family": {
+      "fit": 11658.147874328562,
+      "held_out": 3045.589029325789,
+      "all": 14703.736903654351
+    },
+    "literal": {
+      "fit": 784.3710723728084,
+      "held_out": 1566.9175352761604,
+      "all": 2351.288607648969
+    },
+    "d_low": {
+      "fit": 725.3083272120284,
+      "held_out": 1578.2899745553264,
+      "all": 2303.5983017673543
+    },
+    "e_high": {
+      "fit": 698.8597442907806,
+      "held_out": 1443.3042577156054,
+      "all": 2142.1640020063865
+    },
+    "three_terms": {
+      "fit": 697.6741020769022,
+      "held_out": 1388.8790000457523,
+      "all": 2086.5531021226543
+    },
+    "c_two": {
+      "fit": 658.9380802009846,
+      "held_out": 1363.4527510602582,
+      "all": 2022.3908312612427
+    },
+    "as_fitted_plus_modes": {
+      "fit": 1344.7677704431803,
+      "held_out": 1653.625278805817,
+      "all": 2998.3930492489976
+    }
+  },
+  "joined_plateau_graded": false,
+  "joined_slow_terms_measured_on_pair": false,
+  "cooling_graded": false,
+  "heldout_mean_pct_by_drive_s": {
+    "held_out": {
+      "a_ntc": {
+        "[0.0, 0.4)": {
+          "mean": -0.6120145659360764,
+          "se": 0.2574807198651802,
+          "seats": 17,
+          "blocks": 49
+        },
+        "[0.4, 1.2)": {
+          "mean": -0.22124960964038545,
+          "se": 0.1380498857980625,
+          "seats": 28,
+          "blocks": 118
+        },
+        "[1.2, 4.5)": {
+          "mean": 0.1493422119617022,
+          "se": 0.04532424581112101,
+          "seats": 24,
+          "blocks": 380
+        },
+        "[4.5, 9.0)": {
+          "mean": -0.00902451850352122,
+          "se": 0.11443641102202035,
+          "seats": 8,
+          "blocks": 8
+        },
+        "[9.0, 60.0)": {
+          "mean": 1.007616088038776,
+          "se": null,
+          "seats": 1,
+          "blocks": 1
+        }
+      },
+      "f_one_slow": {
+        "[0.0, 0.4)": {
+          "mean": -0.5190046022489145,
+          "se": 0.22360310091742813,
+          "seats": 17,
+          "blocks": 49
+        },
+        "[0.4, 1.2)": {
+          "mean": -0.15734106337294898,
+          "se": 0.11440329159478188,
+          "seats": 28,
+          "blocks": 118
+        },
+        "[1.2, 4.5)": {
+          "mean": 0.1500480033549965,
+          "se": 0.03992137342276162,
+          "seats": 24,
+          "blocks": 380
+        },
+        "[4.5, 9.0)": {
+          "mean": -0.06418350327536163,
+          "se": 0.10617549567602622,
+          "seats": 8,
+          "blocks": 8
+        },
+        "[9.0, 60.0)": {
+          "mean": 0.6925875976650842,
+          "se": null,
+          "seats": 1,
+          "blocks": 1
+        }
+      },
+      "b_one": {
+        "[0.0, 0.4)": {
+          "mean": -0.11356506192501568,
+          "se": 0.06775229317172698,
+          "seats": 17,
+          "blocks": 49
+        },
+        "[0.4, 1.2)": {
+          "mean": 0.06392226555584579,
+          "se": 0.08923827627160352,
+          "seats": 28,
+          "blocks": 118
+        },
+        "[1.2, 4.5)": {
+          "mean": -0.055170118007999154,
+          "se": 0.037636069848077575,
+          "seats": 24,
+          "blocks": 380
+        },
+        "[4.5, 9.0)": {
+          "mean": 0.13159772191022662,
+          "se": 0.10341214854067379,
+          "seats": 8,
+          "blocks": 8
+        },
+        "[9.0, 60.0)": {
+          "mean": 0.5822563143261299,
+          "se": null,
+          "seats": 1,
+          "blocks": 1
+        }
+      },
+      "d_low": {
+        "[0.0, 0.4)": {
+          "mean": -0.05892048989982013,
+          "se": 0.05792599453904996,
+          "seats": 17,
+          "blocks": 49
+        },
+        "[0.4, 1.2)": {
+          "mean": 0.10012705555113185,
+          "se": 0.0916307765882412,
+          "seats": 28,
+          "blocks": 118
+        },
+        "[1.2, 4.5)": {
+          "mean": -0.06408039446490743,
+          "se": 0.03891060059812888,
+          "seats": 24,
+          "blocks": 380
+        },
+        "[4.5, 9.0)": {
+          "mean": 0.15063377225312297,
+          "se": 0.10647677575843759,
+          "seats": 8,
+          "blocks": 8
+        },
+        "[9.0, 60.0)": {
+          "mean": 0.4267524540430122,
+          "se": null,
+          "seats": 1,
+          "blocks": 1
+        }
+      },
+      "e_high": {
+        "[0.0, 0.4)": {
+          "mean": -0.038648773962016526,
+          "se": 0.05656944968872817,
+          "seats": 17,
+          "blocks": 49
+        },
+        "[0.4, 1.2)": {
+          "mean": 0.11750695685274463,
+          "se": 0.09404522050676241,
+          "seats": 28,
+          "blocks": 118
+        },
+        "[1.2, 4.5)": {
+          "mean": -0.05107370474258982,
+          "se": 0.03521089572974876,
+          "seats": 24,
+          "blocks": 380
+        },
+        "[4.5, 9.0)": {
+          "mean": 0.1099887040631095,
+          "se": 0.09725455190721219,
+          "seats": 8,
+          "blocks": 8
+        },
+        "[9.0, 60.0)": {
+          "mean": 0.2841944415991352,
+          "se": null,
+          "seats": 1,
+          "blocks": 1
+        }
+      }
+    },
+    "fit": {
+      "a_ntc": {
+        "[0.0, 0.4)": {
+          "mean": -0.6004175993318625,
+          "se": 0.11416600750145782,
+          "seats": 23,
+          "blocks": 26
+        },
+        "[0.4, 1.2)": {
+          "mean": -0.41716112688866147,
+          "se": 0.0684639783637167,
+          "seats": 59,
+          "blocks": 166
+        },
+        "[1.2, 4.5)": {
+          "mean": 0.5022499664744787,
+          "se": 0.10372349668812872,
+          "seats": 42,
+          "blocks": 206
+        },
+        "[4.5, 9.0)": {
+          "mean": 0.5676163460470307,
+          "se": 0.174672663429255,
+          "seats": 6,
+          "blocks": 6
+        }
+      },
+      "f_one_slow": {
+        "[0.0, 0.4)": {
+          "mean": -0.5308497164076503,
+          "se": 0.10639367060531373,
+          "seats": 23,
+          "blocks": 26
+        },
+        "[0.4, 1.2)": {
+          "mean": -0.3694780304535749,
+          "se": 0.06201394565466743,
+          "seats": 59,
+          "blocks": 166
+        },
+        "[1.2, 4.5)": {
+          "mean": 0.4522535012949631,
+          "se": 0.09194635534009789,
+          "seats": 42,
+          "blocks": 206
+        },
+        "[4.5, 9.0)": {
+          "mean": 0.45039007507033046,
+          "se": 0.14585900216042436,
+          "seats": 6,
+          "blocks": 6
+        }
+      },
+      "b_one": {
+        "[0.0, 0.4)": {
+          "mean": 0.09032816620140584,
+          "se": 0.03516999651650794,
+          "seats": 23,
+          "blocks": 26
+        },
+        "[0.4, 1.2)": {
+          "mean": 0.004267179122523486,
+          "se": 0.01307798886467547,
+          "seats": 59,
+          "blocks": 166
+        },
+        "[1.2, 4.5)": {
+          "mean": -0.010759024013844412,
+          "se": 0.022825349354571516,
+          "seats": 42,
+          "blocks": 206
+        },
+        "[4.5, 9.0)": {
+          "mean": -0.038237457660283386,
+          "se": 0.053003866216689885,
+          "seats": 6,
+          "blocks": 6
+        }
+      },
+      "d_low": {
+        "[0.0, 0.4)": {
+          "mean": 0.0860511363281543,
+          "se": 0.03502394499201777,
+          "seats": 23,
+          "blocks": 26
+        },
+        "[0.4, 1.2)": {
+          "mean": -0.004149960731880375,
+          "se": 0.013455875953988667,
+          "seats": 59,
+          "blocks": 166
+        },
+        "[1.2, 4.5)": {
+          "mean": -0.0032312957493078635,
+          "se": 0.02325763086896287,
+          "seats": 42,
+          "blocks": 206
+        },
+        "[4.5, 9.0)": {
+          "mean": -0.01511320817892963,
+          "se": 0.05508375048160565,
+          "seats": 6,
+          "blocks": 6
+        }
+      },
+      "e_high": {
+        "[0.0, 0.4)": {
+          "mean": 0.08476681672385786,
+          "se": 0.03501714465014446,
+          "seats": 23,
+          "blocks": 26
+        },
+        "[0.4, 1.2)": {
+          "mean": -0.001708512357081901,
+          "se": 0.013222556112138071,
+          "seats": 59,
+          "blocks": 166
+        },
+        "[1.2, 4.5)": {
+          "mean": -0.001511981251486178,
+          "se": 0.02298446865826584,
+          "seats": 42,
+          "blocks": 206
+        },
+        "[4.5, 9.0)": {
+          "mean": -0.04676345766237342,
+          "se": 0.051888087854151305,
+          "seats": 6,
+          "blocks": 6
+        }
+      }
+    }
+  },
+  "pair_rise_pct_by_candidate": {
+    "meter-8 low": {
+      "read": 0.5480849608275933,
+      "read_se": 0.05377620738959541,
+      "n": 18,
+      "dt_s": 3.0915001100964017,
+      "p_w": 0.2322540089774797,
+      "one_event": false,
+      "b_one": 0.6657389426496925,
+      "f_one_slow": 0.1009821819068551,
+      "g_family": 0.18278668994565392,
+      "literal": 0.7270913086542312,
+      "as_fitted_plus_modes": 0.8505549069596601,
+      "d_low": 0.6125306707358052,
+      "e_high": 0.6324586229183268,
+      "three_terms": 0.6539581452920625,
+      "c_two": 0.6569116724980222
+    },
+    "meter-8 high": {
+      "read": 2.490918514209345,
+      "read_se": 0.04658463996490045,
+      "n": 16,
+      "dt_s": 3.0939487367868423,
+      "p_w": 0.5465801887605751,
+      "one_event": false,
+      "b_one": 2.4361091825411405,
+      "f_one_slow": 0.24208291790708547,
+      "g_family": 0.43968633376638144,
+      "literal": 2.5873649421062765,
+      "as_fitted_plus_modes": 2.89185562549637,
+      "d_low": 2.436629505221313,
+      "e_high": 2.4302308336314358,
+      "three_terms": 2.4264984680172534,
+      "c_two": 2.4088015113341616
+    },
+    "held-5": {
+      "read": 2.1445264569783795,
+      "read_se": null,
+      "n": 1,
+      "dt_s": 36.17174983024597,
+      "p_w": 0.1259130844036069,
+      "one_event": true,
+      "b_one": 0.9619395976555589,
+      "f_one_slow": 0.7394000114520516,
+      "g_family": 1.013082391063902,
+      "literal": 1.3505438273937242,
+      "as_fitted_plus_modes": 1.8859787088421731,
+      "d_low": 1.27642781245918,
+      "e_high": 1.5655951729385942,
+      "three_terms": 1.707419744781058,
+      "c_two": 2.4306152420597416
+    },
+    "load from-above": {
+      "read": 0.40516074770642785,
+      "read_se": 0.2444834898473159,
+      "n": 15,
+      "dt_s": 3.4325555324554444,
+      "p_w": 0.3387140573170923,
+      "one_event": false,
+      "b_one": 0.3913407185704802,
+      "f_one_slow": 0.15824506609219746,
+      "g_family": 0.2765300688463057,
+      "literal": 0.49049017857728155,
+      "as_fitted_plus_modes": 0.6789825913812386,
+      "d_low": 0.3525540575282182,
+      "e_high": 0.4212389212086043,
+      "three_terms": 0.49424882966214206,
+      "c_two": 0.5745132986546116
+    }
+  },
+  "joined_predicted_rise_c": {
+    "0.25 A": {
+      "b_one": {
+        "total_c_per_w": 23.238778454241114,
+        "1 s": 2.107603422259286,
+        "3 s": 4.408763873015986,
+        "10 s": 6.111473677606431,
+        "60 s": 6.21340115234651,
+        "600 s": 6.213401152467529
+      },
+      "f_one_slow": {
+        "total_c_per_w": 53.79360775316893,
+        "1 s": 0.10760189864333193,
+        "3 s": 0.31879599908308964,
+        "10 s": 1.0336449561686285,
+        "60 s": 5.218106046487618,
+        "600 s": 14.660023049482277
+      },
+      "literal": {
+        "total_c_per_w": 55.238778454241114,
+        "1 s": 2.1732358431459557,
+        "3 s": 4.605477036618675,
+        "10 s": 6.759065922133886,
+        "60 s": 9.492705662274851,
+        "600 s": 15.178209818810512
+      },
+      "d_low": {
+        "total_c_per_w": 53.69980008875541,
+        "1 s": 2.2773955431287396,
+        "3 s": 4.608561243120503,
+        "10 s": 6.3803891287733325,
+        "60 s": 9.019723064223705,
+        "600 s": 14.72057214541185
+      },
+      "e_high": {
+        "total_c_per_w": 80.41571009950304,
+        "1 s": 2.2053242224441343,
+        "3 s": 4.519340293645014,
+        "10 s": 6.596974652914186,
+        "60 s": 11.520409708882895,
+        "600 s": 22.625807455861995
+      },
+      "g_family": {
+        "total_c_per_w": 59.97,
+        "1 s": 0.19972645932298244,
+        "3 s": 0.5807859079412655,
+        "10 s": 1.7744483714738348,
+        "60 s": 7.040090564827128,
+        "600 s": 16.491559525513537
+      },
+      "three_terms": {
+        "total_c_per_w": 78.76728479458393,
+        "1 s": 2.138111543237411,
+        "3 s": 4.433821784533003,
+        "10 s": 6.794846293609838,
+        "60 s": 12.31635983795763,
+        "600 s": 22.164727378656117
+      },
+      "three terms, R_wc 40 held (bursts)": {
+        "total_c_per_w": 88.93929459283764,
+        "1 s": 2.1514963508216898,
+        "3 s": 4.445715828802889,
+        "10 s": 7.038398798874823,
+        "60 s": 14.227124025723423,
+        "600 s": 25.36455132066416
+      },
+      "three terms, R_wc 25 held (hold)": {
+        "total_c_per_w": 74.30288819842643,
+        "1 s": 2.1596565126216127,
+        "3 s": 4.451764931283618,
+        "10 s": 6.984533376688285,
+        "60 s": 12.453047021083561,
+        "600 s": 20.798337225208485
+      }
+    },
+    "0.5 A": {
+      "b_one": {
+        "total_c_per_w": 23.238778454241114,
+        "1 s": 8.548103263440398,
+        "3 s": 18.283171976675305,
+        "10 s": 26.20870121321493,
+        "60 s": 26.802025952568517,
+        "600 s": 26.80202595572264
+      },
+      "f_one_slow": {
+        "total_c_per_w": 53.79360775316893,
+        "1 s": 0.43067498856198466,
+        "3 s": 1.2775696653588626,
+        "10 s": 4.160247950313601,
+        "60 s": 21.618634905545782,
+        "600 s": 69.91174322879854
+      },
+      "literal": {
+        "total_c_per_w": 55.238778454241114,
+        "1 s": 8.817635188716702,
+        "3 s": 19.121245167207206,
+        "10 s": 29.121423876502668,
+        "60 s": 42.338994476353896,
+        "600 s": 73.53031513501804
+      },
+      "d_low": {
+        "total_c_per_w": 53.69980008875541,
+        "1 s": 9.249258418996153,
+        "3 s": 19.16337177473415,
+        "10 s": 27.418940791453135,
+        "60 s": 39.99207122459684,
+        "600 s": 70.83568404704152
+      },
+      "e_high": {
+        "total_c_per_w": 80.41571009950304,
+        "1 s": 8.951752525612815,
+        "3 s": 18.769818489051612,
+        "10 s": 28.349283853692587,
+        "60 s": 52.097053755985954,
+        "600 s": 121.3101631458799
+      },
+      "g_family": {
+        "total_c_per_w": 59.97,
+        "1 s": 0.7998334691601892,
+        "3 s": 2.331219408836183,
+        "10 s": 7.177978369580272,
+        "60 s": 29.751029401058698,
+        "600 s": 80.8272731406079
+      },
+      "three_terms": {
+        "total_c_per_w": 78.76728479458393,
+        "1 s": 8.67465608353854,
+        "3 s": 18.39386553921924,
+        "10 s": 29.19687889862356,
+        "60 s": 56.209521794078846,
+        "600 s": 118.40296063779115
+      },
+      "three terms, R_wc 40 held (bursts)": {
+        "total_c_per_w": 88.93929459283764,
+        "1 s": 8.730186849671142,
+        "3 s": 18.44627188514581,
+        "10 s": 30.265383719062786,
+        "60 s": 65.96281035106398,
+        "600 s": 142.55221535762033
+      },
+      "three terms, R_wc 25 held (hold)": {
+        "total_c_per_w": 74.30288819842643,
+        "1 s": 8.763921042205498,
+        "3 s": 18.47368467032846,
+        "10 s": 30.033324411934114,
+        "60 s": 57.10149159926133,
+        "600 s": 109.01261280649231
+      }
+    }
+  },
+  "joined_fields": {
+    "f_one_slow": {
+      "thermal_tau_s": 115,
+      "th_rise_q016": 1143,
+      "thermal_tau2_s": 0,
+      "th_rise2_q016": 0,
+      "runs_at_s": [
+        131.072,
+        null
+      ],
+      "r0_ohm": 4.1767417953059445,
+      "counts_per_a": 1135.013429521035
+    },
+    "b_one": {
+      "thermal_tau_s": 2,
+      "th_rise_q016": 494,
+      "thermal_tau2_s": 0,
+      "th_rise2_q016": 0,
+      "runs_at_s": [
+        2.048,
+        null
+      ],
+      "r0_ohm": 4.1767417953059445,
+      "counts_per_a": 1135.013429521035
+    },
+    "literal": {
+      "thermal_tau_s": 2,
+      "th_rise_q016": 494,
+      "thermal_tau2_s": 129,
+      "th_rise2_q016": 680,
+      "runs_at_s": [
+        2.048,
+        131.072
+      ],
+      "r0_ohm": 4.1767417953059445,
+      "counts_per_a": 1135.013429521035
+    },
+    "d_low": {
+      "thermal_tau_s": 2,
+      "th_rise_q016": 461,
+      "thermal_tau2_s": 129,
+      "th_rise2_q016": 680,
+      "runs_at_s": [
+        2.048,
+        131.072
+      ],
+      "r0_ohm": 4.1767417953059445,
+      "counts_per_a": 1135.013429521035
+    },
+    "e_high": {
+      "thermal_tau_s": 2,
+      "th_rise_q016": 434,
+      "thermal_tau2_s": 129,
+      "th_rise2_q016": 1274,
+      "runs_at_s": [
+        2.048,
+        131.072
+      ],
+      "r0_ohm": 4.1767417953059445,
+      "counts_per_a": 1135.013429521035
+    },
+    "g_family": {
+      "thermal_tau_s": 20,
+      "th_rise_q016": 153,
+      "thermal_tau2_s": 129,
+      "th_rise2_q016": 1121,
+      "runs_at_s": [
+        16.384,
+        131.072
+      ],
+      "r0_ohm": 4.1767417953059445,
+      "counts_per_a": 1135.013429521035
+    }
+  },
+  "joined_fields_vs_one_slow_node_c": {
+    "hold": [
+      {
+        "counts": 284,
+        "s": 1,
+        "f_one_slow": 0.1,
+        "d_low": 2.25,
+        "e_high": 2.17,
+        "low - one": 2.15,
+        "high - one": 2.07
+      },
+      {
+        "counts": 284,
+        "s": 3,
+        "f_one_slow": 0.31,
+        "d_low": 4.62,
+        "e_high": 4.52,
+        "low - one": 4.3100000000000005,
+        "high - one": 4.21
+      },
+      {
+        "counts": 284,
+        "s": 10,
+        "f_one_slow": 1.03,
+        "d_low": 6.38,
+        "e_high": 6.59,
+        "low - one": 5.35,
+        "high - one": 5.56
+      },
+      {
+        "counts": 284,
+        "s": 30,
+        "f_one_slow": 2.89,
+        "d_low": 7.58,
+        "e_high": 8.79,
+        "low - one": 4.6899999999999995,
+        "high - one": 5.899999999999999
+      },
+      {
+        "counts": 284,
+        "s": 60,
+        "f_one_slow": 5.21,
+        "d_low": 9.02,
+        "e_high": 11.51,
+        "low - one": 3.8099999999999996,
+        "high - one": 6.3
+      },
+      {
+        "counts": 284,
+        "s": 120,
+        "f_one_slow": 8.6,
+        "d_low": 11.09,
+        "e_high": 15.48,
+        "low - one": 2.49,
+        "high - one": 6.880000000000001
+      },
+      {
+        "counts": 284,
+        "s": 300,
+        "f_one_slow": 13.15,
+        "d_low": 13.84,
+        "e_high": 20.82,
+        "low - one": 0.6899999999999995,
+        "high - one": 7.67
+      },
+      {
+        "counts": 284,
+        "s": 600,
+        "f_one_slow": 14.66,
+        "d_low": 14.72,
+        "e_high": 22.62,
+        "low - one": 0.0600000000000005,
+        "high - one": 7.960000000000001
+      },
+      {
+        "counts": 284,
+        "s": 3600,
+        "f_one_slow": 14.83,
+        "d_low": 14.82,
+        "e_high": 22.83,
+        "low - one": -0.009999999999999787,
+        "high - one": 7.999999999999998
+      },
+      {
+        "counts": 568,
+        "s": 1,
+        "f_one_slow": 0.42,
+        "d_low": 9.16,
+        "e_high": 8.86,
+        "low - one": 8.74,
+        "high - one": 8.44
+      },
+      {
+        "counts": 568,
+        "s": 3,
+        "f_one_slow": 1.27,
+        "d_low": 19.23,
+        "e_high": 18.81,
+        "low - one": 17.96,
+        "high - one": 17.54
+      },
+      {
+        "counts": 568,
+        "s": 10,
+        "f_one_slow": 4.16,
+        "d_low": 27.48,
+        "e_high": 28.39,
+        "low - one": 23.32,
+        "high - one": 24.23
+      },
+      {
+        "counts": 568,
+        "s": 30,
+        "f_one_slow": 11.79,
+        "d_low": 33.18,
+        "e_high": 38.87,
+        "low - one": 21.39,
+        "high - one": 27.08
+      },
+      {
+        "counts": 568,
+        "s": 60,
+        "f_one_slow": 21.65,
+        "d_low": 40.1,
+        "e_high": 52.21,
+        "low - one": 18.450000000000003,
+        "high - one": 30.560000000000002
+      },
+      {
+        "counts": 568,
+        "s": 120,
+        "f_one_slow": 36.81,
+        "d_low": 50.45,
+        "e_high": 73.05,
+        "low - one": 13.64,
+        "high - one": 36.239999999999995
+      },
+      {
+        "counts": 568,
+        "s": 300,
+        "f_one_slow": 60.06,
+        "d_low": 65.37,
+        "e_high": 106.27,
+        "low - one": 5.310000000000002,
+        "high - one": 46.209999999999994
+      },
+      {
+        "counts": 568,
+        "s": 600,
+        "f_one_slow": 70.16,
+        "d_low": 71.1,
+        "e_high": 121.9,
+        "low - one": 0.9399999999999977,
+        "high - one": 51.74000000000001
+      },
+      {
+        "counts": 568,
+        "s": 3600,
+        "f_one_slow": 72.17,
+        "d_low": 72.03,
+        "e_high": 125.46,
+        "low - one": -0.14000000000000057,
+        "high - one": 53.28999999999999
+      }
+    ],
+    "seconds_to_threshold": [
+      {
+        "board_c": 25.0,
+        "threshold_c": 80.0,
+        "counts": 284,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 80.0,
+        "counts": 426,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": 415.344
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 80.0,
+        "counts": 568,
+        "f_one_slow": 241.344,
+        "d_low": 156.256,
+        "e_high": 66.944
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 90.0,
+        "counts": 284,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 90.0,
+        "counts": 426,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 90.0,
+        "counts": 568,
+        "f_one_slow": 387.79200000000003,
+        "d_low": 291.52,
+        "e_high": 94.368
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 100.0,
+        "counts": 284,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 100.0,
+        "counts": 426,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 25.0,
+        "threshold_c": 100.0,
+        "counts": 568,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": 126.768
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 80.0,
+        "counts": 284,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 80.0,
+        "counts": 426,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": 141.856
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 80.0,
+        "counts": 568,
+        "f_one_slow": 135.856,
+        "d_low": 59.52,
+        "e_high": 32.368
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 90.0,
+        "counts": 284,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 90.0,
+        "counts": 426,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": 265.76
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 90.0,
+        "counts": 568,
+        "f_one_slow": 198.416,
+        "d_low": 116.83200000000001,
+        "e_high": 54.672000000000004
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 100.0,
+        "counts": 284,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 100.0,
+        "counts": 426,
+        "f_one_slow": null,
+        "d_low": null,
+        "e_high": null
+      },
+      {
+        "board_c": 40.0,
+        "threshold_c": 100.0,
+        "counts": 568,
+        "f_one_slow": 299.104,
+        "d_low": 209.472,
+        "e_high": 80.144
+      }
+    ],
+    "plateau": [
+      {
+        "counts": 284,
+        "f_one_slow": 14.83,
+        "d_low": 14.82,
+        "e_high": 22.83
+      },
+      {
+        "counts": 426,
+        "f_one_slow": 36.08,
+        "d_low": 36.02,
+        "e_high": 58.0
+      },
+      {
+        "counts": 568,
+        "f_one_slow": 72.17,
+        "d_low": 72.03,
+        "e_high": 125.46
+      }
+    ],
+    "cooling": [
+      {
+        "s_into_rest": 1,
+        "f_one_slow": 69.63,
+        "d_low": 59.61,
+        "e_high": 109.05
+      },
+      {
+        "s_into_rest": 3,
+        "f_one_slow": 68.57,
+        "d_low": 47.76,
+        "e_high": 95.49
+      },
+      {
+        "s_into_rest": 10,
+        "f_one_slow": 65.0,
+        "d_low": 39.19,
+        "e_high": 83.9
+      },
+      {
+        "s_into_rest": 30,
+        "f_one_slow": 55.8,
+        "d_low": 33.46,
+        "e_high": 71.82
+      },
+      {
+        "s_into_rest": 60,
+        "f_one_slow": 44.38,
+        "d_low": 26.61,
+        "e_high": 57.12
+      },
+      {
+        "s_into_rest": 120,
+        "f_one_slow": 28.07,
+        "d_low": 16.83,
+        "e_high": 36.13
+      },
+      {
+        "s_into_rest": 300,
+        "f_one_slow": 7.09,
+        "d_low": 4.25,
+        "e_high": 9.13
+      }
+    ],
+    "duty": [
+      {
+        "cycle": "0.5 s on, 4.5 s off",
+        "cand": "f_one_slow",
+        "peak_c": 5.79,
+        "mean_c": 5.688269230769231
+      },
+      {
+        "cycle": "0.5 s on, 4.5 s off",
+        "cand": "d_low",
+        "peak_c": 8.95,
+        "mean_c": 5.699134615384616
+      },
+      {
+        "cycle": "0.5 s on, 4.5 s off",
+        "cand": "e_high",
+        "peak_c": 11.77,
+        "mean_c": 8.624679487179488
+      },
+      {
+        "cycle": "3 s on, 3 s off",
+        "cand": "f_one_slow",
+        "peak_c": 31.96,
+        "mean_c": 31.59976
+      },
+      {
+        "cycle": "3 s on, 3 s off",
+        "cand": "d_low",
+        "peak_c": 40.18,
+        "mean_c": 31.785599999999995
+      },
+      {
+        "cycle": "3 s on, 3 s off",
+        "cand": "e_high",
+        "peak_c": 59.33,
+        "mean_c": 50.69493333333333
+      },
+      {
+        "cycle": "3 s on, 57 s off",
+        "cand": "f_one_slow",
+        "peak_c": 3.49,
+        "mean_c": 2.825314666666667
+      },
+      {
+        "cycle": "3 s on, 57 s off",
+        "cand": "d_low",
+        "peak_c": 20.7,
+        "mean_c": 2.9394506666666667
+      },
+      {
+        "cycle": "3 s on, 57 s off",
+        "cand": "e_high",
+        "peak_c": 21.57,
+        "mean_c": 4.414202666666667
+      },
+      {
+        "cycle": "30 s on, 30 s off",
+        "cand": "f_one_slow",
+        "peak_c": 35.24,
+        "mean_c": 31.613746666666668
+      },
+      {
+        "cycle": "30 s on, 30 s off",
+        "cand": "d_low",
+        "peak_c": 48.93,
+        "mean_c": 32.974824
+      },
+      {
+        "cycle": "30 s on, 30 s off",
+        "cand": "e_high",
+        "peak_c": 71.04,
+        "mean_c": 52.61975733333334
+      }
+    ],
+    "integers_less_float_c_max": 0.12187471668883632
+  },
+  "fast_node_family": [
+    {
+      "unit": "mg90-b",
+      "where": "stage 2 rest-resistance, in the can, through the brushes",
+      "tau_s": 1.897226914055545,
+      "tau_lo": 1.3934629492220234,
+      "tau_hi": 2.063607081590477,
+      "c_j_per_c": 0.13419915704875598,
+      "c_is": "upper bound"
+    },
+    {
+      "unit": "mg90-c",
+      "where": "stage 2 rest-resistance, in the can, through the brushes",
+      "tau_s": 1.404633169233885,
+      "tau_lo": 0.9878179664187284,
+      "tau_hi": 1.5083823412693662,
+      "c_j_per_c": 0.1130414349315606,
+      "c_is": "upper bound"
+    },
+    {
+      "unit": "mg90-b",
+      "where": "stage 2 teardown, bare rotor in air, no brushes in the path",
+      "tau_s": 2.1487622507168473,
+      "tau_lo": 1.7768413819271776,
+      "tau_hi": 2.4034462439336126,
+      "c_j_per_c": 0.13810643039606016,
+      "c_is": "upper bound"
+    },
+    {
+      "unit": "mg90-d",
+      "where": "stage 3 resistance, meter holds",
+      "tau_s": 3.3939495057931217,
+      "tau_lo": 3.080648403342676,
+      "tau_hi": 3.739113244917768,
+      "c_j_per_c": 0.07735151044331119,
+      "c_is": "upper bound, 3.7 V laps"
+    },
+    {
+      "unit": "mg90-d",
+      "where": "stage 4, this notebook, one node",
+      "tau_s": 2.3752191114749404,
+      "tau_lo": 1.2032400402255934,
+      "tau_hi": 3.2271300880695795,
+      "c_j_per_c": 0.10220929280564052,
+      "c_is": "fitted, 0.063 to 0.135"
+    }
+  ],
+  "capture_predicted_c": [
+    {
+      "i_a": 0.25,
+      "cand": "d_low",
+      "10 s": 6.3803891287733325,
+      "60 s": 9.019723064223705,
+      "120 s": 11.096926150659513,
+      "600 s": 14.72057214541185,
+      "900 s": 14.816994033212428,
+      "960 s": 5.583553992587806,
+      "1200 s": 0.8947336546036561
+    },
+    {
+      "i_a": 0.25,
+      "cand": "e_high",
+      "10 s": 6.596974652914186,
+      "60 s": 11.520409708882895,
+      "120 s": 15.479099529899212,
+      "600 s": 22.625807455861995,
+      "900 s": 22.83623808523718,
+      "960 s": 10.770795163907877,
+      "1200 s": 1.7259603709008262
+    },
+    {
+      "i_a": 0.4,
+      "cand": "d_low",
+      "10 s": 16.945498074747576,
+      "60 s": 24.331793502706475,
+      "120 s": 30.265940373278845,
+      "600 s": 41.31942375193853,
+      "900 s": 41.675811606124874,
+      "960 s": 15.701847224472747,
+      "1200 s": 2.5161341987255588
+    },
+    {
+      "i_a": 0.4,
+      "cand": "e_high",
+      "10 s": 17.52099832786836,
+      "60 s": 31.38733788090095,
+      "120 s": 43.01201834892673,
+      "600 s": 66.81521214572,
+      "900 s": 67.81602462554645,
+      "960 s": 31.975857958949067,
+      "1200 s": 5.123954436310756
+    }
+  ],
+  "earlier_work": [
+    {
+      "notebook": "17",
+      "where": "section 4",
+      "conclusion": "the winding loop is copper; the thermometer runs on copper's handbook slope",
+      "number": "DC pair 4.52 ohm at 28.6 C, 5.09 ohm at 61.5 C, ratio 1.1261 against copper's 1.1250; 0.396 %/C, 101 % of copper at the nominal temperature",
+      "status": "a confirmation, not a calibration constant: 98 to 108 % across the hot reading's bracket (59.5 to 62.3 C)",
+      "caveats": "one reading per temperature at one rotor angle; meter ungraded; the hot temperature is a bracket",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/17-winding-thermometer-calibrated.ipynb"
+    },
+    {
+      "notebook": "17",
+      "where": "section 4",
+      "conclusion": "nothing fixed in series worth modeling",
+      "number": "fixed part at most about 0.1 ohm, 2 % of R",
+      "status": "bounded",
+      "caveats": "the meter's 10 digits sit whole in it",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/17-winding-thermometer-calibrated.ipynb"
+    },
+    {
+      "notebook": "17",
+      "where": "sections 4 and 6",
+      "conclusion": "the burst's R scales a little less than DC",
+      "number": "compression 0 to 2 % over 33 C; plain fit 0.365 +/- 0.022 %/C (1.3 se under copper); two quieter routes fall 1.4 to 1.5 +/- 0.3 %",
+      "status": "not resolved, \"probably negative\"",
+      "caveats": "each quiet route leans on a temperature-correlated choice",
+      "later": "open in its own Open list",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/17-winding-thermometer-calibrated.ipynb"
+    },
+    {
+      "notebook": "17",
+      "where": "section 5",
+      "conclusion": "a contact in series moves R by percents for hours",
+      "number": "first two sets 3 to 4 % high, 8 to 12 C of copper, flat inside a set, gone after the 60 C hour",
+      "status": "a finding; the cause \"a story\"",
+      "caveats": "does not separate heat, hours, J4 or brushes",
+      "later": "stands; it is why no absolute R is used",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/17-winding-thermometer-calibrated.ipynb"
+    },
+    {
+      "notebook": "17",
+      "where": "section 7",
+      "conclusion": "absolute R against a stored reference is not used on a brushed motor",
+      "number": "-",
+      "status": "the design rule",
+      "caveats": "-",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/17-winding-thermometer-calibrated.ipynb"
+    },
+    {
+      "notebook": "17",
+      "where": "sections 4 and 5",
+      "conclusion": "the hot bracket rests on a 720 s decay of R",
+      "number": "-",
+      "status": "-",
+      "caveats": "-",
+      "later": "superseded: notebook 18 reads a decay that slow as circuit excess, not heat",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/17-winding-thermometer-calibrated.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "sections 2 and 4",
+      "conclusion": "can to air",
+      "number": "32.0 +/- 0.1 C/W, 31.4 to 32.1 across the anchored rows; 29.7 and 31.2 by the heater's power, 34.9 and 36.5 by wall-clock power",
+      "status": "pinned",
+      "caveats": "per watt of winding heat with the shaft moving; the free heaters put 10 to 30 % more heat in than i^2 R; the locked hold reads 26 C/W; the bead reads between can and air",
+      "later": "notebook 19 agrees on two holds, 30.89 and 32.38",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "section 4",
+      "conclusion": "the slow mode",
+      "number": "129 s (128.92; 121 to 135)",
+      "status": "pinned",
+      "caveats": "the 0.25 W block's can is faster up and slower down than the network (172 against 123 s, 107 against 168 s)",
+      "later": "stands; notebook 21's dev-board leak wants 78.2 s",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "section 4",
+      "conclusion": "a fast mode is in the can data",
+      "number": "17 to 24 s (20.05 anchored)",
+      "status": "pinned as a product only: the can does not split R from C",
+      "caveats": "-",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "sections 3 and 4",
+      "conclusion": "winding to can",
+      "number": "28 +/- 3 C/W with 1.3 +/- 0.5 J/C by the fit; 40 to 45 by the bursts; 27 to 32 by the hold's curve (tau 56 to 75 s, 2.1 to 2.4 J/C)",
+      "status": "bracket 28 to 45; \"the fit's standard error is not the uncertainty\"",
+      "caveats": "the bursts are cross-seat ratios read about 8 s late (2 % of R, 5 C a run); the hold was taken in the excess state and its excess fell from 7 to 4 C at constant power",
+      "later": "notebook 21 reads 13.0 to 21.0 directly; not the copper's own node (section 4 here)",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "section 4",
+      "conclusion": "winding over air",
+      "number": "60.0 anchored, 57.1 to 71.4 across the rows",
+      "status": "carries the same bracket",
+      "caveats": "linear only over 0.25 to 0.42 W; the 1 W point was never taken",
+      "later": "notebook 21 reads 40.4 to 45.6 over the room at a hold's end",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "summary (cell 0) and section 4",
+      "conclusion": "winding heat capacity",
+      "number": "1.3 J/C, \"a few grams of copper and iron\"",
+      "status": "follows the bracket, 1.3 down to 0.7",
+      "caveats": "-",
+      "later": "superseded as a statement about the copper: the copper's own node is ten times lighter (section 4 here, with stage 2's teardown and rest-resistance)",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "summary (cell 0) and section 3",
+      "conclusion": "the 0.42 W block's bursts are not a thermometer",
+      "number": "4 to 16 % over copper, climbing with the can flat",
+      "status": "a finding; cause in the circuit",
+      "caveats": "-",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "section 5 and Open (cell 33)",
+      "conclusion": "the contact-state rule",
+      "number": "re-baseline after heavy running: 15 min rest, V/I flat within 2 % over three bursts",
+      "status": "\"nothing here grades it\"",
+      "caveats": "-",
+      "later": "never graded",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "section 4, what the model predicts",
+      "conclusion": "predictions",
+      "number": "at the 0.253 A limit the winding settles at 46 to 51 C, can 37; a hard stall at 7.43 V (11.6 W) crosses 130 C in 12 to 17 s",
+      "status": "model extrapolation",
+      "caveats": "enamel class assumed, bridge left out",
+      "later": "the stall time has no copper node in it (section 4 here)",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "18",
+      "where": "section 4, what ships",
+      "conclusion": "the family pair",
+      "number": "tau 128 s, g 63 C/W over the board NTC",
+      "status": "tau pinned, \"the 63 is not pinned\"",
+      "caveats": "-",
+      "later": "superseded by notebook 21",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/18-two-node-thermal-model.ipynb"
+    },
+    {
+      "notebook": "19",
+      "where": "section 1",
+      "conclusion": "a resistance is only good against itself at one seat",
+      "number": "seat references spread 1.96 to 2.69 % (5 to 7 C) at one stop; anchors 3.71 %; a moved stop 9 % over the stored R",
+      "status": "a finding",
+      "caveats": "-",
+      "later": "stands; section 2 here has mg90-d's own spread",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/19-shipped-winding-thermometer.ipynb"
+    },
+    {
+      "notebook": "19",
+      "where": "sections 1 and 4",
+      "conclusion": "the bridged state",
+      "number": "three references about 20 % low (-18.7 to -20.9 %)",
+      "status": "a finding",
+      "caveats": "-",
+      "later": "stands; section 2 here has mg90-d's bridged seats",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/19-shipped-winding-thermometer.ipynb"
+    },
+    {
+      "notebook": "19",
+      "where": "section 3",
+      "conclusion": "the board NTC rests over the can",
+      "number": "2.03 to 2.75 C, moving 0.7 C between rests",
+      "status": "does not say which sensor is off",
+      "caveats": "-",
+      "later": "stands; notebook 21 carries it (2.74 C)",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/19-shipped-winding-thermometer.ipynb"
+    },
+    {
+      "notebook": "19",
+      "where": "section 6",
+      "conclusion": "can over air",
+      "number": "30.89 and 32.38 C/W on two 480 s holds",
+      "status": "agrees with notebook 18",
+      "caveats": "-",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/19-shipped-winding-thermometer.ipynb"
+    },
+    {
+      "notebook": "19",
+      "where": "section 6",
+      "conclusion": "the winding over the can at a hold's end",
+      "number": "about 7 C by the host clock, none by the meter's own clock",
+      "status": "\"the data does not settle it\"; decides whether g is about 31 or about 40 C/W over the NTC",
+      "caveats": "-",
+      "later": "open; it is the low and the high reading of section 4 here",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/19-shipped-winding-thermometer.ipynb"
+    },
+    {
+      "notebook": "19",
+      "where": "section 4",
+      "conclusion": "no heating rises faster than about 1 C in one second",
+      "number": "other holds' largest one-second rise 0.46 to 1.07 C at 0.29 W",
+      "status": "a finding",
+      "caveats": "-",
+      "later": "consistent with the copper node of section 4 here, read past its 1 to 3 s reference",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/19-shipped-winding-thermometer.ipynb"
+    },
+    {
+      "notebook": "19",
+      "where": "sections 2, 3 and 5",
+      "conclusion": "the estimator itself: gate, reference window 1 to 3 s, tracker, carry, guards, boot prior",
+      "number": "carry over-reads 240 s gaps by +0.05, +1.36, +2.12 C; boot prior 6.3 C high at first",
+      "status": "graded",
+      "caveats": "-",
+      "later": "retired: notebook 21 replaces the resistance thermometer with the I2t heat",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/19-shipped-winding-thermometer.ipynb"
+    },
+    {
+      "notebook": "20",
+      "where": "summary (cell 0) and section 2",
+      "conclusion": "rest resistance has no single value",
+      "number": "15 hand stops 4.31 to 5.30 ohm, median 4.46; 20 settles after drives 4.63 to 5.18, median 4.76; bulk 2 to 2.4 % wide, worst stop 21 %",
+      "status": "a finding; one-sided or two-sided not decided",
+      "caveats": "-",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/20-bare-motor.ipynb"
+    },
+    {
+      "notebook": "20",
+      "where": "section 2",
+      "conclusion": "it shifts between sessions and relaxes after a drive",
+      "number": "+0.30 ohm [0.20, 0.38] between sets; every settle falls 0.051 +/- 0.005 ohm plus 0.153 +/- 0.018 of its excess within 60 s",
+      "status": "\"an observation, not a finding\"; film or thermoelectric voltage",
+      "caveats": "-",
+      "later": "open",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/20-bare-motor.ipynb"
+    },
+    {
+      "notebook": "20",
+      "where": "section 2",
+      "conclusion": "a thermometer must take R as a ratio to its own reference at the same seat and state",
+      "number": "-",
+      "status": "the rule",
+      "caveats": "-",
+      "later": "stands",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/20-bare-motor.ipynb"
+    },
+    {
+      "notebook": "20",
+      "where": "section 10 and caveats",
+      "conclusion": "temperature",
+      "number": "nothing logged; \"heat killed\" has no script behind it",
+      "status": "stated as a gap",
+      "caveats": "-",
+      "later": "-",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/20-bare-motor.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "section 1",
+      "conclusion": "form",
+      "number": "heat += (i^2 - heat) >> s every 16 ms; T = T_ntc + k x heat; the leak an octave of the 16 ms period",
+      "status": "the design",
+      "caveats": "\"for protection, never a thermometer\"",
+      "later": "stands as a form; section 7 here runs two such heats on a warmed input",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "section 3",
+      "conclusion": "NTC on the can",
+      "number": "free leak 12.8 to 32.6 s; 16.4 s octave; k 0.00478 to 0.00771 cC/count^2, 13.0 to 21.0 C/W; within 3.6 C either way",
+      "status": "three holds",
+      "caveats": "under notebook 18's 28 to 45",
+      "later": "two brackets stand",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "sections 3, 4 and 6",
+      "conclusion": "NTC on the dev board",
+      "number": "free leak 78.2 s, run at 65.5 s; k 0.01591, 43.3 C/W; 0.4 C cold, 4.3 C warm, 2.74 C of the warm side the rest offset",
+      "status": "one run grades it",
+      "caveats": "capture-1 has no NTC",
+      "later": "stands as that board's fit",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "sections 3 and 7",
+      "conclusion": "the copper over the room at a hold's end",
+      "number": "40.4, 45.6, 40.6 C/W",
+      "status": "read directly",
+      "caveats": "under notebook 18's 57.1 to 71.4; a negative contact drift would make it low",
+      "later": "open",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "sections 2 and 7",
+      "conclusion": "the excess over the can peaks early and falls back",
+      "number": "6.9 C at 34 s, 6.7 at 72 s, 9.1 at 70 s, then 2.7 to 4.6 C at the end",
+      "status": "\"a two-node plant does not do that\"",
+      "caveats": "contact steps up to 1.44 % of R, 3.7 C, in one second",
+      "later": "open",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "sections 2 and 7",
+      "conclusion": "the first seconds",
+      "number": "2 to 10 s rise 1.10, 3.17, 0.29 C; capture-2 is over what 1.3 to 0.7 J/C allows",
+      "status": "open: contact, the reference window, or \"a heat capacity under the bracket\"",
+      "caveats": "-",
+      "later": "the third candidate is now supported: the copper's own node is ten times under the bracket (section 4 here)",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "sections 4 and 7",
+      "conclusion": "proposed band",
+      "number": "5 C either way",
+      "status": "proposed",
+      "caveats": "\"the real protection margin sits in i_cont itself\"",
+      "later": "-",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
+    },
+    {
+      "notebook": "21",
+      "where": "sections 1 and 3",
+      "conclusion": "octave rule",
+      "number": "a written tau runs up to 1.5 times shorter; cap 262 s",
+      "status": "-",
+      "caveats": "-",
+      "later": "section 7 here takes the cap at 524 s",
+      "unit_under_test": "mg90-a",
+      "board": "dev-v006 rev 2A board #1",
+      "permalink": "https://github.com/OpenServoCore/open-servo-core/blob/624e29d3/notebooks/21-i2t-winding-estimate.ipynb"
     }
   ]
 }
