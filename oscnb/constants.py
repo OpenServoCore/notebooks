@@ -40,6 +40,21 @@ alone: a scale that moves leaves `hash.set` where it was. A field's entry
 says which it is under `protection`: null for the plant, the way the
 value moves to protect less for a protection field, as LOOSER has it.
 
+Under `limits` the set carries a bound on its own fields that the
+control table has no field for yet. The first is the speed ceiling
+(`speed_ceiling_cps`), the most the output is ever to turn at, which
+protects the brushes: the no-load speed the maker of the servo's class
+states at the sheet's operating voltage, times the derate `policy.json`
+decides for this servo, in deg/s and in the counts per second of the
+set's scale. What a maker states of a class is a record beside the
+sets, `<class>.datasheet.json`, with the document, where it was read
+and when; the registry names the class a servo is of, and a servo that
+names none has no limit from a sheet. A limit is on no servo, so
+`hash.limits` covers it alone, and a set whose field is over the limit
+that bounds it (BOUNDS: the move's speed limit, `velocity_limit_cps`,
+under the speed ceiling) is refused by `build` and by `load`. `status`
+prints the ceiling with its source.
+
     uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
     uv run python -m oscnb.constants build [--out PATH [--deviation FILE]] [--protection NAME ...]
     uv run python -m oscnb.constants status
@@ -277,9 +292,9 @@ PER_COUNT = frozenset((
 
 ORIGIN = "servo-state"      # the origin a value adopted from a record of the servo's state names
 BEFORE = "the servo's state before the path"
-TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "scales", "fields", "hash",
-       "previous", "deviation")
-BLOCKS = ("inputs", "origins", "scales", "fields")    # written an entry a line
+TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "scales", "limits", "fields",
+       "hash", "previous", "deviation")
+BLOCKS = ("inputs", "origins", "scales", "limits", "fields")    # written an entry a line
 LEAD = ("value", "slots", "state", "kind", "counts_per_deg", "points_sha1", "class", "reason", "needs",
         "datasheet_candidate")
 TABLE_STATE, TABLE_POINTS, SLOTS = "position table state", "position table points sha1", "wide-code slots"
@@ -332,12 +347,15 @@ def hashes(doc):
     """The hashes of a set. `set` covers `plant` and `protection`, what
     the servo is to hold. `scales`, on a set that holds any, covers the
     values a capture of the servo is scored with: they are on no servo,
-    so a scale that moves leaves `set` where it was."""
+    so a scale that moves leaves `set` where it was. `limits`, the same
+    way, covers the bounds no field of the table holds yet."""
     plant, protection = (sc.config_hash(x) for x in hashed(doc))
     out = {"plant": plant, "protection": protection,
            "set": sc.config_hash({"plant": plant, "protection": protection})}
     if doc.get("scales"):
         out["scales"] = sc.config_hash(values(doc["scales"]))
+    if doc.get("limits"):
+        out["limits"] = sc.config_hash(values(doc["limits"]))
     return out
 
 
@@ -380,8 +398,9 @@ def load(path):
     whose origin the file does not hold, a bench or datasheet value
     that names no record, a datasheet value that names no document, a
     field that says another thing of protection than LOOSER, a field a
-    rule computed for another table than the set's, or hashes that are
-    not those of its content."""
+    rule computed for another table than the set's, a limit that is
+    not one as the tool writes it or a field over the limit that bounds
+    it (`limits_loaded`), or hashes that are not those of its content."""
     path = Path(path)
     where = sc.shown(path)
     doc = json.loads(path.read_text())
@@ -408,6 +427,7 @@ def load(path):
         if e.get("pos_unit") and e.get("scale_points_sha1") != scale.get("points_sha1"):
             raise ValueError(f"{where}: {name} was computed for the table of points sha1 "
                              f"{e.get('scale_points_sha1')}, the set's scale is that of {scale.get('points_sha1')}")
+    limits_loaded(doc, where)
     if doc.get("hash") != hashes(doc):
         raise ValueError(f"{where}: its hashes are not those of its content: a set is generated, never edited "
                          f"(or the protection list moved since it was written)")
@@ -495,7 +515,7 @@ def described(doc):
           for n, e in doc.get("scales", {}).items()),
         f"hash: plant {h['plant'][:12]}, protection {h['protection'][:12]} "
         f"({sum(n in PROTECTION for n in doc['fields'])} fields), set {h['set'][:12]}"
-        + (f", scales {h['scales'][:12]}" if "scales" in h else ""),
+        + "".join(f", {k} {h[k][:12]}" for k in ("scales", "limits") if k in h),
     ]
 
 
@@ -1206,6 +1226,157 @@ rule("th_rise2_q016", "th_rise2.family", kind="u16", unit="cC/count^2", q=16, cl
      mirrors="core estimator/thermal.rs rise_cc")(rise(lambda c: c.raw(WINDING, joined(c), "slow_gain_c_per_w")))
 
 
+# --- the limits no field holds ---
+#
+# A limit is a bound of the set on its own fields that the control
+# table has no field for yet: the set carries it under `limits`, in no
+# hash of what the servo is to hold, and a set with a field over the
+# limit that bounds it is refused. The one limit so far is the speed
+# ceiling, the most the output is ever to turn at, which protects the
+# brushes: a speed, and no effective voltage. It is the no-load speed
+# the maker of the servo's class states at the sheet's operating
+# voltage, times the policy's derate of a datasheet speed on this
+# servo, in the counts per second of the set's scale, and it bounds the
+# move's speed limit (core kernel/phases/loops/trajectory.rs vel_cap).
+#
+# What a maker states of a servo class is a record of the repo beside
+# the sets, `<class>.datasheet.json`: the document, where it was read
+# and when, and under `stated` each value as a quantity, one stated at
+# several voltages as a list with the voltage of each. The registry
+# names the class a servo is of (`datasheet_class`); a servo that names
+# none has no sheet, and so no limit from one.
+SHEET = "datasheet"                 # the input a set names the class's datasheet record by
+CEILING = "speed_ceiling_cps"
+SPEED_DERATE = "datasheet_derate_speed"     # the policy entry, a ratio as [numerator, denominator]
+BOUNDS = {CEILING: ("velocity_limit_cps",)}     # the fields each limit bounds: none is ever over it
+
+
+def sheet_path(pair, name, root=results.ROOT):
+    """The datasheet record of servo class `name`, beside the sets."""
+    return set_path(pair, root).with_name(f"{name}.datasheet.json")
+
+
+def sheet(c):
+    """The datasheet record of the class the registry says the pair's
+    servo is of, the file among the set's inputs by its sha1."""
+    name = c.reg("servo", "datasheet_class")
+    rel = sheet_path(c.pair, name, c.root).relative_to(c.root)
+    doc = c.file(SHEET, rel)
+    if doc is None:
+        raise Missing(f"the servo class {name} has no datasheet record ({rel.as_posix()})")
+    return doc
+
+
+def stated(c, key):
+    """What the maker states under `key`, as the record holds it."""
+    doc = sheet(c)
+    if key not in doc.get("stated", {}):
+        raise Missing(f"the datasheet record of {doc.get('class')} states no {key}")
+    c.reads.append((f"{SHEET}:{key}", None))
+    return doc["stated"][key]
+
+
+def no_load(c):
+    """(the no-load speed the maker states at the sheet's operating
+    voltage, deg/s, that voltage): the angle the sheet times over the
+    time it states for it."""
+    volts = stated(c, "operating_voltage")["value"]
+    at = [q for q in stated(c, "no_load_time") if q["at_v"] == volts]
+    if len(at) != 1:
+        raise Missing(f"the datasheet record states no one no-load time at its operating voltage, {volts:g} V")
+    return at[0]["per_deg"] / at[0]["value"], volts
+
+
+def speed_ceiling_deg_s(c):
+    """The speed ceiling, deg/s: the maker's no-load speed at the
+    policy's derate of a datasheet speed."""
+    ratio = c.policy(SPEED_DERATE)
+    if not (isinstance(ratio, list) and len(ratio) == 2 and all(type(n) is int for n in ratio)
+            and 0 < ratio[0] <= ratio[1]):
+        raise ValueError(f"{POLICY}: {SPEED_DERATE} is {ratio!r}: a derate is a ratio of at most one, written "
+                         f"[numerator, denominator]")
+    return no_load(c)[0] * ratio[0] / ratio[1]
+
+
+SPEED_CEILING = Rule(CEILING, "speed_ceiling.datasheet", "u16", "count/s", 0, +1, 1, "datasheet",
+                     "no field yet: the bound of velocity_limit_cps, core kernel/phases/loops/trajectory.rs vel_cap",
+                     lambda c: speed_ceiling_deg_s(c) * c.counts_per_deg)
+
+
+def limits_of(c, previous):
+    """The set's limits, None for a set with none: the speed ceiling of
+    a pair whose servo names a datasheet class, by its rule, with the
+    speed in deg/s, what the maker states and at which voltage, the
+    derate, the record and its document, and the fields it bounds. With
+    an input missing it is held at the previous set's value, the input
+    named, and left out where there is nothing to carry."""
+    if not c.registry.get("servo", {}).get("datasheet_class"):
+        return None
+    carried = ((previous or {}).get("limits") or {}).get(CEILING)
+    try:
+        e = evaluate(SPEED_CEILING, c)
+        (speed, volts), doc = no_load(c), sheet(c)
+        e = {**e, "deg_s": speed_ceiling_deg_s(c), "stated_deg_s": speed, "at_v": volts,
+             "derate": c.policies[SPEED_DERATE], "record": doc["what"], "document": doc["document"]}
+    except Missing as m:
+        c.notes.append(f"{CEILING}: {'left out' if carried is None else 'held'}, {m}")
+        if carried is None:
+            return None
+        e = {**held("value", SPEED_CEILING.name, carried, str(m), previous), "unit": carried["unit"]}
+    return {CEILING: {**e, "bounds": list(BOUNDS[CEILING])}}
+
+
+def over_limit(doc):
+    """A line for every field of a set whose value is over a limit of
+    the set that bounds it (BOUNDS)."""
+    return [f"{name}: {doc['fields'][name]['value']} {e['unit']} is over the set's {limit}, {e['value']} {e['unit']}"
+            + (f" ({e['deg_s']:g} deg/s)" if "deg_s" in e else "") + ": a field stays at or under the limit that "
+            "bounds it"
+            for limit, e in (doc.get("limits") or {}).items() for name in BOUNDS[limit]
+            if name in doc["fields"] and type(doc["fields"][name]["value"]) is int
+            and doc["fields"][name]["value"] > e["value"]]
+
+
+def limits_loaded(doc, where):
+    """Refuse a set file whose limits are not limits as the tool writes
+    them: one the tool has none of, without a value of one class or the
+    fields it bounds, a datasheet value that names no record or no
+    document, one computed for another table than the set's, or a field
+    over the limit that bounds it."""
+    scale = doc.get("scale") or {}
+    for name, e in (doc.get("limits") or {}).items():
+        if name not in BOUNDS or "value" not in e or e.get("class") not in CLASSES \
+                or e.get("bounds") != list(BOUNDS[name]):
+            raise ValueError(f"{where}: {name} is no limit as the tool writes one: a value of one class of "
+                             f"{', '.join(CLASSES)} and the fields it bounds")
+        if e["class"] == "datasheet" and not (e.get("inputs") and e.get("document")):
+            raise ValueError(f"{where}: {name} is of class datasheet and names no record or no document")
+        if e.get("pos_unit") and e.get("scale_points_sha1") != scale.get("points_sha1"):
+            raise ValueError(f"{where}: {name} was computed for the table of points sha1 "
+                             f"{e.get('scale_points_sha1')}, the set's scale is that of {scale.get('points_sha1')}")
+    over = over_limit(doc)
+    if over:
+        raise ValueError(f"{where}: {'; '.join(over)}")
+
+
+def ceiling_said(doc):
+    """What `status` says of a set's speed ceiling, a line, none for a
+    set without: its counts per second and deg/s, what the maker states
+    and the derate that give it, the document, and the field it bounds
+    at the value the set holds."""
+    e = (doc.get("limits") or {}).get(CEILING)
+    if e is None:
+        return []
+    bounds = ", ".join(f"{n} = {doc['fields'][n]['value']}" if n in doc["fields"] else f"{n}, not in the set"
+                       for n in e["bounds"])
+    if "held" in e:
+        return [f"speed ceiling: {e['value']} {e['unit']} [{tagged(e)}]: {e['held']}; it bounds {bounds}"]
+    num, den = e["derate"]
+    return [f"speed ceiling: {e['value']} {e['unit']}, {e['deg_s']:g} deg/s at the set's scale [{tagged(e)}]: the "
+            f"maker's no-load speed at {e['at_v']:g} V, {e['stated_deg_s']:g} deg/s, x {num}/{den} by the policy "
+            f"({SPEED_DERATE}); {e['document']}; it bounds {bounds}"]
+
+
 # --- build ---
 
 def held(what, rule_name, carried, why, previous, would_be=None):
@@ -1403,7 +1574,9 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     what defines a count, the slots, then the table and its scale, then
     every field, in the previous set's order with new ones after. A
     field with no rule, no pin and no record is carried at its value,
-    with no source.
+    with no source. Then the limits no field holds (`limits_of`), which
+    either kind of build forms anew, and a set with a field over the
+    limit that bounds it is refused (`over_limit`).
 
     One build moves one hash. Without `protection` it moves the plant:
     every protection field is carried, with `would_be` where its rule
@@ -1481,6 +1654,12 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
         doc["scale"] = scale
     if scales:
         doc["scales"] = scales
+    limits = limits_of(c, previous)
+    if limits:
+        doc["limits"] = limits
+    over = over_limit(doc)
+    if over:
+        raise ValueError("; ".join(over))
     return {**doc, "hash": hashes(doc)}, c.notes
 
 
@@ -1509,7 +1688,7 @@ def changes(previous, doc):
     if a != b:
         out.append("scale: " + " -> ".join("none" if x is None else f"{x['counts_per_deg']:.4f} counts/deg, the "
                                            f"{x['kind']} one" for x in (a, b)))
-    for block, label in (("scales", "scored with "), ("fields", "")):
+    for block, label in (("scales", "scored with "), ("limits", "limit "), ("fields", "")):
         was, now = previous.get(block) or {}, doc.get(block) or {}
         for name in dict.fromkeys([*was, *now]):
             a, b = was.get(name), now.get(name)
@@ -1520,7 +1699,8 @@ def changes(previous, doc):
                 out.append(f"{label}{name}: {a['value']} -> {b['value']} [{tagged(b)}]")
             elif tagged(a) != tagged(b):
                 out.append(f"{label}{name}: {b['value']} [{tagged(a)} -> {tagged(b)}]")
-    both = [k for k in ("plant", "protection", "set", "scales") if k in previous["hash"] or k in doc["hash"]]
+    both = [k for k in ("plant", "protection", "set", "scales", "limits")
+            if k in previous["hash"] or k in doc["hash"]]
     moved_ = [k for k in both if k != "set" and previous["hash"].get(k) != doc["hash"].get(k)]
     out.append("hash: " + (f"{' and '.join(moved_)} moved" if moved_ else "neither moved") + ": "
                + ", ".join(f"{k} {(previous['hash'].get(k) or 'none')[:12]} -> {(doc['hash'].get(k) or 'none')[:12]}"
@@ -1700,9 +1880,10 @@ def derive(base, deviation, root=results.ROOT, registry=None):
 
 def users(doc, name):
     """What of a set lists input `name`: its fields, the slots, the
-    table."""
+    table, what it is scored with and its limits."""
     blocks = ((SLOTS, doc["wide_codes"] or {}), ("position table", doc["pos_table"]))
-    return [n for n, e in (*doc["fields"].items(), *blocks, *doc.get("scales", {}).items())
+    return [n for n, e in (*doc["fields"].items(), *blocks, *doc.get("scales", {}).items(),
+                           *doc.get("limits", {}).items())
             if any(i.split(":")[0] == name for i in e.get("inputs", ()))]
 
 
@@ -1735,7 +1916,8 @@ def status(doc, root=results.ROOT, registry=None):
     """(lines, stale): the set against its inputs as they are now, a
     moved or missing file and a moved registry value named with what
     lists it, then the inputs that record no inputs of their own, what
-    the set holds, every field with no source with why it has none,
+    the set holds, its speed ceiling with its source (`ceiling_said`),
+    every field with no source with why it has none,
     what would give it one and the maker's value that could supply it
     where the set names one, the fields on a weak record, and where its
     adopted values came from."""
@@ -1752,6 +1934,7 @@ def status(doc, root=results.ROOT, registry=None):
     lines += [f"{name}: the results it read are not recorded: {', '.join(users(doc, name))}"
               for name, inp in sorted(doc["inputs"].items()) if inp.get("inputs_recorded") is False]
     lines += described(doc)
+    lines += ceiling_said(doc)
     debt = unsourced(doc)
     if debt:
         could = sum(maker is not None for *_, maker in debt)

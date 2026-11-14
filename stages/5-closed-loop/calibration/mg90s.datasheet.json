@@ -1,0 +1,26 @@
+{
+ "what": "what the maker states of the TowerPro MG90S, a servo class: ratings and nominals, no measurement",
+ "class": "mg90s",
+ "maker": "TowerPro",
+ "document": "TowerPro MG90S product page (manufacturer), https://www.towerpro.com.tw/product/mg90s-3/, read 2026-11-14",
+ "url": "https://www.towerpro.com.tw/product/mg90s-3/",
+ "same_text_at": "https://www.towerpro.com.tw/product/mg90s/",
+ "read": "2026-11-14",
+ "stands_for": {
+  "mg90-d": "a clone of the class with no sheet of its own, so the class's sheet stands for it: the owner's decision"
+ },
+ "stated": {
+  "operating_voltage": {"value": 4.8, "unit": "V"},
+  "no_load_time": [
+   {"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
+   {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}
+  ],
+  "stall_torque": [
+   {"value": 1.8, "unit": "kg cm", "at_v": 4.8}
+  ],
+  "temperature_min": {"value": 0, "unit": "C"},
+  "temperature_max": {"value": 55, "unit": "C"}
+ },
+ "not_stated": "no official sheet states a current of any kind, the travel or a voltage range",
+ "left_out": "the page also states the weight, the size, a stall torque at a second voltage, the dead band, the gear material and the lead: no limit is taken from them"
+}

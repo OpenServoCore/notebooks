@@ -19,6 +19,12 @@ stopper in the path. Any other held stall, an arm stood against gravity,
 draws at most the hold current the gear class allows. A lap pressed into an
 end stop draws at most the lap cap, lower, since the output stopper is
 plastic on a metal train and took a set on another unit at about 0.32 A.
+
+A servo that is a clone of a class some maker publishes a sheet for names
+that class (`datasheet_class`), the name on the part. The clone has no sheet
+of its own; what the class's maker states is a record beside the constant
+sets (`oscnb.constants`), never typed here, and stands for the servo only
+where its owner has decided so.
 """
 import os
 from dataclasses import dataclass
@@ -49,6 +55,7 @@ class Servo:
     # driving), the output gear last; empty until counted
     gear_teeth: tuple[int, ...] = ()
     notes: str = ""
+    datasheet_class: str = ""     # the class whose maker's sheet stands for it, "" for none
 
     @property
     def motor_entry(self):
@@ -102,6 +109,7 @@ SERVOS = {
               "the type Kt of 1.16 mN m per A: about 0.75 to 0.85 A at the "
               "motor, the top of that range taken, which a 100 % lap holds "
               "to 3.7 V by the type R",
+        datasheet_class="mg90s",
     ),
 }
 DEFAULT = "mg90-d"
