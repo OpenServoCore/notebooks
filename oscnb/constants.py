@@ -47,11 +47,14 @@ names its sha1, the hash of the state and where it came from in words.
 
 `build` is offline and writes the set from the results of record, on
 top of the pair's set of record, which it replaces, or to `--out` as a
-derived set. A field is bound by a rule (`rule`, RULES), one function a
-field, that reads only through a Context: a result's quantity, the
-registry, the policy file, the scale of the count. Each read is
-recorded, so a field's `inputs` are what its rule read, and the set's
-`inputs` name every file by its sha1. One encoder rounds a rule's value
+derived set. A field is bound by a rule (`rule`, RULES), a function
+that reads only through a Context: a result's quantity, the registry,
+the policy file, the scale of the count. A field may have several
+rules, one a way its quantity is on record, and the policy file names
+under `rule` the one that binds; with none named the field is held.
+Each read is recorded, so a field's `inputs` are what its rule read,
+and the set's `inputs` name every file by its sha1. One encoder rounds
+a rule's value
 to the field's Q format and refuses one that does not fit; it never
 clamps. A rule's band is the rule again at each end of every banded
 input. The order is the one a count is defined in: the slots from the
@@ -61,9 +64,13 @@ slots, then the scale (the table's counts per deg, the raw pot's on a
 pair with no table), then the fields, a per-count one naming the table
 it was computed for. A field with no rule is carried as it stands.
 `policy.json`, beside the sets and one for every pair, holds the
-choices that are no measurement, in physical units, and the fields it
-holds back with the reason; `<pair>.pins.json` the literals typed for
-one pair, each with its why and the rung that chose it. A rule whose
+choices that are no measurement, in physical units, and under `hold`
+the fields it holds back with the reason: a held field stays at the
+value the set had, with what its rule gives beside it (`would_be`) and
+what the rule read still listed, and one the set never held stays out
+of it, said with what its rule gives; `<pair>.pins.json` the literals
+typed for one pair, each with its why and the rung that chose it. A
+rule whose
 input is missing does not guess: the field is `held` at the value the
 set had, the missing input named, or left out and said where there is
 nothing to carry. A result that names a file it read which has moved
@@ -74,11 +81,14 @@ beside it (`would_be`), or with `--protection` the fields named and
 nothing of the plant.
 
 A deviation is one change to a set, for a rung: a file of policy
-entries and pins, `{"policy": {...}, "pins": {field: {"value", "why",
-"rung"}}}`, never a list of raw fields. `build --deviation FILE --out
-PATH` (`derive`) builds the set of record again with the file's
-entries over the policy file's and its pins over the pair's, so a
-policy entry moves what its rules give, at the set's scale. The
+entries, pins and holds to release, `{"policy": {...}, "pins": {field:
+{"value", "why", "rung"}}, "release": [field, ...]}`, never a list of
+raw values. `build --deviation FILE --out PATH` (`derive`) builds the
+set of record again with the file's entries over the policy file's and
+its pins over the pair's, so a policy entry moves what its rules give,
+at the set's scale, and with each hold it releases bound at what the
+field's rule gives, the rest of the policy as it stands. A release of
+a field that is not held, or whose rule has no value, is refused. The
 derived set names the file among its inputs and, under `deviation`,
 every field it moved as [of record, deviated]. It is refused when the
 set of record is not what a build of its inputs gives now, when it
@@ -406,7 +416,7 @@ def adopt(pair, record_path, words=BEFORE, root=results.ROOT):
 
 KINDS = {"u8": (0, 0xFF), "i8": (-0x80, 0x7F), "u16": (0, 0xFFFF), "i16": (-0x8000, 0x7FFF),
          "u32": (0, 0xFFFFFFFF), "i32": (-0x80000000, 0x7FFFFFFF)}
-RULES = {}      # {field: Rule}, in the order the rules are written
+RULES = {}      # {field: {rule name: Rule}}, in the order the rules are written
 POLICY = "policy.json"
 ZERO_POINTS = hashlib.sha1(bytes(2 * postable.INTERVALS)).hexdigest()   # the points of an identity table
 WIDE = f"{widecodes.STAGE}/{widecodes.EXPERIMENT}"
@@ -443,11 +453,31 @@ class Rule:
 
 
 def rule(field, name, *, kind, unit, mirrors, q=0, pos_unit=0, rev=1, cls="measured"):
-    """Register the function under it as the rule of `field`."""
+    """Register the function under it as rule `name` of `field`. A
+    field may have several, one a way its quantity is on record."""
     def register(fn):
-        RULES[field] = Rule(field, name, kind, unit, q, pos_unit, rev, cls, mirrors, fn)
+        RULES.setdefault(field, {})[name] = Rule(field, name, kind, unit, q, pos_unit, rev, cls, mirrors, fn)
         return fn
     return register
+
+
+def rules():
+    """Every rule there is, the rules of one field together."""
+    return [r for of in RULES.values() for r in of.values()]
+
+
+def rule_of(c, field):
+    """The rule that binds `field`: its one rule, or of several the one
+    the policy names for the field under `rule`."""
+    of = RULES[field]
+    if len(of) == 1:
+        return next(iter(of.values()))
+    name = c.policies.get("rule", {}).get(field)
+    if name is None:
+        raise Missing(f"{POLICY} names no rule for {field} of {', '.join(of)}")
+    if name not in of:
+        raise ValueError(f"{POLICY}: {name} is no rule of {field} ({', '.join(of)})")
+    return of[name]
 
 
 def encode(r, x, fit=True):
@@ -482,8 +512,9 @@ class Context:
     `inputs` gathers what a set names under `inputs`, `notes` what a
     build has to say. A read of something that is not there raises
     Missing. With a `deviation` (`deviation_of`) its policy entries
-    stand over the policy file's and its pins over the pair's, and the
-    file is one of the inputs."""
+    stand over the policy file's and its pins over the pair's, the
+    holds it releases are `released`, and the file is one of the
+    inputs."""
 
     def __init__(self, pair, root=results.ROOT, registry=None, deviation=None):
         self.pair, self.root = pair, Path(root)
@@ -494,11 +525,17 @@ class Context:
         beside = set_path(pair, root).parent.relative_to(self.root)     # the policy and the pins lie beside the set
         self.policies = self.file("policy", beside / POLICY) or {}
         self.pins = self.file("pins", beside / f"{pair}.pins.json") or {}
+        self.released = ()
         if deviation is not None:
             dev = deviation_of(deviation)
             self.file("deviation", in_repo(deviation, self.root))
             self.policies = {**self.policies, **dev.get("policy", {})}
             self.pins = {**self.pins, **dev.get("pins", {})}
+            self.released = tuple(dev.get("release", ()))
+            free = [n for n in self.released if n not in self.policies.get("hold", {})]
+            if free:
+                raise ValueError(f"{sc.shown(deviation)}: {', '.join(free)} is not held: a deviation releases a "
+                                 f"hold of {POLICY}")
         loose = [n for n, pin in self.pins.items() if not all(k in pin for k in ("value", "why", "rung"))]
         if loose:
             raise ValueError(f"the pins of {pair}: {', '.join(loose)} lacks its value, its why or its rung")
@@ -535,19 +572,23 @@ class Context:
                                      f"re-run {name}")
         return doc
 
-    def raw(self, name, key):
-        """`key` of result `name`, as the file holds it."""
-        doc = self.result(name)
-        if key not in doc:
-            raise Missing(f"{name} has no {key}")
-        self.reads.append((f"{name}:{key}", doc[key]))
-        return doc[key]
+    def raw(self, name, *path):
+        """What result `name` holds at `path`, a key or the keys down
+        to a nested entry, as the file holds it."""
+        at = self.result(name)
+        for k, key in enumerate(path):
+            if not isinstance(at, dict) or key not in at:
+                raise Missing(f"{name} has no {'.'.join(path[:k + 1])}")
+            at = at[key]
+        self.reads.append((f"{name}:{'.'.join(path)}", at))
+        return at
 
-    def q(self, name, key):
-        """The value of quantity `key` of result `name`; its `lo` or
-        `hi` while the rule is evaluated at that end of its band."""
-        quantity = self.raw(name, key)
-        return quantity[self.side.get(f"{name}:{key}", "value")]
+    def q(self, name, *path):
+        """The value of the quantity result `name` holds at `path`; its
+        `lo` or `hi` while the rule is evaluated at that end of its
+        band."""
+        quantity = self.raw(name, *path)
+        return quantity[self.side.get(f"{name}:{'.'.join(path)}", "value")]
 
     def reg(self, kind, key):
         """`key` of the pair's registry entry of `kind`."""
@@ -602,8 +643,8 @@ def evaluate(r, c):
 
     value = encode(r, at({}))
     reads = c.reads
-    ends = [encode(r, at({name: end}), fit=False) for name, quantity in reads if isinstance(quantity, dict)
-            for end in ("lo", "hi") if quantity.get(end) is not None]
+    ends = [encode(r, at({name: end}), fit=False) for name, quantity in dict(reads).items()
+            if isinstance(quantity, dict) for end in ("lo", "hi") if quantity.get(end) is not None]
     c.side = {}
     e = {"value": value, "class": r.cls, "rule": r.name, "rule_rev": r.rev, "unit": r.unit, "q": r.q,
          "pos_unit": r.pos_unit, "inputs": list(dict.fromkeys(name for name, _ in reads))}
@@ -646,15 +687,164 @@ def gear_class(c):
     return f"{GEAR_CLASSES.index(name)} ({name})"
 
 
+# --- the motor block, the feedforwards and the observer gains ---
+#
+# The kernel works in counts: tap counts (vcounts), shunt counts
+# (ccounts), position counts, a MEDIUM tick. A rule takes the SI
+# quantity of record there through the board's stage 1 scales, the gear
+# and the scale of the count:
+#   R  vcounts/ccount            = R [ohm] x tap counts per V / shunt counts per A
+#   Ke vcounts/(count/s)         = Ke [V s/rad] x tap counts per V / counts per motor rad
+#   B  (count/s)/tick per ccount = Ke [N m/A] / shunt counts per A / J x counts per motor rad / MEDIUM rate
+#   Fc ccounts                   = Tc / Ke x shunt counts per A
+#   Fv ccounts/(count/s)         = b / Ke x shunt counts per A / counts per motor rad
+# The inertia feedforward and the observer's gains follow from B and the
+# observer's bandwidth the way the firmware repo's own synthesis has
+# them (ident/src/gains.rs synthesize), which the parity test holds.
+
+DECIM_MED = 10      # FAST ticks a MEDIUM period (core kernel/scheduler/table.rs DECIM_MED)
+LADDER, FRICTION = "3-servo/ladder", "3-servo/friction"
+# the winding's resistance as it is on record, by the way it was taken: (result, key)
+RESISTANCES = {
+    "rails_fit": ("3-servo/resistance", "r_rails_at_measured_e_ohm"),
+    "locked_laps": ("3-servo/resistance", "r_term_ohm"),
+    "small_step": ("3-servo/steps", "r_step_a_ohm"),
+    "take_back": ("3-servo/steps", "r_takeback_ohm"),
+}
+
+
+def counts_per_motor_rad(c):
+    return c.counts_per_deg * 180 / math.pi / c.reg("servo", "gear_ratio")
+
+
+def tap_counts_per_v(c):
+    return c.q("1-board/terminal-chain", "terminal_counts_per_v")
+
+
+def shunt_counts_per_a(c):
+    return c.q(*SCALES[CURRENT][:2])
+
+
+def medium_hz(c):
+    return c.reg("board", "tick_hz") / DECIM_MED
+
+
+def ke_v_s_per_rad(c):
+    """The back-EMF constant, V s/rad, which is the torque constant in
+    N m/A."""
+    return c.q(LADDER, "ke_v_s_per_rad")
+
+
+def ke_vcounts(c):
+    """Ke, tap counts per count/s."""
+    return ke_v_s_per_rad(c) * tap_counts_per_v(c) / counts_per_motor_rad(c)
+
+
+def b_gain(c):
+    """B, the speed a shunt count of current adds in a MEDIUM tick,
+    (count/s) per tick per ccount."""
+    return (ke_v_s_per_rad(c) / shunt_counts_per_a(c) / c.q("3-servo/run-up", "j_kg_m2")
+            * counts_per_motor_rad(c) / medium_hz(c))
+
+
+def friction(c, key):
+    """The friction line the firmware's model takes, SI: the pooled fit
+    with the bounds the friction result gives that pair."""
+    return c.q(FRICTION, "firmware_pair", "pooled", key) * 1e-6
+
+
+def observer_pole(c):
+    """The observer's three coincident poles, at the policy's bandwidth
+    on the MEDIUM tick."""
+    return math.exp(-2 * math.pi * c.policy("observer_hz") / medium_hz(c))
+
+
+def resistance(result, key):
+    def r_vcounts(c):
+        return c.q(result, key) * tap_counts_per_v(c) / shunt_counts_per_a(c)
+    return r_vcounts
+
+
+# One quantity, two fields: r_q12 is the resistance the back-EMF boxcar
+# subtracts and the one the stall-safe open-loop duty is sized from;
+# r_bemf_q12 is the boxcar's alone, on an image that gives it a field.
+# Each way the resistance is on record is a rule of both, and the policy
+# names the one that binds each.
+for _field, _lead, _mirrors in (
+        ("r_q12", "r", "core estimator/bemf.rs close_half, kernel/phases/limits.rs limit"),
+        ("r_bemf_q12", "r_bemf", "core estimator/bemf.rs close_half, the resistance of its subtract")):
+    for _way, _source in RESISTANCES.items():
+        rule(_field, f"{_lead}.{_way}", kind="u16", unit="vcounts/ccount", q=12, mirrors=_mirrors)(
+            resistance(*_source))
+
+
+@rule("recip_ke_q", "recip_ke.ladder", kind="u16", unit="(count/s)/vcount", q=10, pos_unit=+1,
+      mirrors="core estimator/bemf.rs close_half")
+def recip_ke(c):
+    return 1 / ke_vcounts(c)
+
+
+@rule("b_i_q313", "b_i.run_up", kind="u16", unit="(count/s)/tick per ccount", q=13, pos_unit=+1,
+      mirrors="core estimator/fusion.rs step")
+def b_i(c):
+    return b_gain(c)
+
+
+@rule("fric_fc_counts", "fric_fc.friction", kind="u16", unit="ccounts",
+      mirrors="core estimator/fusion.rs fric_c, kernel/phases/loops/velocity.rs fric_ff")
+def fric_fc(c):
+    return friction(c, "coulomb_uNm") / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
+
+
+@rule("fric_fv_q016", "fric_fv.friction", kind="u16", unit="ccounts/(count/s)", q=16, pos_unit=-1,
+      mirrors="core kernel/phases/loops/velocity.rs fric_ff")
+def fric_fv(c):
+    return (friction(c, "viscous_uNm_s_per_rad") / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
+            / counts_per_motor_rad(c))
+
+
+@rule("ke_vpc_q", "ke_vpc.ladder", kind="u16", unit="vcounts/(count/s)", q=12, pos_unit=-1,
+      mirrors="core kernel/phases/loops/current.rs u_ff_vc")
+def ke_vpc(c):
+    return ke_vcounts(c)
+
+
+@rule("j_ff_q88", "j_ff.run_up", kind="u16", unit="ccounts/((count/s)/tick)", q=8, pos_unit=-1,
+      mirrors="core kernel/phases/loops/velocity.rs step, ident gains.rs synthesize")
+def j_ff(c):
+    return 1 / b_gain(c)
+
+
+@rule("l1_q016", "l1.observer", kind="u16", unit="1", q=16, cls="policy",
+      mirrors="core estimator/fusion.rs step, ident gains.rs synthesize")
+def l1(c):
+    return 1 - observer_pole(c) ** 3
+
+
+@rule("l2_q88", "l2.observer", kind="u16", unit="(count/s)/count", q=8, cls="policy",
+      mirrors="core estimator/fusion.rs step, ident gains.rs synthesize")
+def l2(c):
+    pole = observer_pole(c)
+    return 1.5 * (1 - pole) ** 2 * (1 + pole) * medium_hz(c)
+
+
+@rule("l3_q88", "l3.observer", kind="u16", unit="ccounts/count", q=8, pos_unit=-1, cls="policy",
+      mirrors="core estimator/fusion.rs step, ident gains.rs synthesize")
+def l3(c):
+    return (1 - observer_pole(c)) ** 3 * medium_hz(c) / (2 * b_gain(c))
+
+
 # --- build ---
 
 def held(what, rule_name, carried, why, previous, would_be=None):
     """The entry of a field (`what` "value") or of the slots ("slots")
     whose rule does not bind: what the previous set held, why, the set
-    it was first carried from, and what the rule would give where it
-    gave a value."""
-    e = {what: carried[what], "class": "held", "rule": rule_name, "held": why,
-         "carried_from": carried.get("carried_from", previous["hash"]["set"])}
+    it was first carried from, what the rule would give where it gave a
+    value, and the rule's name where one is chosen. A carried value at
+    an unknown scale stays marked as that: holding it gave it none."""
+    e = {what: carried[what], "class": "held", **({} if rule_name is None else {"rule": rule_name}), "held": why,
+         "carried_from": carried.get("carried_from", previous["hash"]["set"]),
+         **({"scale": carried["scale"]} if "scale" in carried else {})}
     return e if would_be is None else {**e, "would_be": would_be}
 
 
@@ -749,25 +939,35 @@ def table_of(c, previous, slots):
 
 def bound(c, name, carried, previous):
     """The entry a build gives field `name`, None when it has none: a
-    pin of the pair, else its rule's value, held at the carried value
-    where the policy holds it or an input is missing, else the previous
-    set's entry as it stands."""
+    pin of the pair, else the value of its rule, the one the policy
+    names where it has several, held at the carried value where the
+    policy holds it or an input is missing, else the previous set's
+    entry as it stands. A field the policy holds lists what its rule
+    read beside what it would be. A hold a deviation releases does not
+    hold, and is refused where the rule has no value to bind."""
     if name in c.pins:
         pin = c.pins[name]
         return {"value": pin["value"], "class": "pinned", "why": pin["why"], "rung": pin["rung"]}
-    r = RULES.get(name)
-    if r is None:
+    if name not in RULES:
         return copy.deepcopy(carried)
+    r = None
     try:
+        r = rule_of(c, name)
         e = evaluate(r, c)
     except Missing as m:
+        if name in c.released:
+            raise ValueError(f"{name}: its hold is released and its rule has no value: {m}") from None
         c.notes.append(f"{name}: {'left out' if carried is None else 'held'}, {m}")
-        return None if carried is None else held("value", r.name, carried, str(m), previous)
-    why = c.policies.get("hold", {}).get(name)
+        return None if carried is None else held("value", r and r.name, carried, str(m), previous)
+    if len(RULES[name]) > 1:
+        e["inputs"] = [f"policy:rule.{name}", *e["inputs"]]
+    why = None if name in c.released else c.policies.get("hold", {}).get(name)
     if why is None:
         return e
     c.notes.append(f"{name}: {'left out' if carried is None else 'held'}, {why}; its rule gives {e['value']}")
-    return None if carried is None else held("value", r.name, carried, why, previous, e["value"])
+    # what the rule read stays listed: the value it would be moves with it
+    return None if carried is None else {**held("value", r.name, carried, why, previous, e["value"]),
+                                         "inputs": e["inputs"]}
 
 
 def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, deviation=None):
@@ -817,10 +1017,12 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
             would = None
             if e is not None and name in before:
                 would = e["value"] if e["value"] != before[name]["value"] else e.get("would_be")
-            e = copy.deepcopy(before.get(name))
+            gave, e = e, copy.deepcopy(before.get(name))
             if e is None:
-                c.notes.append(f"{name}: left out, "
-                               f"{'name it with --protection' if name in PROTECTION else 'a field of the plant'}")
+                # a field its rule left out is said already
+                if gave is not None:
+                    c.notes.append(f"{name}: left out, "
+                                   f"{'name it with --protection' if name in PROTECTION else 'a field of the plant'}")
             else:
                 e.pop("would_be", None)
                 if would is not None:
@@ -900,27 +1102,34 @@ def in_repo(path, root=results.ROOT, what="a deviation"):
 
 def deviation_of(path):
     """A deviation file's document: `{"policy": {...}, "pins": {field:
-    {"value", "why", "rung"}}}`, either or both, and a `note`. It names
-    no raw list of fields: a policy entry goes through the rules, at
-    the set's scale, and a pin is a literal with its reason and the
-    rung that chose it."""
+    {"value", "why", "rung"}}, "release": [field, ...]}`, any of the
+    three, and a `note`. It names no raw list of values: a policy entry
+    goes through the rules, at the set's scale, a pin is a literal with
+    its reason and the rung that chose it, and a release names fields
+    the policy file holds, each then bound at what its rule gives, the
+    rest of the policy standing as it is."""
     doc = json.loads(Path(path).read_text())
-    extra = [k for k in doc if k not in ("note", "policy", "pins")]
-    if extra or not (doc.get("policy") or doc.get("pins")):
-        raise ValueError(f"{sc.shown(path)}: a deviation holds policy entries or pins"
-                         f"{', and no ' + ', '.join(extra) if extra else ', and this one neither'}")
+    extra = [k for k in doc if k not in ("note", "policy", "pins", "release")]
+    release = doc.get("release", [])
+    if extra or not (doc.get("policy") or doc.get("pins") or release):
+        raise ValueError(f"{sc.shown(path)}: a deviation holds policy entries, pins or holds to release"
+                         f"{', and no ' + ', '.join(extra) if extra else ', and this one none'}")
+    if not (isinstance(release, list) and all(isinstance(n, str) for n in release)):
+        raise ValueError(f"{sc.shown(path)}: `release` is a list of the fields whose hold it releases")
     return doc
 
 
 def derive(base, deviation, root=results.ROOT, registry=None):
     """(the set `base` with one deviation, what the build has to say):
     `base` built again with the deviation file's policy entries and
-    pins over its own, the file named among its inputs, and under
-    `deviation` the file, its sha1 and every field it moved as [of
-    record, deviated]. Refused when `base` already holds a deviation,
-    when `base` is not what a build of its inputs gives now, so the
-    derived set would differ by more than the deviation, when the
-    deviation moves nothing, and when it pins a protection field and
+    pins over its own and the holds it releases bound at their rules'
+    values, the file named among its inputs, and under `deviation` the
+    file, its sha1 and every field it moved as [of record, deviated].
+    Refused when `base` already holds a deviation, when `base` is not
+    what a build of its inputs gives now, so the derived set would
+    differ by more than the deviation, when the deviation moves
+    nothing, when it releases a field that is not held or whose rule
+    has no value, and when it pins or releases a protection field and
     anything else: a deviation that moves a protection field may move
     nothing else."""
     where = sc.shown(deviation)
@@ -928,9 +1137,9 @@ def derive(base, deviation, root=results.ROOT, registry=None):
         raise ValueError(f"the set already holds the deviation {base['deviation']['file']}: a rung runs on a set "
                          f"or on a set with one deviation")
     dev = deviation_of(deviation)
-    pins = dev.get("pins", {})
-    named = [n for n in pins if n in PROTECTION]
-    if named and (len(named) < len(pins) or dev.get("policy")):
+    moves = [*dev.get("pins", {}), *dev.get("release", [])]
+    named = [n for n in moves if n in PROTECTION]
+    if named and (len(named) < len(moves) or dev.get("policy")):
         raise ValueError(f"{where}: a deviation that moves a protection field ({', '.join(named)}) may move "
                          f"nothing else")
     plain, _ = build(base["pair"], base, named, root, registry)
@@ -1404,7 +1613,8 @@ def main(argv=None):
     b = sub.add_parser("build", help="offline: the set from the results of record, on top of the set of record")
     b.add_argument("--out", type=Path, help="write a derived set here and leave the set of record as it is")
     b.add_argument("--deviation", type=Path,
-                   help="with --out: the set of record with this deviation file's policy entries and pins")
+                   help="with --out: the set of record with this deviation file's policy entries, pins and "
+                        "released holds")
     b.add_argument("--protection", nargs="+", default=[], metavar="NAME",
                    help="move these protection fields and carry the plant, not the other way about")
     sub.add_parser("status", help="offline: the set's input files against the files now")

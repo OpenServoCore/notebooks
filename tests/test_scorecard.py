@@ -441,6 +441,7 @@ def test_inputs_come_through_the_chain():
 
 
 PAIR = sc.pair_of(SERVO, BOARD)
+RESISTANCE = results.path("3-servo", "resistance", PAIR)      # the pair's stage 3 result of record
 
 
 @pytest.fixture
@@ -612,6 +613,31 @@ def test_a_rung_records_its_set_and_its_deviation(bus, monkeypatch, tmp_path):
     assert out["runs"] == ["run-1", "run-2"] and out["deviation"] == doc["deviation"]
 
 
+def test_a_rung_releases_a_hold_and_records_the_field_of_record_beside_deviated(bus, tmp_path):
+    # the pair's set of record with the winding resistance held: the rule's value beside the servo's
+    dst = results.path("3-servo", "resistance", PAIR)
+    dst.parent.mkdir(parents=True)
+    shutil.copy(RESISTANCE, dst)
+    cn.set_path(PAIR, tmp_path).with_name(cn.POLICY).write_text(json.dumps({
+        "rule": {"r_q12": "r.rails_fit"}, "hold": {"r_q12": "it moves on a rung of its own"}}))
+    held, _ = cn.build(PAIR, bus["set"], root=tmp_path)
+    cn.write(held, cn.set_path(PAIR, tmp_path))
+    e = held["fields"]["r_q12"]
+    gives = e["would_be"]
+    assert (e["value"], e["class"], e["rule"]) == (17100, "held", "r.rails_fit") and gives != 17100
+    assert held["hash"]["set"] == bus["set"]["hash"]["set"]
+    f = tmp_path / "deviations" / "r.json"
+    f.parent.mkdir()
+    f.write_text(json.dumps({"note": "the winding resistance of the record", "release": ["r_q12"]}))
+    rung = sc.run("01-r", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
+    doc, derived = rung_json(rung), cn.load(rung / sc.SET_COPY)
+    assert doc["deviation"] == {"file": "deviations/r.json", "sha1": sha1(f), "fields": {"r_q12": [17100, gives]}}
+    assert derived["fields"]["r_q12"]["class"] == "measured" and doc["set"]["classes"] == cn.classes(derived)
+    # the install wrote the released field alone, and the reboot after the runs brought the stored state back
+    assert bus["servo"].wrote() == [("set", "r_q12", str(gives)), ("run", "stamp"), ("run", "reboot")]
+    assert constants(rung, 1)["fields"]["r_q12"] == gives and bus["servo"].decoded("r_q12") == 17100
+
+
 def test_a_rung_is_scored_at_the_current_scale_of_its_own_set(bus, tmp_path):
     scale = bus["set"]["scales"][cn.CURRENT]
     assert scale["value"] == CPA and scale["class"] == "measured"
@@ -755,7 +781,8 @@ def outside(bus, root):
      "deviations/same.json: the deviation moves no field of the set"),
     (lambda bus, root: {"deviation": deviation(root, "raw", pins={"p_kp_q88": {"value": 5026}})},
      "p_kp_q88 lacks its value, its why or its rung"),
-    (lambda bus, root: {"deviation": deviation(root, "empty", pins={})}, "a deviation holds policy entries or pins"),
+    (lambda bus, root: {"deviation": deviation(root, "empty", pins={})},
+     "a deviation holds policy entries, pins or holds to release"),
     (two_deviations, "the set already holds the deviation deviations/one.json"),
     (outside, "is not a file of the repo: a deviation is named by its path in it"),
     (lambda bus, root: {"set_file": cn.write(bus["set"], root.parent / f"{root.name}-set.json")},
@@ -828,7 +855,7 @@ def test_a_rung_off_its_set_does_not_start(bus, monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as e:
         sc.run("01-soft", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
     assert str(e.value).endswith("01-soft: run-1 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [adopted])")
+                                 "clean; r_q12: servo 16000, set 17100 [held])")
     # nothing is recorded, nothing is driven, and the stored state comes back
     assert bus["log"] == [] and not sc.rung_dir(PAIR, "01-soft").exists()
     assert servo.wrote()[-1] == ("run", "reboot") and servo.decoded("r_q12") == 17100
@@ -1234,7 +1261,7 @@ def test_a_constant_changed_between_runs_is_refused_with_the_field_named(bus, mo
     with pytest.raises(SystemExit) as e:
         sc.run("00-baseline", "abc123", "f" * 40, runs=3, servo=SERVO, board=BOARD)
     assert str(e.value).endswith("00-baseline: run-2 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [adopted])")
+                                 "clean; r_q12: servo 16000, set 17100 [held])")
     # nothing of run-2 is recorded or driven, and run-1 stands
     rung = sc.rung_dir(PAIR, "00-baseline")
     assert [name for name, _, _ in bus["log"]] == list(TS.CAPTURES)
@@ -1550,19 +1577,26 @@ def test_the_plans_of_a_rung_on_the_table_rebuild_byte_for_byte_from_the_set_of_
             for g in sets["wide"] if g["test"] == "wide-hold"] == recorded
 
 
-def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_its_pins_alone():
+def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what_it_names_alone():
     pair = sc.pair_of(SERVO, BOARD)
     base = cn.of_record(pair)
     files = sorted((results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations").glob("*.json"))
-    assert files
+    assert {f.stem for f in files} >= {"motor-r", "motor-rest"}
     for f in files:
         dev = json.loads(f.read_text())
+        pins, release = dev.get("pins", {}), dev.get("release", [])
         doc, _ = cn.derive(base, f)
-        assert doc["deviation"]["fields"] == {n: [base["fields"][n]["value"], pin["value"]]
-                                              for n, pin in dev["pins"].items()}, f.name
-        assert all(doc["fields"][n]["class"] == "pinned" and pin["why"] and pin["rung"]
-                   for n, pin in dev["pins"].items())
+        # a pin moves its field to its literal, a release a held field to what its rule gives
+        assert doc["deviation"]["fields"] == {
+            **{n: [base["fields"][n]["value"], pin["value"]] for n, pin in pins.items()},
+            **{n: [base["fields"][n]["value"], base["fields"][n]["would_be"]] for n in release}}, f.name
+        assert all(doc["fields"][n]["class"] == "pinned" and pin["why"] and pin["rung"] for n, pin in pins.items())
+        assert all(base["fields"][n]["class"] == "held" and doc["fields"][n]["class"] in ("measured", "policy")
+                   for n in release) and dev["note"]
         assert "/Users/" not in f.read_text() and "/home/" not in f.read_text()
+    assert json.loads((files[0].parent / "motor-r.json").read_text())["release"] == ["r_q12"]
+    assert json.loads((files[0].parent / "motor-rest.json").read_text())["release"] == [
+        "b_i_q313", "fric_fv_q016", "ke_vpc_q", "j_ff_q88", "l3_q88"]
 
 
 def test_an_identity_rungs_plan_is_rebuilt_byte_for_byte():

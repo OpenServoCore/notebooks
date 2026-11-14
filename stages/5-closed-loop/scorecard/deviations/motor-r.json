@@ -1,0 +1,4 @@
+{
+  "note": "the winding resistance of the stage 3 rails fit in place of the stored value, alone: the back-EMF boxcar subtracts it and the stall-safe open-loop duty is sized from it",
+  "release": ["r_q12"]
+}

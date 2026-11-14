@@ -3,10 +3,16 @@
  "pair": "mg90-d__dev-v006-2A-D",
  "inputs": {
   "1-board/current-scale": {"file": "stages/1-board/current-scale/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "5fbdb93bd77174824fffb47a5b58e6d50e8d66e1"},
+  "1-board/terminal-chain": {"file": "stages/1-board/terminal-chain/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "e1249f71a80bcad5c4c1d64301560f66c0bd8582"},
   "1-board/wide-codes": {"file": "stages/1-board/wide-codes/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "68f01864e8cba762cf8c680f3078df4ecd4b77fc"},
-  "policy": {"file": "stages/5-closed-loop/calibration/policy.json", "sha1": "73bb5f120346a8d6b84bfc0a8acd4853942dda51"},
+  "3-servo/friction": {"file": "stages/3-servo/friction/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "39c90cfb713782bd4285dbf6b14257d8e0650c4e"},
+  "3-servo/ladder": {"file": "stages/3-servo/ladder/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "02128bc470f487be558053bc7cc8b1af63dab685"},
+  "3-servo/resistance": {"file": "stages/3-servo/resistance/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "aeac82cbb9299ae6d23e31753d8010797bc7a25d"},
+  "3-servo/run-up": {"file": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "0293b324b5bb7c0030930964dffa4f6856d02283"},
+  "3-servo/steps": {"file": "stages/3-servo/steps/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "06987086aefe0619e015c979d9ce1266ed4996ca"},
+  "policy": {"file": "stages/5-closed-loop/calibration/policy.json", "sha1": "e06c11f1d4160626b022a5241c31260ee6250a46"},
   "pos_table": {"file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json", "sha1": "904c4575899f8215f5daec1d2bdd227a1ee9c4c3"},
-  "registry": {"servo": {"gear_ratio": 308.0533, "gear_class": "metal"}}
+  "registry": {"board": {"tick_hz": 20000}, "servo": {"gear_ratio": 308.0533, "gear_class": "metal"}}
  },
  "origins": {
   "servo-state": {"from": "the servo's state before the path, read in its stored state", "sha1": "a51c65dbf71cd5bbf7e7f5e5b905a79fe58d8a83", "state_hash": "a984528e836c6dd59b41b6ee708396a5304fb9819018cf58d6de73f82e021914"}
@@ -29,7 +35,7 @@
   "v_kp_q88": {"value": 124, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
   "v_ki_q412": {"value": 311, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
   "v_kaw_q412": {"value": 623, "class": "adopted", "origin": "servo-state", "protection": null},
-  "j_ff_q88": {"value": 789, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
+  "j_ff_q88": {"value": 789, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term", "inputs": ["3-servo/ladder:ke_v_s_per_rad", "1-board/current-scale:counts_per_a", "3-servo/run-up:j_kg_m2", "scale", "registry:gear_ratio", "registry:tick_hz"], "protection": null, "rule": "j_ff.run_up", "scale": "unknown", "would_be": 862},
   "p_kp_q88": {"value": 5026, "class": "adopted", "origin": "servo-state", "protection": null},
   "pos_deadband_counts": {"value": 4, "class": "adopted", "origin": "servo-state", "protection": null},
   "velocity_limit_cps": {"value": 1500, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
@@ -56,15 +62,15 @@
   "sensor_delta_max": {"value": 256, "class": "adopted", "origin": "servo-state", "protection": {"looser": "up"}},
   "sensor_bad_count": {"value": 4, "class": "adopted", "origin": "servo-state", "protection": {"looser": "up"}},
   "rail_fold_q8": {"value": 1430, "class": "adopted", "origin": "servo-state", "protection": {"looser": "judged"}},
-  "l1_q016": {"value": 8640, "class": "adopted", "origin": "servo-state", "protection": null},
-  "l2_q88": {"value": 3180, "class": "adopted", "origin": "servo-state", "protection": null},
-  "l3_q88": {"value": 77, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
-  "r_q12": {"value": 4541, "class": "adopted", "origin": "servo-state", "protection": null},
-  "recip_ke_q": {"value": 11817, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
-  "b_i_q313": {"value": 2657, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
-  "fric_fc_counts": {"value": 100, "class": "adopted", "origin": "servo-state", "protection": null},
-  "fric_fv_q016": {"value": 289, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
-  "ke_vpc_q": {"value": 355, "class": "adopted", "origin": "servo-state", "protection": null, "scale": "unknown"},
+  "l1_q016": {"value": 8640, "class": "policy", "inputs": ["policy:observer_hz", "registry:tick_hz"], "pos_unit": 0, "protection": null, "q": 16, "rule": "l1.observer", "rule_rev": 1, "unit": "1"},
+  "l2_q88": {"value": 3180, "class": "policy", "inputs": ["policy:observer_hz", "registry:tick_hz"], "pos_unit": 0, "protection": null, "q": 8, "rule": "l2.observer", "rule_rev": 1, "unit": "(count/s)/count"},
+  "l3_q88": {"value": 77, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term", "inputs": ["policy:observer_hz", "registry:tick_hz", "3-servo/ladder:ke_v_s_per_rad", "1-board/current-scale:counts_per_a", "3-servo/run-up:j_kg_m2", "scale", "registry:gear_ratio"], "protection": null, "rule": "l3.observer", "scale": "unknown", "would_be": 84},
+  "r_q12": {"value": 4541, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own: the back-EMF boxcar subtracts it and the stall-safe open-loop duty is sized from it", "inputs": ["policy:rule.r_q12", "3-servo/resistance:r_rails_at_measured_e_ohm", "1-board/terminal-chain:terminal_counts_per_v", "1-board/current-scale:counts_per_a"], "protection": null, "rule": "r.rails_fit", "would_be": 3744},
+  "recip_ke_q": {"value": 11817, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own, with the resistance the boxcar subtracts: on an estimator without the on-time term a replay reads the speed worse with the record's pair", "inputs": ["3-servo/ladder:ke_v_s_per_rad", "1-board/terminal-chain:terminal_counts_per_v", "scale", "registry:gear_ratio"], "protection": null, "rule": "recip_ke.ladder", "scale": "unknown", "would_be": 13315},
+  "b_i_q313": {"value": 2657, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term", "inputs": ["3-servo/ladder:ke_v_s_per_rad", "1-board/current-scale:counts_per_a", "3-servo/run-up:j_kg_m2", "scale", "registry:gear_ratio", "registry:tick_hz"], "protection": null, "rule": "b_i.run_up", "scale": "unknown", "would_be": 2434},
+  "fric_fc_counts": {"value": 100, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own: the measured Coulomb term was benched alone and not kept", "inputs": ["3-servo/friction:firmware_pair.pooled.coulomb_uNm", "3-servo/ladder:ke_v_s_per_rad", "1-board/current-scale:counts_per_a"], "protection": null, "rule": "fric_fc.friction", "would_be": 54},
+  "fric_fv_q016": {"value": 289, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term", "inputs": ["3-servo/friction:firmware_pair.pooled.viscous_uNm_s_per_rad", "3-servo/ladder:ke_v_s_per_rad", "1-board/current-scale:counts_per_a", "scale", "registry:gear_ratio"], "protection": null, "rule": "fric_fv.friction", "scale": "unknown", "would_be": 812},
+  "ke_vpc_q": {"value": 355, "class": "held", "carried_from": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66", "held": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term", "inputs": ["3-servo/ladder:ke_v_s_per_rad", "1-board/terminal-chain:terminal_counts_per_v", "scale", "registry:gear_ratio"], "protection": null, "rule": "ke_vpc.ladder", "scale": "unknown", "would_be": 315},
   "r0_q12": {"value": 0, "class": "adopted", "origin": "servo-state", "protection": null},
   "th_rise_q016": {"value": 1143, "class": "adopted", "origin": "servo-state", "protection": {"looser": "down"}},
   "th_rise2_q016": {"value": 0, "class": "adopted", "origin": "servo-state", "protection": {"looser": "down"}},
@@ -83,5 +89,5 @@
   "gear_class": {"value": "2 (metal)", "class": "measured", "inputs": ["registry:gear_class"], "pos_unit": 0, "protection": null, "q": 0, "rule": "gear_class.registry", "rule_rev": 1, "unit": "class"}
  },
  "hash": {"plant": "18ddc93bf79a2e7ee2728f84e49773b87a916aa987b7b85a23c94a5ebe9dc5fe", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66"},
- "previous": {"plant": "18ddc93bf79a2e7ee2728f84e49773b87a916aa987b7b85a23c94a5ebe9dc5fe", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "set": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66"}
+ "previous": {"plant": "18ddc93bf79a2e7ee2728f84e49773b87a916aa987b7b85a23c94a5ebe9dc5fe", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66"}
 }
