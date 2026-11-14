@@ -222,20 +222,64 @@ def test_the_crawl_swing_reads_the_items_that_swing_about_their_own_line(tmp_pat
     assert f["crawl_swing_deg"] == pytest.approx(16 / CPD, abs=1 / CPD)
 
 
-def slow_report(segs, slow_deg_s):
-    """omega_hat_cps a poll an item: the ramps' real speed less
-    `slow_deg_s` along the travel, 0 on a pause."""
-    cps = 10 / (512 / 20_000)
-    return [round(s["direction"] * (cps - slow_deg_s * CPD) * sc.Q16) if s["test"] == "ramp" else 0
+def ramp_paths(path, n=50):
+    """ramp_rows' goals, the shaft in item j of each ramp on
+    `path(goal, direction, j)`, 400 rows."""
+    segs, rows = ramp_rows(n)
+    j = 0
+    for k, s in enumerate(segs):
+        if s["test"] == "ramp":
+            rows[k] = (rows[k][0], rows[k][1], path(s["goal_counts"], s["direction"], j), rows[k][3])
+            j += 1
+        else:
+            j = 0
+    return segs, rows
+
+
+def stop_go(goal, direction, j):
+    """Still over the item's first and last 40 rows, the item's 10 counts
+    travelled between: the shaft stopped across every hole."""
+    return goal - direction * 10 * (1 - np.clip((np.arange(400) - 40) / 320, 0, 1))
+
+
+def steady(goal, direction, j):
+    """A count every 4 ticks through the items and the holes alike, 5000
+    counts/s, from the ramp's first goal less one step."""
+    return goal - direction * 10 * (j + 1) + direction * ((512 * j + np.arange(400)) // 4)
+
+
+def reports(segs, cps_of):
+    """omega_hat_cps a poll an item: `cps_of(direction)` along the travel
+    on a ramp item, 0 on a pause."""
+    return [round(s["direction"] * cps_of(s["direction"]) * sc.Q16) if s["test"] == "ramp" else 0
             for s in segs]
 
 
-def test_a_speed_report_that_reads_slow_scores_negative(tmp_path):
-    segs, rows = ramp_rows()
+def test_a_report_of_a_shaft_stopped_at_every_poll_scores_no_error(tmp_path):
+    segs, rows = ramp_paths(stop_go)
     synth.write(tmp_path, rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
-                polls={"omega_hat_cps": slow_report(segs, 4.0)})
+                polls={"omega_hat_cps": reports(segs, lambda d: 0.0)})
+    f = sc.follow_scores(sc.load(tmp_path))
+    assert f["speed_report_error_deg_s_1pct"] == pytest.approx(0.0, abs=1e-6)
+    # the same report against the ramp's own speed would read all of it as error
+    assert f["ramp_speed_deg_s_1pct"] == pytest.approx(10 / 0.0256 / CPD)
+
+
+def test_a_report_that_reads_slow_scores_its_shortfall(tmp_path):
+    segs, rows = ramp_paths(steady, n=12)
+    synth.write(tmp_path, rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
+                polls={"omega_hat_cps": reports(segs, lambda d: 5000 - 4.0 * CPD)})
     f = sc.follow_scores(sc.load(tmp_path))
     assert f["speed_report_error_deg_s_1pct"] == pytest.approx(-4.0, abs=1e-6)
+
+
+def test_the_speed_report_is_the_mean_of_the_up_and_the_down_ramp(tmp_path):
+    segs, rows = ramp_paths(stop_go)
+    synth.write(tmp_path, rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
+                polls={"omega_hat_cps": reports(segs, lambda d: (2.0 if d > 0 else -6.0) * CPD)})
+    cap = sc.load(tmp_path)
+    assert [sc.speed_report_error_deg_s(cap, s, g) for s, g in sc.ramps(cap).values()] == pytest.approx([2.0, -6.0])
+    assert sc.follow_scores(cap)["speed_report_error_deg_s_1pct"] == pytest.approx(-2.0)
 
 
 def steps_with_reports(tmp_path, offsets):
@@ -265,7 +309,7 @@ def test_a_position_report_reads_against_the_quiet_pot_of_the_item_it_closes(tmp
 def test_a_capture_without_the_report_columns_scores_nan(tmp_path):
     segs, rows = ramp_rows()
     synth.write(tmp_path / "follow", rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs),
-                polls={"omega_hat_cps": slow_report(segs, 4.0)})
+                polls={"omega_hat_cps": reports(segs, lambda d: 0.0)})
     steps_with_reports(tmp_path / "steps", [0, 1, 0, 1])
     for name, col in (("follow", "omega_hat_cps"), ("steps", "theta_hat_q16")):
         f = tmp_path / name / "segments.csv"
@@ -734,9 +778,10 @@ def bump_points(height):
     return c.astype(np.int64)
 
 
-def table_rung(root, points, lut_state, segs, plan_doc, named=True):
+def table_rung(root, points, lut_state, segs, plan_doc, named=True, **kw):
     """A rung under `root` with one capture, steps, its table file under
-    the repo root `root` and `rung.json` naming it (or not)."""
+    the repo root `root` and `rung.json` naming it (or not); `kw` go to
+    the capture's writer."""
     path = root / "stages" / "5-closed-loop" / "calibration" / "synth.pos_lut.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     assert postable.validate(points, *STOPS) is None
@@ -745,7 +790,7 @@ def table_rung(root, points, lut_state, segs, plan_doc, named=True):
         "target": {"theta_at_stops_deg": [-90.0, 90.0]},
         "points_by_page": [[int(x) for x in points[p * 32:(p + 1) * 32]] for p in range(postable.PAGES)]}))
     rung = root / "telemetry" / "synth" / "scorecard" / "03-table"
-    cap = synth.write(rung / "run-1" / "steps", segs, CENTER, GUARD, plan=plan_doc, lut_state=lut_state)
+    cap = synth.write(rung / "run-1" / "steps", segs, CENTER, GUARD, plan=plan_doc, lut_state=lut_state, **kw)
     table = {"file": str(path.relative_to(root)), "sha1": hashlib.sha1(path.read_bytes()).hexdigest()}
     (rung / "rung.json").write_text(json.dumps({"label": "03-table", "pos_table": table if named else None}))
     return cap, path
@@ -775,6 +820,23 @@ def test_a_live_rung_reads_the_raw_pot_through_its_table(tmp_path, monkeypatch):
     # the same rows read raw miss the goal by the table's bend there
     raw_dir = synth.write(tmp_path / "raw", segs, CENTER, GUARD, plan=plan_doc)
     assert sc.rest_error_deg(sc.load(raw_dir)) == pytest.approx(abs(goal - r) / CPD)
+
+
+def test_a_live_rungs_speed_report_reads_against_the_pot_through_its_table(tmp_path, monkeypatch):
+    """A table whose points fall a count a node from 640 to 2816 raw, a
+    linearized 15/16 count a raw count there, and a shaft at a steady
+    5000 raw counts/s inside it: the servo's report is 4687.5."""
+    monkeypatch.setattr(results, "ROOT", tmp_path)
+    k = np.arange(postable.INTERVALS)
+    points = np.clip(np.minimum(4 * (k - 6), 176 - k), 0, None)
+    segs, rows = ramp_paths(steady, n=6)
+    polls = {"omega_hat_cps": reports(segs, lambda d: 4687.5)}
+    cap_dir, _ = table_rung(tmp_path, points, "LIVE", rows, plan(segs), gap_ticks=112, polls=polls)
+    f = sc.follow_scores(sc.load(cap_dir))
+    assert f["speed_report_error_deg_s_1pct"] == pytest.approx(0.0, abs=1e-6)
+    raw_dir = synth.write(tmp_path / "raw", rows, CENTER, GUARD, gap_ticks=112, plan=plan(segs), polls=polls)
+    f = sc.follow_scores(sc.load(raw_dir))
+    assert f["speed_report_error_deg_s_1pct"] == pytest.approx((4687.5 - 5000) / CPD, abs=1e-6)
 
 
 @pytest.mark.parametrize("rung_json", ["null", "absent"])

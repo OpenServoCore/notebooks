@@ -74,6 +74,7 @@ TAIL_DRIVEN_SHARE = 0.02  # a hunting tail: above the share a single noise wake 
 FOLLOW_TAIL = 2 / 3       # the share of a ramp, from its end, a follow score reads
 RAIL_TOL_V = 0.3          # the rail against the servo's rated voltage before a run
 REPORT_POT_MS = 50        # the pot a position report is read against, its span the quiet gate
+REPORT_EDGE_ROWS = 20     # 1 ms at 20 kHz each side of a poll's hole: the pot's level there
 CRAWL_SWING_PCTL = 95     # the crawl's widest goal items, short of a lone one
 Q16 = 1 << 16
 
@@ -506,21 +507,33 @@ def ramp_speed_deg_s(cap, segs, g):
 
 
 def speed_report_error_deg_s(cap, segs, g):
-    """One ramp, over the items in its follow tail: the mean reported
-    speed along the travel less the pot's, the slope of a line through
-    each item's median pot against its t_start; negative reads slow. The
-    polls sit at one phase of the goal period, so on a shaft that surges
-    inside the period this reads the surge's phase with the report's
-    error."""
-    p = polls_of(cap, "omega_hat_cps", "t_start")
-    items = ramp_tail(g)["seg"].unique()
-    if p is None or len(items) < 2:
+    """One ramp, over the items in its follow tail: the mean of each poll's
+    reported speed less the pot's own speed across the hole the poll was
+    taken in, along the travel; negative reads slow. The poll on item k's
+    line is taken in the hole between item k-1's rows and k's commit, so
+    the pot's speed there is the mean `pos` over k's first
+    REPORT_EDGE_ROWS rows less the mean over k-1's last, over the time
+    between the two windows' centers on the rows' time axis. The report
+    is `omega_hat_cps` in the counts the servo ran in and `pos` the pot
+    as `load` reads it, in the same counts: the raw pot, a wide code read
+    as the middle of its span, and under a LIVE table the linearized
+    counts. The hole holds no rows, so this is the pot's mean speed across
+    it, the commit included, against a report taken near its middle. An
+    item without REPORT_EDGE_ROWS rows on either side of its hole reads
+    nothing."""
+    p = polls_of(cap, "omega_hat_cps")
+    if p is None:
         return np.nan
-    pot = g[g["seg"].isin(items)].groupby("seg")["pos"].median().reindex(items).to_numpy(float)
-    t = p.loc[items, "t_start"].to_numpy(float)
-    slope = np.polyfit(t - t[0], pot, 1)[0]
-    report = p.loc[items, "omega_hat_cps"].to_numpy(float).mean() / Q16
-    return float(segs[0]["direction"] * (report - slope) / cap["cpd"])
+    items = dict(tuple(g.groupby("seg")))
+    errs = []
+    for k in ramp_tail(g)["seg"].unique():
+        before, after = items.get(k - 1), items[k]
+        if before is None or len(before) < REPORT_EDGE_ROWS or len(after) < REPORT_EDGE_ROWS:
+            continue
+        a, b = before.iloc[-REPORT_EDGE_ROWS:], after.iloc[:REPORT_EDGE_ROWS]
+        pot = (b["pos"].mean() - a["pos"].mean()) / (b["t"].mean() - a["t"].mean())
+        errs.append(p.loc[k, "omega_hat_cps"] / Q16 - pot)
+    return float(segs[0]["direction"] * np.mean(errs) / cap["cpd"]) if errs else np.nan
 
 
 def item_swings(g):
