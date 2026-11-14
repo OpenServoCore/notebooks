@@ -1,0 +1,12 @@
+{
+ "what": "the reading floor of the rail tap of mg90-d on dev-v006-2A-D: a walk of the bench supply down and back up, the rail tap and the chip's supply read at each level, in raw counts",
+ "date": "2026-11-14",
+ "how": "torque off, the bench supply stepped with 1.5 s at a level and three reads of `vbus_raw` and `vref_raw` a level, the middle one kept: walk-1 from 4.60 to 2.70 V in 50 mV steps, walk-2 from 3.90 to 3.40 V and back up in 20 mV steps. The levels are the supply's, ahead of the board's feed diode, so the rail sits under them. The servo answered every read and did not reset; the supply was put back after each walk",
+ "rows": ["telemetry/mg90-d__dev-v006-2A-D/rail-walk/walk-1.csv", "telemetry/mg90-d__dev-v006-2A-D/rail-walk/walk-2.csv"],
+ "edge_supply_v": 3.7,
+ "edge_vbus_counts": {"lo": 860, "hi": 861},
+ "floor_vbus_counts": {"lo": 857, "hi": 862},
+ "vref_in_regulation_counts": {"lo": 1490, "hi": 1499},
+ "says": "down to the edge the chip's supply, the ADC's reference, holds (`vref_raw` in its band) and the rail reading falls with the rail, so it is true there. Under the edge the chip's supply follows the rail down (`vref_raw` climbs) and the rail reading stops: it stays inside the floor's band at every level to 2.70 V, the same edge going down and coming up, three passes over it. A threshold under the floor never trips on a rail the chip survives",
+ "not_measured": "the edge with the motor drawing current, where the board's load and the regulator's dropout rise, and a 2S pack"
+}

@@ -423,8 +423,11 @@ its fields, and the reason and the need of the ones with none.
 
 Every verb prints the count per class, and the count of fields with no
 source whose value is per position count, which were fitted at a scale
-nothing recorded. On mg90-d with board D the set holds 62 fields: 3
-measured, 10 bench, no datasheet, 10 policy and 39 with no source. The
+nothing recorded. On mg90-d with board D the set holds 62 fields: 4
+measured, 10 bench, no datasheet, 18 policy and 30 with no source. Of
+the 30, 28 are held beside what a result or a decision on record gives
+and wait for a release or a protection step, and two are the
+observer's gains, bound at a bandwidth nobody decided. The
 bench fields are the four loop gains of rung `01b-gains-3hz-50hz`,
 the stops, the drive's sign and the gear class. The stops are a hand
 reading of 2026-11-05, kept as a dated file beside the set that says of
@@ -539,6 +542,13 @@ every rule to it.
 | `l1_q016` | the observer's position gain, 1 - p^3 | p = exp(-2 pi f / MEDIUM rate), f the policy's `observer_hz` | no |
 | `l2_q88` | its speed gain, 1.5 (1 - p)^2 (1 + p) x MEDIUM rate | the same | no |
 | `l3_q88` | its disturbance gain, (1 - p)^3 x MEDIUM rate / (2 B) | p and B | over |
+| `i_kp_q88` | the current loop's proportional gain, w x L x tap counts per V / shunt counts per A | w = 2 pi f, f the policy's `current_loop_hz`; L the stage 3 inductance of the locked bursts | no |
+| `i_ki_q412` | its integral gain, w x R a FAST tick | w, and R the rails fit's, as `r_q12` takes it | no |
+| `i_kaw_q412` | its anti-windup gain, twice the integral gain | the same | no |
+| `r0_q12` | the cold resistance, the rails fit taken to 25 C along copper's slope | the stage 3 resistance and the board temperature that result states | no |
+| `ke_uvs_per_rad` | Ke, uV s/rad | the stage 3 ladder | no |
+| `fric_breakaway_counts` | the static friction as a current, Ts / Ke x shunt counts per A | the stage 3 static friction, measured with the load on the horn | no |
+| `vdd_mv` | the chip's supply, mV | the stage 1 terminal chain's `vdd_v` | no |
 
 Each rule names in the module the firmware function that uses its
 field. The feedforward and the three observer gains are the firmware
@@ -547,7 +557,30 @@ rules to the fields that file's code gives on its own test plant. The
 three observer gains are the policy's by their rule: the bandwidth is a
 choice. It is one nobody has made: 15 Hz is an old tool's default
 target, listed under `undecided`, so the gains bound at it have no
-source.
+source. A deviation's `observer_hz` moves them: 10 Hz gives 5894, 1446
+and 25 for `l1_q016`, `l2_q88` and `l3_q88`, 15 Hz 8640, 3180 and 84,
+25 Hz 13757, 8433 and 371, the last of each with its hold released.
+
+The current loop's three gains are that file's placement too. The
+proportional gain cancels the winding's electrical pole, w L, the
+integral gain sets the crossover, w R a FAST tick, and the anti-windup
+gain is twice the integral one, with L and R in counts through the
+measured stage 1 scales. The bandwidth is the policy's
+`current_loop_hz`, 1 kHz, the old tool's default target, listed under
+`undecided`: a sweep rung picks it. On this motor's 0.82 mH and
+4.18 ohm the rules give 289, 1176 and 2352, where the servo holds 275,
+1580 and 3160, an old identification fit of another servo. The three
+are held together. A deviation's `current_loop_hz` moves them in
+proportion: 144, 588 and 1176 at 500 Hz, 433, 1764 and 3528 at 1.5 kHz.
+
+Four fields are records a host keeps on the servo, which the kernel
+never reads: the cold resistance `r0_q12`, the back-EMF constant
+`ke_uvs_per_rad`, the static friction `fric_breakaway_counts` and the
+chip's supply `vdd_mv`. Their rules give 3725, 1159, 97 and 3293, where
+the servo holds three zeros never written and the board's nominal
+3300. The cold resistance is the rails fit, 4.177 ohm at the 26.26 C
+its result states, taken to the 25 C the field is stated at. The four
+are held together, for a release of their own.
 
 The resistance is on record four ways in stage 3, each a rule:
 `rails_fit`, the fit over three rails with the edge lags at stage 1's
@@ -622,10 +655,11 @@ itself, 2 of 6 of the first half and 1 of 6 of the second: it lands on
 a stuck code's gap and flips from run to run on the set of record
 alone.
 
-Three groups of protection fields and the thermal limit have rules. The
-NTC curve's and the winding model's are held, so the set shows what the
-record gives beside what protects the servo now; the current limits'
-and the thermal limit's are bound.
+Every protection field has a rule. The NTC curve's and the winding
+model's are held, so the set shows what the record gives beside what
+protects the servo now, and so are the screens and the supply terms
+whose decision is another value than the servo holds (below); the
+current limits', the thermal limit's and the rest are bound.
 
 The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
@@ -636,9 +670,10 @@ than 1.0 C under it from 15 to 90 C. The thermocouple run graded that
 equation and found it inside the meter's class once the rig's two
 effects are taken out. The result's `refit_*` curve and its
 fitted beta are fits against a thermocouple shown to read low and are
-not design constants. `ntc_raw_ref` has no rule yet and stays as the
-servo holds it, 2048, which is also the count the result names for its
-design curve (`design_raw_ref`). The servo holds another curve, the host's
+not design constants. `ntc_raw_ref` is the count that result names for
+its design curve (`design_raw_ref`), 2048, which is also the count the
+servo holds, so it binds as it stands. The other three words are held:
+the servo holds another curve, the host's
 tangent form about 25 C. What each reads on the bench board, through
 the kernel's own conversion and with the part's nominal equation as
 the truth:
@@ -730,21 +765,24 @@ and not alternated with it, its 60 degree move settles in 883 [874,
 ramps' goals went out late on a busy host, so its follow rows are not
 a comparison.
 
-Three of the four mA are decisions. The continuous current stays
+The four mA are decisions. The continuous current stays
 250 mA, interim, until a lock hold gives this motor's plateau, and the
 release moves with it; `policy.json` says so under `why`. The overcurrent
-trip's 2200 mA is a boot default nobody decided, so `oc_trip_counts`
-binds at it with no source. The collision trip stays off, a decision:
+trip stays 2200 mA: it is a detector of a wiring or bridge fault, above
+the locked-rotor current on a full 2S pack, about 2.0 A, so only a
+short reaches it. The collision trip stays off, a decision:
 the policy's `collision_trip` is `off`, and the rule of
 `stall_tau_trip_counts` gives the field's largest value, which no
 disturbance estimate passes. A level in counts has no rule yet.
 
 A deviation moves the protection fields of one step: the words of the
-NTC curve are one step, the four current limits another and the winding
-model's four a third, a protection field in none is a step alone, and a
+NTC curve are one step, the four current limits another, the winding
+model's four a third and the position-error screen's angle and time a
+fourth, a protection field in none is a step alone, and a
 release of one field of a step releases every held field of it, so no
-curve of two fits, no limits at two scales and no model of two halves
-are built. The NTC curve's step of record is
+curve of two fits, no limits at two scales, no model of two halves and
+no screen of one decision and one default are built. The NTC curve's
+step of record is
 [protection-ntc-curve.json](scorecard/deviations/protection-ntc-curve.json).
 Its install names every field it moves as `--protection` and again as
 `--loosen`: the curve's words are judged. The current limits' step
@@ -759,32 +797,33 @@ a policy entry in the unit a person sets it in and a rule that takes
 it to counts at the set's scale: a speed in deg/s and an angle in deg
 times the counts per degree, an acceleration in deg/s^2 times the
 counts per degree over the MEDIUM rate, since the kernel holds it as
-the speed one MEDIUM tick adds. The entries are what the stored counts
-were typed for at the raw pot's mid travel scale, to four figures.
-None is a round number: the stored counts are the firmware's boot
-defaults, which are round in counts (1500 count/s, reached in 50 ms;
-500 count/s; 400 counts).
+the speed one MEDIUM tick adds. The two limits of motion still restate
+the stored counts: their entries are what those were typed for at the
+raw pot's mid travel scale, to four figures, the firmware's boot
+defaults, which are round in counts (1500 count/s, reached in 50 ms).
+The two screens are decided.
 
-| field | the kernel's use | policy | the servo holds | typed for | on the table | the rule gives |
-|---|---|---|---|---|---|---|
-| `velocity_limit_cps` | the cap of the profile's speed and of the position loop's command, count/s | 79.31 deg/s | 1500 | 79.31 deg/s | 74.53 deg/s | 1596 |
-| `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 1586 deg/s^2 | 3840 | 1586 deg/s^2 | 1491 deg/s^2 | 4086 |
-| `stall_omega_max_cps` | a press over the continuous current counts toward a stall while the estimate's speed is under this, count/s | 26.44 deg/s | 500 | 26.44 deg/s | 24.84 deg/s | 532 |
-| `pos_error_counts` | the profile less the estimate, over this for the error time, faults; counts | 21.15 deg | 400 | 21.15 deg | 19.87 deg | 426 |
+| field | the kernel's use | policy | the servo holds | which is, on the table | the rule gives |
+|---|---|---|---|---|---|
+| `velocity_limit_cps` | the cap of the profile's speed and of the position loop's command, count/s | 79.31 deg/s | 1500 | 74.53 deg/s | 1596 |
+| `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 1586 deg/s^2 | 3840 | 1491 deg/s^2 | 4086 |
+| `stall_omega_max_cps` | a press over the continuous current counts toward a stall while the estimate's speed is under this, count/s | 24.84 deg/s | 500 | 24.84 deg/s | 500 |
+| `pos_error_counts` | the profile less the estimate, over this for the error time, faults; counts | 9.9 deg | 400 | 19.87 deg | 199 |
 
-All four are held, so no value moves. The two limits of motion are of
-the plant and move together on a rung,
+The two limits of motion are of the plant, held and undecided, interim:
+a bench sweep under the speed ceiling picks the default, and they move
+together on a rung,
 [motion-limits.json](scorecard/deviations/motion-limits.json): the
 acceleration limit was typed as the speed limit reached in 50 ms. The
-two screens are protection fields, each a step alone.
-[protection-position-error.json](scorecard/deviations/protection-position-error.json)
-puts the screen at 426 counts, which trips later than 400 and protects
-less: its install names `pos_error_counts` as `--protection` and as
-`--loosen`.
-[protection-stall-speed.json](scorecard/deviations/protection-stall-speed.json)
-puts the stall speed at 532, so a press is taken as a stall up to a
-higher speed, which protects more: its install names
-`stall_omega_max_cps` as `--protection` alone.
+stall speed is decided at the speed its counts are on the set's count,
+24.84 deg/s, four times the speed noise of a still shaft. Its rule
+then gives the 500 the servo holds, so it binds, of class `policy`, at
+a scale that is on record, and has no step. The position-error screen
+is decided at 9.9 deg, twice the worst healthy following error on
+record, 4.4 deg on a free horn, interim until the load arm confirms
+it. That is 199 counts on the set's count where the servo holds 400,
+so the field is held, and moves with the screen's time as one
+protection step (below).
 
 Three more fields are counts of position and move with no table. The
 soft limits are positions: `osc cal` typed them a sixteenth of the
@@ -811,10 +850,69 @@ counts, the policy's `hold_band_noise_multiple` and
 band sits on the floor, 4, the value the servo holds. The band of 4
 counts is a decision, said under `why`. The band at 8
 counts, over half the train's play, stays a pin of its own deviation.
-The sensor screen is the policy's `sensor_delta_max_counts`, 256 raw
-counts between two MEDIUM samples, the value the servo holds. Both
-bind, the screen with no source: its 256 is a boot default nobody
-decided.
+The sensor screen is the policy's `sensor_delta_max_counts`, raw
+counts between two MEDIUM samples. It is decided at 64, twice the worst
+healthy step of the pot on 5 V, 32 counts, where the servo holds the
+boot default's 256: the band binds, and the screen is held at 256
+until its protection step is installed.
+
+The other screens, the supply terms and the open loop's two choices
+each have a policy entry in the unit a person sets it in, its reason
+under `why`, and a rule: a time in ms is that many kernel ticks, a
+count of samples is the field, and a choice between named behaviors is
+the policy's word, written as `osc dump` prints the field. Where the
+decision is the value the servo holds, the field binds, of class
+`policy`, and nothing moves:
+
+| field | policy | the rule gives | why |
+|---|---|---|---|
+| `duty_max_q15` | `duty_max_share` 1, the whole rail | 32767 | no voltage cap: the speed ceiling and the current limit protect the motor |
+| `stall_time_ticks` | `stall_time_ms` 500 | 10000 | on a free horn the stall conditions never last past 12 ms, and the Feetech class allows 2 s; interim until the load arm |
+| `oc_trip_ticks` | `oc_trip_samples` 8 | 8 | it rides over single-sample spikes, 0.4 ms |
+| `sensor_bad_count` | `sensor_bad_samples` 4 | 4 | the default stands: no capture shows a failing pot, and a capture of one would revisit it |
+| `openloop_decay` | `openloop_decay` slow | Slow | the off-time brake: smooth current, torque in proportion to duty |
+| `openloop_zero_brake` | `openloop_zero_brake` off | off | zero duty coasts in open loop, which calibration relies on |
+
+Where the decision is another value, the field is held at the servo's
+with the decision's beside it, until a bench session installs its
+protection step:
+
+| field | policy | the servo holds | the rule gives | step | its install names |
+|---|---|---|---|---|---|
+| `stall_response` | `stall_response` yield | Fault | Yield | [protection-stall-response.json](scorecard/deviations/protection-stall-response.json) | `--protection` and `--loosen`: judged |
+| `pos_error_counts`, `pos_error_time_ticks` | `pos_error_deg` 9.9, `pos_error_time_ms` 100 | 400, 10000 | 199, 2000 | [protection-position-error.json](scorecard/deviations/protection-position-error.json) | `--protection`: both protect more |
+| `sensor_delta_max` | `sensor_delta_max_counts` 64 | 256 | 64 | [protection-sensor-delta.json](scorecard/deviations/protection-sensor-delta.json) | `--protection`: it protects more |
+| `v_undervolt_counts` | `v_undervolt_v` 3.70 | 720 | 922 | [protection-undervolt.json](scorecard/deviations/protection-undervolt.json) | `--protection`: it protects more |
+| `rail_fold_q8` | `rail_source_ohm` 0.8 | 1430 | 1467 | [protection-rail-fold.json](scorecard/deviations/protection-rail-fold.json) | `--protection` and `--loosen`: judged |
+
+A blocked horn then yields: the current limit folds to the continuous
+current and the servo recovers on the next command, as the Feetech
+class does, with the 90 C cutoff as the backstop. The position error's
+100 ms is a time a healthy error never holds, and it catches a reversed
+motor before it reaches a stop; it is interim with the angle, and the
+two are one step. The rail fold's slope is the shunt counts a rail
+count of sag gives through the source the policy designs for, 0.8 ohm,
+a soft supply such as a battery on a long lead; a stiffer setting
+protects less, and it never acts on the 5 V bench supply. The servo's
+1430 is that source through the board's nominal parts. Through the
+measured counts per amp and rail counts per volt the same source is
+1467, a steeper slope, which folds later, so the field is held.
+
+The undervolt floor stands on a bench record, the rail walk of
+2026-11-14, kept as a dated file beside the set with its rows under
+`telemetry/<pair>/rail-walk/`: the supply stepped down and back up with
+torque off, the rail tap and the chip's supply read at each level. Down
+to a supply of 3.70 V the chip's supply, which is the ADC's reference,
+holds, and the rail reading follows the rail. Under it the chip's
+supply follows the rail down and the reading stops: 860 to 861 counts
+at the edge, 3.45 V at the rail on stage 1's rail line, and 857 to 862
+at every level down to 2.70 V. The 720 counts the servo holds are under
+that floor, so the undervolt fault cannot trip on a rail the chip
+survives. The policy's floor is 3.70 V at the rail, 0.25 V over the
+edge, for the 5 V bench supply, and its rule takes it through the
+measured rail line, offset and scale, to 922 counts, on the stretch
+that line is graded over. A 2S pack's floor waits for the pack on the
+board. The rail fold stands on the floor, so its band moves up with it.
 
 Of the loop gains, two carry a position unit: `v_kp_q88` and
 `v_ki_q412` are shunt counts per count/s, so they fall as the counts
@@ -825,8 +923,8 @@ and the same counts have run on the table since `12a-pos-table-live`.
 They stay as benched, in counts, which is a decision `policy.json`
 records under `why`, so neither is at a scale nothing recorded.
 `p_kp_q88` is count/s per count, a rate, and carries no position unit,
-nor do `v_kaw_q412` and the three gains of the current loop, which have
-no source: they are an old identification fit of another servo.
+nor do `v_kaw_q412` and the three gains of the current loop, which are
+held beside what their rule gives (above).
 
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. It then

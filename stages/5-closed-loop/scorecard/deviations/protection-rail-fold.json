@@ -1,0 +1,4 @@
+{
+  "note": "the rail fold's slope for the policy's source through the board's measured counts per A and rail counts per V, in place of the slope of the same source through the nominal parts: a steeper slope, which folds later. A protection step: it moves nothing else",
+  "release": ["rail_fold_q8"]
+}

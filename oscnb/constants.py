@@ -141,8 +141,9 @@ set of record is not what a build of its inputs gives now, when it
 moves nothing, and when it moves a protection field and anything else.
 The protection fields a deviation moves are of one step (GROUPS: the
 words of the NTC curve, the current limits, the four fields of the
-winding model, any other field alone), and a release of one held field
-of a step releases them all. A deviation that moves the winding model
+winding model, the position-error screen's angle and time, any other
+field alone), and a release of one held field of a step releases them
+all. A deviation that moves the winding model
 is said with what the estimate reads under the four held and under the
 four wanted (`winding_step`).
 A derived set is never a set of record and is never saved.
@@ -270,9 +271,10 @@ PROTECTION = frozenset((*LOOSER, *RETIRED))
 
 # The protection fields that are one step together: the four words of
 # the NTC curve, which are one curve, the current limits, which one
-# shunt scale takes from amps to counts, and the four fields of the
+# shunt scale takes from amps to counts, the four fields of the
 # winding estimate, which are one model of the winding's heat, a leak
-# and a rise for each of its two nodes. A deviation moves the
+# and a rise for each of its two nodes, and the position-error screen,
+# which is one test, an angle held for a time. A deviation moves the
 # protection fields of one group, a field in none being a group of its
 # own, and it releases a group's holds together or not at all.
 MODEL = "winding model"
@@ -280,6 +282,7 @@ GROUPS = {
     "ntc curve": ("ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24"),
     "current scale": ("current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_trip_counts"),
     MODEL: ("thermal_tau_s", "th_rise_q016", "thermal_tau2_s", "th_rise2_q016"),
+    "position error": ("pos_error_counts", "pos_error_time_ticks"),
 }
 
 # The fields whose value is per position count, or a position in counts:
@@ -898,6 +901,7 @@ def gear_class(c):
 
 DECIM_MED = 10      # FAST ticks a MEDIUM period (core kernel/scheduler/table.rs DECIM_MED)
 LADDER, FRICTION = "3-servo/ladder", "3-servo/friction"
+CHAIN = "1-board/terminal-chain"    # the board's tap, rail and supply scales
 # the winding's resistance as it is on record, by the way it was taken: (result, key)
 RESISTANCES = {
     "rails_fit": ("3-servo/resistance", "r_rails_at_measured_e_ohm"),
@@ -912,7 +916,7 @@ def counts_per_motor_rad(c):
 
 
 def tap_counts_per_v(c):
-    return c.q("1-board/terminal-chain", "terminal_counts_per_v")
+    return c.q(CHAIN, "terminal_counts_per_v")
 
 
 def shunt_counts_per_a(c):
@@ -1028,6 +1032,73 @@ def l3(c):
     return (1 - observer_pole(c)) ** 3 * medium_hz(c) / (2 * b_gain(c))
 
 
+# --- the current loop ---
+#
+# The firmware repo's own placement (ident/src/gains.rs synthesize): the
+# proportional gain cancels the winding's electrical pole, w x L, the
+# integral gain sets the crossover, w x R a FAST tick, and the
+# anti-windup gain is twice the integral one. w is the policy's
+# bandwidth, L the stage 3 locked bursts' inductance and R the
+# resistance of the rails fit, the winding's, each in counts through the
+# board's stage 1 scales as that file's l_cd_from_si takes them.
+INDUCTANCE = ("3-servo/inductance", "l_mh")
+
+
+def loop_rad_s(c):
+    return 2 * math.pi * c.policy("current_loop_hz")
+
+
+def loop_ki(c):
+    """The integral gain, vcounts per ccount a FAST tick."""
+    return loop_rad_s(c) * resistance(*RESISTANCES["rails_fit"])(c) / c.reg("board", "tick_hz")
+
+
+@rule("i_kp_q88", "i_kp.bandwidth", kind="u16", unit="vcounts/ccount", q=8, cls="policy",
+      mirrors="core kernel/phases/loops/current.rs step, ident gains.rs synthesize, l_cd_from_si")
+def i_kp(c):
+    return loop_rad_s(c) * c.q(*INDUCTANCE) / 1000 * tap_counts_per_v(c) / shunt_counts_per_a(c)
+
+
+rule("i_ki_q412", "i_ki.bandwidth", kind="u16", unit="vcounts/ccount per tick", q=12, cls="policy",
+     mirrors="core kernel/phases/loops/current.rs step, ident gains.rs synthesize")(loop_ki)
+rule("i_kaw_q412", "i_kaw.bandwidth", kind="u16", unit="vcounts/ccount per tick", q=12, cls="policy",
+     mirrors="core kernel/phases/loops/current.rs step, ident gains.rs synthesize")(lambda c: 2 * loop_ki(c))
+
+
+# --- the records a host keeps on the servo ---
+#
+# Four fields the kernel never reads, each a quantity of record a host
+# reads back: the winding's cold resistance, at the 25 C the field is
+# stated at, the back-EMF constant in uV s/rad, the static friction as
+# a current, and the chip's supply, which is the ADC's reference. The
+# resistance of the rails fit is the winding's at the board temperature
+# its result states, the pair the identification takes together
+# (oscnb.speed.motor_of), and goes to 25 C along copper's slope
+# (oscnb.winding.r_of_t).
+R0_AT_C = 25.0      # C, where the cold resistance is stated (core regions/calib.rs CalibWinding)
+
+
+@rule("r0_q12", "r0.rails_fit", kind="u16", unit="vcounts/ccount", q=12, mirrors="core regions/calib.rs CalibWinding")
+def r0(c):
+    return winding.r_of_t(R0_AT_C, resistance(*RESISTANCES["rails_fit"])(c), c.q("3-servo/resistance", "board_ntc_c"))
+
+
+@rule("ke_uvs_per_rad", "ke_uvs.ladder", kind="u16", unit="uV s/rad", mirrors="core regions/calib.rs CalibMotorExt")
+def ke_uvs(c):
+    return ke_v_s_per_rad(c) * 1e6
+
+
+@rule("fric_breakaway_counts", "fric_breakaway.static", kind="u16", unit="ccounts",
+      mirrors="core regions/calib.rs CalibMotorExt")
+def fric_breakaway(c):
+    return c.q(FRICTION, "load_static_friction_uNm_motor") * 1e-6 / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
+
+
+@rule("vdd_mv", "vdd.terminal_chain", kind="u16", unit="mV", mirrors="core regions/calib.rs CalibSense")
+def vdd(c):
+    return c.q(CHAIN, "vdd_v") * 1000
+
+
 # --- the fields in counts of position ---
 #
 # The kernel's estimate and its profile run in the count of the scale:
@@ -1100,10 +1171,14 @@ def sensor_delta(c):
 # The board NTC's curve is the design quadratic of the board's stage 1
 # ntc-curve result, the fixed-point form the kernel carries (core
 # estimator/thermal.rs ntc_cc): the centi-C at the reference count, the
-# slope there and the curvature, as that result holds them. The
-# reference count itself has no rule yet: the result names it as
-# design_raw_ref.
+# slope there and the curvature about the reference count, as that
+# result holds the four.
 NTC = "1-board/ntc-curve"
+
+
+@rule("ntc_raw_ref", "ntc_raw_ref.design", kind="u16", unit="counts", mirrors="core estimator/thermal.rs ntc_cc")
+def ntc_raw_ref(c):
+    return c.q(NTC, "design_raw_ref")
 
 
 @rule("ntc_t_ref_cc", "ntc_t_ref.design", kind="i16", unit="cC", mirrors="core estimator/thermal.rs ntc_cc")
@@ -1224,6 +1299,91 @@ rule("th_rise_q016", "th_rise.fast_node", kind="u16", unit="cC/count^2", q=16,
      mirrors="core estimator/thermal.rs rise_cc")(rise(lambda c: c.q(WINDING, joined(c))))
 rule("th_rise2_q016", "th_rise2.family", kind="u16", unit="cC/count^2", q=16, cls="policy",
      mirrors="core estimator/thermal.rs rise_cc")(rise(lambda c: c.raw(WINDING, joined(c), "slow_gain_c_per_w")))
+
+
+# --- the screens' times and counts, the supply terms and the choices in words ---
+#
+# A time the policy states in ms is that many kernel ticks (core
+# regions/config.rs ms_ticks), and a count of samples is the field. A
+# choice between named behaviors is the policy's word, written as `osc
+# dump` prints the field: an enum's name with its number, a flag as on
+# or off.
+STALL_RESPONSES = ("fault", "yield")    # core regions/config.rs StallResponse, by number
+DECAYS = ("slow", "fast")               # core traits/control.rs DecayMode, by number
+DUTY_FULL_Q15 = 32767                   # the whole rail, the field's largest value (core regions/config.rs)
+
+
+def in_ticks(key):
+    def ticks(c):
+        return c.policy(key) * c.reg("board", "tick_hz") / 1000
+    return ticks
+
+
+def decided(key):
+    def value(c):
+        return c.policy(key)
+    return value
+
+
+def named(key, names):
+    def text(c):
+        name = c.policy(key)
+        if name not in names:
+            raise ValueError(f"{POLICY}: {key} is {name!r}: it is one of {', '.join(names)}")
+        return f"{name.capitalize()} ({names.index(name)})"
+    return text
+
+
+rule("stall_response", "stall_response.policy", kind="u8", unit="response", cls="policy",
+     mirrors="core kernel/phases/loops/limits.rs fold")(named("stall_response", STALL_RESPONSES))
+rule("stall_time_ticks", "stall_time.policy", kind="u32", unit="ticks", cls="policy",
+     mirrors="core kernel/phases/loops/limits.rs fold")(in_ticks("stall_time_ms"))
+rule("pos_error_time_ticks", "pos_error_time.policy", kind="u32", unit="ticks", cls="policy",
+     mirrors="core kernel/phases/rail.rs rail")(in_ticks("pos_error_time_ms"))
+rule("oc_trip_ticks", "oc_trip_ticks.policy", kind="u8", unit="samples", cls="policy",
+     mirrors="core kernel/phases/fast.rs measure")(decided("oc_trip_samples"))
+rule("sensor_bad_count", "sensor_bad.policy", kind="u8", unit="samples", cls="policy",
+     mirrors="core kernel/phases/loops/faults.rs sensor_sample")(decided("sensor_bad_samples"))
+rule("openloop_decay", "openloop_decay.policy", kind="u8", unit="decay", cls="policy",
+     mirrors="core kernel/phases/fast.rs drive")(named("openloop_decay", DECAYS))
+
+
+@rule("openloop_zero_brake", "openloop_zero_brake.policy", kind="u8", unit="flag", cls="policy",
+      mirrors="core kernel/phases/fast.rs drive")
+def zero_brake(c):
+    flag = c.policy("openloop_zero_brake")
+    if flag not in ("off", "on"):
+        raise ValueError(f"{POLICY}: openloop_zero_brake is {flag!r}: it is off or on")
+    return flag
+
+
+# The duty cap is the policy's share of the rail, 1 being no cap.
+@rule("duty_max_q15", "duty_max.policy", kind="u16", unit="Q15 of the rail", cls="policy",
+      mirrors="core kernel/phases/loops/current.rs step")
+def duty_max(c):
+    share = c.policy("duty_max_share")
+    if not 0 < share <= 1:
+        raise ValueError(f"{POLICY}: duty_max_share is {share!r}: a share of the rail, over 0 and at most 1")
+    return share * DUTY_FULL_Q15
+
+
+# The undervolt floor is the policy's volts at the rail as the rail tap
+# reads them, through the board's measured rail line, its offset with
+# it (core kernel/phases/slow.rs compares the filtered tap). The rail
+# fold's slope is the admittance of the source the policy designs for,
+# shunt counts per rail count: the ceiling it puts on the current
+# reaches zero at the floor (core kernel/phases/loops/limits.rs
+# update_rail).
+@rule("v_undervolt_counts", "v_undervolt.rail", kind="u16", unit="vcounts", cls="policy",
+      mirrors="core kernel/phases/slow.rs slow, regions/config.rs vmotor_counts")
+def v_undervolt(c):
+    return c.q(CHAIN, "rail_offset_counts") + c.policy("v_undervolt_v") * c.q(CHAIN, "rail_counts_per_v")
+
+
+@rule("rail_fold_q8", "rail_fold.source", kind="u16", unit="ccounts/vcount", q=8, cls="policy",
+      mirrors="core kernel/phases/loops/limits.rs update_rail, regions/config.rs rail_fold_q8")
+def rail_fold(c):
+    return shunt_counts_per_a(c) / (c.q(CHAIN, "rail_counts_per_v") * c.policy("rail_source_ohm"))
 
 
 # --- the limits no field holds ---
