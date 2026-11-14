@@ -1666,6 +1666,220 @@ def test_a_set_carries_the_current_scale_it_is_scored_with_under_a_hash_of_its_o
         cn.load(out)
 
 
+# --- the limits no field holds ---
+
+CLASS = "synth-class"                                       # the class the fake servo is a clone of
+CLASS_REG = {**BOARD_REG, "servo": {**REG["servo"], "datasheet_class": CLASS}}
+CLASS_SHEET = f"stages/5-closed-loop/calibration/{CLASS}.datasheet.json"
+DOCUMENT = "the maker's page, at its address, read on a day"
+DERATE = {"datasheet_derate_speed": [2, 3]}
+CEILING = round(400 * SCALE)        # two thirds of 60 deg in 0.10 s, counts per second on the fake's table
+NO_TIME = "the datasheet record states no one no-load time at its operating voltage, 5 V"
+
+
+def datasheet(root, volts=4.8):
+    """The datasheet record of the fake servo's class under `root`: an
+    operating voltage and the no-load time over 60 deg at two."""
+    path = root / CLASS_SHEET
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "what": "what the maker states of the class", "class": CLASS, "document": DOCUMENT,
+        "stated": {"operating_voltage": {"value": volts, "unit": "V"},
+                   "no_load_time": [{"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
+                                    {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}]}}))
+    return path
+
+
+def classed(previous, root):
+    """A build for the fake servo as a clone of its class."""
+    return cn.build(PAIR, previous, root=root, registry=CLASS_REG)
+
+
+def test_the_speed_ceiling_is_the_makers_no_load_speed_derated_at_the_sets_scale(first, tmp_path):
+    inputs(tmp_path, policy=DERATE)
+    path = datasheet(tmp_path)
+    # a servo that names no class has no sheet: its set holds no limit, and the build says nothing of one
+    bare, notes = built_on(first, tmp_path)
+    assert "limits" not in bare and "limits" not in bare["hash"] and not any(cn.CEILING in n for n in notes)
+    doc, notes = classed(bare, tmp_path)
+    # 60 deg in 0.10 s at the sheet's operating voltage is 600 deg/s, two thirds of it 400 deg/s, and that in
+    # counts per second at the set's scale: the record, the policy and the scale, no number typed
+    assert doc["limits"] == {cn.CEILING: {
+        "value": CEILING, "class": "datasheet", "rule": "speed_ceiling.datasheet", "rule_rev": 1, "unit": "count/s",
+        "q": 0, "pos_unit": 1, "scale_points_sha1": cn.points_sha1(POINTS),
+        "inputs": ["policy:datasheet_derate_speed", "registry:datasheet_class", "datasheet:operating_voltage",
+                   "datasheet:no_load_time", "scale"],
+        "deg_s": 400.0, "stated_deg_s": 600.0, "at_v": 4.8, "derate": [2, 3],
+        "record": "what the maker states of the class", "document": DOCUMENT, "bounds": ["velocity_limit_cps"]}}
+    assert CEILING == 8244 and not any(cn.CEILING in n for n in notes)
+    # the record is an input of the set by its sha1, the class the registry's
+    assert doc["inputs"]["datasheet"] == {"file": CLASS_SHEET, "sha1": sc.file_sha1(path)}
+    assert doc["inputs"]["registry"] == {"servo": CLASS_REG["servo"]}
+    # it is on no servo: the plant, the protection and the set hash stand, and a hash of its own says it
+    assert {k: doc["hash"][k] for k in bare["hash"]} == bare["hash"]
+    assert doc["hash"]["limits"] == sc.config_hash({cn.CEILING: CEILING})
+    h = bare["hash"]
+    assert cn.changes(bare, doc) == [
+        f"limit speed_ceiling_cps: not in the set -> {CEILING}",
+        f"hash: limits moved: plant {h['plant'][:12]} -> {h['plant'][:12]}, protection {h['protection'][:12]} -> "
+        f"{h['protection'][:12]}, set {h['set'][:12]} -> {h['set'][:12]}, limits none -> "
+        f"{doc['hash']['limits'][:12]}"]
+    assert cn.described(doc)[-1] == (
+        f"hash: plant {h['plant'][:12]}, protection {h['protection'][:12]} "
+        f"({sum(n in cn.PROTECTION for n in doc['fields'])} fields), set {h['set'][:12]}, limits "
+        f"{doc['hash']['limits'][:12]}")
+    # status says the ceiling with its source: the maker's value, the derate, the document, what it bounds
+    lines, stale = cn.status(doc, tmp_path, CLASS_REG)
+    assert not stale and lines[lines.index(cn.described(doc)[-1]) + 1] == (
+        f"speed ceiling: {CEILING} count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
+        f"maker's no-load speed at 4.8 V, 600 deg/s, x 2/3 by the policy (datasheet_derate_speed); {DOCUMENT}; it "
+        f"bounds velocity_limit_cps, not in the set")
+    # the file renders, loads and builds again to the same bytes
+    out = cn.write(doc, tmp_path / "x.constants.json")
+    assert cn.load(out) == doc and cn.render(classed(bare, tmp_path)[0]) == out.read_text()
+    # a record that moves makes the set stale, and the build after moves that hash alone: at another
+    # operating voltage the ceiling is the speed the sheet states there, derated
+    datasheet(tmp_path, volts=6.0)
+    lines, stale = cn.status(doc, tmp_path, CLASS_REG)
+    assert stale and lines[0] == (f"stale: datasheet ({CLASS_SHEET}) is no longer the file the set read, sha1 "
+                                  f"{sc.file_sha1(path)}: speed_ceiling_cps")
+    again, _ = classed(doc, tmp_path)
+    e = again["limits"][cn.CEILING]
+    assert (e["stated_deg_s"], e["deg_s"], e["at_v"], e["value"]) == (750.0, 500.0, 6.0, round(500 * SCALE))
+    assert [k for k in doc["hash"] if doc["hash"][k] != again["hash"][k]] == ["limits"]
+    assert cn.changes(doc, again)[0] == (f"limit speed_ceiling_cps: {CEILING} -> {round(500 * SCALE)} "
+                                         f"[datasheet, speed_ceiling.datasheet]")
+    # an edited limit is not the set the tool wrote
+    for change, match in (
+            (lambda e: e.update(value=60000), "hashes are not those of its content"),
+            (lambda e: e.update(bounds=[]), "speed_ceiling_cps is no limit as the tool writes one"),
+            (lambda e: e.pop("document"), "speed_ceiling_cps is of class datasheet and names no record or no document"),
+            (lambda e: e.update(scale_points_sha1="0" * 40), "speed_ceiling_cps was computed for the table of")):
+        edited = copy.deepcopy(doc)
+        change(edited["limits"][cn.CEILING])
+        out.write_text(cn.render(edited))
+        with pytest.raises(ValueError, match=match):
+            cn.load(out)
+
+
+def test_a_ceiling_whose_input_is_missing_is_held_and_does_not_guess(first, tmp_path):
+    inputs(tmp_path, policy=DERATE)
+    path = datasheet(tmp_path)
+    doc, _ = classed(first, tmp_path)
+    # the sheet states no time at its operating voltage: the ceiling the set had stands, the input named
+    datasheet(tmp_path, volts=5.0)
+    held, notes = classed(doc, tmp_path)
+    assert held["limits"] == {cn.CEILING: {
+        "value": CEILING, "class": "none", "rule": "speed_ceiling.datasheet", "held": NO_TIME,
+        "carried_from": doc["hash"]["set"], "unit": "count/s", "bounds": ["velocity_limit_cps"]}}
+    assert f"speed_ceiling_cps: held, {NO_TIME}" in notes and held["hash"] == doc["hash"]
+    assert cn.load(cn.write(held, tmp_path / "x.constants.json")) == held
+    assert (f"speed ceiling: {CEILING} count/s [none, held, speed_ceiling.datasheet]: {NO_TIME}; it bounds "
+            f"velocity_limit_cps, not in the set") in cn.status(held, tmp_path, CLASS_REG)[0]
+    # with nothing to carry it is left out and said: a record that is not there, a derate nobody decided
+    path.unlink()
+    none, notes = classed(first, tmp_path)
+    assert "limits" not in none
+    assert f"speed_ceiling_cps: left out, the servo class {CLASS} has no datasheet record ({CLASS_SHEET})" in notes
+    datasheet(tmp_path)
+    inputs(tmp_path)
+    none, notes = classed(first, tmp_path)
+    assert "limits" not in none and "speed_ceiling_cps: left out, policy.json has no datasheet_derate_speed" in notes
+    # a derate is a ratio of at most one, written as it was decided
+    for bad in (0.6667, [3, 2], [2, 3, 4], [2.0, 3.0]):
+        inputs(tmp_path, policy={"datasheet_derate_speed": bad})
+        with pytest.raises(ValueError, match="datasheet_derate_speed is .*: a derate is a ratio of at most one"):
+            classed(first, tmp_path)
+
+
+def test_a_set_whose_speed_limit_is_over_the_ceiling_is_refused(first, tmp_path):
+    datasheet(tmp_path)
+    plant(tmp_path, POT_NOISE)
+
+    def at(deg_s):
+        inputs(tmp_path, policy={**COUNT_POLICY, **DERATE, "velocity_limit_deg_s": deg_s})
+        return classed(first, tmp_path)[0]
+
+    # the move's speed limit binds under the ceiling and at it, and status says where it stands
+    doc = at(75.0)
+    assert doc["fields"]["velocity_limit_cps"]["value"] == round(75 * SCALE) < CEILING and cn.over_limit(doc) == []
+    doc = at(400.0)
+    assert doc["fields"]["velocity_limit_cps"]["value"] == doc["limits"][cn.CEILING]["value"] == CEILING
+    assert any(line.endswith(f"; it bounds velocity_limit_cps = {CEILING}")
+               for line in cn.status(doc, tmp_path, CLASS_REG)[0])
+    # over it the set is refused, by the build, by a deviation and by load
+    over = (f"velocity_limit_cps: {{}} count/s is over the set's speed_ceiling_cps, {CEILING} count/s "
+            f"\\(400 deg/s\\): a field stays at or under the limit that bounds it")
+    with pytest.raises(ValueError, match=over.format(round(401 * SCALE))):
+        at(401.0)
+    base = at(75.0)
+    cn.write(base, cn.set_path(PAIR, tmp_path))
+    fast = dev_file(tmp_path, "fast", pins={"velocity_limit_cps": pin(CEILING + 1)})
+    with pytest.raises(ValueError, match=over.format(CEILING + 1)):
+        cn.derive(base, fast, tmp_path, CLASS_REG)
+    faster = dev_file(tmp_path, "faster", policy={"velocity_limit_deg_s": 500.0})
+    with pytest.raises(ValueError, match=over.format(round(500 * SCALE))):
+        cn.derive(base, faster, tmp_path, CLASS_REG)
+    top = dev_file(tmp_path, "top", pins={"velocity_limit_cps": pin(CEILING)})
+    assert cn.derive(base, top, tmp_path, CLASS_REG)[0]["deviation"]["fields"] == {
+        "velocity_limit_cps": [round(75 * SCALE), CEILING]}
+    path = tmp_path / "over.constants.json"
+    path.write_text(cn.render(deviated(base, velocity_limit_cps=CEILING + 1)))
+    with pytest.raises(ValueError, match=over.format(CEILING + 1)):
+        cn.load(path)
+
+
+def test_the_set_of_record_holds_the_speed_ceiling_of_its_servo_class():
+    pair = postable.default_pair()
+    doc = cn.of_record(pair)
+    servo = cn.servos.SERVOS[pair.partition("__")[0]]
+    path = cn.sheet_path(pair, servo.datasheet_class)
+    sheet = json.loads(path.read_text())
+    # the record: the maker's page with its address and the day it was read, what it states and what it
+    # does not, and why the class's sheet stands for a clone with none of its own
+    assert (sheet["class"], sheet["maker"], sheet["read"]) == (servo.datasheet_class, "TowerPro", "2026-11-14")
+    assert sheet["url"].startswith("https://www.towerpro.com.tw/product/mg90s") and sheet["url"] in sheet["document"]
+    assert sheet["read"] in sheet["document"]
+    assert sheet["stated"] == {
+        "operating_voltage": {"value": 4.8, "unit": "V"},
+        "no_load_time": [{"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
+                         {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}],
+        "stall_torque": [{"value": 1.8, "unit": "kg cm", "at_v": 4.8}],
+        "temperature_min": {"value": 0, "unit": "C"}, "temperature_max": {"value": 55, "unit": "C"}}
+    assert "a clone of the class with no sheet of its own" in sheet["stands_for"][servo.key]
+    assert sheet["stands_for"][servo.key].endswith(": the owner's decision")
+    assert all(word in sheet["not_stated"] for word in ("current", "travel", "voltage range"))
+    assert "/Users/" not in path.read_text() and "/home/" not in path.read_text()
+    # this servo's derates are decisions for it, with their why, and no rule for another servo
+    policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    assert (policy["datasheet_derate_speed"], policy["datasheet_derate_default"]) == ([2, 3], 0.8)
+    for key in ("datasheet_derate_speed", "datasheet_derate_default"):
+        assert "for this servo and no rule for another" in policy["why"][key] and key not in policy["undecided"]
+    # the ceiling: 600 deg/s no load at the sheet's 4.8 V, two thirds of it, at the pair's own scale
+    e = doc["limits"][cn.CEILING]
+    assert (e["stated_deg_s"], e["at_v"], e["derate"], e["deg_s"]) == (600.0, 4.8, [2, 3], 400.0)
+    assert e["value"] == round(400 * doc["scale"]["counts_per_deg"]) == 8051 and e["unit"] == "count/s"
+    assert (e["class"], e["document"], e["record"]) == ("datasheet", sheet["document"], sheet["what"])
+    assert e["scale_points_sha1"] == doc["scale"]["points_sha1"] and e["bounds"] == ["velocity_limit_cps"]
+    assert doc["inputs"]["datasheet"] == {"file": path.relative_to(results.ROOT).as_posix(),
+                                          "sha1": sc.file_sha1(path)}
+    assert doc["inputs"]["registry"]["servo"]["datasheet_class"] == "mg90s"
+    # it is in no hash of what the servo is to hold, and no field gained a source by it: the move's speed
+    # limit stays as it was, under the ceiling and still nobody's decision
+    assert doc["hash"]["limits"] == sc.config_hash({cn.CEILING: e["value"]})
+    assert {k: v for k, v in doc["hash"].items() if k != "limits"} == cn.hashes(
+        {k: v for k, v in doc.items() if k != "limits"})
+    limit = doc["fields"]["velocity_limit_cps"]
+    assert (limit["value"], limit["class"]) == (1500, "none") and limit["value"] <= e["value"]
+    assert "velocity_limit_deg_s" in policy["undecided"] and cn.classes(doc)["datasheet"] == 0
+    assert cn.over_limit(doc) == []
+    lines, stale = cn.status(doc)
+    assert not stale and (
+        "speed ceiling: 8051 count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
+        "maker's no-load speed at 4.8 V, 600 deg/s, x 2/3 by the policy (datasheet_derate_speed); "
+        f"{sheet['document']}; it bounds velocity_limit_cps = 1500") in lines
+
+
 # --- a deviation ---
 
 def pin(value, rung="a-rung"):

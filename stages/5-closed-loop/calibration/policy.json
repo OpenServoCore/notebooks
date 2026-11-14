@@ -8,6 +8,8 @@
  "collision_trip": "off",
  "cutoff_c": 90.0,
  "winding_plateau_reading": "high",
+ "datasheet_derate_speed": [2, 3],
+ "datasheet_derate_default": 0.8,
  "velocity_limit_deg_s": 79.31,
  "accel_limit_deg_s2": 1586.0,
  "stall_omega_max_deg_s": 26.44,
@@ -18,6 +20,8 @@
  "sensor_delta_max_counts": 256,
  "why": {
   "cutoff_c": "one thermal limit, at 90 C: the owner's decision",
+  "datasheet_derate_speed": "this servo never turns faster than two thirds of the no-load speed the maker of its class states, written as the ratio 2 over 3: the speed ceiling, which protects the brushes. A decision for this servo and no rule for another: the owner's decision",
+  "datasheet_derate_default": "any other value taken from the maker's sheet is taken at 0.8 of it on this servo, to be safe; no rule reads it yet. A decision for this servo and no rule for another: the owner's decision",
   "winding_plateau_reading": "the high reading of the winding's plateau over the board NTC, the earlier model's two modes together: of the two readings it alone reads at least as hot as the set the servo holds in every case computed, heating, pulsed and cooling, so the step loosens nothing. The plateau is not graded on this pair, and the lock hold at 0.25 A decides later: the owner's decision",
   "thermal_tau2_s": "the family's slow mode, quoted from earlier work on another servo of the type, until a lock hold with its cooling measures this motor's: the owner's decision",
   "th_rise2_q016": "the family's slow gain at the reading winding_plateau_reading names, on this motor's own resistance and counts per A, until a lock hold measures this motor's plateau: the owner's decision",

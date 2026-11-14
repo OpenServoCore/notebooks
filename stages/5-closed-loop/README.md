@@ -447,6 +447,31 @@ so it has a hash of its own, `scales`, outside `set`: a scale that
 moves leaves what the servo is to hold, and the name a save is kept
 under, where they were.
 
+The set carries one more thing that is on no servo, under `limits`: a
+bound on its own fields that the control table has no field for yet.
+The first is the speed ceiling, the most the output is ever to turn
+at. It protects the brushes, and it is a speed, not an effective
+voltage. Its source is a maker's sheet. mg90-d is a clone of the
+TowerPro MG90S with no sheet of its own, so by the owner's decision
+the class's sheet stands for it. What that sheet states is a record
+beside the set,
+[calibration/mg90s.datasheet.json](calibration/mg90s.datasheet.json),
+with the page it was read from and the date: a stall torque, a no-load
+time over 60 deg at two voltages, one operating voltage and a
+temperature range, and no current, travel or voltage range. The
+registry names the class a servo is of, so a table of classes can grow
+from such records later. A value of the sheet is not taken whole:
+`policy.json` holds this servo's derates, two thirds for a speed and
+0.8 for any other value, decisions for this servo and not a rule for
+every servo. The ceiling is the no-load speed at the sheet's operating
+voltage times the speed derate, 600 deg/s x 2/3 = 400 deg/s, which is
+8051 counts per second at the table's 20.13 counts per degree. The set
+refuses a `velocity_limit_cps` over it, `status` prints it with its
+source, and it has a hash of its own, `limits`, outside `set`. No
+other value of the sheet is derated into a limit yet, and
+`velocity_limit_cps` itself stays where it was, with no source, until
+a bench sweep chooses it.
+
 ```
 uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
 uv run python -m oscnb.constants build [--out PATH [--deviation FILE]] [--protection NAME ...]
