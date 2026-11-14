@@ -42,11 +42,11 @@ every capture's `meta.json` carries.
   run holds a `servo.json` beside its captures, the servo's constant
   state read off it before the run's first capture, with the rung's
   settings, table and slots on: the bytes of CONFIG and CALIB with every
-  field there by name, the position table's state and the sha1 of its
-  points as the servo holds them, the ADC wide-code slots, the plant
-  stamp and the data state. `rung.json` keeps the hash of the first
-  run's, and a later run that reads another state is refused, the fields
-  that differ named.
+  field there by name and the writable ones named, the position table's
+  state and the sha1 of its points as the servo holds them, the ADC
+  wide-code slots, the plant stamp and the data state. `rung.json` keeps
+  the hash of the first run's, and a later run that reads another state
+  is refused, the fields that differ named.
 - **The results**, one file per rung,
   `scorecard/results/<servo>__<board>/<label>.json`: every score as the
   median over the rung's runs with their range as the bounds.
@@ -174,6 +174,46 @@ a rung like any other, for `score` and `table`.
 `table` prints the ladder, one column per rung in label order, with a
 last column of other people's figures for stock smart servos (STS3215,
 LX-16A) where a row has one, for scale only.
+
+## The constant set
+
+The constants a servo is to hold are one generated file per pair,
+`calibration/<servo>__<board>.constants.json`, written and read by
+`oscnb/constants.py`: every CONFIG and CALIB field a host may write, the
+bus id, rate and deadline and the plant stamp left out, each with its
+value as `osc dump` prints it, its class and where the value came from;
+the ADC wide-code slots; the position table's state and the sha1 of its
+points. The file is never typed. The same inputs give the same bytes,
+and a file whose hashes are not those of its content is refused.
+
+A field's class says what stands behind its value. The first set of a
+servo that already runs holds every field as `adopted`: the value the
+servo held before the set existed, taken from a record of its state
+(the `servo.json` of a scorecard run) and named by that record's sha1,
+so it has no source in the notebooks. Every verb prints that count, the
+fields with no source, and the count of adopted fields whose value is
+per position count, which were fitted at a scale nothing recorded. The
+other classes are in the module's docstring.
+
+Three hashes close the file: `protection` over the values of the
+protection fields (the limits, the fault thresholds, the NTC curve and
+the thermal model), `plant` over every other value with the table and
+the slots, and `set` over the two.
+
+```
+uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
+uv run python -m oscnb.constants status
+uv run python -m oscnb.constants check
+```
+
+`adopt` writes the first set of a servo that already runs, and only the
+first. `status` is offline: the sha1 of every file the set read against
+the file now, a moved one named with the fields that list it. `check`
+needs the bus and changes nothing the servo holds: it reads the servo's
+state the way a run records it and prints a line for every field of the
+set, the table and the slots where the servo holds something else, then
+the writable fields the servo has outside the set. It exits 1 on a
+difference and refuses a servo whose data state is not clean.
 
 ## The ladder
 

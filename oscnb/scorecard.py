@@ -26,10 +26,11 @@ rest, outside the stamp, the board's result file and its sha1 kept in
 `rung.json` and the same reboot dropping them. Before a run's first
 capture, the settings, the table and the slots on, the servo's constant
 state is read into `run-K/servo.json`: the bytes of CONFIG and CALIB with
-every field there by name, the position table's state and the sha1 of
-its points as fetched back, the wide-code slots, the stamp and the data
-state. `rung.json` keeps the hash of the first run's, and a later run
-that reads another state is refused, what differs named.
+every field there by name and the writable ones named, the position
+table's state and the sha1 of its points as fetched back, the wide-code
+slots, the stamp and the data state. `rung.json` keeps the hash of the
+first run's, and a later run that reads another state is refused, what
+differs named.
 `ab` records two such rungs at once, one
 run of each per round, A then B, flashing a side's image (and verifying
 the stamp) whenever the servo holds the other's, so the two share the
@@ -717,10 +718,12 @@ def servo_state():
     of CONFIG and CALIB from `addr`, the span taken off the servo's own
     descriptor (`osc dump`): the table's first field to the first field
     of CONTROL. `fields` is every field there by name, as `osc dump`
-    decodes it. With them the position table's state and the sha1 of its
-    256 points as fetched back, i16 LE in a row, the ADC wide-code slots,
-    and the stamp and the data state of `osc status`. `hash` covers all
-    of it but `fields`, which `raw` holds."""
+    decodes it, and `writable` the names of those the descriptor lets a
+    host write, in table order. With them the position table's state and
+    the sha1 of its 256 points as fetched back, i16 LE in a row, the ADC
+    wide-code slots, and the stamp and the data state of `osc status`.
+    `hash` covers all of it but `fields`, which `raw` holds, and
+    `writable`, which is the descriptor's and not the servo's state."""
     rows = osc.dump()
     lo = min(addr for addr, _, _, _ in rows)
     end = next((addr for addr, name, _, _ in rows if name == CONTROL_FIRST), None)
@@ -733,6 +736,7 @@ def servo_state():
     doc = {
         "addr": lo, "raw": raw.hex(),
         "fields": {name: v for addr, name, _, v in rows if addr < end},
+        "writable": [name for addr, name, access, _ in rows if addr < end and access == "rw"],
         "pos_table": {"state": lut_state, "points_sha1": hashlib.sha1(points).hexdigest()},
         "wide_codes": None if slots is None else slots.hex(),
         "stamp": settings.plant_stamp(status), "data_state": settings.data_state(status),
