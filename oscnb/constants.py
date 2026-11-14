@@ -87,12 +87,14 @@ has to be named with `--protection`, and named again with `--loosen`
 when the set's value protects less than the servo's (LOOSER; a field
 no one direction says it for is always taken as protecting less). Then,
 in the order a count is defined: the slots, the stops, the table
-(`postable`'s own steps, every page read back), the other fields in
-table order, each read back, a write the servo refuses tried once more
-after the rest. The whole state is then read back, and only when it is
-the set does `osc stamp` bless it, no save, after which the data state
-must read clean. A refusal after the first write reboots the servo,
-which returns its saved state.
+(`postable`'s own steps, every page read back; an IDENTITY table is
+written as all-zero points, whose COMMIT must land IDENTITY, and a
+servo whose firmware lands it LIVE is refused as that), the other
+fields in table order, each read back, a write the servo refuses tried
+once more after the rest. The whole state is then read back, and only
+when it is the set does `osc stamp` bless it, no save, after which the
+data state must read clean. A refusal after the first write reboots the
+servo, which returns its saved state.
 
 `save` is a verb of its own, never a flag of `install`, and saves the
 pair's set of record alone. Before the bus is touched it refuses a
@@ -115,11 +117,7 @@ state, `restore --from stored.json` installs the old one, volatile, and
 the old one is made permanent again by adopting that record as the
 pair's set of record and saving it. `restore` puts a recorded state
 back, volatile: the install of the set adopted from the record, the
-table from the record's own points, behind the same protection gate. No
-write returns a LIVE table to IDENTITY short of a boot (a COMMIT of
-all-zero points lands LIVE), so a record with an identity table cannot
-be put back on a servo that holds a LIVE one, and `save` refuses,
-before it installs anything, to put a LIVE table over a stored identity.
+table from the record's own points, behind the same protection gate.
 """
 import argparse
 import copy
@@ -973,18 +971,23 @@ def points_sha1(points):
 
 def table_to_write(doc, state, root=results.ROOT, table=None):
     """The Table an install has to write, None when the servo holds the
-    set's. Only a LIVE table can be written: `table` when it is given
-    and holds the set's points, else the one of the pair's table file,
-    which must hold the set's points, be built against the set's stops,
-    and name no other slots than the set's as the ones its lookup was
-    fitted on; a file that records none is said and taken."""
+    set's. An IDENTITY table is all-zero points against the set's
+    stops. A LIVE one is `table` when it is given and holds the set's
+    points, else the one of the pair's table file, which must hold the
+    set's points, be built against the set's stops, and name no other
+    slots than the set's as the ones its lookup was fitted on; a file
+    that records none is said and taken. No other state can be
+    written."""
     want, have = doc["pos_table"], state["pos_table"]
     if all(have[k] == want[k] for k in ("state", "points_sha1")):
         return None
-    if want["state"] != "LIVE":
+    if want["state"] not in ("LIVE", "IDENTITY"):
         raise settings.Refused(f"the set's table is {want['state']} (points sha1 {want['points_sha1']}) and the "
-                               f"servo's {have['state']} ({have['points_sha1']}): an install writes a LIVE table "
-                               f"only")
+                               f"servo's {have['state']} ({have['points_sha1']}): an install writes a LIVE or an "
+                               f"IDENTITY table only")
+    stops = [doc["fields"][n]["value"] if n in doc["fields"] else state["fields"].get(n) for n in STOPS]
+    if want["state"] == "IDENTITY":
+        table = postable.from_points(bytes(2 * postable.INTERVALS), *stops)
     if table is not None:
         if points_sha1(table.points) != want["points_sha1"]:
             raise settings.Refused(f"the table at hand holds points of sha1 {points_sha1(table.points)}, the "
@@ -1004,7 +1007,6 @@ def table_to_write(doc, state, root=results.ROOT, table=None):
     if points_sha1(t.points) != want["points_sha1"]:
         raise settings.Refused(f"{sc.shown(path)} holds points of sha1 {points_sha1(t.points)}, the set's table "
                                f"is {want['points_sha1']}")
-    stops = [doc["fields"][n]["value"] if n in doc["fields"] else state["fields"].get(n) for n in STOPS]
     if stops != [t.raw_min, t.raw_max]:
         raise settings.Refused(f"{sc.shown(path)} was built against stops {t.raw_min} and {t.raw_max}, the set's "
                                f"are {stops[0]} and {stops[1]}")
@@ -1066,7 +1068,8 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None):
         if table is not None:
             wrote.append("position table")
             postable.install_table(table)
-            print(f"position table: {state['pos_table']['state']} -> LIVE, {postable.PAGES} pages read back")
+            print(f"position table: {state['pos_table']['state']} -> {doc['pos_table']['state']}, "
+                  f"{postable.PAGES} pages read back")
         pending = [n for n in differ if n not in STOPS]
         for last in (False, True):
             again = []
@@ -1145,11 +1148,8 @@ def save(pair, protection=(), loosen=(), root=results.ROOT):
     SAVE (`osc save`, protocol sec 9.4) programs CONFIG and CALIB with
     the slots, the stamp and the table's points into flash, and with
     them whatever else of those regions the servo holds. After a reboot
-    the state is written to `after.json` and must be the set. A save
-    that would put a LIVE table over a stored table that is not LIVE is
-    refused before the install: no write takes a LIVE table back short
-    of a boot, so `stored.json` could not be put back. Returns the two
-    paths."""
+    the state is written to `after.json` and must be the set. Returns
+    the two paths."""
     path = set_path(pair, root)
     doc = of_record(pair, root)
     lines, stale = status(doc, root)
@@ -1169,12 +1169,6 @@ def save(pair, protection=(), loosen=(), root=results.ROOT):
     folder.mkdir(parents=True, exist_ok=True)
     stored, after = folder / "stored.json", folder / "after.json"
     stored.write_text(json.dumps(state, indent=2) + "\n")
-    have, want = state["pos_table"], doc["pos_table"]
-    if have["state"] != "LIVE" and any(have[k] != want[k] for k in ("state", "points_sha1")):
-        raise settings.Refused(
-            f"the servo's stored table is {have['state']} and the set's {want['state']}: no write returns a LIVE "
-            f"table to {have['state']} short of a boot, so `restore` could not put {sc.shown(stored)} back and "
-            f"this save could not be undone from its own record. Nothing was written to the servo")
     try:
         install(doc, protection, loosen, root)
         left = check(doc)

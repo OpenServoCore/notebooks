@@ -418,8 +418,10 @@ def test_status_of_a_stale_set_exits_1(cli, tmp_path, monkeypatch, capsys):
 class Bench(Servo):
     """The fake servo with the writes an install makes: `osc set` by
     name, refused where it would put the low soft limit at or past the
-    high one, the table's STORE and COMMIT behind the window, the slots,
-    the stamp and the reboot. A write of a CONFIG or CALIB field or a
+    high one, the table's STORE and COMMIT behind the window (a COMMIT
+    of all-zero points lands IDENTITY, or LIVE with `zero_live`, as a
+    firmware that judges only the shape lands it), the slots, the stamp
+    and the reboot. A write of a CONFIG or CALIB field or a
     COMMIT leaves the data state STAMP_MISMATCH until a stamp. `drop`
     names fields whose write is answered and not taken, `drift` a field
     whose write moves another too."""
@@ -439,7 +441,7 @@ class Bench(Servo):
     VARIANTS = ("Fault", "Yield")
 
     def __init__(self):
-        self.drop, self.drift, self.flash, self.torn = set(), {}, None, {}
+        self.drop, self.drift, self.flash, self.torn, self.zero_live = set(), {}, None, {}, False
         super().__init__()
 
     def reboot(self):
@@ -492,7 +494,8 @@ class Bench(Servo):
             self.pages[page] = bytes(data[2:])
             self.set("pos_lut_state", postable.STATES.index("LOADING"))
         elif cmd == postable.COMMIT:
-            self.set("pos_lut_state", postable.STATES.index("LIVE"))
+            live = self.zero_live or any(any(p) for p in self.pages)
+            self.set("pos_lut_state", postable.STATES.index("LIVE" if live else "IDENTITY"))
             self.data = "STAMP_MISMATCH"
         else:
             self.window = self.pages[page]
@@ -770,23 +773,59 @@ def unnamed(doc, root):
     (lambda doc, root: None, "torque_enable reads on: a set is installed with torque off"),
     (stale, "the set is stale, 3-servo/ladder moved"),
     (unnamed, "the servo's descriptor lets a host write no ke_vpc_q, tick_hz"),
-    (lambda doc, root: doc["pos_table"].update(state="IDENTITY", points_sha1=NO_POINTS),
-     "the set's table is IDENTITY .* and the servo's LIVE .*: an install writes a LIVE table only"),
+    (lambda doc, root: doc["pos_table"].update(state="REJECT_ENDS"),
+     "the set's table is REJECT_ENDS .* and the servo's IDENTITY .*: an install writes a LIVE or an IDENTITY "
+     "table only"),
     (lambda doc, root: table_file(root).unlink(), "the set's table is LIVE and the pair has no table file"),
     (lambda doc, root: table_file(root, [0] * 256), "holds points of sha1 .*, the set's table is"),
     (lambda doc, root: table_file(root, stops=(82, 3792)),
      "was built against stops 82 and 3792, the set's are 90 and 3780"),
-], ids=["torque on", "a stale set", "fields the servo has none of or lets no host write", "an identity table",
-        "no table file", "a table file of other points", "a table built against other stops"])
+], ids=["torque on", "a stale set", "fields the servo has none of or lets no host write",
+        "a table of a state no host writes", "no table file", "a table file of other points",
+        "a table built against other stops"])
 def test_install_refuses_before_anything_is_written(target, bench, tmp_path, monkeypatch, change, match):
     if "torque" in match:
         bench.set("torque_enable", 1)
-    if "IDENTITY" in match:
-        bench.set("pos_lut_state", postable.STATES.index("LIVE"))
     change(target, tmp_path)
     with pytest.raises(settings.Refused, match=match):
         cn.install(target, **NAMED, root=tmp_path)
     assert bench.wrote() == []
+
+
+def identity(doc):
+    """`doc` with the identity for its table, as a set of its own."""
+    other = copy.deepcopy(doc)
+    other["pos_table"].update(state="IDENTITY", points_sha1=NO_POINTS)
+    return {**other, "hash": cn.hashes(other)}
+
+
+def test_install_returns_a_live_table_to_the_identity(target, bench, tmp_path, capsys):
+    cn.install(target, **NAMED, root=tmp_path)
+    bench.log.clear()
+    capsys.readouterr()
+    # all-zero points against the set's stops, stored a page at a time and committed, each page read back
+    assert cn.install(identity(target), root=tmp_path) == ["position table", "stamp"]
+    zero = bytes(2 * postable.PAGE_POINTS)
+    assert bench.wrote() == [*(("write", postable.WINDOW_ADDR, bytes([p, postable.STORE]) + zero)
+                               for p in range(postable.PAGES)),
+                             ("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT])), ("run", "stamp")]
+    assert capsys.readouterr().out.splitlines()[0] == "position table: LIVE -> IDENTITY, 8 pages read back"
+    state = sc.servo_state()
+    assert state["pos_table"]["state"] == "IDENTITY" and state["pos_table"]["points_sha1"] == NO_POINTS
+    assert cn.differences(identity(target), state) == [] and state["data_state"] == "clean"
+
+
+def test_a_servo_that_lands_an_all_zero_table_live_is_refused_as_that(target, bench, tmp_path):
+    cn.install(target, **NAMED, root=tmp_path)
+    bench.zero_live = True
+    bench.log.clear()
+    with pytest.raises(settings.Refused) as e:
+        cn.install(identity(target), root=tmp_path)
+    assert str(e.value) == ("the COMMIT of an all-zero table landed LIVE, not IDENTITY: the servo's firmware lands "
+                            "an all-zero table LIVE, and only a boot returns its table to IDENTITY; rebooted: the "
+                            "servo is back on its saved state")
+    # nothing is read back or stamped past the COMMIT: the reboot is the next thing the servo is told
+    assert bench.wrote()[-2:] == [("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT])), ("run", "reboot")]
 
 
 def test_a_table_fitted_on_other_slots_is_refused(target, bench, tmp_path, capsys):
@@ -1289,17 +1328,18 @@ def held(state):
 
 
 def test_save_backs_up_saves_and_reads_back(target, bench, tmp_path, committed):
-    boot = stored_live(bench)
+    boot = sc.servo_state()
+    assert boot["pos_table"]["state"] == "IDENTITY"
     bench.set("r_q12", 1)     # volatile: what is recorded is the state a boot gives, not this
     bench.log.clear()
     stored, after = cn.save(PAIR, **NAMED, root=tmp_path)
     folder = backup(target, tmp_path)
     assert (stored, after) == (folder / "stored.json", folder / "after.json")
-    assert json.loads(stored.read_text()) == boot and boot["pos_table"]["points"] == b"".join(
-        postable.page_bytes(OLD_POINTS, p) for p in range(postable.PAGES)).hex()
+    assert json.loads(stored.read_text()) == boot and boot["pos_table"]["points"] == bytes(512).hex()
     back = json.loads(after.read_text())
     assert cn.differences(target, back) == [] and back["data_state"] == "clean"
-    assert back["wide_codes"] == NEW_SLOTS.hex() and str(tmp_path) not in stored.read_text() + after.read_text()
+    assert back["pos_table"]["state"] == "LIVE" and back["wide_codes"] == NEW_SLOTS.hex()
+    assert str(tmp_path) not in stored.read_text() + after.read_text()
     # torque read, the reboot onto the stored state, the install with its stamp, the SAVE, the reboot
     wrote = bench.wrote()
     assert bench.log[0] == ("get", "torque_enable") and wrote[0] == ("run", "reboot")
@@ -1308,7 +1348,7 @@ def test_save_backs_up_saves_and_reads_back(target, bench, tmp_path, committed):
     bench.set("r_q12", 1)
     bench.reboot()
     assert cn.check(target) == []
-    # and the record puts the state the servo had stored back, the table from its own points
+    # and the record puts the state the servo had stored back, its identity table with it
     assert cn.restore(stored, PAIR, **BOTH, root=tmp_path)[-1] == "stamp"
     assert held(sc.servo_state()) == held(boot)
     # a second save of the same set keeps its files beside the first, which stand as they were
@@ -1379,21 +1419,15 @@ def test_save_refuses_a_protection_change_from_the_stored_state_that_is_not_name
     assert [json.loads((stored.parent / n / "stored.json").read_text()) for n in ("2", "3")] == [boot, boot]
 
 
-def test_save_refuses_to_put_a_live_table_over_a_stored_identity(target, bench, tmp_path, committed):
-    bench.log.clear()
-    with pytest.raises(settings.Refused) as e:
-        cn.save(PAIR, **NAMED, root=tmp_path)
-    stored = backup(target, tmp_path) / "stored.json"
-    assert str(e.value) == (
-        "the servo's stored table is IDENTITY and the set's LIVE: no write returns a LIVE table to IDENTITY short "
-        f"of a boot, so `restore` could not put {stored} back and this save could not be undone from its own "
-        "record. Nothing was written to the servo")
-    assert bench.wrote() == [("run", "reboot")] and bench.flash is None
-    # which is what a restore of that record onto the set would say
-    cn.install(target, **NAMED, root=tmp_path)
-    with pytest.raises(settings.Refused, match="the set's table is IDENTITY .* and the servo's LIVE .*: an install "
-                                               "writes a LIVE table only"):
+def test_a_stored_identity_is_not_put_back_on_a_servo_that_lands_an_all_zero_table_live(
+        target, bench, tmp_path, committed):
+    stored, _ = cn.save(PAIR, **NAMED, root=tmp_path)
+    bench.zero_live = True
+    with pytest.raises(settings.Refused, match="the servo's firmware lands an all-zero table LIVE, and only a boot "
+                                               "returns its table to IDENTITY; rebooted: the servo is back on its "
+                                               "saved state"):
         cn.restore(stored, PAIR, **BOTH, root=tmp_path)
+    assert cn.check(target) == []
 
 
 def test_a_save_that_does_not_read_back_says_what_flash_holds_and_what_puts_the_old_state_back(

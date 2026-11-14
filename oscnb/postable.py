@@ -493,8 +493,14 @@ class Step:
 
 def install_steps(t):
     """The install's steps 1 to 4 for table `t`, section headings as
-    strings between them: what `plan` prints and `install` runs."""
+    strings between them: what `plan` prints and `install` runs. A
+    table of all-zero points is the identity, and its COMMIT is to land
+    IDENTITY, as a boot reads such an array (protocol sec 5.7)."""
     states = ", ".join(f"{i} {s}" for i, s in enumerate(STATES))
+    landed = (Step("poll", "pos_lut_state", "LIVE",
+                   note="again while 1 LOADING; 2 LIVE goes on, any REJECT stops here") if np.any(t.points)
+              else Step("poll", "pos_lut_state", "IDENTITY",
+                        note="again while 1 LOADING; 0 IDENTITY goes on: all-zero points are the identity"))
     out = [
         "1. preconditions, each read before anything is written",
         Step("get", "torque_enable", "off", note="off; STORE and COMMIT are refused under torque"),
@@ -509,7 +515,7 @@ def install_steps(t):
         Step("get", "pos_lut_state", "LOADING", note="1 LOADING"),
         "3. COMMIT: page 0 and cmd 3, the write covers the command",
         Step("write", data=bytes([0, COMMIT])),
-        Step("poll", "pos_lut_state", "LIVE", note="again while 1 LOADING; 2 LIVE goes on, any REJECT stops here"),
+        landed,
         "4. read back: FETCH a page into the window, read its 64 B, compare with its STORE above",
     ]
     out += [Step("fetch", data=page_bytes(t.points, p), page=p) for p in range(PAGES)]
@@ -603,6 +609,10 @@ def install_table(t):
             else:
                 raise settings.Refused(f"{s.field} still LOADING {COMMIT_TRIES * COMMIT_WAIT_S:g} s "
                                        "after the COMMIT")
+            if (v, s.want) == ("LIVE", "IDENTITY"):
+                raise settings.Refused("the COMMIT of an all-zero table landed LIVE, not IDENTITY: the servo's "
+                                       "firmware lands an all-zero table LIVE, and only a boot returns its table "
+                                       "to IDENTITY")
             if v != s.want:
                 raise settings.Refused(f"the COMMIT landed {v}, not {s.want}")
         else:
