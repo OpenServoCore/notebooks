@@ -1,0 +1,4 @@
+{
+  "note": "the position-error screen at the angle its counts were typed for at the raw pot's mid travel scale, on the set's count in place of the stored counts: the same angle is more counts on the table, so the screen trips later than the value the servo holds. A protection step: it moves nothing else",
+  "release": ["pos_error_counts"]
+}

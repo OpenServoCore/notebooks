@@ -1,0 +1,4 @@
+{
+  "note": "the speed a press counts as stalled under at the deg/s its counts were typed for at the raw pot's mid travel scale, on the set's count in place of the stored counts: the same speed is more counts on the table, so a press is taken as a stall up to a higher count. A protection step: it moves nothing else",
+  "release": ["stall_omega_max_cps"]
+}

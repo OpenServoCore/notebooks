@@ -527,7 +527,8 @@ class Context:
     """What a rule reads through, every read recorded as it is made, so
     a field's inputs are what its rule read: results of record (`q`,
     `raw`), the registry (`reg`), the policy file (`policy`), and the
-    scale of the count (`counts_per_deg`, `travel_deg`, `ascending`).
+    scale of the count (`counts_per_deg`, `travel_deg`, `stops`,
+    `ascending`).
     `inputs` gathers what a set names under `inputs`, `notes` what a
     build has to say. A read of something that is not there raises
     Missing. With a `deviation` (`deviation_of`) its policy entries
@@ -640,6 +641,15 @@ class Context:
             raise Missing("the pair has no position table: the stops its scale runs between are not known")
         self.reads.append(("pos_table:stops", None))
         return (self.table.raw_max - self.table.raw_min) / self.counts_per_deg
+
+    @property
+    def stops(self):
+        """The raw counts of the two stops, low then high, which the
+        table reads as themselves."""
+        if self.table is None:
+            raise Missing("the pair has no position table: the stops its count runs between are not known")
+        self.reads.append(("pos_table:stops", None))
+        return self.table.raw_min, self.table.raw_max
 
     @property
     def ascending(self):
@@ -851,6 +861,73 @@ def l2(c):
       mirrors="core estimator/fusion.rs step, ident gains.rs synthesize")
 def l3(c):
     return (1 - observer_pole(c)) ** 3 * medium_hz(c) / (2 * b_gain(c))
+
+
+# --- the fields in counts of position ---
+#
+# The kernel's estimate and its profile run in the count of the scale:
+# the table's count, the raw pot's on a pair with no table (core
+# kernel/phases/loops/trajectory.rs, limits.rs, phases/rail.rs). A
+# speed, an acceleration and an angle the policy states in degrees are
+# that many counts there, so each rule carries the scale once. The soft
+# limits are positions and no lengths: a share of the travel inside
+# each stop, on a count that reads the stops as themselves, so they
+# take the stops and not the scale. Two fields are in the raw counts of
+# the pot whatever the table, and carry no scale: the hold band, which
+# the kernel takes through the table's local gain itself (core
+# kernel/phases/loops/position.rs band_q16), and the sensor screen,
+# which reads the pot sample before any table (core
+# kernel/phases/loops/faults.rs sensor_sample).
+POT = "3-servo/pot-table"
+
+
+def in_counts(key, per_tick=False):
+    """A length, a speed or an acceleration the policy states in deg,
+    in counts at the scale of the count; an acceleration, `per_tick`,
+    as the speed it adds in one MEDIUM period."""
+    def counts(c):
+        return c.policy(key) * c.counts_per_deg / (medium_hz(c) if per_tick else 1)
+    return counts
+
+
+def soft_limit(high):
+    """A soft limit, counts: the policy's share of the stops' span
+    inside the low stop, or inside the high one."""
+    def counts(c):
+        share = c.policy("soft_margin_share")
+        lo, hi = c.stops
+        return hi - share * (hi - lo) if high else lo + share * (hi - lo)
+    return counts
+
+
+rule("velocity_limit_cps", "velocity_limit.policy", kind="u16", unit="count/s", pos_unit=+1, cls="policy",
+     mirrors="core kernel/phases/loops/trajectory.rs vel_cap")(in_counts("velocity_limit_deg_s"))
+rule("accel_limit_q88", "accel_limit.policy", kind="u16", unit="(count/s)/tick", q=8, pos_unit=+1, cls="policy",
+     mirrors="core kernel/phases/loops/trajectory.rs step_position")(in_counts("accel_limit_deg_s2", per_tick=True))
+rule("stall_omega_max_cps", "stall_omega_max.policy", kind="u16", unit="count/s", pos_unit=+1, cls="policy",
+     mirrors="core kernel/phases/loops/limits.rs fold")(in_counts("stall_omega_max_deg_s"))
+rule("pos_error_counts", "pos_error.policy", kind="u16", unit="counts", pos_unit=+1, cls="policy",
+     mirrors="core kernel/phases/rail.rs rail")(in_counts("pos_error_deg"))
+rule("pos_min_soft_counts", "soft_min.stops", kind="i32", unit="counts", cls="policy",
+     mirrors="core kernel/phases/loops/trajectory.rs goal_q16, limits.rs fold")(soft_limit(False))
+rule("pos_max_soft_counts", "soft_max.stops", kind="i32", unit="counts", cls="policy",
+     mirrors="core kernel/phases/loops/trajectory.rs goal_q16, limits.rs fold")(soft_limit(True))
+
+
+@rule("pos_deadband_counts", "deadband.pot_noise", kind="u16", unit="raw counts", cls="policy",
+      mirrors="core kernel/phases/loops/position.rs band_q16, ident gains.rs synthesize")
+def deadband(c):
+    """The hold band: the policy's multiple of the pot's noise at rest,
+    and no less than its floor, a band a quiet pot cannot make too
+    tight to hold."""
+    return max(c.policy("hold_band_noise_multiple") * c.q(POT, "pot_rest_sd_counts"),
+               c.policy("hold_band_floor_counts"))
+
+
+@rule("sensor_delta_max", "sensor_delta.policy", kind="u16", unit="raw counts/tick", cls="policy",
+      mirrors="core kernel/phases/loops/faults.rs sensor_sample")
+def sensor_delta(c):
+    return c.policy("sensor_delta_max_counts")
 
 
 # --- the protection rules ---

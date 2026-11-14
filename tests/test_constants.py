@@ -799,13 +799,23 @@ WAYS = ("rails_fit", "locked_laps", "small_step", "take_back")
 NO_RULE = "policy.json names no rule for {} of " + ", ".join(f"{{}}.{w}" for w in WAYS)
 NO_LADDER = "3-servo/ladder has no result for synth__board"
 NO_LIMIT = "current_limit_counts: held, policy.json has no current_limit_ma"
-HELD_BLOCK = [NO_LIMIT, f"r_q12: held, {NO_RULE.format('r_q12', *['r'] * 4)}", f"recip_ke_q: held, {NO_LADDER}"]
+NO_R = f"r_q12: held, {NO_RULE.format('r_q12', *['r'] * 4)}"
+# and of the fields in counts of position under a policy with none of their entries: the range, the hold band
+# and the stall speed, which the fake servo holds, are held, the rest left out
+NO_RANGE = [*(f"pos_{end}_soft_counts: held, policy.json has no soft_margin_share" for end in ("min", "max")),
+            "pos_deadband_counts: held, policy.json has no hold_band_noise_multiple"]
+NO_STALL = "stall_omega_max_cps: held, policy.json has no stall_omega_max_deg_s"
+NO_COUNTS = [f"{n}: left out, policy.json has no {key}" for n, key in (
+    ("velocity_limit_cps", "velocity_limit_deg_s"), ("accel_limit_q88", "accel_limit_deg_s2"),
+    ("pos_error_counts", "pos_error_deg"), ("sensor_delta_max", "sensor_delta_max_counts"))]
+HELD_BLOCK = [*NO_RANGE, NO_LIMIT, NO_STALL, NO_R, f"recip_ke_q: held, {NO_LADDER}"]
 NO_BLOCK = [
     f"r_bemf_q12: left out, {NO_RULE.format('r_bemf_q12', *['r_bemf'] * 4)}",
     f"b_i_q313: left out, {NO_LADDER}",
     *(f"{n}: left out, 3-servo/friction has no result for synth__board" for n in ("fric_fc_counts", "fric_fv_q016")),
     *(f"{n}: left out, {NO_LADDER}" for n in ("ke_vpc_q", "j_ff_q88")),
     *(f"{n}: left out, policy.json has no observer_hz" for n in ("l1_q016", "l2_q88", "l3_q88")),
+    *NO_COUNTS,
     *(f"{n}: left out, 1-board/ntc-curve has no result for board" for n in ("ntc_t_ref_cc", "ntc_k1_q88",
                                                                            "ntc_k2_q24")),
     *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("i_cont", "stall_release", "oc_trip"))]
@@ -815,10 +825,17 @@ BOARD_REG = {**REG, "board": {"tick_hz": 20_000}}
 LIMITS_MA = {"current_limit_ma": 500.0, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
 BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_q12": "r.rails_fit", "r_bemf_q12": "r_bemf.small_step"},
                 **LIMITS_MA}
-# what a build of the plant says of the protection fields those inputs give a value: the one the fake servo
+# the policy entries the rules of the fields in counts of position read, and the pot's noise at rest
+COUNT_POLICY = {"velocity_limit_deg_s": 75.0, "accel_limit_deg_s2": 1500.0, "stall_omega_max_deg_s": 25.0,
+                "pos_error_deg": 20.0, "soft_margin_share": 0.0625, "hold_band_noise_multiple": 2.5,
+                "hold_band_floor_counts": 4, "sensor_delta_max_counts": 256}
+POT_NOISE = {"3-servo/pot-table": {"pot_rest_sd_counts": (1.0, 0.0, 1.5)}}
+# what a build of the plant over those inputs says, in the set's order: the fields in counts of position,
+# whose entries that policy lacks, and the protection fields the inputs give a value, the one the fake servo
 # holds carried with what it would be, the rest, which nothing carries, left to a build that names them
-PROTECTION_SIDE = [
-    "current_limit_counts: carried at 554, it would be 500: name it with --protection",
+BLOCK_SAID = [
+    *NO_RANGE, "current_limit_counts: carried at 554, it would be 500: name it with --protection", NO_STALL,
+    *NO_COUNTS,
     *(f"{n}: left out, name it with --protection" for n in (
         "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts", "oc_trip_counts"))]
 PLANT = {
@@ -924,7 +941,7 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
     rules = set(cn.RULES)
     assert list(f) == list(first["fields"])
     assert all(f[n] == first["fields"][n] for n in f if n not in rules)
-    assert f["raw_min"]["class"] == f["pos_min_soft_counts"]["class"] == "adopted"
+    assert f["raw_min"]["class"] == f["p_kp_q88"]["class"] == "adopted"
     assert all("protection" in e for e in f.values())
     # what the build read, each file by its sha1, the registry by its values, and the origin still used
     assert doc["inputs"] == {
@@ -958,7 +975,11 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
         "position table state: IDENTITY -> LIVE [measured, table.pos_lut]",
         f"position table points sha1: {NO_POINTS} -> {sha} [measured, table.pos_lut]",
         f"scale: none -> {SCALE:.4f} counts/deg, the table one",
+        "pos_min_soft_counts: 314 [adopted -> held, soft_min.stops]",
+        "pos_max_soft_counts: 3560 [adopted -> held, soft_max.stops]",
+        "pos_deadband_counts: 4 [adopted -> held, deadband.pot_noise]",
         "current_limit_counts: 554 [adopted -> held, current_limit.policy]",
+        "stall_omega_max_cps: 500 [adopted -> held, stall_omega_max.policy]",
         "r_q12: 17100 [adopted -> held]",
         "recip_ke_q: 11817 [adopted -> held, recip_ke.ladder]",
         "angle_min_cdeg: 0 [adopted -> measured, angle_min.table]",
@@ -980,8 +1001,8 @@ def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
 def context(root, k=1.0, policy=None, **kw):
     """The Context a build gives its rules over `inputs(**kw)` and the
     plant's results, the scale of the count times `k`."""
-    inputs(root, policy={**BLOCK_POLICY, **(policy or {})}, **kw)
-    plant(root)
+    inputs(root, policy={**BLOCK_POLICY, **COUNT_POLICY, **(policy or {})}, **kw)
+    plant(root, {**PLANT, **POT_NOISE})
     c = cn.Context(PAIR, root, BOARD_REG)
     cn.table_of(c, None, cn.slots_of(c, None))
     c.scale = {**c.scale, "counts_per_deg": c.scale["counts_per_deg"] * k}
@@ -1061,7 +1082,7 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
         "wide-code slots: held, 1-board/wide-codes has no result for board",
         "scale: none, 3-servo/pot-table has no result for synth__board", NO_SCALE, *HELD_BLOCK,
         f"angle_min_cdeg: held, {no_table}", f"angle_max_cdeg: held, {no_table}", *NO_BLOCK]
-    assert cn.described(doc)[0].startswith("16 fields: 2 measured, 0 policy, 0 pinned, 5 held, 9 adopted")
+    assert cn.described(doc)[0].startswith("16 fields: 2 measured, 0 policy, 0 pinned, 9 held, 5 adopted")
     assert moved_hashes(first, doc) == [] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
     # held again on top of that set, the value still names the set it first came from
     again, _ = built_on(doc, tmp_path)
@@ -1157,7 +1178,8 @@ def test_one_build_moves_one_hash(first, limited, tmp_path):
     # a field its rule leaves out is said once, by the rule
     assert moved_hashes(doc, named) == ["protection"] and notes == [
         "1-board/wide-codes: the results it read are not recorded",
-        "current_counts_per_a: left out, 1-board/current-scale has no counts_per_a", *HELD_BLOCK[1:], *NO_BLOCK]
+        "current_counts_per_a: left out, 1-board/current-scale has no counts_per_a",
+        *(n for n in HELD_BLOCK if n != NO_LIMIT), *NO_BLOCK]
     assert named["fields"]["current_limit_counts"] == {
         "value": 500, "class": "policy", "rule": "current_limit.class", "rule_rev": 1, "unit": "ccounts", "q": 0,
         "pos_unit": 0, "inputs": ["1-board/current-scale:half_limit_counts"], "band": [490, 520],
@@ -1213,7 +1235,7 @@ def test_a_pin_binds_its_field_and_shows_as_pinned(first, tmp_path):
     assert doc["fields"]["angle_max_cdeg"]["class"] == "pinned" and doc["fields"]["angle_max_cdeg"]["value"] == 18433
     assert doc["inputs"]["pins"] == {"file": f"stages/5-closed-loop/calibration/{PAIR}.pins.json",
                                      "sha1": sc.file_sha1(pins)}
-    assert cn.described(doc)[0].startswith("16 fields: 3 measured, 0 policy, 2 pinned, 3 held, 8 adopted")
+    assert cn.described(doc)[0].startswith("16 fields: 3 measured, 0 policy, 2 pinned, 7 held, 4 adopted")
     pins.write_text(json.dumps({"p_kp_q88": {"value": 5026}}))
     with pytest.raises(ValueError, match="p_kp_q88 lacks its value, its why or its rung"):
         built_on(first, tmp_path)
@@ -1486,7 +1508,7 @@ def block(first, root, **policy):
 def test_the_motor_block_binds_from_the_record_through_the_stage_1_scales_the_gear_and_the_count(first, tmp_path):
     doc, notes = block(first, tmp_path)
     f, sha = doc["fields"], cn.points_sha1(POINTS)
-    assert notes == ["1-board/wide-codes: the results it read are not recorded", *PROTECTION_SIDE]
+    assert notes == ["1-board/wide-codes: the results it read are not recorded", *BLOCK_SAID]
     # the resistance, ohm x tap counts per V / shunt counts per A, by the rule the policy names, its band the
     # rule again at each end of the resistance's band and of the shunt scale's
     assert f["r_q12"] == {
@@ -1540,7 +1562,8 @@ def test_the_policy_names_which_of_a_fields_rules_binds(first, tmp_path):
     doc, notes = block(first, tmp_path, rule={})
     assert doc["fields"]["r_q12"] == {"value": 17100, "class": "held", "held": NO_RULE.format("r_q12", *["r"] * 4),
                                       "carried_from": first["hash"]["set"], "protection": None}
-    assert "r_bemf_q12" not in doc["fields"] and [HELD_BLOCK[1], NO_BLOCK[0]] == notes[2:4]
+    assert "r_bemf_q12" not in doc["fields"]
+    assert [NO_R, NO_BLOCK[0]] == [n for n in notes if n.startswith(("r_q12", "r_bemf_q12"))]
     with pytest.raises(ValueError, match="policy.json: r.guess is no rule of r_q12 \\(r.rails_fit, r.locked_laps"):
         block(first, tmp_path, rule={"r_q12": "r.guess"})
 
@@ -1563,14 +1586,16 @@ def test_a_held_field_stands_beside_what_its_rule_gives_and_one_with_nothing_to_
         "inputs": ["3-servo/ladder:ke_v_s_per_rad", "1-board/terminal-chain:terminal_counts_per_v", "scale",
                    "registry:gear_ratio"]}
     assert (doc["fields"]["r_q12"]["value"], doc["fields"]["r_q12"]["would_be"]) == (17100, 4096)
-    assert notes[2:5] == [f"r_q12: held, {HOLDS['r_q12']}; its rule gives 4096",
-                          f"recip_ke_q: held, {HOLDS['recip_ke_q']}; its rule gives {would}",
-                          "r_bemf_q12: left out, the servo's image has no such field yet; its rule gives 5120"]
+    assert [n for n in notes if n.startswith(("r_q12", "recip_ke_q", "r_bemf_q12"))] == [
+        f"r_q12: held, {HOLDS['r_q12']}; its rule gives 4096",
+        f"recip_ke_q: held, {HOLDS['recip_ke_q']}; its rule gives {would}",
+        "r_bemf_q12: left out, the servo's image has no such field yet; its rule gives 5120"]
     assert list(doc["fields"]) == [*first["fields"], *JOINED[1:]]
     # a value carried from before the path is still at a scale nothing recorded: holding it gave it none
     unknown = [cn.described(d)[0].split("; ")[1] for d in (first, doc)]
     assert unknown == ["4 per-count at an unknown scale"] * 2
-    assert cn.classes(doc)["held"] == 2 and cn.classes(doc)["adopted"] == cn.classes(first)["adopted"] - 6
+    # the two the policy holds, and the range, the hold band and the stall speed, whose entries it lacks
+    assert cn.classes(doc)["held"] == 6 and cn.classes(doc)["adopted"] == cn.classes(first)["adopted"] - 10
 
 
 def test_a_deviation_releases_a_hold_and_the_rest_of_the_policy_stands(holding, tmp_path):
@@ -1721,7 +1746,7 @@ def test_a_held_protection_field_is_held_by_a_build_of_the_plant_and_moves_no_ha
         "value": 554, "class": "held", "rule": "current_limit.policy", "would_be": 500, "held": why,
         "carried_from": first["hash"]["set"], "protection": {"looser": "up"},
         "inputs": ["policy:current_limit_ma", "1-board/current-scale:counts_per_a"]}
-    assert notes[1] == f"current_limit_counts: held, {why}; its rule gives 500"
+    assert f"current_limit_counts: held, {why}; its rule gives 500" in notes
     # a held field the set never held stays out, said with what its rule gives
     assert "ntc_k1_q88" not in doc["fields"] and f"ntc_k1_q88: left out, {why}; its rule gives 200" in notes
     assert doc["hash"]["protection"] == first["hash"]["protection"]
@@ -1883,6 +1908,186 @@ def test_the_protection_steps_of_record_name_what_their_install_needs():
         assert all(line.endswith(f"name it with --protection {n} and --loosen {n}") for n, line in zip(fields, asked))
         assert len(cn.gate(derived, state, protection=fields)) == len(fields)
         assert cn.gate(derived, state, protection=fields, loosen=fields) == []
+
+
+# --- the fields in counts of position ---
+
+MOTION = ("velocity_limit_cps", "accel_limit_q88")
+SCREENS = ("stall_omega_max_cps", "pos_error_counts")       # the protection fields that carry the scale
+RANGE = ("pos_min_soft_counts", "pos_max_soft_counts")
+
+
+def count_rule(c, name):
+    return cn.evaluate(cn.rule_of(c, name), c)
+
+
+@pytest.mark.parametrize("theta", [THETA, THETA[::-1]], ids=["ascending", "descending"])
+def test_a_policy_in_degrees_is_that_many_counts_at_the_scale_of_the_count(tmp_path, theta):
+    c = context(tmp_path, theta=theta)
+    sha = cn.points_sha1(POINTS)
+    medium = BOARD_REG["board"]["tick_hz"] / cn.DECIM_MED
+    # a speed, an acceleration as the speed one MEDIUM period adds, and an angle, each times the counts per deg
+    gives = {"velocity_limit_cps": raw(75.0 * SCALE), "accel_limit_q88": raw(1500.0 * SCALE / medium, 8),
+             "stall_omega_max_cps": raw(25.0 * SCALE), "pos_error_counts": raw(20.0 * SCALE)}
+    assert gives == {"velocity_limit_cps": 1546, "accel_limit_q88": 3957, "stall_omega_max_cps": 515,
+                     "pos_error_counts": 412}
+    keys = {"velocity_limit_cps": "velocity_limit_deg_s", "accel_limit_q88": "accel_limit_deg_s2",
+            "stall_omega_max_cps": "stall_omega_max_deg_s", "pos_error_counts": "pos_error_deg"}
+    for name, value in gives.items():
+        e = count_rule(c, name)
+        assert (e["value"], e["class"], e["pos_unit"], e["scale_points_sha1"]) == (value, "policy", 1, sha), name
+        assert e["inputs"][:2] == [f"policy:{keys[name]}", "scale"], name
+    assert count_rule(c, "accel_limit_q88")["inputs"] == ["policy:accel_limit_deg_s2", "scale", "registry:tick_hz"]
+    assert (cn.RULES["accel_limit_q88"]["accel_limit.policy"].q, count_rule(c, "accel_limit_q88")["unit"]) == (
+        8, "(count/s)/tick")
+    # the range is a share of the travel inside each stop, on a count that reads the stops as themselves:
+    # it takes the stops and no scale, whichever way the angle runs
+    span = STOPS[1] - STOPS[0]
+    soft = [count_rule(c, n) for n in RANGE]
+    assert [e["value"] for e in soft] == [raw(STOPS[0] + span / 16), raw(STOPS[1] - span / 16)] == [314, 3560]
+    assert all(e["inputs"] == ["policy:soft_margin_share", "pos_table:stops"] and e["pos_unit"] == 0
+               and "scale_points_sha1" not in e for e in soft)
+    wide = context(tmp_path, theta=theta, policy={"soft_margin_share": 0.125})
+    assert [count_rule(wide, n)["value"] for n in RANGE] == [raw(82 + span / 8), raw(3792 - span / 8)]
+    # the screens that protect say which way protects less, and the limits of motion are of the plant
+    assert [cn.LOOSER[n] for n in SCREENS] == ["down", "up"] and cn.LOOSER["sensor_delta_max"] == "up"
+    assert not {*MOTION, *RANGE, "pos_deadband_counts"} & cn.PROTECTION
+
+
+def test_the_hold_band_and_the_sensor_screen_are_in_the_pots_raw_counts_whatever_the_scale(tmp_path):
+    def band(sd, **policy):
+        c = context(tmp_path, policy=policy)
+        plant(tmp_path, {"3-servo/pot-table": {"pot_rest_sd_counts": sd}})
+        return count_rule(c, "pos_deadband_counts")
+
+    # the firmware repo's own synthesis (ident/src/gains.rs synthesize and its test): 2.5 times the pot's
+    # noise at rest and no less than 4 counts, so a quiet pot sits on the floor and a noisy one clears it
+    quiet, noisy = band((1.0, 0.0, 1.5)), band((6.9, 6.0, 8.0))
+    assert (quiet["value"], quiet["band"]) == (4, [4, 4])
+    assert (noisy["value"], noisy["band"]) == (raw(2.5 * 6.9), [15, 20])
+    assert quiet["inputs"] == ["policy:hold_band_noise_multiple", "3-servo/pot-table:pot_rest_sd_counts",
+                               "policy:hold_band_floor_counts"]
+    assert band((6.9,), hold_band_noise_multiple=1.0, hold_band_floor_counts=10)["value"] == 10
+    # neither reads the scale: the kernel takes the band through the table's local gain itself, and screens
+    # the pot sample before any table
+    c = context(tmp_path, k=3.0)
+    screen = count_rule(c, "sensor_delta_max")
+    assert (screen["value"], screen["inputs"], screen["unit"]) == (256, ["policy:sensor_delta_max_counts"],
+                                                                 "raw counts/tick")
+    assert count_rule(c, "pos_deadband_counts")["value"] == 4
+    assert all(e["pos_unit"] == 0 and "scale_points_sha1" not in e and e["class"] == "policy"
+               for e in (quiet, noisy, screen))
+    assert not {"pos_deadband_counts", "sensor_delta_max"} & cn.PER_COUNT
+
+
+def test_a_pair_with_no_table_takes_its_speeds_at_the_raw_pots_scale_and_has_no_range(tmp_path):
+    inputs(tmp_path, theta=None, policy=COUNT_POLICY)
+    plant(tmp_path, {"3-servo/pot-table": {"pot_scale_counts_per_deg": (19.0, 18.9, 19.1)}})
+    c = cn.Context(PAIR, tmp_path, BOARD_REG)
+    cn.table_of(c, None, cn.slots_of(c, None))
+    e = count_rule(c, "velocity_limit_cps")
+    assert (e["value"], e["scale_points_sha1"]) == (raw(75.0 * 19.0), None)
+    with pytest.raises(cn.Missing, match="the pair has no position table: the stops its count runs between"):
+        count_rule(c, "pos_max_soft_counts")
+
+
+def test_a_build_binds_the_range_and_the_band_and_carries_the_screens_to_a_build_that_names_them(first, tmp_path):
+    why = "the motion limits move together"
+    inputs(tmp_path, policy={**COUNT_POLICY, "hold": {"velocity_limit_cps": why}})
+    plant(tmp_path, POT_NOISE)
+    doc, notes = cn.build(PAIR, first, root=tmp_path, registry=BOARD_REG)
+    f = doc["fields"]
+    # the range and the band at the values the servo holds: the class moves and no hash of the fields does
+    assert {n: (f[n]["value"], f[n]["class"]) for n in (*RANGE, "pos_deadband_counts")} == {
+        "pos_min_soft_counts": (314, "policy"), "pos_max_soft_counts": (3560, "policy"),
+        "pos_deadband_counts": (4, "policy")}
+    assert all("scale" not in f[n] and first["fields"][n]["scale"] == "unknown" for n in RANGE)
+    # the stall speed stands with what its rule gives beside it, the screens the servo lacks wait to be named
+    assert f["stall_omega_max_cps"] == {**first["fields"]["stall_omega_max_cps"], "would_be": 515,
+                                        "protection": {"looser": "down"}}
+    assert "stall_omega_max_cps: carried at 500, it would be 515: name it with --protection" in notes
+    assert all(f"{n}: left out, name it with --protection" in notes for n in ("pos_error_counts", "sensor_delta_max"))
+    # a limit of motion the policy holds, which the set never held, stays out; the other binds
+    assert f"velocity_limit_cps: left out, {why}; its rule gives 1546" in notes and "velocity_limit_cps" not in f
+    assert (f["accel_limit_q88"]["value"], f["accel_limit_q88"]["class"]) == (3957, "policy")
+    assert doc["hash"]["protection"] == first["hash"]["protection"]
+    # named, the stall speed moves alone, up, which protects more than the servo's
+    named, _ = cn.build(PAIR, doc, protection=["stall_omega_max_cps"], root=tmp_path, registry=BOARD_REG)
+    assert moved_hashes(doc, named) == ["protection"]
+    assert (named["fields"]["stall_omega_max_cps"]["value"], named["fields"]["stall_omega_max_cps"]["class"]) == (
+        515, "policy")
+    state = {"fields": {**{n: e["value"] for n, e in named["fields"].items()}, "stall_omega_max_cps": 500}}
+    assert cn.gate(named, state) == ["stall_omega_max_cps: servo 500, set 515, protects more (less is down): name "
+                                     "it with --protection stall_omega_max_cps"]
+
+
+def test_the_bench_pairs_fields_in_counts_are_held_beside_what_they_were_typed_for():
+    doc, c, board = of_the_bench_pair()
+    f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    typed_at = results.read_file(results.path("3-servo", "pot-table", doc["pair"]))["pot_scale_counts_per_deg"]["value"]
+    table, medium = doc["scale"]["counts_per_deg"], board.tick_hz / cn.DECIM_MED
+    assert (round(typed_at, 3), round(table, 3), round(table / typed_at, 4)) == (18.913, 20.127, 1.0642)
+    # field: (what the servo holds, in its unit per count of position, the policy's entry, what the rule gives)
+    held = {"velocity_limit_cps": (1500, 1500, "velocity_limit_deg_s", 1596),
+            "accel_limit_q88": (3840, 3840 / 256 * medium, "accel_limit_deg_s2", 4086),
+            "stall_omega_max_cps": (500, 500, "stall_omega_max_deg_s", 532),
+            "pos_error_counts": (400, 400, "pos_error_deg", 426)}
+    for name, (stored, counts, key, gives) in held.items():
+        # the policy is what the stored counts were typed for at the raw pot's mid travel scale, four figures
+        assert policy[key] == float(f"{counts / typed_at:.4g}"), name
+        assert count_rule(c, name)["value"] == gives, name
+        assert (f[name]["value"], f[name]["class"], f[name]["would_be"]) == (stored, "held", gives), name
+        assert f[name]["scale"] == "unknown" and name in policy["hold"], name
+    assert {n: policy[key] for n, (_, _, key, _) in held.items()} == {
+        "velocity_limit_cps": 79.31, "accel_limit_q88": 1586.0, "stall_omega_max_cps": 26.44,
+        "pos_error_counts": 21.15}
+    # and what the stored counts are on the table's count: 6.4 % less of each
+    assert {n: float(f"{counts / table:.4g}") for n, (_, counts, _, _) in held.items()} == {
+        "velocity_limit_cps": 74.53, "accel_limit_q88": 1491.0, "stall_omega_max_cps": 24.84,
+        "pos_error_counts": 19.87}
+    # the range is what it was typed as, a sixteenth of the stops' span inside each stop, and binds as it stands
+    lo, hi = (f[n]["value"] for n in cn.STOPS)
+    assert policy["soft_margin_share"] == 1 / 16
+    assert [(f[n]["value"], f[n]["class"]) for n in RANGE] == [(raw(lo + (hi - lo) / 16), "policy"),
+                                                               (raw(hi - (hi - lo) / 16), "policy")]
+    assert [f[n]["value"] for n in RANGE] == [314, 3560]
+    # on the raw pot those counts sat nearer the stops than on the table, deg inside the low and the high one
+    inside = [(float(c.table.lin(314)) - lo) / table, (hi - float(c.table.lin(3560))) / table]
+    assert [round(x, 2) for x in inside] == [10.4, 10.86] and round((314 - lo) / table, 2) == 11.53
+    # the band on its floor over the pot's noise, and the sensor screen, in the pot's raw counts: bound as held
+    noise = results.read_file(results.path("3-servo", "pot-table", doc["pair"]))["pot_rest_sd_counts"]
+    assert max(policy["hold_band_noise_multiple"] * noise[k] for k in ("value", "lo", "hi")) < 4
+    assert [(f[n]["value"], f[n]["class"], f[n]["rule"]) for n in ("pos_deadband_counts", "sensor_delta_max")] == [
+        (4, "policy", "deadband.pot_noise"), (256, "policy", "sensor_delta.policy")]
+    # what is left with no source at a scale nothing recorded: the velocity loop's two gains
+    assert [n for n, e in f.items() if e["class"] == "adopted" and e.get("scale") == "unknown"] == [
+        "v_kp_q88", "v_ki_q412"]
+    assert cn.described(doc)[0] == ("63 fields: 4 measured, 6 policy, 0 pinned, 19 held, 34 adopted (no source); "
+                                    "12 per-count at an unknown scale")
+
+
+def test_the_steps_of_the_fields_in_counts_name_what_their_install_needs():
+    doc, _, _ = of_the_bench_pair()
+    state = {"fields": {n: e["value"] for n, e in doc["fields"].items()}}
+    folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
+    # the limits of motion are of the plant: a rung's own step, no gate
+    motion, _ = cn.derive(doc, folder / "motion-limits.json")
+    assert motion["deviation"]["fields"] == {"velocity_limit_cps": [1500, 1596], "accel_limit_q88": [3840, 4086]}
+    assert moved_hashes(doc, motion) == ["plant"] and cn.gate(motion, state) == []
+    # the position-error screen trips later on more counts: a protection step that protects less
+    error, _ = cn.derive(doc, folder / "protection-position-error.json")
+    assert error["deviation"]["fields"] == {"pos_error_counts": [400, 426]} and moved_hashes(doc, error) == [
+        "protection"]
+    assert cn.gate(error, state, protection=["pos_error_counts"]) == [
+        "pos_error_counts: servo 400, set 426, protects less (less is up): name it with --loosen pos_error_counts"]
+    assert cn.gate(error, state, protection=["pos_error_counts"], loosen=["pos_error_counts"]) == []
+    # the stall speed takes a press as a stall up to a higher count: a protection step that protects more
+    stall, _ = cn.derive(doc, folder / "protection-stall-speed.json")
+    assert stall["deviation"]["fields"] == {"stall_omega_max_cps": [500, 532]} and moved_hashes(doc, stall) == [
+        "protection"]
+    assert len(cn.gate(stall, state)) == 1 and cn.gate(stall, state, protection=["stall_omega_max_cps"]) == []
+    # each is a step alone: the two screens do not move in one deviation
+    assert [cn.group_of(n) for n in SCREENS] == [(n, (n,)) for n in SCREENS]
 
 
 # --- save and restore ---
@@ -2094,3 +2299,4 @@ def test_git_says_whether_a_set_file_is_committed(tmp_path):
     path.write_text("{}")
     with pytest.raises(settings.Refused, match="git cannot say whether .*x.constants.json is committed"):
         cn.uncommitted(path)
+
