@@ -60,6 +60,10 @@
     }
   ],
   "capture": "telemetry/mg90-d__dev-v006-2A-D/scorecard/11a-first-reading",
+  "current_scale": {
+    "counts_per_a": 1135.013429521035,
+    "from": "1-board/current-scale"
+  },
   "scores": {
     "overshoot_deg_2deg": {
       "value": 0.5287353359047327,
@@ -74,9 +78,9 @@
       "unit": "ms"
     },
     "move_current_rms_ma_2deg": {
-      "value": 121.29535637203935,
-      "lo": 112.5215170663234,
-      "hi": 167.9639935299984,
+      "value": 118.45682675271684,
+      "lo": 109.88831107594561,
+      "hi": 164.03333381741848,
       "unit": "mA"
     },
     "move_reversals_per_s_2deg": {
@@ -104,9 +108,9 @@
       "unit": "ms"
     },
     "move_current_rms_ma_20deg": {
-      "value": 173.80262293911727,
-      "lo": 152.37687050667193,
-      "hi": 177.32147088382618,
+      "value": 169.73532879130642,
+      "lo": 148.81097752305095,
+      "hi": 173.1718293616747,
       "unit": "mA"
     },
     "move_reversals_per_s_20deg": {
@@ -134,9 +138,9 @@
       "unit": "ms"
     },
     "move_current_rms_ma_60deg": {
-      "value": 126.34792990564921,
-      "lo": 125.66726641653412,
-      "hi": 129.05181498904517,
+      "value": 123.39116097314995,
+      "lo": 122.72642623458586,
+      "hi": 126.03177027974768,
       "unit": "mA"
     },
     "move_reversals_per_s_60deg": {
@@ -211,11 +215,11 @@
       "hi": 0.0,
       "unit": "ms"
     },
-    "hold_jitter_counts": {
-      "value": 1.2856256252365872,
-      "lo": 1.2642281783988762,
-      "hi": 1.550654155035018,
-      "unit": "counts"
+    "hold_jitter_deg": {
+      "value": 0.06797556968071988,
+      "lo": 0.06684421105659581,
+      "hi": 0.08198856455345095,
+      "unit": "deg"
     },
     "hold_buzz_share": {
       "value": 0.0,
@@ -244,7 +248,7 @@
     "wide_hold_current_rms_ma": {
       "value": 0.0,
       "lo": 0.0,
-      "hi": 75.28955685112452,
+      "hi": 73.52764573152581,
       "unit": "mA"
     },
     "lag_deg_1pct": {
@@ -260,9 +264,9 @@
       "unit": "deg"
     },
     "follow_current_rms_ma_1pct": {
-      "value": 71.73177651694579,
-      "lo": 71.32953542496563,
-      "hi": 95.70243177495244,
+      "value": 70.0531238596631,
+      "lo": 69.66029593309871,
+      "hi": 93.4628226476156,
       "unit": "mA"
     },
     "follow_reversals_per_s_1pct": {
@@ -314,9 +318,9 @@
       "unit": "deg"
     },
     "follow_current_rms_ma_3pct": {
-      "value": 84.9063370493149,
-      "lo": 83.59048497513776,
-      "hi": 85.13907177255636,
+      "value": 82.91937596695134,
+      "lo": 81.6343171992858,
+      "hi": 83.14666427884512,
       "unit": "mA"
     },
     "follow_reversals_per_s_3pct": {
@@ -356,9 +360,9 @@
       "unit": "deg"
     },
     "follow_current_rms_ma_10pct": {
-      "value": 139.8679248487986,
-      "lo": 134.56633586417163,
-      "hi": 145.1057594493687,
+      "value": 136.59476370437073,
+      "lo": 131.41724144259652,
+      "hi": 141.71002354940583,
       "unit": "mA"
     },
     "follow_reversals_per_s_10pct": {

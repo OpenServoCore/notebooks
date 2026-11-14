@@ -786,6 +786,9 @@ STOPS = (82, 3792)
 THETA = (-90.0, 90.0)      # the tag angle at the stops: 180 deg of travel, 3710 counts
 SCALE = (STOPS[1] - STOPS[0]) / 180
 WIDE = "stages/1-board/wide-codes/results/board.json"
+CURRENT = "stages/1-board/current-scale/results/board.json"
+# what a build says of a board with no current-scale result: the set holds no scale to score a current with
+NO_SCALE = "current_counts_per_a: left out, 1-board/current-scale has no result for board"
 
 
 def inputs(root, slots=NEW_SLOTS, theta=THETA, policy=None, fitted=NEW_SLOTS, wide_inputs=None):
@@ -866,7 +869,7 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
                       "sha1": sc.file_sha1(cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pos_lut.json"))},
         "registry": REG}
     assert doc["origins"] == first["origins"] and doc["previous"] == first["hash"]
-    assert notes == ["1-board/wide-codes: the results it read are not recorded"]
+    assert notes == ["1-board/wide-codes: the results it read are not recorded", NO_SCALE]
     # the plant moved and the protection fields did not; the same inputs give the same bytes; the file loads
     assert moved_hashes(first, doc) == ["plant"]
     assert cn.render(built_on(first, tmp_path)[0]) == cn.render(doc)
@@ -979,7 +982,7 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
     assert doc["fields"]["gear_ratio_centi"]["class"] == "measured"
     assert notes == [
         "wide-code slots: held, 1-board/wide-codes has no result for board",
-        "scale: none, 3-servo/pot-table has no result for synth__board",
+        "scale: none, 3-servo/pot-table has no result for synth__board", NO_SCALE,
         f"angle_min_cdeg: held, {no_table}", f"angle_max_cdeg: held, {no_table}"]
     assert cn.described(doc)[0].startswith("16 fields: 2 measured, 0 policy, 0 pinned, 2 held, 12 adopted")
     assert moved_hashes(first, doc) == [] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
@@ -1074,7 +1077,8 @@ def test_one_build_moves_one_hash(first, limited, tmp_path):
     # named, it moves, alone: the plant is the previous set's to the byte
     named, notes = built_on(doc, tmp_path, protection=["current_limit_counts"])
     assert moved_hashes(doc, named) == ["protection"] and notes == [
-        "1-board/wide-codes: the results it read are not recorded"]
+        "1-board/wide-codes: the results it read are not recorded",
+        "current_counts_per_a: left out, 1-board/current-scale has no counts_per_a"]
     assert named["fields"]["current_limit_counts"] == {
         "value": 500, "class": "policy", "rule": "current_limit.class", "rule_rev": 1, "unit": "ccounts", "q": 0,
         "pos_unit": 0, "inputs": ["1-board/current-scale:half_limit_counts"], "band": [490, 520],
@@ -1094,7 +1098,8 @@ def test_one_build_moves_one_hash(first, limited, tmp_path):
     assert "angle_min_cdeg: carried at 0, it would be 1000" in notes
     # what defines a count has to stand: a protection build does not carry a table that would move
     inputs(tmp_path, theta=(-100.0, 100.0))
-    with pytest.raises(ValueError, match="the slots, the table or the scale would move: build the plant first"):
+    with pytest.raises(ValueError, match="the slots, the table, the scale or what the set is scored with would "
+                                         "move: build the plant first"):
         built_on(named, tmp_path, protection=["current_limit_counts"])
     for names, match in ((["p_kp_q88"], "p_kp_q88 is no protection field"),):
         with pytest.raises(ValueError, match=match):
@@ -1171,6 +1176,72 @@ def test_build_as_a_command(cli, geared, tmp_path, monkeypatch, capsys):
     assert cn.load(tmp_path / f"{PAIR}.constants.json") == doc
     with pytest.raises(SystemExit, match="refused: a deviation is built on the set of record, to --out"):
         cli("build", "--deviation", str(f))
+
+
+# --- what a set is scored with ---
+
+def current_scale(root, value=1135.0, **more):
+    """The board's stage 1 current-scale result under `root`."""
+    path = root / CURRENT
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"inputs": {}, "counts_per_a": {"value": value, "lo": value - 1.2, "hi": value + 1.2,
+                                                               "unit": "counts/A"}, **more}))
+    return path
+
+
+def test_a_set_carries_the_current_scale_it_is_scored_with_under_a_hash_of_its_own(first, tmp_path):
+    inputs(tmp_path)
+    bare, _ = built_on(first, tmp_path)
+    assert "scales" not in bare and "scales" not in bare["hash"]
+    path = current_scale(tmp_path)
+    doc, notes = built_on(bare, tmp_path)
+    # the board's measured counts per A with its band, the result among the set's inputs
+    assert doc["scales"] == {"current_counts_per_a": {
+        "value": 1135.0, "lo": 1133.8, "hi": 1136.2, "unit": "counts/A", "class": "measured",
+        "rule": "scales.current", "inputs": ["1-board/current-scale:counts_per_a"]}}
+    assert doc["inputs"]["1-board/current-scale"] == {"file": CURRENT, "sha1": sc.file_sha1(path)}
+    assert not any("current" in n for n in notes)
+    # it is on no servo: the plant, the protection and the set hash stand, and a hash of its own says it
+    assert {k: doc["hash"][k] for k in bare["hash"]} == bare["hash"]
+    assert doc["hash"]["scales"] == sc.config_hash({"current_counts_per_a": 1135.0})
+    assert cn.changes(bare, doc) == [
+        "scored with current_counts_per_a: not in the set -> 1135.0",
+        f"hash: scales moved: plant {bare['hash']['plant'][:12]} -> {bare['hash']['plant'][:12]}, protection "
+        f"{bare['hash']['protection'][:12]} -> {bare['hash']['protection'][:12]}, set {bare['hash']['set'][:12]} "
+        f"-> {bare['hash']['set'][:12]}, scales none -> {doc['hash']['scales'][:12]}"]
+    assert cn.described(doc)[-2:] == [
+        "scored with current_counts_per_a: 1135.0000 counts/A [measured]",
+        f"hash: plant {doc['hash']['plant'][:12]}, protection {doc['hash']['protection'][:12]} (3 fields), set "
+        f"{doc['hash']['set'][:12]}, scales {doc['hash']['scales'][:12]}"]
+    # the file renders, loads and builds again to the same bytes
+    out = cn.write(doc, tmp_path / "x.constants.json")
+    assert cn.load(out) == doc and cn.render(built_on(bare, tmp_path)[0]) == out.read_text()
+    assert cn.install(doc, root=tmp_path)[-1] == "stamp" and cn.check(doc) == []
+    # a scale that moves is a build that moves that hash alone, and the set it stood in is stale
+    current_scale(tmp_path, 1140.0)
+    lines, stale = cn.status(doc, tmp_path, REG)
+    assert stale and lines[0] == (f"stale: 1-board/current-scale ({CURRENT}) is no longer the file the set read, "
+                                  f"sha1 {sc.file_sha1(path)}: current_counts_per_a")
+    again, _ = built_on(doc, tmp_path)
+    assert [k for k in doc["hash"] if doc["hash"][k] != again["hash"][k]] == ["scales"]
+    assert cn.changes(doc, again)[0] == "scored with current_counts_per_a: 1135.0 -> 1140.0 [measured, scales.current]"
+    # a build of protection fields carries it, and is refused while it would move
+    with pytest.raises(ValueError, match="what the set is scored with would move: build the plant first"):
+        built_on(doc, tmp_path, protection=["current_limit_counts"])
+    assert built_on(again, tmp_path, protection=["current_limit_counts"])[0]["scales"] == again["scales"]
+    # without its result the scale is held at what the set had, the missing input named
+    path.unlink()
+    held, notes = built_on(again, tmp_path)
+    assert held["scales"]["current_counts_per_a"] == {
+        "value": 1140.0, "lo": 1138.8, "hi": 1141.2, "unit": "counts/A", "class": "held", "rule": "scales.current",
+        "held": "1-board/current-scale has no result for board", "carried_from": again["hash"]["set"]}
+    assert "current_counts_per_a: held, 1-board/current-scale has no result for board" in notes
+    # an edited scale is not the set the tool wrote
+    edited = copy.deepcopy(doc)
+    edited["scales"]["current_counts_per_a"]["value"] = 1108.5
+    out.write_text(cn.render(edited))
+    with pytest.raises(ValueError, match="hashes are not those of its content"):
+        cn.load(out)
 
 
 # --- a deviation ---

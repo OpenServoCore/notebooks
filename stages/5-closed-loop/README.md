@@ -51,10 +51,44 @@ every capture's `meta.json` carries.
   named. A copy of the set lies beside `rung.json` as `constants.json`.
 - **The results**, one file per rung,
   `scorecard/results/<servo>__<board>/<label>.json`: every score as the
-  median over the rung's runs with their range as the bounds.
+  median over the rung's runs with their range as the bounds, and the
+  scale its current rows are at.
 
 Every score reads the pot. How each one is taken is in the docstrings of
 `oscnb/scorecard.py`.
+
+A current row reads the shunt: a row's raw reading over the capture's
+own zero, the median reading of its rows at zero duty, through the
+board's measured counts per amp, the stage 1 current-scale result
+([stage 1](../1-board/README.md)), 1135.0 on this board. A rung that
+names a constant set reads that scale from its set, which carries what
+it is scored with; a rung recorded before reads it from the board's
+result. The zero is read with the driver awake, as the readings are, so
+the in-drive offset stage 1 found over the torque-off zero is not taken
+off a second time. `hold_jitter_deg` is the sd of the pot over a hold,
+unfiltered, in degrees through the plan's counts per degree like every
+degree row, so it reads alike on a rung in raw counts and on one in a
+table's counts.
+
+Every result file names the scale its current rows are at, as
+`current_scale`: the counts per amp and where it is from. The scorer
+read the current at the registry's nominal parts before, 2.4 % over the
+measured scale, and the jitter in the counts the rung ran in, as
+`hold_jitter_counts`. The rungs whose rows are kept (`00-baseline`,
+`01b`, `05a`, `07a` and `09a` to `13a`) are scored again from their
+rows and hold the rows as described here. The rows of every other rung
+recorded before were not kept, so its result cannot be scored again.
+`scorecard carry` multiplied its current rows by nominal over measured
+counts per amp, which is what scoring the same rows at the measured
+scale gives, and its file says so, as `carried` under `current_scale`.
+Its jitter row stays `hold_jitter_counts`, in counts: the counts per
+degree of its plan went with its rows. So every result of this pair is
+at the one measured scale, and every current quoted from a result below
+is at it. A hold jitter is quoted in counts where a side of the
+comparison has it only in counts, a kept rung's figure there the one
+read in counts when it was recorded. The currents counted outside the
+scorecard's rows, named as such where they are quoted, were counted at
+the nominal parts and are quoted times the same ratio.
 
 The `wide` capture holds the goals the ADC's wide codes make hard. A wide
 code stands for itself and the codes it skips
@@ -239,6 +273,13 @@ Three hashes close the file: `protection` over the values of the
 protection fields (the limits, the fault thresholds, the NTC curve and
 the thermal model), `plant` over every other value with the table and
 the slots, and `set` over the two.
+
+The set also carries what a capture of the pair is scored with, under
+`scales`: the shunt's counts per amp, the board's stage 1 current-scale
+result with its band, read by a rule like a field. It is on no servo,
+so it has a hash of its own, `scales`, outside `set`: a scale that
+moves leaves what the servo is to hold, and the name a save is kept
+under, where they were.
 
 ```
 uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
@@ -433,7 +474,7 @@ Kept:
   alternated in one sitting outside the scorecard, nine holds of 2 s a
   run at goals inside the codes at 1023, 2047 and 2559: 10 of 27 holds
   are still driven in their last second (8 of 12 at 1023, on 80 % of the
-  rows at 250 to 340 mA rms), against 0 of 27. On the scorecard,
+  rows at 244 to 332 mA rms), against 0 of 27. On the scorecard,
   alternated in two sets of three rounds with the order of the sides
   swapped (this rung against `zz-ab-before-wide-codes`,
   `zz-ab-after-wide-codes-2` against `zz-ab-before-wide-codes-2`): the
@@ -468,7 +509,7 @@ Kept:
   that code's slot, not a result of the change.
   `zz-ab-before-adc-all-nomap` is firmware 194bf988 with no slots
   installed, recorded right after: 3 [3, 4] of 8 holds hunt, on 0.31 of
-  the tails' rows at 114 mA rms, both holds at 1023 in every run, the
+  the tails' rows at 112 mA rms, both holds at 1023 in every run, the
   hold at 2559 approached from below in every run and the one from
   above in one, and none at 511 or 2047. It is what the `wide` rows read
   without the correction. Open on it: all four sides of the two sets
@@ -526,19 +567,19 @@ Kept:
   (this rung against `zz-ab-before-pos-table-live`,
   `zz-ab-pos-table-live-2` against `zz-ab-before-pos-table-live-2`), the
   table side reads better in both sets, the ranges of three runs apart,
-  on three rows of the 60 degree move: its current 117 and 121 mA
-  against 132 and 134, its duty 21.0 and 21.6 % against 22.8 and 23.7,
+  on three rows of the 60 degree move: its current 114 and 118 mA
+  against 129 and 131, its duty 21.0 and 21.6 % against 22.8 and 23.7,
   and its reversals 499 and 491 per second against 567 and 588, in the
   first set by a hair (up to 531.6 against 532.8 and up). It reads
   better the same way on the reversals of the 3 % follow, 223 and 207
   per second against 244 and 241, and on the current and duty of the
-  10 % follow, 137 and 149 mA against 151 and 165, 22.5 and 24.1 %
+  10 % follow, 133 and 146 mA against 147 and 161, 22.5 and 24.1 %
   against 24.7 and 26.5. It reads worse in both sets, the ranges apart,
   on the follow error sd at 1 %, 0.133 and 0.135 deg against 0.111 and
   0.116. In one set only it reads worse on the 2 degree move's
   overshoot, current and duty in the second (0.658 against 0.529 deg,
-  167 against 143 mA, 21.8 against 19.6 %), on the 1 % follow's
-  current, duty and reversals in the first (78.7 against 72.1 mA, 9.29
+  163 against 140 mA, 21.8 against 19.6 %), on the 1 % follow's
+  current, duty and reversals in the first (76.9 against 70.4 mA, 9.29
   against 8.88 %, 168 against 157 per second) and on the enable kick in
   the first (0.086 against 0.053 deg). In one set only it reads better
   on the 60 degree settle and the speed ripple of a move in the first
@@ -592,11 +633,11 @@ Kept:
   to 2079, stuck code 2047 and the 32 codes above it, against the rows
   at raw 1960 to 2160 outside that stretch, each the rms of the rows
   where the shunt was read, per run, as the mean of three runs and
-  their range. The stretch reads 112 [103, 126] mA against 87 on this
-  rung and 120 [96, 146] against 94 on `zz-ab-wide-step-2`, and 122
-  [114, 134] against 87 and 137 [126, 153] against 90 on the two
+  their range. The stretch reads 109 [101, 123] mA against 85 on this
+  rung and 117 [94, 143] against 92 on `zz-ab-wide-step-2`, and 119
+  [111, 131] against 85 and 134 [123, 149] against 88 on the two
   control sides. Its excess over the neighbors is lower on f933a4a7 in
-  both sets, 25 and 26 mA against 35 and 47, with the ranges of the
+  both sets, 24 and 25 mA against 34 and 46, with the ranges of the
   stretch's current overlapping in both.
   The `wide` capture of these sets holds at the table's reading of the
   raw goals, and `rung.json` keeps both, so its holds sit on the codes
@@ -633,7 +674,7 @@ Tried, not kept:
   on at the servo's own estimate, so its enable kick is not comparable.
 - `01c-gains-rule`, the set a gain rule over the measured plant gives,
   between `01a` and `01b`: the slow follow's current lands where the rule
-  predicted (101 mA against 80 to 119), and it loses to `01b` on settle,
+  predicted (99 mA against 80 to 119), and it loses to `01b` on settle,
   overshoot and current.
 - `02a-limits-half`, `01b` with the speed limit at half the no-load speed
   and the acceleration limit five times the stored one: the 60 degree move
@@ -673,7 +714,7 @@ Tried, not kept:
 - `06a-hold-zone-speed-third` and `06b-hold-zone-speed-half`, `05a` with
   the speed limit at a third and a half: against `zz-control-hold-zone`,
   recorded between them, the 60 degree move settles in 523 and 514 ms
-  against 1290, its current is 226 and 242 mA against 151, its overshoot
+  against 1290, its current is 221 and 237 mA against 147, its overshoot
   1.16 and 0.53 deg against 0.63, and the 20 degree settle is 294 and 877
   ms against 595; 3 and 2 landings of 39 are driven in their tail against
   2. The landing that blocked `02b` no longer oscillates to the end. A
@@ -690,8 +731,8 @@ Tried, not kept:
   median drive after an arrival longer in two sets of three; at `02b`'s
   speed limit (`-half`) the 60 degree move settles in 652 ms against
   453. On `01a`'s stiffer gains (`-01a`) the currents fall by a third or
-  more, the 60 degree move 132 mA against 219 and the fast follow 156
-  against 253, to the level of `01b` on f5e9ee6f. So the back-EMF
+  more, the 60 degree move 129 mA against 214 and the fast follow 152
+  against 247, to the level of `01b` on f5e9ee6f. So the back-EMF
   estimate damps the end of a large move and is what makes a stiffer
   loop cost current: not a rung, a pointer at how that estimate enters
   the loop.
@@ -700,21 +741,21 @@ Tried, not kept:
   place of the stored 100), alternated with `zz-ab-before-friction` and
   `zz-ab-before-friction-2`, the order of the sides swapped for the
   second pair: the slow follow it was aimed at does not gain (current
-  72 and 98 mA against 77 and 100, error sd 0.13 and 0.18 deg against
+  70 and 96 mA against 75 and 98, error sd 0.13 and 0.18 deg against
   0.14 and 0.20, the crawl's ripple 34 and 45 % against 36 and 27), the
   lag grows on the 1 % and the 10 % ramp in both pairs (0.086 and 0.081
   deg against 0.025 and 0.035; 2.04 and 2.01 against 1.98 and 1.96),
   and the median drive after an arrival is shorter in both (27 and 40 ms
   against 62 and 87) with the worst one longer. The first pair's gain on
-  the 2 degree move (overshoot 0.16 deg against 0.42, current 115 mA
-  against 146) is gone in the second, where both sides' 2 degree rows
+  the 2 degree move (overshoot 0.16 deg against 0.42, current 112 mA
+  against 143) is gone in the second, where both sides' 2 degree rows
   read worse than either side of the first: those rows move more
   between two sittings an hour apart than between the two settings.
 
 The controls, and what they say about reading the ladder:
 
 - `zz-control-01b` is `01b` recorded again on the same build a few hours
-  into the session. Its follow current at 3 % reads 113 mA against 90,
+  into the session. Its follow current at 3 % reads 110 mA against 88,
   its 20 degree settle 664 ms against 362, its 60 degree overshoot 0.21
   deg against 0. The spread of three runs taken back to back is narrower
   than the servo's drift over a session, so a candidate is judged against
@@ -757,12 +798,12 @@ The controls, and what they say about reading the ladder:
   are the other three sides of `10a`'s two sets. Beside the crawl's
   ripple, every row whose ranges of three runs come apart does so in one
   set only and overlaps in the other. In the first set the change reads
-  lower on the 2 degree move's current (136 against 155 mA), the 60
+  lower on the 2 degree move's current (133 against 151 mA), the 60
   degree move's duty (22.4 against 23.1 %, apart by a hair), the lag on
   the 3 % ramp (0.313 against 0.316 deg) and the speed of the 10 % ramp
   (62.5 against 63.8 deg/s). In the second, the order of the sides
-  swapped, it reads higher on the 20 degree move's current and duty (258
-  against 213 mA, 30.0 against 26.3 %) and the 2 degree move's reversals
+  swapped, it reads higher on the 20 degree move's current and duty (252
+  against 208 mA, 30.0 against 26.3 %) and the 2 degree move's reversals
   (467 against 296 per second), three rows where that control side reads
   lower than any of the other three sides, higher on the hold jitter
   (1.38 against 1.25 counts) and lower on the reversals of the 1 % ramp
@@ -798,10 +839,10 @@ The controls, and what they say about reading the ladder:
   in both sets. The first set alone reads the half side slower on the 2
   degree settle (279 against 107 ms, where the second reads 539 against
   1050 with the ranges overlapping) and higher on the 3 % ramp's current
-  and speed (86 against 84 mA, 18.32 against 18.26 deg/s). The second
+  and speed (84 against 82 mA, 18.32 against 18.26 deg/s). The second
   set alone reads it better on the 60 degree move's overshoot, settle,
-  current and duty (0.21 against 0.95 deg, 845 against 1650 ms, 129
-  against 159 mA, 22.0 against 23.2 %) and on the landing buzz share
+  current and duty (0.21 against 0.95 deg, 845 against 1650 ms, 126
+  against 156 mA, 22.0 against 23.2 %) and on the landing buzz share
   (0.07 against 0.17), and worse on the two-sided error (0.417 against
   0.228 deg) and the position report error (0.072 against 0.056 deg). So
   most of the reversal count at these gains follows the current loop's
@@ -835,12 +876,12 @@ The controls, and what they say about reading the ladder:
   sides, recorded about half an hour after them. The first reads inside
   the ranges of `11a`'s sides on every row. The second reads higher than
   both of them, the ranges apart, on the 10 % follow's current, duty and
-  error sd (164.8 against 139.9 and 149.7 mA, 26.5 against 23.1 and
+  error sd (160.9 against 136.6 and 146.2 mA, 26.5 against 23.1 and
   24.4 %, 0.473 against 0.451 and 0.461 deg, the last by a hair), on the
-  3 % follow's current, duty and lag (89.3 against 84.9 and 87.7 mA,
+  3 % follow's current, duty and lag (87.2 against 82.9 and 85.6 mA,
   12.8 against 11.6 and 12.3 %, 0.376 against 0.340 and 0.352 deg) and
   on the 60 degree move's duty (23.7 against 22.2 and 23.0 %). The table
-  side of that set reads 149.4 mA and 24.1 % on the 10 % follow, inside
+  side of that set reads 145.9 mA and 24.1 % on the 10 % follow, inside
   the ranges of `11a`'s sides, so the second set's gain on that follow
   is measured against a control that reads above them. The speed report
   on the 10 % ramp reads 0.57 and 7.59 deg/s on the two controls, -2.71
@@ -853,13 +894,13 @@ The controls, and what they say about reading the ladder:
   sets. Every row but one whose ranges of three runs come apart does so
   in one set only and overlaps in the other. In the first set f933a4a7
   reads higher on the 20 degree move's overshoot, settle, current and
-  duty (0.745 against 0.121 deg, 1271 against 301 ms, 197 against 124
+  duty (0.745 against 0.121 deg, 1271 against 301 ms, 193 against 121
   mA, 25.3 against 21.5 %) and on the landing rows (the landing buzz
   share 0.055 against 0, the landings driven in their tail 1 of 13
   against 0, the worst drive after an arrival 1204 against 231 ms).
   Each of those rows takes in the landing described under `13a`, which
   hunts on both sides of the second set, where the same rows read 0.795
-  against 0.795 deg, 1497 against 1492 ms, 243 against 240 mA, 29.0
+  against 0.795 deg, 1497 against 1492 ms, 237 against 235 mA, 29.0
   against 28.6 %, 0.058 against 0.057, 1 against 1 and 1204 against
   1206 ms. In the second set, the order of the sides swapped, f933a4a7
   reads lower on the 2 degree move's reversals (270 against 362 per

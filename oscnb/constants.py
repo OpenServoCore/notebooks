@@ -21,7 +21,11 @@ scale and counted too.
 `hash.protection` covers the values of the protection fields
 (PROTECTION), `hash.plant` every other field's value with the table's
 state and points and the slots, and `hash.set` the two, so a change of
-a limit and a change of the plant never share a hash. A field's entry
+a limit and a change of the plant never share a hash. Under `scales`
+the set carries what a capture of the pair is scored with (SCALES), the
+shunt's counts per A from the board's stage 1 result. A scale is on no
+servo, so it is in neither of the two and `hash.scales` covers it
+alone: a scale that moves leaves `hash.set` where it was. A field's entry
 says which it is under `protection`: null for the plant, the way the
 value moves to protect less for a protection field, as LOOSER has it.
 
@@ -191,9 +195,9 @@ PER_COUNT = frozenset((
 
 ORIGIN = "servo-state"      # the origin an adopted value names
 BEFORE = "the servo's state before the path"
-TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "fields", "hash", "previous",
-       "deviation")
-BLOCKS = ("inputs", "origins", "fields")    # written an entry a line
+TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "scales", "fields", "hash",
+       "previous", "deviation")
+BLOCKS = ("inputs", "origins", "scales", "fields")    # written an entry a line
 LEAD = ("value", "slots", "state", "kind", "counts_per_deg", "points_sha1", "class")
 TABLE_STATE, TABLE_POINTS, SLOTS = "position table state", "position table points sha1", "wide-code slots"
 STOPS = ("raw_min", "raw_max")      # the stops a table is taken against, written ahead of it
@@ -225,9 +229,16 @@ def protection_of(name):
 
 
 def hashes(doc):
+    """The hashes of a set. `set` covers `plant` and `protection`, what
+    the servo is to hold. `scales`, on a set that holds any, covers the
+    values a capture of the servo is scored with: they are on no servo,
+    so a scale that moves leaves `set` where it was."""
     plant, protection = (sc.config_hash(x) for x in hashed(doc))
-    return {"plant": plant, "protection": protection,
-            "set": sc.config_hash({"plant": plant, "protection": protection})}
+    out = {"plant": plant, "protection": protection,
+           "set": sc.config_hash({"plant": plant, "protection": protection})}
+    if doc.get("scales"):
+        out["scales"] = sc.config_hash(values(doc["scales"]))
+    return out
 
 
 def entry(e):
@@ -274,7 +285,7 @@ def load(path):
     doc = json.loads(path.read_text())
     if doc.get("format") != FORMAT:
         raise ValueError(f"{where}: format {doc.get('format')}, this tool reads {FORMAT}")
-    for name, e in doc["fields"].items():
+    for name, e in (*doc["fields"].items(), *doc.get("scales", {}).items()):
         if "value" not in e or e.get("class") not in CLASSES:
             raise ValueError(f"{where}: {name} holds no value of one class of {', '.join(CLASSES)}")
     for name, e in (*doc["fields"].items(), (SLOTS, doc["wide_codes"] or {}), ("position table", doc["pos_table"])):
@@ -333,8 +344,11 @@ def described(doc):
         "wide-code slots: none" if slots is None
         else f"wide-code slots {bytes(slots['slots']).hex(' ')} [{slots['class']}]",
         *([f"scale: {scale['counts_per_deg']:.4f} counts/deg, the {scale['kind']} one"] if scale else []),
+        *(f"scored with {n}: {e['value']:.4f} {e.get('unit', '')} [{e['class']}]".replace("  [", " [")
+          for n, e in doc.get("scales", {}).items()),
         f"hash: plant {h['plant'][:12]}, protection {h['protection'][:12]} "
-        f"({sum(n in PROTECTION for n in doc['fields'])} fields), set {h['set'][:12]}",
+        f"({sum(n in PROTECTION for n in doc['fields'])} fields), set {h['set'][:12]}"
+        + (f", scales {h['scales'][:12]}" if "scales" in h else ""),
     ]
 
 
@@ -399,6 +413,9 @@ WIDE = f"{widecodes.STAGE}/{widecodes.EXPERIMENT}"
 RAW_SCALE = ("3-servo/pot-table", "pot_scale_counts_per_deg")   # counts per deg of a pair with no table
 # the byte of each gear class, as the firmware's client names them (client calib.rs GearClass)
 GEAR_CLASSES = ("unknown", "plastic", "metal")
+CURRENT = "current_counts_per_a"    # the shunt's counts per A, the scale a capture's current is scored with
+# what a set is scored with, each a quantity of a stage 1 result of the board: (result, key, rule)
+SCALES = {CURRENT: ("1-board/current-scale", "counts_per_a", "scales.current")}
 
 
 class Missing(Exception):
@@ -661,6 +678,36 @@ def slots_of(c, previous):
     return {"slots": slots, "class": "measured", "rule": name, "inputs": [f"{WIDE}:{widecodes.FIELD}"]}
 
 
+def values(block):
+    """The values of a set's `scales`, by name; none for a set without."""
+    return {n: e["value"] for n, e in (block or {}).items()}
+
+
+def scales_of(c, previous):
+    """The conversions a capture of the pair is scored with (SCALES),
+    each the board's measured quantity with its band, read through `c`
+    so the result is among the set's inputs; held at the previous set's
+    where the result is missing, left out where there is nothing to
+    carry. None for a set with none."""
+    out = {}
+    for name, (result, key, rule_name) in SCALES.items():
+        carried = ((previous or {}).get("scales") or {}).get(name)
+        c.reads = []
+        try:
+            value = c.q(result, key)
+        except Missing as m:
+            c.notes.append(f"{name}: {'left out' if carried is None else 'held'}, {m}")
+            if carried is not None:
+                out[name] = {**held("value", rule_name, carried, str(m), previous),
+                             **{k: carried[k] for k in ("lo", "hi", "unit") if k in carried}}
+            continue
+        quantity = c.reads[-1][1]
+        out[name] = {"value": value, **{k: quantity[k] for k in ("lo", "hi") if quantity.get(k) is not None},
+                     "unit": quantity.get("unit", ""), "class": "measured", "rule": rule_name,
+                     "inputs": [f"{result}:{key}"]}
+    return out or None
+
+
 def table_of(c, previous, slots):
     """The set's position table and the scale of its count, set on `c`
     for the rules. With the pair's table file: LIVE, its points, refused
@@ -746,15 +793,20 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     slots = slots_of(c, previous)
     table = table_of(c, previous, slots)
     scale = c.scale
+    scales = scales_of(c, previous)
     if protection:
-        # the plant stands: what defines a count is the previous set's, and must be what it would be now
+        # the plant stands: what defines a count is the previous set's, and must be what it would be now,
+        # and so must what the set is scored with
         stood = [previous["wide_codes"], previous["pos_table"], previous.get("scale")]
+        was = previous.get("scales")
         if any((a is None) != (b is None) or (a is not None and any(a[k] != b[k] for k in keys))
                for a, b, keys in zip((slots, table, scale), stood,
-                                     (("slots",), ("state", "points_sha1"), ("counts_per_deg",)))):
-            raise ValueError("the slots, the table or the scale would move: build the plant first, then the "
-                             "protection fields")
+                                     (("slots",), ("state", "points_sha1"), ("counts_per_deg",)))) \
+                or values(scales) != values(was):
+            raise ValueError("the slots, the table, the scale or what the set is scored with would move: build "
+                             "the plant first, then the protection fields")
         slots, table, scale = (copy.deepcopy(x) for x in stood)
+        scales = copy.deepcopy(was)
     before = previous["fields"] if previous else {}
     fields = {}
     for name in dict.fromkeys([*before, *RULES, *c.pins]):
@@ -784,6 +836,8 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
            "previous": previous["hash"] if previous else None}
     if scale is not None:
         doc["scale"] = scale
+    if scales:
+        doc["scales"] = scales
     return {**doc, "hash": hashes(doc)}, c.notes
 
 
@@ -814,19 +868,22 @@ def changes(previous, doc):
     if a != b:
         out.append("scale: " + " -> ".join("none" if x is None else f"{x['counts_per_deg']:.4f} counts/deg, the "
                                            f"{x['kind']} one" for x in (a, b)))
-    for name in dict.fromkeys([*previous["fields"], *doc["fields"]]):
-        a, b = previous["fields"].get(name), doc["fields"].get(name)
-        if a is None or b is None:
-            out.append(f"{name}: {'not in the set' if a is None else a['value']} -> "
-                       f"{'not in the set' if b is None else b['value']}")
-        elif a["value"] != b["value"]:
-            out.append(f"{name}: {a['value']} -> {b['value']} [{tag(b)}]")
-        elif tag(a) != tag(b):
-            out.append(f"{name}: {b['value']} [{tag(a)} -> {tag(b)}]")
-    moved_ = [k for k in ("plant", "protection") if previous["hash"][k] != doc["hash"][k]]
+    for block, label in (("scales", "scored with "), ("fields", "")):
+        was, now = previous.get(block) or {}, doc.get(block) or {}
+        for name in dict.fromkeys([*was, *now]):
+            a, b = was.get(name), now.get(name)
+            if a is None or b is None:
+                out.append(f"{label}{name}: {'not in the set' if a is None else a['value']} -> "
+                           f"{'not in the set' if b is None else b['value']}")
+            elif a["value"] != b["value"]:
+                out.append(f"{label}{name}: {a['value']} -> {b['value']} [{tag(b)}]")
+            elif tag(a) != tag(b):
+                out.append(f"{label}{name}: {b['value']} [{tag(a)} -> {tag(b)}]")
+    both = [k for k in ("plant", "protection", "set", "scales") if k in previous["hash"] or k in doc["hash"]]
+    moved_ = [k for k in both if k != "set" and previous["hash"].get(k) != doc["hash"].get(k)]
     out.append("hash: " + (f"{' and '.join(moved_)} moved" if moved_ else "neither moved") + ": "
-               + ", ".join(f"{k} {previous['hash'][k][:12]} -> {doc['hash'][k][:12]}"
-                           for k in ("plant", "protection", "set")))
+               + ", ".join(f"{k} {(previous['hash'].get(k) or 'none')[:12]} -> {(doc['hash'].get(k) or 'none')[:12]}"
+                           for k in both))
     return out
 
 
@@ -898,7 +955,7 @@ def users(doc, name):
     """What of a set lists input `name`: its fields, the slots, the
     table."""
     blocks = ((SLOTS, doc["wide_codes"] or {}), ("position table", doc["pos_table"]))
-    return [n for n, e in (*doc["fields"].items(), *blocks)
+    return [n for n, e in (*doc["fields"].items(), *blocks, *doc.get("scales", {}).items())
             if any(i.split(":")[0] == name for i in e.get("inputs", ()))]
 
 

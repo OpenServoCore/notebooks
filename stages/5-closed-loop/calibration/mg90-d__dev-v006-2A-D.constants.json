@@ -2,6 +2,7 @@
  "format": 1,
  "pair": "mg90-d__dev-v006-2A-D",
  "inputs": {
+  "1-board/current-scale": {"file": "stages/1-board/current-scale/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "5fbdb93bd77174824fffb47a5b58e6d50e8d66e1"},
   "1-board/wide-codes": {"file": "stages/1-board/wide-codes/results/dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "68f01864e8cba762cf8c680f3078df4ecd4b77fc"},
   "policy": {"file": "stages/5-closed-loop/calibration/policy.json", "sha1": "73bb5f120346a8d6b84bfc0a8acd4853942dda51"},
   "pos_table": {"file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json", "sha1": "904c4575899f8215f5daec1d2bdd227a1ee9c4c3"},
@@ -13,6 +14,9 @@
  "wide_codes": {"slots": [0, 48, 0, 80, 0, 0, 0, 88, 0, 48, 0, 0, 0, 0, 0, 0], "class": "measured", "inputs": ["1-board/wide-codes:adc_wide_mid_q4"], "rule": "slots.wide_codes"},
  "pos_table": {"state": "LIVE", "points_sha1": "e169fd753bddf3632413e1644932a01b08c17b44", "class": "measured", "fitted_on_slots_sha1": null, "inputs": ["pos_table"], "rule": "table.pos_lut"},
  "scale": {"kind": "table", "counts_per_deg": 20.126631678008682, "points_sha1": "e169fd753bddf3632413e1644932a01b08c17b44"},
+ "scales": {
+  "current_counts_per_a": {"value": 1135.013429521035, "class": "measured", "hi": 1136.2501461238103, "inputs": ["1-board/current-scale:counts_per_a"], "lo": 1133.7767129182598, "rule": "scales.current", "unit": "counts/A"}
+ },
  "fields": {
   "pos_min_phys_counts": {"value": 82, "class": "adopted", "origin": "servo-state", "protection": null},
   "pos_max_phys_counts": {"value": 3792, "class": "adopted", "origin": "servo-state", "protection": null},
@@ -78,6 +82,6 @@
   "vdd_mv": {"value": 3300, "class": "adopted", "origin": "servo-state", "protection": null},
   "gear_class": {"value": "2 (metal)", "class": "measured", "inputs": ["registry:gear_class"], "pos_unit": 0, "protection": null, "q": 0, "rule": "gear_class.registry", "rule_rev": 1, "unit": "class"}
  },
- "hash": {"plant": "18ddc93bf79a2e7ee2728f84e49773b87a916aa987b7b85a23c94a5ebe9dc5fe", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "set": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66"},
- "previous": {"plant": "6c54f787dde907f1736f9a68bcca182c7b8d9e64b25cf4bcfc92f4171a606d1a", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "set": "3886cc3dc6d7f7ac8f066732b579443d9ef39bda9f975286c5d2ee1795e84a33"}
+ "hash": {"plant": "18ddc93bf79a2e7ee2728f84e49773b87a916aa987b7b85a23c94a5ebe9dc5fe", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead", "set": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66"},
+ "previous": {"plant": "18ddc93bf79a2e7ee2728f84e49773b87a916aa987b7b85a23c94a5ebe9dc5fe", "protection": "6b8439b7e501819e658e33b9e5cc7dcebdc2470a50c56b6022724f2b3ab3ff04", "set": "5f9a79891bbbacded4b2cba0809fa5b15e5d9682dc49fe575bdc2f00ca024c66"}
 }
