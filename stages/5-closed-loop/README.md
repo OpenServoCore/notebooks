@@ -567,9 +567,9 @@ itself, 2 of 6 of the first half and 1 of 6 of the second: it lands on
 a stuck code's gap and flips from run to run on the set of record
 alone.
 
-Two groups of protection fields have rules, both held, so the set
-shows what the record gives beside what protects the servo now and no
-limit moves.
+Two groups of protection fields have rules. The NTC curve's is held,
+so the set shows what the record gives beside what protects the servo
+now; the current limits' is bound.
 
 The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
@@ -616,29 +616,36 @@ driver's own current, so the in-drive offset of stage 1 is not added.
 The entries are the mA the stored counts were typed for: the whole mA
 the board's nominal parts take to each stored count.
 
-| field | policy | the servo holds | which is | the rule gives |
+| field | policy | the servo held | which was | the rule gives |
 |---|---|---|---|---|
 | `current_limit_counts` | 500 mA | 554 | 488.1 mA | 568 |
 | `i_cont_counts` | 250 mA | 277 | 244.0 mA | 284 |
 | `stall_release_counts` | 90 mA | 100 | 88.1 mA | 102 |
 | `oc_trip_counts` | 2200 mA | 2439 | 2148.9 mA | 2497 |
 
-Each stored limit is 2.3 % under the current it was typed for, and the
-rule's value puts more counts on the same mA, which protects less than
-what the servo holds. `stall_tau_trip_counts` is off on the servo and
-has no rule.
+Each limit the servo held was 2.3 % under the current it was typed
+for, and the rule's value puts more counts on the same mA, which
+protects less than what the servo held. The four are bound at what the
+rule gives: one rung of three runs on the set with the four moved
+(`zz-current-limits-true-ma`) raised no fault and left every hold at
+rest. Set beside `14a-set-of-record`, recorded three hours before it
+and not alternated with it, its 60 degree move settles in 883 [874,
+893] ms against 910 [906, 912] and its lag at the 10 % ramp reads
+1.941 [1.934, 1.948] deg against 1.983 [1.948, 2.000]; 28 to 68 of its
+ramps' goals went out late on a busy host, so its follow rows are not
+a comparison. `stall_tau_trip_counts` is off on the servo and has no
+rule.
 
 A deviation moves the protection fields of one step: the words of the
 NTC curve are one step and the four current limits another, a
 protection field in neither is a step alone, and a release of one
 field of a step releases every held field of it, so no curve of two
-fits and no limits at two scales are built. The steps of record are
-[protection-ntc-curve.json](scorecard/deviations/protection-ntc-curve.json)
-and
-[protection-current-scale.json](scorecard/deviations/protection-current-scale.json).
-The install of either names every field it moves as `--protection`
-and again as `--loosen`: the curve's words are judged, as is the
-continuous current, and the other limits move up.
+fits and no limits at two scales are built. The step of record is
+[protection-ntc-curve.json](scorecard/deviations/protection-ntc-curve.json).
+Its install names every field it moves as `--protection` and again as
+`--loosen`: the curve's words are judged. The current limits' step
+was installed the same way, the continuous current judged and the
+other three moving up.
 
 The fields in counts of position were typed when the servo ran on the
 raw pot, 18.913 counts per degree at mid travel, and are read by a

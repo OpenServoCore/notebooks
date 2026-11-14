@@ -1,4 +1,0 @@
-{
-  "note": "the current limits at the mA they were typed for through the board's measured shunt scale, in place of the counts the nominal parts gave: the peak cap, the continuous current, the press release and the overcurrent trip together, one scale. A protection step: it moves nothing else",
-  "release": ["current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_trip_counts"]
-}
