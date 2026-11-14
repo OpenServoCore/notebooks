@@ -1,0 +1,3 @@
+seg,kind,field,value,ms,tick0,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,i_tick_counts,current_bias_counts,fault_code,omega_hat_src
+0,hold,,,3000,63070,60000,0,1794641988.451,1794641991.458,1246,2088,126706353,-2376432,2443,554,0,0,1966,0,1210,0,0
+1,hold,,,3000,58392,60000,0,1794641991.492,1794641994.496,1243,2086,126777019,2103956,2462,554,0,0,1964,0,1210,0,0
