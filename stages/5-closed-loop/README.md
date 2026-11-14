@@ -258,6 +258,39 @@ Kept:
   arrival of 1220 ms, against 438 ms, 0 and 227 ms on `09a`. The four
   `zz-rev-ikp` sides, recorded before them on `09a`'s firmware, read
   1480 to 1500 ms, 1 to 4 landings and 1210 to 1230 ms.
+- `11a-first-reading`: `01b`'s settings on firmware 7ef0554f, on the
+  board's slots. The shunt is read only on a drive pulse at least as
+  wide as the current window's floor, 64 ticks. A commanded pulse too
+  narrow for the bridge to put out leaves no pulse, and the first window
+  read after one reads far over the winding current, about 145 counts
+  against 63 inside a train of pulses, after a command of 1 to 15 ticks.
+  On the current loop's proportional gain that one reading steps the
+  drive across zero. Firmware 7ef0554f does not feed that reading to its
+  current loop, which is fed zero in its place as under the floor. The
+  trip, the stall check and the limiter still see it. Alternated with
+  firmware 97f819c9 in two sets of three rounds with the order of the
+  sides swapped (this rung against `zz-ab-before-first-reading`,
+  `zz-ab-first-reading-2` against `zz-ab-before-first-reading-2`), the
+  duty reverses less often on every follow and on the 2 and 60 degree
+  moves, the ranges of three runs apart in both sets: on the follow 146
+  and 156 per second against 278 and 270 at 1 %, 225 and 232 against
+  302 and 313 at 3 %, 452 and 435 against 598 and 594 at 10 %, and on
+  the moves 335 and 294 against 467 and 537 at 2 degrees, 556 and 582
+  against 669 and 632 at 60. In the second set two of them are apart by
+  a hair (up to 519 against 520 and up at 10 %, up to 623.3 against
+  623.9 and up at 60 degrees). The 20 degree move reads 563 and 485
+  against 815 and 535 with the ranges overlapping. No other row moves
+  the same way beyond the spread in both sets. Counted on the follow
+  captures' rows, outside the scorecard's rows, over all three runs of
+  each side: a row of 64 to 79 ticks, where the shunt is read, that
+  follows a row of 1 to 15 ticks in the same direction is followed by a
+  row driving the other way in 1 of 550 and 1 of 553 cases against 628
+  of 668 and 555 of 607 on 97f819c9, and after a row of 16 to 26 ticks
+  in 3 of 2349 and 8 of 2323 against 841 of 1786 and 886 of 1757. The
+  gain is smaller than the cut the halved current gain showed
+  (`zz-rev-ikp-half`, 86 to 116 per second at 1 and 3 %). What remains
+  of the reversal count is not the first reading. Readings the loop
+  takes at references near zero are a candidate, not measured here.
 
 Tried, not kept:
 
@@ -440,3 +473,23 @@ The controls, and what they say about reading the ladder:
   most of the reversal count at these gains follows the current loop's
   proportional gain, in both sets; a halved gain is not kept as a
   setting.
+- `zz-ab-before-first-reading`, `zz-ab-first-reading-2` and
+  `zz-ab-before-first-reading-2` are the other three sides of `11a`'s
+  two sets. Beside the reversal counts, every row whose ranges of three
+  runs come apart does so in one set only and overlaps in the other. In
+  the first set the change reads lower on the position report error
+  (0.051 against 0.103 deg) and higher on the follow error sd at 10 %
+  (0.451 against 0.430 deg). In the second, the order of the sides
+  swapped, it reads lower on the 2 degree overshoot (0.529 against 0.687
+  deg) and the follow error sd at 1 % (0.115 against 0.125 deg) and
+  higher on the two-sided error (0.427 against 0.368 deg). The landing
+  rows read differently from `10a`'s open point, where every side read
+  the 20 degree settle at 1480 to 1500 ms. Here, as the median of three
+  runs, the 20 degree settle reads 507 and 833 ms on 7ef0554f against
+  367 and 1498 on 97f819c9, the landings driven in their tail 0 and 0 of
+  13 against 0 and 1, and the worst drive after an arrival 287 and 586
+  ms against 464 and 1206. Recorded a few hours after `10a`'s sets, the
+  landings settle again on three of the four sides, on both firmwares.
+  `zz-ab-before-first-reading`'s 20 degree settle still reaches 1500 ms
+  in one run of three. This is an observation next to `10a`'s open
+  point, not explained here.
