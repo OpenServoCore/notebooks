@@ -69,14 +69,24 @@ no such rows.
 
 Two rows read the servo's own reports against the pot,
 `position_report_error_deg` and `speed_report_error_deg_s`. A report is
-polled once a goal item, in the gap between two bursts of rows, about a
-millisecond after the rows stop. On a goal stream the shaft speeds up and
-slows down inside every goal period and the poll sits at the slow end of
-it, so the speed row reads that swing together with the report's own
-error, 5 to 7 deg/s low on the 1 % ramp on every rung with `01b`'s
-gains: a row to see a change with, not a grade of the report. The
-position row is empty under a position table, where the report is in
-linearized counts.
+polled once a goal item, in the gap of about 5 ms between two bursts of
+rows, 2 to 3 ms after the rows stop. On a goal stream the shaft speeds up
+and slows down inside every goal period, and on the 1 % ramp it stands
+still through that gap, so the speed row grades each poll against the
+pot's own speed across the gap it was taken in: the mean pot over the
+first millisecond of rows after the next commit less the mean over the
+last millisecond before the gap, over the time between the two, along
+the travel. The row is the mean over a ramp's follow tail, then the mean
+of the up and the down ramp. The gap holds no rows, so the reference is
+the pot's mean speed across it, the next commit included. Report and pot
+are in the counts the servo ran in, under a position table the
+linearized ones. Over a rung's three runs the row's standard error is
+about 1.5, 2 and 3 deg/s at 1, 3 and 10 %, so a change shows on it only
+past about 3, 4 and 6 deg/s. The row read the report against the ramp's
+mean speed before, which graded the poll's place in the period: a
+perfect report scored about -6, -3.5 and -3 deg/s there. A rung whose
+rows were not kept stays as scored then. The position row is empty
+under a position table, where the report is in linearized counts.
 
 `crawl_swing_deg` reads how far the shaft strays inside one goal period
 of the slowest ramp, the span of the pot about the period's own line, at
@@ -224,8 +234,10 @@ Kept:
   `zz-ab-after-wide-codes-2` against `zz-ab-before-wide-codes-2`): the
   speed report on the 1 % ramp reads -5.8 and -5.7 deg/s against -7.2
   and -7.4, and no other row moves the same way beyond the spread in
-  both sets. The set had no hold at a wide-code goal when the rung was
-  recorded, so the rung's own gain is not one of its rows. Its rows are
+  both sets. Those speed report figures were read under the row's
+  earlier definition, the ramp's mean speed as the reference. The set
+  had no hold at a wide-code goal when the rung was recorded, so the
+  rung's own gain is not one of its rows. Its rows are
   read through the board's slots, a stuck code as the middle of its
   span, where `zz-ab-after-wide-codes-2`, whose rows were not kept,
   stays as scored on the raw pot.
@@ -342,10 +354,12 @@ Kept:
   of the same kind. The position report error has no value on a rung
   that ran on the table, where the report is in linearized counts. The
   speed report on the 10 % ramp changes sign, -1.09 and -2.70 deg/s
-  against 0.57 and 7.59, the ranges apart in both sets. Open on it: the
-  follow error sd at 1 %, the one-set losses on the 2 degree move, the
-  1 % follow and the enable kick, the landing rows, and a position
-  report row for a rung on the table, an open point of the scorer.
+  against 0.57 and 7.59, the ranges apart in both sets, figures read
+  under the row's earlier definition, the ramp's mean speed as the
+  reference. Open on it: the follow error sd at 1 %, the one-set losses
+  on the 2 degree move, the 1 % follow and the enable kick, the landing
+  rows, and a position report row for a rung on the table, an open point
+  of the scorer.
 
 Tried, not kept:
 
@@ -473,7 +487,8 @@ The controls, and what they say about reading the ladder:
   of the change's sit between -3.3 and -5.3 deg/s, inside the control's
   -3.2 to -5.4, and three read -7 to -9. A ramp's speed report is one
   poll per goal item, so the row carries a shift of that size only as a
-  pointer.
+  pointer. Those speed report figures were read under the row's earlier
+  definition, the ramp's mean speed as the reference.
 - `zz-ab-before-adc-all`, `zz-ab-adc-all-2` and `zz-ab-before-adc-all-2`
   are the other three sides of `10a`'s two sets. Beside the crawl's
   ripple, every row whose ranges of three runs come apart does so in one
@@ -566,5 +581,6 @@ The controls, and what they say about reading the ladder:
   is measured against a control that reads above them. The speed report
   on the 10 % ramp reads 0.57 and 7.59 deg/s on the two controls, -2.71
   and -1.99 on `11a`'s sides with the ranges overlapping, and -1.09 and
-  -2.70 on the table sides. This is an observation next to `12a`'s rows,
-  not explained here.
+  -2.70 on the table sides, read under the row's earlier definition, the
+  ramp's mean speed as the reference. This is an observation next to
+  `12a`'s rows, not explained here.
