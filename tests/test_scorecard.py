@@ -531,10 +531,9 @@ def bus(monkeypatch, tmp_path):
     synth.wide_result(wc.result_file(BOARD.key), [(1023, 11)])
     # the rules of the registry's gear fields bind nothing: the fake servo has none of them
     monkeypatch.setattr(cn, "registry_of", lambda pair: {})
-    # nor do the rules of the records a host keeps that the results here would bind, the chip's supply off the
-    # board's terminal chain and the cold resistance off the pair's: it has no vdd_mv and no r0_q12
-    for name in ("vdd_mv", "r0_q12"):
-        monkeypatch.delitem(cn.RULES, name)
+    # nor does the rule of the record a host keeps that the results here would bind, the cold resistance off
+    # the pair's stage 3 resistance: it has no r0_q12
+    monkeypatch.delitem(cn.RULES, "r0_q12")
     state["servo"] = synth.Bench().stub(monkeypatch, lambda: {"torque_enable": state["torque"]})
     monkeypatch.setattr(sc.osc, "bus_baud", lambda: state["baud"])
     monkeypatch.setattr(sc.osc, "identity", lambda: {"sha1": f"sha1 of {sc.osc.tool()}", "version": None})
@@ -2032,8 +2031,9 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
             cn.derive(base, folder / f"{name}.json")
     # every other file derives, so the two lists are the folder
     live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in OVERTAKEN)
-    assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "hold-band-8",
-                    "motion-200", "motion-400", "motion-limits", "observer-10hz", "observer-25hz", "plant-as-held"]
+    assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "emf-pair-as-held",
+                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held", "motion-200",
+                    "motion-400", "motion-limits", "observer-10hz", "observer-25hz", "plant-as-held", "r-as-held"]
     # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
     # one it ran: what its release gave there is what the set of record binds now
     named = {}
@@ -2043,7 +2043,8 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
             named.setdefault(Path(dev["file"]).stem, []).append(result.stem)
             assert sc.file_sha1(results.ROOT / dev["file"]) == dev["sha1"], result.name
             assert {n: fields[n]["value"] for n in dev["fields"]} == {n: b for n, (_, b) in dev["fields"].items()}
-    assert named == {"motor-model": ["zz-ab-motor-model-2", "zz-ab-motor-model"]}
+    assert named == {"motor-model": ["zz-ab-motor-model-2", "zz-ab-motor-model"],
+                     "protection-ntc-curve": ["zz-ab-ntc-pinned"], "motor-r": ["zz-ab-r-measured"]}
 
 
 def test_an_identity_rungs_plan_is_rebuilt_byte_for_byte():
