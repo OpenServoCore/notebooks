@@ -2,8 +2,8 @@
 fixed test set, scored from the pot, so a change is kept or dropped on
 numbers.
 
-  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...] [--max-load N]
-  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-osc PATH] [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-note TEXT] --b-label ... [--c-label ...] [--order abc] [--rounds 3] [--max-load N]
+  uv run python -m oscnb.scorecard run --label 00-baseline --fw <commit> --image-sha <sha1> [--runs 3] [--note TEXT] [--set PATH] [--deviation FILE] [--protection NAME ...] [--loosen NAME ...] [--motion test|set] [--max-load N]
+  uv run python -m oscnb.scorecard ab --a-label L --a-fw REV --a-image PATH [--a-osc PATH] [--a-set PATH] [--a-deviation FILE] [--a-protection NAME ...] [--a-loosen NAME ...] [--a-motion test|set] [--a-note TEXT] --b-label ... [--c-label ...] [--order abc] [--rounds 3] [--max-load N]
   uv run python -m oscnb.scorecard score <label>
   uv run python -m oscnb.scorecard carry
   uv run python -m oscnb.scorecard table
@@ -43,8 +43,10 @@ The moves run at the test set's own limits of motion, a speed and an
 acceleration in deg/s and deg/s^2 taken to counts on the set's count by
 the set's own rules, installed over the set with it and checked with it
 before each run (`run_motion`), whatever the set's default, so a step
-row compares down the ladder. A set whose deviation moves either of the
-two runs at its own two, which are what it tests. `rung.json` records
+row compares down the ladder. With `--motion set` a rung runs at the
+set's default instead, the set installed as it is, the speed a user
+gets. A set whose deviation moves either of the two runs at its own
+two, which are what it tests, whatever `--motion` says. `rung.json` records
 them under `motion`: where they are from, the two as the fields hold
 them and what they are in deg/s and deg/s^2. A result recorded before
 rungs recorded them ran at the limits of its day (`motion_of`): the
@@ -999,13 +1001,15 @@ def capture(out, name, segs, center, guard, inp, deadman_check, ts):
     return meta
 
 
-def new_rung(pair, label, fw, image_sha, runs, note="", set_file=None, deviation=None, protection=(), loosen=()):
+def new_rung(pair, label, fw, image_sha, runs, note="", set_file=None, deviation=None, protection=(), loosen=(),
+             motion="test"):
     """A rung to record, refused when its label already holds one: its
     folder, what `rung.json` names and the constant set it runs on,
     which is the set of `set_file`, the pair's set of record without
     one, or that set with the one deviation of file `deviation`
-    (`constants.derive`). Refused offline when the set is not the
-    pair's, an input file of it moved, or the deviation does not build.
+    (`constants.derive`), at the limits of motion `motion` names
+    (`run_motion`). Refused offline when the set is not the pair's, an
+    input file of it moved, or the deviation does not build.
     `protection` and `loosen` are the names the set's install passes
     its protection gate with."""
     cn = constants()
@@ -1024,7 +1028,7 @@ def new_rung(pair, label, fw, image_sha, runs, note="", set_file=None, deviation
         lines, stale = cn.status(doc, root)
         if stale:
             raise ValueError(f"the set is stale: {'; '.join(x for x in lines if x.startswith('stale: '))}")
-        ran, motion = run_motion(doc, testset())
+        ran, motion = run_motion(doc, testset(), motion)
     except (ValueError, settings.Refused) as e:
         raise SystemExit(f"{label}: {e}")
     return {"dir": rung, "label": label, "fw": fw, "image_sha": image_sha, "note": note, "runs": runs,
@@ -1032,15 +1036,22 @@ def new_rung(pair, label, fw, image_sha, runs, note="", set_file=None, deviation
             "loosen": tuple(loosen)}
 
 
-def run_motion(doc, ts):
+MOTION_AT = ("test", "set")   # what `--motion` names: the test set's limits of motion, or the set's own
+
+
+def run_motion(doc, ts, at="test"):
     """(the set a rung's runs install, what `rung.json` records of the
-    limits of motion its moves run at). They are the test set's own
-    (`ts.motion`) on the set's count, whatever the set's default, over
-    the set; on a set whose deviation moves either of the two they are
-    the set's two, which are what such a side tests. The record names
-    where they are from, the two as the fields hold them, and what they
-    are in deg/s and deg/s^2 on the set's count to five figures."""
+    limits of motion its moves run at). With `at` "test" they are the
+    test set's own (`ts.motion`) on the set's count, whatever the set's
+    default, over the set; with "set" they are the set's default, the
+    set installed as it is. On a set whose deviation moves either of the
+    two they are the set's two whatever `at` says, which are what such a
+    side tests. The record names where they are from, the two as the
+    fields hold them, and what they are in deg/s and deg/s^2 on the
+    set's count to five figures."""
     cn = constants()
+    if at not in MOTION_AT:
+        raise ValueError(f"motion {at!r} is not one of {', '.join(MOTION_AT)}")
     missing = [n for n in cn.MOTION if n not in doc["fields"]]
     if missing:
         raise ValueError(f"the set holds no {', '.join(missing)}: the test's limits of motion have no field to "
@@ -1048,6 +1059,8 @@ def run_motion(doc, ts):
     moved = (doc.get("deviation") or {}).get("fields", {})
     if any(n in moved for n in cn.MOTION):
         ran, source = doc, "deviation"
+    elif at == "set":
+        ran, source = doc, "set"
     else:
         ran, source = cn.overlaid(doc, ts.motion(doc)), "test set"
     values = {n: ran["fields"][n]["value"] for n in cn.MOTION}
@@ -1225,11 +1238,11 @@ def recorded(r, k, s, servo, board, max_load=None):
 
 
 def run(label, fw, image_sha, runs=3, note="", set_file=None, deviation=None, protection=(), loosen=(),
-        servo=None, board=None, max_load=None):
+        motion="test", servo=None, board=None, max_load=None):
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
-    r = new_rung(pair, label, fw, image_sha, runs, note, set_file, deviation, protection, loosen)
+    r = new_rung(pair, label, fw, image_sha, runs, note, set_file, deviation, protection, loosen, motion)
     r["tool"] = osc.identity()
     s, = bench_sets(servo, board, pair, [r])
     with applied(r):
@@ -1247,7 +1260,8 @@ def ab(*sides, rounds=3, order=None, max_load=None, servo=None, board=None):
     round in `order`, a permutation of the sides' letters ("ab", "cab"),
     a then b then c without one, so all share the servo's drift through
     the session. A side is {"label", "fw", "image", "note", "set_file",
-    "deviation", "protection", "loosen", "osc"}, the last six optional;
+    "deviation", "protection", "loosen", "motion", "osc"}, the last
+    seven optional;
     each rung is the one `run` records, its image sha the image file's.
     A side's turn is everything from its flash to the reboot after its
     run, and every `osc` call in it goes through the side's own tool,
@@ -1280,7 +1294,7 @@ def ab(*sides, rounds=3, order=None, max_load=None, servo=None, board=None):
     for side in sides:
         r = new_rung(pair, side["label"], side["fw"], file_sha1(side["image"]), rounds, side.get("note", ""),
                      side.get("set_file"), side.get("deviation"), side.get("protection", ()),
-                     side.get("loosen", ()))
+                     side.get("loosen", ()), side.get("motion", "test"))
         r["image"], r["osc"] = Path(side["image"]), side.get("osc")
         with osc.using(r["osc"]):
             r["tool"] = osc.identity()
@@ -1440,6 +1454,9 @@ def set_args(parser, side):
                         help="the protection fields the set's install may change on the servo")
     parser.add_argument(f"--{side}loosen", nargs="+", default=[], metavar="NAME",
                         help="of those, the ones it may set to protect less than the servo's value")
+    parser.add_argument(f"--{side}motion", choices=MOTION_AT, default=MOTION_AT[0],
+                        help="the limits of motion the moves run at: the test set's own, or the set's default "
+                             "(a deviation that moves either runs at its own whatever this says)")
 
 
 LOAD_HELP = (f"wait before a run while the host's one minute load is over this, {LOAD_WAIT_S} s at most, "
@@ -1477,12 +1494,13 @@ def main(argv=None):
     a = ap.parse_args(argv)
     if a.cmd == "run":
         print(shown(run(a.label, a.fw, a.image_sha, a.runs, a.note, a.set, a.deviation, a.protection, a.loosen,
-                        max_load=a.max_load)))
+                        a.motion, max_load=a.max_load)))
     elif a.cmd == "ab":
         flags = {"label": "label", "fw": "fw", "image": "image", "note": "note", "set_file": "set",
-                 "deviation": "deviation", "protection": "protection", "loosen": "loosen", "osc": "osc"}
+                 "deviation": "deviation", "protection": "protection", "loosen": "loosen", "motion": "motion",
+                 "osc": "osc"}
         sides = [{key: getattr(a, f"{side}_{flag}") for key, flag in flags.items()} for side in SIDES]
-        if not any(sides[2].values()):
+        if all(sides[2][key] == x.get_default(f"c_{flag}") for key, flag in flags.items()):
             sides.pop()
         elif None in (sides[2]["label"], sides[2]["fw"], sides[2]["image"]):
             ap.error("a third side needs --c-label, --c-fw and --c-image")

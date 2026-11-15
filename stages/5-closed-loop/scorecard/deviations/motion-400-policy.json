@@ -1,0 +1,4 @@
+{
+  "note": "the speed limit at 400 deg/s, the speed ceiling itself, the most the set allows, with the acceleration limit at the speed reached in 50 ms, 8000 deg/s^2, as policy entries over the owner's default move speed of 200 deg/s and 4000 deg/s^2: the two fields are bound by their rules in the set of record, so the entries move them with no hold to release. The ceiling point of the sweep under the speed ceiling, on the set of record",
+  "policy": {"velocity_limit_deg_s": 400.0, "accel_limit_deg_s2": 8000.0}
+}
