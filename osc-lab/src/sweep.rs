@@ -1676,6 +1676,7 @@ mod tests {
                 vbus_raw: u(14),
                 ntc_raw: u(15),
                 vref_raw: u(16),
+                ..TelFrame::default()
             });
         }
         write_rows(&mut out, &seg.unwrap()).unwrap();

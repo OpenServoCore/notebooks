@@ -13,6 +13,8 @@ use super::pump::{BurstCap, BurstStats, exchange_tel_burst, read_snapshot, write
 use super::servo::{Between, Memo, Servo};
 use crate::instrument::frame::{TelFrame, TelemetrySnapshot};
 use crate::instrument::regs::{Reg, calib, config, control};
+use osc_servo_core::kernel::DECIM_MED;
+use osc_servo_core::regions::control::{INJECT_HALF_PERIODS_MAX, Mode as CtMode};
 
 /// The in-process servo stack at `rate`, calibrated and identified like the
 /// bench servo: limit 280, stall yield 168 released under 84, soft limits
@@ -58,6 +60,19 @@ pub(crate) fn rail_at(c: &mut Client<FakePipe>, vbus_raw: u16, vbus_counts: u16)
     c.pipe_mut().set_track(0, vec![s]);
 }
 
+/// The loops a margin sweep closes, played on the rig: a Position goal is
+/// where the shaft goes at once; in Velocity mode a burst moves it at the
+/// committed goal, the observer's speed half the reference's departure from
+/// the goal a period late and its position the speed's sum. On an image
+/// that honors the stimulus, under torque and a loaded dead-man with both
+/// fields set, the reference carries the kernel's triangle; on any other it
+/// reads as the table holds it.
+#[derive(Copy, Clone, Debug)]
+pub(crate) struct Plant {
+    pub(crate) shaft: i32,
+    pub(crate) honors_stimulus: bool,
+}
+
 /// What a test does to the table after a burst, given the burst's index.
 pub(crate) type AfterBurst = Box<dyn FnMut(&mut Client<FakePipe>, u32)>;
 
@@ -97,7 +112,8 @@ const SEED: u64 = 0x9e37_79b9_7f4a_7c15;
 ///
 /// The sim runs no kernel, so with `deadman_honored` the rig plays the
 /// dead-man's part of one: bus silence under torque for the count last
-/// written latches the `deadman` fault, and a torque enable acks it.
+/// written latches the `deadman` fault, and a torque enable acks it. With
+/// a [`Plant`] it plays the loops' part too ([`Rig::plant_at`]).
 pub(crate) struct Rig {
     pub(crate) c: Client<FakePipe>,
     id: Id,
@@ -111,6 +127,7 @@ pub(crate) struct Rig {
     pub(crate) timed: Option<Timed>,
     /// What each timed burst's carrier took to land, ms.
     pub(crate) landings: Vec<f64>,
+    pub(crate) plant: Option<Plant>,
     rng: u64,
     memo: Memo,
     bursts: u32,
@@ -134,6 +151,7 @@ impl Rig {
             after_burst: None,
             timed: None,
             landings: Vec::new(),
+            plant: None,
             rng: SEED,
             memo: Memo::default(),
             bursts: 0,
@@ -141,6 +159,98 @@ impl Rig {
             deadman_ticks: 0,
             silent_ms: 0.0,
         }
+    }
+
+    /// The bench rig, its data state clear, with a [`Plant`] whose shaft
+    /// rests at `shaft` linearized counts (the bench table is the identity).
+    pub(crate) fn plant_at(shaft: i32, honors_stimulus: bool) -> Self {
+        let mut r = Self::bench();
+        r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.mode.data_flags = 0;
+        });
+        r.plant = Some(Plant {
+            shaft,
+            honors_stimulus,
+        });
+        r.publish_shaft();
+        r
+    }
+
+    /// The plant's shaft at rest in the table: the pot sample every read
+    /// and burst sees, at room temperature on the bench rail, and the
+    /// observer's estimate.
+    fn publish_shaft(&mut self) {
+        let Some(p) = &self.plant else {
+            return;
+        };
+        let shaft = p.shaft;
+        let mut s = TelSample {
+            vbus_counts: 3204,
+            ..TelSample::default()
+        };
+        (s.tick.pos, s.tick.vbus_raw, s.tick.ntc_raw) = (shaft as u16, 1961, 1913);
+        self.c.pipe_mut().set_track(0, vec![s]);
+        self.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.estimates.theta_hat_q16 = shaft << 16;
+            t.telemetry.estimates.omega_hat_cps = 0;
+        });
+    }
+
+    /// A burst's rows as the plant drives them in Velocity mode: the shaft
+    /// at the committed goal from the burst's first row, and, on an image
+    /// that honors the stimulus, the triangle on the reference as the
+    /// kernel sums it ([`Plant`]).
+    fn drive_plant(&mut self, frames: &mut [TelFrame]) {
+        let Some(p) = self.plant else {
+            return;
+        };
+        let (mode, goal, accel, half, deadman) =
+            self.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                let c = &t.control;
+                (
+                    c.lifecycle.mode,
+                    c.lifecycle.goal_velocity,
+                    c.inject.inject_accel_q88,
+                    c.inject.inject_half_periods,
+                    c.lifecycle.bus_deadman_ticks,
+                )
+            });
+        if mode != CtMode::Velocity || frames.is_empty() {
+            return;
+        }
+        let on = p.honors_stimulus && self.torque && deadman > 0 && accel > 0 && half > 0;
+        let n = half.min(INJECT_HALF_PERIODS_MAX) as i64;
+        let fm = (osc_servo_core::kernel::TICK_HZ / DECIM_MED as u32) as i64;
+        let g = (goal as i64) << 16;
+        let periods = (frames.last().map_or(0, |f| f.tick) / DECIM_MED as u64 + 1) as usize;
+        let (mut phase, mut prev, mut theta) = (0i64, g, (p.shaft as i64) << 16);
+        let mut at = Vec::with_capacity(periods);
+        for _ in 0..periods {
+            let mut r = g;
+            if on {
+                phase += 1;
+                if phase >= 2 * n {
+                    phase = 0;
+                }
+                r += (accel as i64 * ((n >> 1) - (phase - n).abs())) << 8;
+            }
+            let w = g + (prev - g) / 2;
+            at.push((theta, w, r));
+            theta += w / fm;
+            prev = r;
+        }
+        for f in frames.iter_mut() {
+            let (th, w, r) = at[(f.tick / DECIM_MED as u64) as usize];
+            f.theta_hat_q16 = f.theta_hat_q16.map(|_| th as i32);
+            f.omega_hat_cps = f.omega_hat_cps.map(|_| w as i32);
+            if on {
+                f.omega_ref_cps = f.omega_ref_cps.map(|_| r as i32);
+            }
+        }
+        if let Some(p) = self.plant.as_mut() {
+            p.shaft = (theta >> 16) as i32;
+        }
+        self.publish_shaft();
     }
 
     /// The `fault_flags` bit and `fault_code` the kernel latches, or 0, 0.
@@ -246,7 +356,14 @@ impl Servo for Rig {
         } else if reg == control::BUS_DEADMAN_TICKS {
             self.deadman_ticks = value as u16;
         }
-        write_reg(&mut self.c, self.id, reg, value)
+        write_reg(&mut self.c, self.id, reg, value)?;
+        if reg == control::GOAL_POSITION
+            && let Some(p) = self.plant.as_mut()
+        {
+            p.shaft = value;
+            self.publish_shaft();
+        }
+        Ok(())
     }
 
     fn snapshot(&mut self) -> Result<TelemetrySnapshot> {
@@ -284,7 +401,8 @@ impl Servo for Rig {
         let r = exchange_tel_burst(&mut self.c, self.id, line, samples, goal, chunks, |c| {
             between.map_or(Ok(()), |between| between(c))
         })?;
-        let (frames, mut stats) = r;
+        let (mut frames, mut stats) = r;
+        self.drive_plant(&mut frames);
         (stats.staged_ms, stats.sent_ms) = (staged, sent);
         self.t_ms = sent;
         self.silent_ms = 0.0;

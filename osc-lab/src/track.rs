@@ -54,14 +54,14 @@ use crate::sweep::{RowFields, chunks_json, samples_of_ms, servo_meta, unix_s};
 pub(crate) const MAX_BURST_MS: u32 = u16::MAX as u32 * 1000 / TICK_HZ;
 
 /// The cadence the watchdog polls at through a rest and the centering.
-const POLL_MS: u32 = 50;
+pub(crate) const POLL_MS: u32 = 50;
 
 /// The centering is done once the shaft reads within the deadband plus
 /// this many counts of the middle for `CENTER_STILL` polls in a row, and
 /// gives up after `CENTER_POLLS` polls, 10 s.
 const CENTER_TOL: i32 = 20;
 const CENTER_STILL: u32 = 4;
-const CENTER_POLLS: u32 = 200;
+pub(crate) const CENTER_POLLS: u32 = 200;
 
 /// The NTC watchdog's default sits this far under the servo's `cutoff_cc`,
 /// centi-C: the cutoff is the servo's one thermal limit and latches a
@@ -77,7 +77,7 @@ pub(crate) enum Mode {
 }
 
 impl Mode {
-    fn value(self) -> i32 {
+    pub(crate) fn value(self) -> i32 {
         (match self {
             Mode::Position => CtMode::Position,
             Mode::Velocity => CtMode::Velocity,
@@ -86,7 +86,7 @@ impl Mode {
     }
 
     /// The register a `goal:` item writes.
-    fn goal(self) -> Reg {
+    pub(crate) fn goal(self) -> Reg {
         match self {
             Mode::Position => control::GOAL_POSITION,
             Mode::Velocity => control::GOAL_VELOCITY,
@@ -99,7 +99,7 @@ impl Mode {
         self != Mode::Current
     }
 
-    fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Mode::Position => "position",
             Mode::Velocity => "velocity",
@@ -225,6 +225,26 @@ pub struct Args {
     /// applied duty, trough.
     #[arg(long, default_value = "0x238+2,0x240+10")]
     tel_chunks: String,
+    #[command(flatten)]
+    pub(crate) guarded: Guarded,
+    /// Hold a train of goals to this period, ms: a `goal:` item right
+    /// after a `goal:` item whose burst is shorter than the period is
+    /// committed on a grid of the period from the train's first goal, on
+    /// the servo's tick, the COMMIT waiting for its grid point behind the
+    /// staged writes. A goal the host has not staged by its point goes out
+    /// at once and is counted late, and the goals after it aim at their
+    /// own points. Inside a train there is one poll between two bursts,
+    /// taken once the next goal is staged, ahead of the wait. At most 250
+    /// ms, the keepalive's cadence: the wait is bus silence [default: none,
+    /// a goal goes out as soon as the host is ready].
+    #[arg(long)]
+    goal_period_ms: Option<f64>,
+}
+
+/// The guards every closed-loop run keeps: the watchdog's caps, the bus
+/// dead-man and the end. `osc-lab track` and `osc-lab margin` take them.
+#[derive(clap::Args, Debug, Clone)]
+pub(crate) struct Guarded {
     /// Watchdog: abort on |current| over this, mA [default: a quarter over
     /// the servo's current limit].
     #[arg(long)]
@@ -249,7 +269,7 @@ pub struct Args {
     /// Honored by the experiment image and a production image built with
     /// `deadman`, ignored by any other.
     #[arg(long, default_value_t = 1000)]
-    deadman_ms: u32,
+    pub(crate) deadman_ms: u32,
     /// Prove the image honors the dead-man before the schedule: torque on
     /// holding, silent for 1.5 x the dead-man, then the `deadman` fault must
     /// have latched; refused (exit 2) when it did not.
@@ -259,18 +279,6 @@ pub struct Args {
     /// move to the middle of the soft range.
     #[arg(long)]
     no_center: bool,
-    /// Hold a train of goals to this period, ms: a `goal:` item right
-    /// after a `goal:` item whose burst is shorter than the period is
-    /// committed on a grid of the period from the train's first goal, on
-    /// the servo's tick, the COMMIT waiting for its grid point behind the
-    /// staged writes. A goal the host has not staged by its point goes out
-    /// at once and is counted late, and the goals after it aim at their
-    /// own points. Inside a train there is one poll between two bursts,
-    /// taken once the next goal is staged, ahead of the wait. At most 250
-    /// ms, the keepalive's cadence: the wait is bus silence [default: none,
-    /// a goal goes out as soon as the host is ready].
-    #[arg(long)]
-    goal_period_ms: Option<f64>,
 }
 
 /// A run refused before anything moved, or a dead-man check that failed:
@@ -286,7 +294,7 @@ impl fmt::Display for Refused {
 
 impl std::error::Error for Refused {}
 
-fn refuse<T>(msg: impl Into<String>) -> Result<T> {
+pub(crate) fn refuse<T>(msg: impl Into<String>) -> Result<T> {
     Err(Refused(msg.into()).into())
 }
 
@@ -324,9 +332,9 @@ pub(crate) fn exit_code(e: &anyhow::Error) -> Option<i32> {
 }
 
 /// A watchdog condition, with what was captured of the item it struck in.
-struct Tripped {
-    reason: String,
-    seg: Option<Box<Seg>>,
+pub(crate) struct Tripped {
+    pub(crate) reason: String,
+    pub(crate) seg: Option<Box<Seg>>,
 }
 
 impl fmt::Debug for Tripped {
@@ -343,7 +351,7 @@ impl fmt::Display for Tripped {
 
 impl std::error::Error for Tripped {}
 
-fn trip<T>(reason: impl Into<String>) -> Result<T> {
+pub(crate) fn trip<T>(reason: impl Into<String>) -> Result<T> {
     Err(Tripped {
         reason: reason.into(),
         seg: None,
@@ -399,7 +407,7 @@ impl Poll {
         })
     }
 
-    fn read<S: Servo>(s: &mut S) -> Result<Self> {
+    pub(crate) fn read<S: Servo>(s: &mut S) -> Result<Self> {
         let id = s.id();
         Self::read_on(s.client(), id)
     }
@@ -410,7 +418,7 @@ impl Poll {
     }
 }
 
-fn fault_name(code: u8) -> &'static str {
+pub(crate) fn fault_name(code: u8) -> &'static str {
     match code {
         CODE_DEADMAN => "deadman",
         c => fault::name(c).unwrap_or("unknown"),
@@ -437,8 +445,12 @@ impl Watchdog {
     }
 
     fn check_pos(&self, raw: u16) -> Result<(), String> {
+        self.check_lin(self.lin(raw))
+    }
+
+    /// A linearized position against the guard.
+    fn check_lin(&self, pos: i32) -> Result<(), String> {
         let (lo, hi) = self.guard;
-        let pos = self.lin(raw);
         if pos < lo || pos > hi {
             return Err(format!(
                 "the shaft at {pos} counts is outside the guard {lo}..{hi}"
@@ -488,8 +500,9 @@ impl Watchdog {
         self.check_ntc(p.ntc_raw)
     }
 
-    /// One burst's rows: the guard on every row that carries `pos`, the
-    /// current cap on consecutive rows, the NTC on rows that carry it. A
+    /// One burst's rows: the guard on every row that carries `pos` or the
+    /// observer's position, the current cap on consecutive rows, the NTC on
+    /// rows that carry it. A
     /// row's current is its held current when it carries one, else its raw
     /// shunt off `bias` either way on a window the shunt read (the amplifier
     /// reads under its bias while current flows back); a row that reads no
@@ -499,6 +512,10 @@ impl Watchdog {
         for f in frames {
             if let Some(pos) = f.pos {
                 self.check_pos(pos)
+                    .map_err(|e| format!("{e} at row tick {}", f.tick))?;
+            }
+            if let Some(th) = f.theta_hat_q16 {
+                self.check_lin((th + (1 << 15)) >> 16)
                     .map_err(|e| format!("{e} at row tick {}", f.tick))?;
             }
             let i = match (f.current, f.current_raw) {
@@ -549,6 +566,10 @@ pub(crate) struct Cfg {
     pub(crate) center: Option<i32>,
     pub(crate) deadband: u16,
     pub(crate) pace: Option<Pace>,
+    /// The servo lists the margin stimulus fields ([`lists_inject`]).
+    pub(crate) inject: bool,
+    pub(crate) soft: (i32, i32),
+    pub(crate) i_lim: u16,
 }
 
 /// The goal period's grid. The first goal of a train (a `goal:` item with
@@ -803,6 +824,61 @@ fn resolve_set(d: &Descriptor, field: &str, value: &str) -> Result<(Reg, i32), S
 /// data state that refuses the mode, a standing fault, a shaft outside the
 /// guard, and any item, cap or dead-man the servo cannot carry.
 pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
+    let chunks = pump::parse_tel_chunks(&a.tel_chunks).context("--tel-chunks")?;
+    let mut cfg = preflight(s, &a.guarded, a.mode, chunks)?;
+    cfg.pace = match a.goal_period_ms {
+        None => None,
+        Some(ms) if ms > 0.0 && ms <= PERMIT_REFRESH_MS as f64 => Some(Pace::new(ms, cfg.tick_hz)),
+        Some(ms) => {
+            return refuse(format!(
+                "--goal-period-ms {ms} is not over 0 and at most {PERMIT_REFRESH_MS} ms, the \
+                 keepalive's cadence: a commit's wait for its slot is bus silence"
+            ));
+        }
+    };
+
+    let id = s.id();
+    let d = crate::state::descriptor(s.client(), id)?;
+    let burst_cap = s.burst_cap()?;
+    for item in &a.schedule {
+        cfg.sets.push(match item {
+            Item::Set { field, value } => {
+                let (reg, value) = resolve_set(&d, field, value).or_else(refuse)?;
+                Some(SetReg {
+                    field: field.clone(),
+                    reg,
+                    value,
+                    config: reg.addr < CONFIG_BASE_ADDR + CONFIG_REGION_SIZE,
+                    signed: d.field(field).is_some_and(|f| f.kind == Kind::Int),
+                })
+            }
+            _ => None,
+        });
+        if let Some(ms) = item.burst_ms()
+            && let Err(e) = burst_cap.check(samples_of_ms(ms, cfg.tick_hz))
+        {
+            return refuse(format!("{item}: {e}"));
+        }
+        if let Item::Goal { value, .. } = item {
+            check_goal(a.mode, *value, cfg.wd.guard, cfg.i_lim).or_else(refuse)?;
+        }
+    }
+    cfg.items = a.schedule.clone();
+    standing(s, &cfg.wd)?;
+    Ok(cfg)
+}
+
+/// What every closed-loop run refuses before torque, read once, and the
+/// guards it runs under: an experiment image, a line that streams no TEL
+/// row of `chunks`, a flat pack, a data state that refuses `mode`, and a
+/// cap or dead-man the servo cannot carry. The schedule is the caller's.
+/// Reads only.
+pub(crate) fn preflight<S: Servo>(
+    s: &mut S,
+    g: &Guarded,
+    mode: Mode,
+    chunks: Chunks,
+) -> Result<Cfg> {
     let id = s.id();
     if s.experiment()? {
         return refuse(
@@ -810,7 +886,6 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
              image",
         );
     }
-    let chunks = pump::parse_tel_chunks(&a.tel_chunks).context("--tel-chunks")?;
     if let Err(e) = s.tel_line()?.admit(chunks) {
         return refuse(e.to_string());
     }
@@ -820,11 +895,11 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
         return refuse(m);
     }
     let data = crate::state::check(s.client(), id)?;
-    if !allows(data.flags, a.mode.closed()) {
+    if !allows(data.flags, mode.closed()) {
         return refuse(format!(
             "the servo's data state ({}) refuses {} mode: {}",
             data.names(),
-            a.mode.as_str(),
+            mode.as_str(),
             data.message().unwrap_or_default()
         ));
     }
@@ -835,8 +910,8 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
     let mut points = [0i16; POINTS];
     points[..lut.points.len()].copy_from_slice(&lut.points);
 
-    let guard = guard_of(&lim, a.guard_lo, a.guard_hi)?;
-    let cap = match a.current_cap_ma {
+    let guard = guard_of(&lim, g.guard_lo, g.guard_hi)?;
+    let cap = match g.current_cap_ma {
         None => lim.abort_default() as f64,
         Some(_) if lim.amps_per_count <= 0.0 => {
             return refuse(
@@ -858,30 +933,19 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
              nothing to judge by",
         );
     }
-    let ntc_max_cc = match a.ntc_max_c {
+    let ntc_max_cc = match g.ntc_max_c {
         Some(c) => (c * 100.0).round().clamp(i16::MIN as f64, i16::MAX as f64) as i16,
         None => (read_u16(c, id, config::CUTOFF_CC)? as i16).saturating_sub(NTC_MARGIN_CC),
     };
     let deadband = read_u16(c, id, config::POS_DEADBAND_COUNTS)?;
 
-    let deadman_ticks = deadman_ticks(a.deadman_ms, tick_hz)?;
-    if a.deadman_check && deadman_ticks == 0 {
+    let deadman_ticks = deadman_ticks(g.deadman_ms, tick_hz)?;
+    if g.deadman_check && deadman_ticks == 0 {
         return refuse("--deadman-check needs a dead-man: --deadman-ms is 0");
     }
 
-    let pace = match a.goal_period_ms {
-        None => None,
-        Some(ms) if ms > 0.0 && ms <= PERMIT_REFRESH_MS as f64 => Some(Pace::new(ms, tick_hz)),
-        Some(ms) => {
-            return refuse(format!(
-                "--goal-period-ms {ms} is not over 0 and at most {PERMIT_REFRESH_MS} ms, the \
-                 keepalive's cadence: a commit's wait for its slot is bus silence"
-            ));
-        }
-    };
-
-    let cap_rows = samples_of_ms(a.current_cap_ms, tick_hz).max(1);
-    let cap_polls = a.current_cap_ms.div_ceil(POLL_MS).max(1);
+    let cap_rows = samples_of_ms(g.current_cap_ms, tick_hz).max(1);
+    let cap_polls = g.current_cap_ms.div_ceil(POLL_MS).max(1);
     let wd = Watchdog {
         guard,
         cap,
@@ -893,32 +957,53 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
         polls_over: 0,
     };
 
-    let mut sets = Vec::with_capacity(a.schedule.len());
-    let burst_cap = s.burst_cap()?;
-    for item in &a.schedule {
-        sets.push(match item {
-            Item::Set { field, value } => {
-                let (reg, value) = resolve_set(&d, field, value).or_else(refuse)?;
-                Some(SetReg {
-                    field: field.clone(),
-                    reg,
-                    value,
-                    config: reg.addr < CONFIG_BASE_ADDR + CONFIG_REGION_SIZE,
-                    signed: d.field(field).is_some_and(|f| f.kind == Kind::Int),
-                })
-            }
-            _ => None,
-        });
-        if let Some(ms) = item.burst_ms()
-            && let Err(e) = burst_cap.check(samples_of_ms(ms, tick_hz))
-        {
-            return refuse(format!("{item}: {e}"));
-        }
-        if let Item::Goal { value, .. } = item {
-            check_goal(a.mode, *value, guard, lim.i_lim).or_else(refuse)?;
-        }
-    }
+    let (lo, hi) = lim.soft;
+    Ok(Cfg {
+        mode,
+        items: Vec::new(),
+        sets: Vec::new(),
+        data_flags: data.flags,
+        chunks,
+        tick_hz,
+        wd,
+        cap_ma: g.current_cap_ma,
+        cap_ms: g.current_cap_ms,
+        deadman_ms: g.deadman_ms,
+        deadman_ticks,
+        deadman_check: g.deadman_check,
+        center: (!g.no_center).then_some(lo + (hi - lo) / 2),
+        deadband,
+        pace: None,
+        inject: lists_inject(&d),
+        soft: lim.soft,
+        i_lim: lim.i_lim,
+    })
+}
 
+/// The servo lists both stimulus fields at their addresses (protocol sec
+/// 5.6), writable.
+pub(crate) fn lists_inject(d: &Descriptor) -> bool {
+    [control::INJECT_ACCEL_Q88, control::INJECT_HALF_PERIODS]
+        .iter()
+        .all(|r| {
+            d.fields
+                .iter()
+                .any(|f| f.addr == r.addr && f.width == r.width as u16 && f.access == Access::Rw)
+        })
+}
+
+/// Zero the stimulus fields when the servo lists them: they are volatile
+/// and the servo never clears them, so a stimulus a run left set would
+/// ride the next capture that streams under a dead-man in Velocity mode.
+pub(crate) fn zero_inject<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<()> {
+    if cfg.inject {
+        s.write(control::INJECT, 0)?;
+    }
+    Ok(())
+}
+
+/// A standing fault or a shaft outside the guard, refused.
+pub(crate) fn standing<S: Servo>(s: &mut S, wd: &Watchdog) -> Result<()> {
     let p = Poll::read(s)?;
     if p.fault_flags != 0 {
         return refuse(format!(
@@ -929,26 +1014,7 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
             fault_name(p.fault_code)
         ));
     }
-    wd.check_pos(p.pos).or_else(refuse)?;
-
-    let (lo, hi) = lim.soft;
-    Ok(Cfg {
-        mode: a.mode,
-        items: a.schedule.clone(),
-        sets,
-        data_flags: data.flags,
-        chunks,
-        tick_hz,
-        wd,
-        cap_ma: a.current_cap_ma,
-        cap_ms: a.current_cap_ms,
-        deadman_ms: a.deadman_ms,
-        deadman_ticks,
-        deadman_check: a.deadman_check,
-        center: (!a.no_center).then_some(lo + (hi - lo) / 2),
-        deadband,
-        pace,
-    })
+    wd.check_pos(p.pos).or_else(refuse)
 }
 
 fn as_refusal(e: anyhow::Error) -> anyhow::Error {
@@ -1075,7 +1141,7 @@ const DATA_POLL_MS: u32 = 10;
 /// `data_flags` and warn about a mismatch or any reason new since
 /// preflight. Never turns torque on or changes mode. Every write is tried;
 /// Err is the first that failed.
-fn put_back<S: Servo>(s: &mut S, cfg: &Cfg, ran: &mut Ran) -> Result<()> {
+pub(crate) fn put_back<S: Servo>(s: &mut S, cfg: &Cfg, ran: &mut Ran) -> Result<()> {
     use osc_client::data_state::{STAMP_MISMATCH, reasons};
     let mut first: Option<anyhow::Error> = None;
     for k in std::mem::take(&mut ran.kept).into_iter().rev() {
@@ -1125,7 +1191,7 @@ fn put_back<S: Servo>(s: &mut S, cfg: &Cfg, ran: &mut Ran) -> Result<()> {
 /// sample read over the bus sits a few counts off the shaft's rest, since
 /// the read's own traffic rings the pot channel, and a goal that far from
 /// the estimate is a move the loop then makes.
-fn start_goal<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<i32> {
+pub(crate) fn start_goal<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<i32> {
     Ok(match cfg.mode {
         Mode::Position => (Poll::read(s)?.theta_hat_q16 + (1 << 15)) >> 16,
         Mode::Velocity | Mode::Current => 0,
@@ -1133,7 +1199,7 @@ fn start_goal<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<i32> {
 }
 
 /// A poll, judged.
-fn watch<S: Servo>(s: &mut S, wd: &mut Watchdog) -> Result<Poll> {
+pub(crate) fn watch<S: Servo>(s: &mut S, wd: &mut Watchdog) -> Result<Poll> {
     let p = Poll::read(s)?;
     if let Err(reason) = wd.poll(&p) {
         return trip(reason);
@@ -1141,7 +1207,7 @@ fn watch<S: Servo>(s: &mut S, wd: &mut Watchdog) -> Result<Poll> {
     Ok(p)
 }
 
-fn stopped() -> Result<()> {
+pub(crate) fn stopped() -> Result<()> {
     if STOP.load(std::sync::atomic::Ordering::SeqCst) {
         return trip("interrupted");
     }
@@ -1172,7 +1238,11 @@ const ACK_POLL_MS: u32 = 2;
 /// Torque on holding, then silence for 1.5 x the dead-man: an image that
 /// honors it has latched `deadman` and coasts, and the ack restarts it
 /// holding. Anything else turns torque off and is refused.
-fn check_deadman<S: Servo>(s: &mut S, cfg: &Cfg, lease: &mut Lease) -> Result<&'static str> {
+pub(crate) fn check_deadman<S: Servo>(
+    s: &mut S,
+    cfg: &Cfg,
+    lease: &mut Lease,
+) -> Result<&'static str> {
     let mut left = cfg.deadman_ms * 3 / 2;
     while left > 0 {
         stopped()?;
@@ -1368,9 +1438,17 @@ fn run_item<S: Servo>(
     on_seg(&seg)
 }
 
-/// The Position move to the middle, at the velocity limit in force, held
-/// until the shaft reads there or the bound runs out.
-fn center<S: Servo>(s: &mut S, cfg: &mut Cfg, lease: &mut Lease, at: i32) -> Result<()> {
+/// The Position move to `at`, at the velocity limit in force, the goal
+/// ahead of the mode change when the run's mode is another, held until the
+/// shaft reads within the deadband plus [`CENTER_TOL`] of it for
+/// [`CENTER_STILL`] polls or [`CENTER_POLLS`] run out: Ok(pos) there, Err(pos)
+/// where the bound left it, every poll judged.
+pub(crate) fn go_to<S: Servo>(
+    s: &mut S,
+    cfg: &mut Cfg,
+    lease: &mut Lease,
+    at: i32,
+) -> Result<Result<i32, i32>> {
     s.write(control::GOAL_POSITION, at)?;
     if cfg.mode != Mode::Position {
         s.write(control::MODE, Mode::Position.value())?;
@@ -1390,21 +1468,30 @@ fn center<S: Servo>(s: &mut S, cfg: &mut Cfg, lease: &mut Lease, at: i32) -> Res
             0
         };
         if still >= CENTER_STILL {
-            println!("center: {pos} counts (middle {at})");
-            return Ok(());
+            return Ok(Ok(pos));
         }
     }
-    eprintln!(
-        "warning: the shaft read {pos} counts, not within {tol} of the middle {at}, after {} s; \
-         torque goes off where it is",
-        CENTER_POLLS * POLL_MS / 1000
-    );
+    Ok(Err(pos))
+}
+
+/// The Position move to the middle; a shaft that does not get there is
+/// warned about, and torque goes off where it is.
+pub(crate) fn center<S: Servo>(s: &mut S, cfg: &mut Cfg, lease: &mut Lease, at: i32) -> Result<()> {
+    match go_to(s, cfg, lease, at)? {
+        Ok(pos) => println!("center: {pos} counts (middle {at})"),
+        Err(pos) => eprintln!(
+            "warning: the shaft read {pos} counts, not within {} of the middle {at}, after {} s; \
+             torque goes off where it is",
+            cfg.deadband as i32 + CENTER_TOL,
+            CENTER_POLLS * POLL_MS / 1000
+        ),
+    }
     Ok(())
 }
 
 /// CONFIG and the CONTROL lifecycle as the servo holds them, decoded by
 /// the descriptor.
-fn read_set<S: Servo>(s: &mut S) -> Result<serde_json::Value> {
+pub(crate) fn read_set<S: Servo>(s: &mut S) -> Result<serde_json::Value> {
     let id = s.id();
     let d = crate::state::descriptor(s.client(), id)?;
     let lifecycle = (
@@ -1446,7 +1533,7 @@ fn region<S: Servo>(s: &mut S, d: &Descriptor, (lo, hi): (u16, u16)) -> Result<s
 
 /// Turn torque off first, then keep what the item captured, then report
 /// where the run stopped.
-fn halt<S: Servo>(
+pub(crate) fn halt<S: Servo>(
     s: &mut S,
     lease: &mut Lease,
     seg: Option<usize>,
@@ -1487,6 +1574,7 @@ pub(crate) fn record<S: Servo>(
     };
     let anchor = unix_s() - s.now_ms() / 1000.0;
     let r = guard(s, |s| {
+        zero_inject(s, cfg)?;
         let goal0 = start_goal(s, cfg)?;
         s.write(control::MODE, cfg.mode.value())?;
         s.write(cfg.mode.goal(), goal0)?;
@@ -1895,7 +1983,11 @@ mod tests {
         ]);
         assert_eq!(a.schedule.len(), 3);
         assert_eq!(
-            (a.deadman_ms, a.current_cap_ms, a.no_center),
+            (
+                a.guarded.deadman_ms,
+                a.guarded.current_cap_ms,
+                a.guarded.no_center
+            ),
             (1000, 50, false)
         );
     }
@@ -1929,13 +2021,20 @@ mod tests {
         ]);
         assert_eq!(a.mode, Mode::Current);
         assert_eq!(a.goal_period_ms, Some(25.6));
-        assert_eq!((a.current_cap_ma, a.current_cap_ms), (Some(300.0), 20));
         assert_eq!(
-            (a.ntc_max_c, a.guard_lo, a.guard_hi),
+            (a.guarded.current_cap_ma, a.guarded.current_cap_ms),
+            (Some(300.0), 20)
+        );
+        assert_eq!(
+            (a.guarded.ntc_max_c, a.guarded.guard_lo, a.guarded.guard_hi),
             (Some(60.0), Some(-5), Some(3000))
         );
         assert_eq!(
-            (a.deadman_ms, a.deadman_check, a.no_center),
+            (
+                a.guarded.deadman_ms,
+                a.guarded.deadman_check,
+                a.guarded.no_center
+            ),
             (800, true, true)
         );
     }
@@ -2136,9 +2235,9 @@ mod tests {
         assert_eq!(goal, Some(&(control::GOAL_POSITION, 2025)));
     }
 
-    /// The dead-man goes out before torque on, the goal holds the present
-    /// position, the keepalive feeds it through a rest, and no write ever
-    /// asks for the stall permit.
+    /// The stimulus fields are zeroed first, the dead-man goes out before
+    /// torque on, the goal holds the present position, the keepalive feeds
+    /// it through a rest, and no write ever asks for the stall permit.
     #[test]
     fn the_deadman_leads_torque_on_and_the_permit_is_never_held() {
         let mut r = rig_at(2029, 0);
@@ -2163,8 +2262,9 @@ mod tests {
         );
         let deadman = (control::BUS_DEADMAN_TICKS, 20_000);
         assert_eq!(
-            r.writes[..4],
+            r.writes[..5],
             [
+                (control::INJECT, 0),
                 (control::MODE, 3),
                 (control::GOAL_POSITION, 2029),
                 deadman,
@@ -2190,14 +2290,48 @@ mod tests {
         );
         drive(&mut r, &mut c).2.unwrap();
         assert_eq!(
-            r.writes[..3],
+            r.writes[..4],
             [
+                (control::INJECT, 0),
                 (control::MODE, 2),
                 (control::GOAL_VELOCITY, 0),
                 (control::TORQUE_ENABLE, 1)
             ]
         );
         assert!(!r.writes.iter().any(|w| w.0 == control::BUS_DEADMAN_TICKS));
+    }
+
+    /// A stale stimulus never rides the run: both fields read 0 before
+    /// torque comes on, and a servo whose descriptor does not list them
+    /// gets no write there.
+    #[test]
+    fn the_stimulus_fields_are_zeroed_before_torque_when_listed() {
+        let mut r = rig_at(2029, 0);
+        r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.control.inject.inject_accel_q88 = 300;
+            t.control.inject.inject_half_periods = 20;
+        });
+        let mut c = cfg(&mut r, &["--mode", "velocity", "--schedule", "goal:300@20"]);
+        assert!(c.inject);
+        drive(&mut r, &mut c).2.unwrap();
+        let zero = r.writes.iter().position(|w| *w == (control::INJECT, 0));
+        let on = r
+            .writes
+            .iter()
+            .position(|w| *w == (control::TORQUE_ENABLE, 1));
+        assert!(zero.unwrap() < on.unwrap());
+        assert_eq!(reg_at(&mut r, control::INJECT_ACCEL_Q88), 0);
+        assert_eq!(reg_at(&mut r, control::INJECT_HALF_PERIODS), 0);
+
+        let mut r = rig_at(2029, 0);
+        let mut c = cfg(&mut r, &["--mode", "velocity", "--schedule", "goal:300@20"]);
+        c.inject = false;
+        drive(&mut r, &mut c).2.unwrap();
+        assert!(!r.writes.iter().any(|w| w.0.addr == control::INJECT.addr));
+        let mut d = crate::descriptor::builtin();
+        assert!(lists_inject(&d));
+        d.fields.retain(|f| f.name != "inject_half_periods");
+        assert!(!lists_inject(&d));
     }
 
     /// An image that honors the dead-man latches it in the silence and the
@@ -2440,6 +2574,32 @@ mod tests {
             wd.rows(&[under(0), under(1), row(2, 2029, 1700, true)], 2000)
                 .is_ok()
         );
+    }
+
+    /// A row with the observer's position and no pot is guarded on the
+    /// position, rounded to the count.
+    #[test]
+    fn rows_carrying_the_observer_are_guarded_on_it() {
+        let mut r = rig_at(2029, 0);
+        let c = cfg(&mut r, &["--mode", "velocity", "--schedule", "hold@20"]);
+        let row = |tick, th: i32| TelFrame {
+            tick,
+            theta_hat_q16: Some(th),
+            ..TelFrame::default()
+        };
+        assert!(
+            c.wd.rows(&[row(0, 3626 << 16), row(1, (3626 << 16) + 0x7fff)], 0)
+                .is_ok()
+        );
+        let e =
+            c.wd.rows(&[row(0, 2029 << 16), row(1, (3626 << 16) + 0x8000)], 0)
+                .unwrap_err();
+        assert!(
+            e.contains("the shaft at 3627 counts is outside the guard 432..3626 at row tick 1"),
+            "{e}"
+        );
+        let e = c.wd.rows(&[row(5, 431 << 16)], 0).unwrap_err();
+        assert!(e.contains("at 431 counts"), "{e}");
     }
 
     /// A burst that comes back short aborts with what it held.

@@ -106,6 +106,13 @@ pub struct TelFrame {
     pub ntc_raw: Option<u16>,
     /// The chip's 1.2 V reference against VDD (`vref_raw`).
     pub vref_raw: Option<u16>,
+    /// The medium-rate fields a row carries as last published: the
+    /// observer's position (cQ16) and speed (csQ16), the velocity loop's
+    /// reference (csQ16, protocol sec 5.6) and which estimate the speed is.
+    pub theta_hat_q16: Option<i32>,
+    pub omega_hat_cps: Option<i32>,
+    pub omega_ref_cps: Option<i32>,
+    pub omega_hat_src: Option<u8>,
 }
 
 /// One row of `chunks` at fast tick `tick`; `i_window_min_ticks` is the
@@ -118,6 +125,12 @@ pub fn decode_row(chunks: &Chunks, i_window_min_ticks: u16, row: &[u8], tick: u6
         let b = row.get(at..at + 2)?;
         Some(u16::from_le_bytes([b[0], b[1]]))
     };
+    let word = |r: Reg| {
+        let at = chunks.offset(r.addr, r.width as u16)?;
+        let b = row.get(at..at + 4)?;
+        Some(i32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    };
+    let byte = |r: Reg| row.get(chunks.offset(r.addr, r.width as u16)?).copied();
     let duty_counts = take(t::DUTY_TICKS).map(|v| v as i16);
     let valid = match (take(t::TICK_FLAGS), duty_counts) {
         (Some(flags), _) => flags & tick_flag::I_VALID != 0,
@@ -139,6 +152,10 @@ pub fn decode_row(chunks: &Chunks, i_window_min_ticks: u16, row: &[u8], tick: u6
         vbus_raw: take(t::VBUS_RAW),
         ntc_raw: take(t::NTC_RAW),
         vref_raw: take(t::VREF_RAW),
+        theta_hat_q16: word(t::THETA_HAT_Q16),
+        omega_hat_cps: word(t::OMEGA_HAT_CPS),
+        omega_ref_cps: word(t::OMEGA_REF_CPS),
+        omega_hat_src: byte(t::OMEGA_HAT_SRC),
     }
 }
 
@@ -324,6 +341,7 @@ mod tests {
             vbus_raw: sel(t::VBUS_RAW).then_some(s.vbus_raw),
             ntc_raw: sel(t::NTC_RAW).then_some(s.ntc_raw),
             vref_raw: sel(t::VREF_RAW).then_some(s.vref_raw),
+            ..TelFrame::default()
         }
     }
 
@@ -389,6 +407,60 @@ mod tests {
         let pos = Chunks::one(0x238, 2);
         let p = payload(pos, 0, true, 0, 1);
         assert!(!decode(pos, 0, &p)[0].window_valid, "no duty, no flags");
+    }
+
+    /// The margin row and the source check's row decode the medium-rate
+    /// fields at their table bytes: the observer's position and speed, the
+    /// velocity loop's reference and the speed's source.
+    #[test]
+    fn the_estimate_fields_decode_from_the_core_table() {
+        let table = ControlTableCell::new();
+        table.with_mut(|tb| {
+            tb.telemetry.estimates.theta_hat_q16 = -(1234 << 16) - 5;
+            tb.telemetry.estimates.omega_hat_cps = 742 << 16;
+            tb.telemetry_ext.inject.omega_ref_cps = -(757 << 16);
+            tb.telemetry.mode.omega_hat_src = 1;
+        });
+        let base = table.region_ptr().cast::<u8>();
+        let copy = |chunks: Chunks| -> Vec<u8> {
+            let mut out = Vec::new();
+            for c in chunks.0 {
+                for a in c.addr..c.addr + c.len {
+                    // SAFETY: a read of the local table inside a valid chunk.
+                    out.push(unsafe { base.add(a as usize).read() });
+                }
+            }
+            out
+        };
+        let margin = Chunks::two(
+            Chunk::new(t::THETA_HAT_Q16.addr, 8),
+            Chunk::new(t::OMEGA_REF_CPS.addr, 4),
+        );
+        let f = decode_row(&margin, 0, &copy(margin), 7);
+        assert_eq!(
+            (
+                f.theta_hat_q16,
+                f.omega_hat_cps,
+                f.omega_ref_cps,
+                f.omega_hat_src
+            ),
+            (
+                Some(-(1234 << 16) - 5),
+                Some(742 << 16),
+                Some(-(757 << 16)),
+                None
+            )
+        );
+        assert_eq!((f.pos, f.current), (None, None));
+        let source = Chunks::two(
+            Chunk::new(t::OMEGA_HAT_SRC.addr, 2),
+            Chunk::new(t::THETA_HAT_Q16.addr, 8),
+        );
+        let f = decode_row(&source, 0, &copy(source), 7);
+        assert_eq!(
+            (f.omega_hat_src, f.omega_hat_cps, f.omega_ref_cps),
+            (Some(1), Some(742 << 16), None)
+        );
     }
 
     #[test]

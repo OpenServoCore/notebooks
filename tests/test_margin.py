@@ -4,6 +4,8 @@ that answers a period late, a position gain around it, at the medium
 rate, driven as the firmware drives a margin sweep (a cruise and a
 triangle summed into the speed reference, the three values published a
 period and held over its ten rows)."""
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -198,3 +200,84 @@ def test_a_sweep_reads_the_same_from_its_folder(tmp_path):
     a, b = mg.read(bursts), mg.read(mg.load(tmp_path))
     for loop in mg.LOOPS:
         assert [p["L"] for p in a[loop]["points"]] == [p["L"] for p in b[loop]["points"]]
+
+
+def test_the_half_period_is_read_at_most_512():
+    facts = {"inject_half_periods": 600, "inject_accel_q88": 150}
+    assert mg.HALF_PERIODS_MAX == 512
+    assert mg.half_periods(facts) == 512
+    assert mg.half_periods({**facts, "inject_half_periods": 512}) == 512
+
+
+def test_two_gain_margins_agree_within_1_db_or_both_at_twice_the_floor():
+    assert 2 * mg.GM_FLOOR_DB == 12.0
+    assert mg.gm_agree(5.0, 5.9)
+    assert not mg.gm_agree(5.0, 6.1)
+    assert mg.gm_agree(12.0, 25.0)
+    assert not mg.gm_agree(11.9, 25.0)
+
+
+def test_two_seeds_repeat_and_gain_margins_apart_under_twice_the_floor_do_not():
+    a, b = mg.read(sweep(seed=1)), mg.read(sweep(seed=2))
+    band = {"speed": set(SPEED_BAND), "position": set(POSITION_BAND)}
+    r = mg.repeat(a, b, band)
+    for loop in mg.LOOPS:
+        assert r[loop]["ok"], (loop, r[loop])
+        # a point either sweep's two-cruise check flags is left out
+        seen = {p[0] for p in r[loop]["points"]}
+        assert seen <= band[loop] and len(seen) >= len(band[loop]) - 1, (loop, seen)
+    # gain margins 1.5 dB apart under twice the floor do not repeat; 3 dB
+    # apart over it do
+    def gm(result, db):
+        return {**result, "speed": {**result["speed"], "gm_db": db}}
+    r = mg.repeat(gm(a, 8.0), gm(b, 9.5), band)
+    assert r["speed"]["gm"][2] is False and not r["speed"]["ok"]
+    assert r["position"]["ok"]
+    assert mg.repeat(gm(a, 13.0), gm(b, 16.0), band)["speed"]["ok"]
+
+
+def test_two_cruises_of_the_speed_band_are_two_readings_and_the_second_cruise_a_check():
+    fast = 2 * CRUISE
+
+    def tagged(bursts, reading):
+        return [(rows, {**facts, "reading_cps": reading}) for rows, facts in bursts]
+    slow = tagged(sweep(), CRUISE)
+    quick = tagged([burst(n, fast, d) for n in SPEED_BAND for d in (1, -1)], fast)
+    result = mg.readings(slow + quick)
+    assert sorted(result) == [CRUISE, fast]
+    assert all(p["two_cruise"] is None and p["cruise_cps"] == fast for p in result[fast]["speed"]["points"])
+    flags = {p["half_periods"]: p["two_cruise"] for p in result[CRUISE]["position"]["points"]}
+    assert all(flags[n] is False for n in POSITION_BAND)
+    for p in result[fast]["speed"]["points"]:
+        ref = closed_form(p["half_periods"])[0]
+        assert abs(p["db"] - mg.db(ref)) < DB and abs(p["deg"] - mg.deg(ref)) < DEG
+    # facts with no reading_cps are one reading, as before
+    assert list(mg.readings(sweep())) == [None]
+
+
+FIXTURE = Path(__file__).parent / "margin_osc_lab"
+
+
+def test_a_burst_osc_labs_own_writer_wrote_reads_its_rigs_plant():
+    """The folder `osc-lab`'s writer wrote for its test rig's plant
+    (`margin::tests::the_writer_writes_the_fixture_the_estimator_reads`,
+    which fails when the writer drifts from these files): the observer's
+    speed half the reference's departure from the cruise a period late and
+    its position the speed's sum, so L_v = (z^-1 / 2) / (1 - z^-1 / 2) and
+    L_p = kp z^-2 / (2 fm (1 - z^-1))."""
+    bursts = mg.load(FIXTURE)
+    assert len(bursts) == 1
+    rows, facts = bursts[0]
+    assert set(mg.FACTS) <= set(facts) and facts["reading_cps"] == facts["cruise_cps"]
+    assert mg.bands(bursts) == {"speed": {facts["inject_half_periods"]}}
+    result = mg.readings(bursts)
+    assert list(result) == [facts["cruise_cps"]]
+    n = facts["inject_half_periods"]
+    z1 = np.exp(-1j * np.pi / n)
+    lv = 0.5 * z1 / (1 - 0.5 * z1)
+    lp = facts["p_kp_q88"] / 256 * 0.5 * z1 ** 2 / (mg.PERIOD_HZ * (1 - z1))
+    for loop, want in (("speed", lv), ("position", lp)):
+        (p,) = result[facts["cruise_cps"]][loop]["points"]
+        assert p["half_periods"] == n and p["cycles"] == facts["cycles"] and p["dropped"] == 0
+        assert abs(p["db"] - mg.db(want)) < 0.05, loop
+        assert abs(p["deg"] - mg.deg(want)) < 0.5, loop

@@ -4,7 +4,7 @@ observer's position, the loop's speed and the summed reference. From
 those three, the open-loop gain of the speed loop and of the position
 loop per frequency, and each loop's gain and phase margin.
 
-  uv run python -m oscnb.margin <sweep folder>
+  uv run python -m oscnb.margin <sweep folder> [<second sweep folder>]
 
 A sweep is one folder, `telemetry/<pair>/margin/capture-N/`, and a burst
 a pair of files in it, numbered from 0 in capture order:
@@ -21,7 +21,9 @@ a pair of files in it, numbered from 0 in capture order:
   c/s) and `direction` (+1 or -1, the goal's sign), the CONFIG field
   `p_kp_q88`, and the row stream's losses over the burst, `rows_dropped`
   (the servo's `tel_drop_count`) and `seq_holes` (frames missing from
-  `stream_seq`). Keys beyond these are the tool's and are not read here.
+  `stream_seq`). `reading_cps`, where present, is the cruise of the
+  reading the burst belongs to: its own cruise, or the one a two-cruise
+  check checks. Other keys are the tool's and are not read here.
 
 The method. A burst's rows become periods, one row a period at a whole
 number of periods from its first row once the tick is unwrapped. The
@@ -49,6 +51,17 @@ there as -20 log10(-Re L) (the speed loop), or, where its gain there is
 too far down to read (the position loop), is reported as over the
 smallest -|L| of the points above its crossover whose phase is under
 BOUND_DEG.
+
+A sweep holds one reading a `reading_cps` (one in all where the facts
+carry none): the speed band run at a slow and a fast cruise is two
+readings, each read on its own, and the position band at the second
+cruise is a check of the first. Two sweeps of one servo repeat where
+every point of a loop's band (the bursts' `band` facts) that neither flags differs by at most REPEAT_DB and
+REPEAT_DEG, the phase margins by at most REPEAT_PM_DEG, and the gain
+margins by at most REPEAT_DB or both read at least twice GM_FLOOR_DB:
+the gain margin decides a GM_FLOOR_DB floor, and at twice the floor two
+readings' scatter cannot change that verdict. A margin only one of the
+two read is reported and not judged.
 """
 import argparse
 import json
@@ -64,10 +77,14 @@ PERIOD_HZ = TICK_HZ / PERIOD_TICKS
 TICK_WRAP = 1 << 16
 Q16 = 1 << 16
 HEAD_S = 0.2                # the loop settling on the stimulus at a burst's start
-HALF_PERIODS_MAX = 256      # the firmware reads `inject_half_periods` at most this
+HALF_PERIODS_MAX = 512      # the firmware reads `inject_half_periods` at most this
 AGREE_DB = 1.0              # the two-cruise check
 AGREE_DEG = 10.0
 BOUND_DEG = -170.0
+REPEAT_DB = 1.0             # two sweeps: a point and the gain margins
+REPEAT_DEG = 10.0           # a point
+REPEAT_PM_DEG = 5.0         # the phase margins
+GM_FLOOR_DB = 6.0           # the gain margin a loop is accepted on
 COLUMNS = ("tick", "theta_hat_q16", "omega_hat_cps", "omega_ref_cps")
 FACTS = ("inject_half_periods", "inject_accel_q88", "cruise_cps", "direction", "p_kp_q88", "rows_dropped",
          "seq_holes")
@@ -233,6 +250,63 @@ def read(bursts):
     return out
 
 
+def readings(bursts):
+    """{reading_cps: read of its bursts} of a sweep's bursts, None the key
+    of bursts whose facts carry no `reading_cps`."""
+    groups = {}
+    for rows, facts in bursts:
+        groups.setdefault(facts.get("reading_cps"), []).append((rows, facts))
+    return {k: read(v) for k, v in groups.items()}
+
+
+def gm_agree(a, b):
+    """Two gain margins, dB, agree: within REPEAT_DB, or both at least
+    twice GM_FLOOR_DB."""
+    return abs(a - b) <= REPEAT_DB or min(a, b) >= 2 * GM_FLOOR_DB
+
+
+def bands(bursts):
+    """{loop: its band's half-periods} from the bursts' `band` facts, None
+    where the facts carry none."""
+    out = {}
+    for _, facts in bursts:
+        if "band" not in facts:
+            return None
+        out.setdefault(facts["band"], set()).add(half_periods(facts))
+    return out
+
+
+def repeat(one, two, band=None):
+    """{loop: the checks} of two reads of one reading: each point of the
+    loop's band (`band`, as `bands` gives it; every point without it) both
+    read and neither flagged, (N, dB apart, deg apart, within the bounds);
+    the phase and gain margins of each and whether they agree, None where
+    one of the two read none; and `ok`, nothing that both read disagrees."""
+    out = {}
+    for loop in LOOPS:
+        a, b = one[loop], two[loop]
+        by_n = {p["half_periods"]: p for p in b["points"]}
+        points = []
+        for p in a["points"]:
+            q = by_n.get(p["half_periods"])
+            if band is not None and p["half_periods"] not in band.get(loop, ()):
+                continue
+            if q is None or True in (p["two_cruise"], q["two_cruise"]) \
+                    or not (np.isfinite(p["L"]) and np.isfinite(q["L"])):
+                continue
+            d_db = abs(p["db"] - q["db"])
+            d_deg = abs((p["deg"] - q["deg"] + 180) % 360 - 180)
+            points.append((p["half_periods"], float(d_db), float(d_deg),
+                           bool(d_db <= REPEAT_DB and d_deg <= REPEAT_DEG)))
+        pm = None if a["pm_deg"] is None or b["pm_deg"] is None else \
+            bool(abs(a["pm_deg"] - b["pm_deg"]) <= REPEAT_PM_DEG)
+        gm = None if a["gm_db"] is None or b["gm_db"] is None else bool(gm_agree(a["gm_db"], b["gm_db"]))
+        out[loop] = {"points": points, "pm": (a["pm_deg"], b["pm_deg"], pm),
+                     "gm": (a["gm_db"], b["gm_db"], gm),
+                     "ok": all(p[3] for p in points) and pm is not False and gm is not False}
+    return out
+
+
 def load(folder):
     """Every burst of a sweep folder in capture order, each (rows, facts)."""
     out = []
@@ -269,8 +343,22 @@ def table(result, file=None):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m oscnb.margin", description=__doc__.split("\n\n")[0])
     ap.add_argument("folder", help="a sweep's folder of burst-K.csv and burst-K.json")
+    ap.add_argument("second", nargs="?", help="a second sweep of the same servo, checked against the first")
     a = ap.parse_args(argv)
-    table(read(load(a.folder)))
+    first = load(a.folder)
+    one = readings(first)
+    two = readings(load(a.second)) if a.second else {}
+    for cruise, result in one.items():
+        if cruise is not None:
+            print(f"reading at {cruise} c/s")
+        table(result)
+        if cruise in two:
+            for loop, r in repeat(result, two[cruise], bands(first)).items():
+                worst_db = max((p[1] for p in r["points"]), default=0.0)
+                worst_deg = max((p[2] for p in r["points"]), default=0.0)
+                print(f"{loop} loop against the second sweep: {'repeats' if r['ok'] else 'does not repeat'} "
+                      f"(worst point {worst_db:.2f} dB, {worst_deg:.1f} deg; phase margins agree "
+                      f"{r['pm'][2]}, gain margins agree {r['gm'][2]})")
 
 
 if __name__ == "__main__":

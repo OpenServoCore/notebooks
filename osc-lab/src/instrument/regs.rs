@@ -98,6 +98,13 @@ pub mod control {
     pub const CHUNK0_ADDR: Reg = reg(0x01e2, 2);
     /// Nonzero only while a burst is armed or streaming.
     pub const TEL_COUNT: Reg = reg(0x01ea, 2);
+    /// The loop-margin stimulus (protocol sec 5.6): the triangle's slope,
+    /// Q8.8 c/s per medium period, and its half-period, medium periods; 0
+    /// in either is off. Volatile, and the servo never clears them.
+    pub const INJECT_ACCEL_Q88: Reg = reg(0x01ec, 2);
+    pub const INJECT_HALF_PERIODS: Reg = reg(0x01ee, 2);
+    /// Both stimulus fields, slope low: one write sets or zeroes them.
+    pub const INJECT: Reg = reg(0x01ec, 4);
 }
 
 /// BURST readback section, all RO. One READ of `PAGE_ECHO..=RESTORE_DIR` is
@@ -165,6 +172,9 @@ pub mod telemetry {
     /// TEL rows the servo dropped because both stream buffers were waiting
     /// for the wire; wraps.
     pub const TEL_DROP_COUNT: Reg = reg(0x03c6, 2);
+    /// The velocity loop's reference as it reads it, csQ16; 0 on an image
+    /// that carries no stimulus.
+    pub const OMEGA_REF_CPS: Reg = reg(0x03d0, 4);
 }
 
 #[cfg(test)]
@@ -254,6 +264,9 @@ mod tests {
         ("limit_flags", telemetry::LIMIT_FLAGS),
         ("window_floor_q15", telemetry::WINDOW_FLOOR_Q15),
         ("tel_drop_count", telemetry::TEL_DROP_COUNT),
+        ("inject_accel_q88", control::INJECT_ACCEL_Q88),
+        ("inject_half_periods", control::INJECT_HALF_PERIODS),
+        ("omega_ref_cps", telemetry::OMEGA_REF_CPS),
     ];
 
     #[test]
@@ -266,5 +279,10 @@ mod tests {
             assert_eq!(f.addr, reg.addr, "{name} addr");
             assert_eq!(f.width, reg.width as u16, "{name} width");
         }
+        assert_eq!(control::INJECT.addr, control::INJECT_ACCEL_Q88.addr);
+        assert_eq!(
+            control::INJECT.addr + control::INJECT.width as u16,
+            control::INJECT_HALF_PERIODS.addr + control::INJECT_HALF_PERIODS.width as u16
+        );
     }
 }
