@@ -280,6 +280,17 @@ moves the protection fields of one step only
 [of record, deviated]. The deviation files of the ladder are in
 [scorecard/deviations/](scorecard/deviations), for example
 `--deviation stages/5-closed-loop/scorecard/deviations/hold-band-8.json`.
+A file there that the set of record has overtaken is history. Its
+holds are released in the set of record, or the literal it pins is
+what the set's rule binds now, so `build --deviation` refuses it, the
+field named as not held or the file as moving nothing: `motor-r.json`,
+`motor-model.json`, `friction-measured.json` and the seven
+`protection-*.json` files, each the release of one protection step
+as it was written before the set of record took the step. Each stays
+as it was written, `motor-model.json` the file two rungs of record
+ran, and no rung runs on one again; a result that names one keeps its
+sha1 and the fields it moved. One test names the ten and holds every
+other file to a build.
 A deviation that pins a field the servo's image does not have is
 refused by the install, the field named, before anything is written.
 
@@ -423,11 +434,18 @@ its fields, and the reason and the need of the ones with none.
 
 Every verb prints the count per class, and the count of fields with no
 source whose value is per position count, which were fitted at a scale
-nothing recorded. On mg90-d with board D the set holds 62 fields: 4
-measured, 10 bench, no datasheet, 18 policy and 30 with no source. Of
-the 30, 28 are held beside what a result or a decision on record gives
-and wait for a release or a protection step, and two are the
-observer's gains, bound at a bandwidth nobody decided. The
+nothing recorded. On mg90-d with board D the set holds 62 fields: 17
+measured, 10 bench, no datasheet, 26 policy and 9 with no source. Of
+the 9, six are bound at a bandwidth nobody decided, the current loop's
+three gains and the observer's three, and a sweep rung picks each
+bandwidth. Two are the limits of motion, held at the boot default's
+counts until a sweep under the speed ceiling picks them. One is the
+breakaway record, held at a zero never written because no result on
+record is its quantity (below). Every other field whose rule gives
+another value than the servo held is bound at the rule's value: a
+constant with a source replaces one the board happened to hold, on
+principle, and a scorecard row that loses by it is an open item on
+top of it, not a reason to keep the old value. The
 bench fields are the four loop gains of rung `01b-gains-3hz-50hz`,
 the stops, the drive's sign and the gear class. The stops are a hand
 reading of 2026-11-05, kept as a dated file beside the set that says of
@@ -561,7 +579,7 @@ every rule to it.
 | `i_kaw_q412` | its anti-windup gain, twice the integral gain | the same | no |
 | `r0_q12` | the cold resistance, the rails fit taken to 25 C along copper's slope | the stage 3 resistance and the board temperature that result states | no |
 | `ke_uvs_per_rad` | Ke, uV s/rad | the stage 3 ladder | no |
-| `fric_breakaway_counts` | the static friction as a current, Ts / Ke x shunt counts per A | the stage 3 static friction, measured with the load on the horn | no |
+| `fric_breakaway_counts` | the static friction as a current, Ts / Ke x shunt counts per A | the stage 3 static friction, back-driven with the load on the horn, which is not the field's quantity: held (below) | no |
 | `vdd_mv` | the chip's supply, mV | the stage 1 terminal chain's `vdd_v` | no |
 
 Each rule names in the module the firmware function that uses its
@@ -573,7 +591,10 @@ choice. It is one nobody has made: 15 Hz is an old tool's default
 target, listed under `undecided`, so the gains bound at it have no
 source. A deviation's `observer_hz` moves them: 10 Hz gives 5894, 1446
 and 25 for `l1_q016`, `l2_q88` and `l3_q88`, 15 Hz 8640, 3180 and 84,
-25 Hz 13757, 8433 and 371, the last of each with its hold released.
+25 Hz 13757, 8433 and 371. The two ends are deviation files,
+[observer-10hz.json](scorecard/deviations/observer-10hz.json) and
+[observer-25hz.json](scorecard/deviations/observer-25hz.json), points
+of the sweep that picks the bandwidth.
 
 The current loop's three gains are that file's placement too. The
 proportional gain cancels the winding's electrical pole, w L, the
@@ -582,19 +603,32 @@ gain is twice the integral one, with L and R in counts through the
 measured stage 1 scales. The bandwidth is the policy's
 `current_loop_hz`, 1 kHz, the old tool's default target, listed under
 `undecided`: a sweep rung picks it. On this motor's 0.82 mH and
-4.18 ohm the rules give 289, 1176 and 2352, where the servo holds 275,
+4.18 ohm the rules give 289, 1176 and 2352, where the servo held 275,
 1580 and 3160, an old identification fit of another servo. The three
-are held together. A deviation's `current_loop_hz` moves them in
-proportion: 144, 588 and 1176 at 500 Hz, 433, 1764 and 3528 at 1.5 kHz.
+are bound at the placement, with no source while the bandwidth is
+undecided. A deviation's `current_loop_hz` moves them in
+proportion: 144, 588 and 1176 at 500 Hz, 433, 1764 and 3528 at 1.5 kHz,
+the deviation files
+[current-loop-500hz.json](scorecard/deviations/current-loop-500hz.json)
+and
+[current-loop-1500hz.json](scorecard/deviations/current-loop-1500hz.json).
+[current-gains-as-held.json](scorecard/deviations/current-gains-as-held.json)
+pins the three at the old fit, for the A/B of the placement against
+it.
 
 Four fields are records a host keeps on the servo, which the kernel
 never reads: the cold resistance `r0_q12`, the back-EMF constant
 `ke_uvs_per_rad`, the static friction `fric_breakaway_counts` and the
 chip's supply `vdd_mv`. Their rules give 3725, 1159, 97 and 3293, where
-the servo holds three zeros never written and the board's nominal
+the servo held three zeros never written and the board's nominal
 3300. The cold resistance is the rails fit, 4.177 ohm at the 26.26 C
-its result states, taken to the 25 C the field is stated at. The four
-are held together, for a release of their own.
+its result states, taken to the 25 C the field is stated at. Three of
+the four are bound at what their rules give. The breakaway is not: the
+field means the current at which a driven ramp first moves the horn,
+and the static friction on record is the back-driven one, measured
+with the load arm on the horn. So the field stays held at its zero,
+with no source, the 97 beside it as what the rule would give, until a
+driven-ramp breakaway capture gives a result it can bind to.
 
 The resistance is on record four ways in stage 3, each a rule:
 `rails_fit`, the fit over three rails with the edge lags at stage 1's
@@ -615,31 +649,53 @@ under `held`, what its rule gives beside it as `would_be` and the
 results the rule read still listed, so the set shows what the record
 gives next to what the servo holds and moves nothing. A held field the
 set never held stays out of
-it, and `build` says so with what its rule gives. The fields of the
-motor block whose rule gives another value than the servo holds are
-held, each to move on a rung of its own: the back-EMF pair, `r_q12`
-and `recip_ke_q`, which a replay reads worse on an estimator without
-the on-time term; the Coulomb term, benched alone as
+it, and `build` says so with what its rule gives. Four holds are left:
+the two limits of motion, the breakaway record, and `r_bemf_q12`, held
+because no image has the field yet. A value held from before the set
+existed is still counted as at an unknown scale where it is per count.
+
+The fields of the motor block whose rule gives another value than the
+servo held were each held to move on a rung of its own: the back-EMF
+pair, `r_q12` and `recip_ke_q`, which a replay reads worse on an
+estimator without the on-time term; the Coulomb term, benched alone as
 `08a-friction-measured` and not kept; and `b_i_q313`, `j_ff_q88` and
-`l3_q88`, whose stored values sit inside their rules' bands.
-`r_bemf_q12` is held because no image has the field yet. `l1_q016` and
-`l2_q88` bind: their rules give what the servo holds. `fric_fv_q016`
-and `ke_vpc_q` bind at what their rules give, 812 and 315 where the
-servo held 289 and 355, the two stored values of the block outside
-their rule's band: their release was benched on the saved set and
-kept (below). A value held from before the
-set existed is still counted as at an unknown scale where it is per
-count.
+`l3_q88`, whose stored values sit inside their rules' bands. Those
+holds are released, and with the current loop's gains and the host's
+records the set binds each at what its rule gives:
+
+| field | the servo held | the set binds | class |
+|---|---|---|---|
+| `r_q12` | 4541 | 3744 | measured |
+| `recip_ke_q` | 11817 | 13315 | measured |
+| `b_i_q313` | 2657 | 2434 | measured |
+| `j_ff_q88` | 789 | 862 | measured |
+| `l3_q88` | 77 | 84 | none: the observer's bandwidth is undecided |
+| `fric_fc_counts` | 100 | 54 | measured |
+| `i_kp_q88`, `i_ki_q412`, `i_kaw_q412` | 275, 1580, 3160 | 289, 1176, 2352 | none: the loop's bandwidth is undecided |
+| `r0_q12`, `ke_uvs_per_rad`, `vdd_mv` | 0, 0, 3300 | 3725, 1159, 3293 | measured |
+
+`l1_q016` and `l2_q88` bind at the values the servo held, which their
+rules give. `fric_fv_q016` and `ke_vpc_q` bind at what their rules
+give, 812 and 315 where the servo held 289 and 355, the two stored
+values of the block outside their rule's band: their release was
+benched on the saved set and kept (below).
+[plant-as-held.json](scorecard/deviations/plant-as-held.json) pins
+the twelve fields of the table at what the servo held, the values the
+reference rung `14a-set-of-record` ran on, so one deviation is the
+plant as it was: the A/B of the constants of record against the ones
+they replaced.
 
 A rung releases a hold with a deviation: `"release": [field, ...]`
 names held fields, and the derived set binds each at what its rule
 gives, `rung.json` showing it as [of record, deviated] like any field
 a deviation moves. Nothing else of the policy is restated, and the
 other holds stand. A release of a field that is not held is refused,
-as is one whose rule has no value to bind. The releases of record are
-[motor-model.json](scorecard/deviations/motor-model.json), the model
-gain, the inertia feedforward and the observer's disturbance gain, and
-[motor-r.json](scorecard/deviations/motor-r.json), `r_q12` alone.
+as is one whose rule has no value to bind. The releases benched so far
+were [motor-model.json](scorecard/deviations/motor-model.json), the
+model gain, the inertia feedforward and the observer's disturbance
+gain, and [motor-r.json](scorecard/deviations/motor-r.json), `r_q12`
+alone. The set of record has released those holds itself, so the two
+files no longer build ([Running it](#running-it)).
 
 The first release benched was the block outside the back-EMF pair and
 the Coulomb term, five fields together, against the saved set of
@@ -657,23 +713,33 @@ their rule's band, against `b_i_q313`, `j_ff_q88` and `l3_q88`, the
 three inside it. No row was worse on either half in both sets, the
 1 % ramp's duty rms among them (9.49 against 9.30 and 9.32 %, 9.65
 against 9.74 and 9.14 %), so the first step's row did not repeat on
-either half. The first half binds. The second stays held: its values
-are inside their bands, so the record does not tell them from the
-stored ones, and its reversal rows leaned up, each apart in one set
-(the 60 degree move's 498 against 528 a second in the first set, the
-1 % ramp's 156 against 186 and the 10 % ramp's 416 against 514 in the
-second). The 20 degree landing ran its hold out hunting, a settle
+either half. The first half was bound on that result. The second
+stayed held then: its values are inside their bands, so the record
+does not tell them from the stored ones, and its reversal rows leaned
+up, each apart in one set (the 60 degree move's 498 against 528 a
+second in the first set, the 1 % ramp's 156 against 186 and the 10 %
+ramp's 416 against 514 in the second). It is bound now with the rest
+of the block, on the principle above, and those reversal rows are an
+open item on top of it. The 20 degree landing ran its hold out hunting, a settle
 over 1000 ms, in 3 of 6 runs of the first step's released side and
 none of its control's, and in the split in 2 of 6 runs of the control
 itself, 2 of 6 of the first half and 1 of 6 of the second: it lands on
 a stuck code's gap and flips from run to run on the set of record
 alone.
 
-Every protection field has a rule. The NTC curve's and the winding
-model's are held, so the set shows what the record gives beside what
-protects the servo now, and so are the screens and the supply terms
-whose decision is another value than the servo holds (below); the
-current limits', the thermal limit's and the rest are bound.
+Every protection field has a rule, and every one is bound. The
+current limits, the thermal limit and the decisions the servo already
+held were bound first. The rest came
+in seven protection steps, one build a step with `--protection`
+naming the step's fields and nothing of the plant moving: the NTC
+curve's three words, the winding model's four fields, the
+position-error screen's angle and time, the sensor screen, the
+undervolt floor, the rail fold and the stall response. Each is said
+below with what the servo held before it. A servo that still stores
+the set from before these steps, set `297f3cb4a544`, differs from the
+set of record in those thirteen fields and in the twelve of the plant
+above, and an install on it names the thirteen (below, after the
+undervolt floor).
 
 The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
@@ -686,9 +752,10 @@ effects are taken out. The result's `refit_*` curve and its
 fitted beta are fits against a thermocouple shown to read low and are
 not design constants. `ntc_raw_ref` is the count that result names for
 its design curve (`design_raw_ref`), 2048, which is also the count the
-servo holds, so it binds as it stands. The other three words are held:
-the servo holds another curve, the host's
-tangent form about 25 C. What each reads on the bench board, through
+servo held, so it bound as it stood. The other three words are bound
+as one protection step, in place of the curve the servo held and
+stored, the host's tangent form about 25 C. What each reads on the
+bench board, through
 the kernel's own conversion and with the part's nominal equation as
 the truth:
 
@@ -737,18 +804,19 @@ node the family's, of class `policy` until a lock hold measures this
 motor's. The policy's `winding_plateau_reading` names the reading of
 the plateau the two rises take, and it is `high`, the owner's decision:
 of the two readings it alone reads at least as hot as what the servo
-holds in every case computed. The rules give 2 / 434 / 129 / 1274, and
+held in every case computed. The rules give 2 / 434 / 129 / 1274, and
 the kernel runs the two leaks at 2.048 and 131.072 s (the rounding as
 firmware 08c7beaf has it, mirrored in `oscnb.winding`). The four are
-held, so the set keeps the servo's one node on the slow leak, 115 /
-1143 / 0 / 0, until a bench session installs
-[protection-winding-model.json](scorecard/deviations/protection-winding-model.json).
-No direction field by field says what that step does, so its build and
-its install print what the estimate reads over the board NTC under the
-four held and under the four wanted, by the kernel's integers: a hold
+bound as one protection step, in place of the one node on the slow
+leak the servo held, 115 / 1143 / 0 / 0.
+No direction field by field says what that step does, so an install
+on a servo that holds another four prints what the estimate reads
+over the board NTC under the servo's four and under the set's, by the
+kernel's integers: a hold
 from rest at the continuous current and at the limit, the rest after
 it, four duty cycles, and whether the wanted four read at least as hot
-in every case. The install still names all four as `--protection`, and
+in every case. Over the four the servo held they do, in every case.
+The install still names all four as `--protection`, and
 the two leaks, which are judged, and the fast rise, which falls, as
 `--loosen` too.
 
@@ -795,11 +863,12 @@ model's four a third and the position-error screen's angle and time a
 fourth, a protection field in none is a step alone, and a
 release of one field of a step releases every held field of it, so no
 curve of two fits, no limits at two scales, no model of two halves and
-no screen of one decision and one default are built. The NTC curve's
-step of record is
-[protection-ntc-curve.json](scorecard/deviations/protection-ntc-curve.json).
-Its install names every field it moves as `--protection` and again as
-`--loosen`: the curve's words are judged. The current limits' step
+no screen of one decision and one default are built. A build of the
+set of record takes a step the same way, its fields named together
+with `--protection`. An install of the NTC curve's step on a servo
+that holds the stored curve names the three words it moves as
+`--protection` and again as `--loosen`: the curve's words are judged.
+The current limits' step
 was installed the same way, the continuous current judged and the
 other three moving up.
 
@@ -817,7 +886,7 @@ raw pot's mid travel scale, to four figures, the firmware's boot
 defaults, which are round in counts (1500 count/s, reached in 50 ms).
 The two screens are decided.
 
-| field | the kernel's use | policy | the servo holds | which is, on the table | the rule gives |
+| field | the kernel's use | policy | the servo held | which is, on the table | the rule gives |
 |---|---|---|---|---|---|
 | `velocity_limit_cps` | the cap of the profile's speed and of the position loop's command, count/s | 79.31 deg/s | 1500 | 74.53 deg/s | 1596 |
 | `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 1586 deg/s^2 | 3840 | 1491 deg/s^2 | 4086 |
@@ -825,19 +894,28 @@ The two screens are decided.
 | `pos_error_counts` | the profile less the estimate, over this for the error time, faults; counts | 9.9 deg | 400 | 19.87 deg | 199 |
 
 The two limits of motion are of the plant, held and undecided, interim:
-a bench sweep under the speed ceiling picks the default, and they move
-together on a rung,
-[motion-limits.json](scorecard/deviations/motion-limits.json): the
-acceleration limit was typed as the speed limit reached in 50 ms. The
+the set keeps the 1500 and the 3840 the servo holds, a bench sweep
+under the speed ceiling picks the default, and they move together on
+a rung. [motion-limits.json](scorecard/deviations/motion-limits.json)
+releases the two at the policy's entries: the acceleration limit was
+typed as the speed limit reached in 50 ms. Two points of the sweep
+keep that 50 ms:
+[motion-200.json](scorecard/deviations/motion-200.json), 200 deg/s
+and 4000 deg/s^2, 4025 and 10305 as the fields hold them, and
+[motion-400.json](scorecard/deviations/motion-400.json), 400 deg/s
+and 8000 deg/s^2, 8051 and 20610. 400 deg/s is the speed ceiling
+itself, so its 8051 counts are the ceiling's and pass; a deg/s more is
+refused. The
 stall speed is decided at the speed its counts are on the set's count,
 24.84 deg/s, four times the speed noise of a still shaft. Its rule
-then gives the 500 the servo holds, so it binds, of class `policy`, at
-a scale that is on record, and has no step. The position-error screen
+then gives the 500 the servo held, so it bound as it stood, of class
+`policy`, at a scale that is on record, and had no step. The
+position-error screen
 is decided at 9.9 deg, twice the worst healthy following error on
 record, 4.4 deg on a free horn, interim until the load arm confirms
-it. That is 199 counts on the set's count where the servo holds 400,
-so the field is held, and moves with the screen's time as one
-protection step (below).
+it. That is 199 counts on the set's count where the servo held 400,
+so the field moved, with the screen's time, as one protection step
+(below).
 
 Three more fields are counts of position and move with no table. The
 soft limits are positions: `osc cal` typed them a sixteenth of the
@@ -866,9 +944,9 @@ counts is a decision, said under `why`. The band at 8
 counts, over half the train's play, stays a pin of its own deviation.
 The sensor screen is the policy's `sensor_delta_max_counts`, raw
 counts between two MEDIUM samples. It is decided at 64, twice the worst
-healthy step of the pot on 5 V, 32 counts, where the servo holds the
-boot default's 256: the band binds, and the screen is held at 256
-until its protection step is installed.
+healthy step of the pot on 5 V, 32 counts, where the servo held the
+boot default's 256: the band bound as it stood, and the screen is
+bound at 64 by a protection step of its own.
 
 The other screens, the supply terms and the open loop's two choices
 each have a policy entry in the unit a person sets it in, its reason
@@ -887,19 +965,20 @@ decision is the value the servo holds, the field binds, of class
 | `openloop_decay` | `openloop_decay` slow | Slow | the off-time brake: smooth current, torque in proportion to duty |
 | `openloop_zero_brake` | `openloop_zero_brake` off | off | zero duty coasts in open loop, which calibration relies on |
 
-Where the decision is another value, the field is held at the servo's
-with the decision's beside it, until a bench session installs its
-protection step:
+Where the decision is another value than the servo held, a protection
+step of its own bound the field at the decision's, one build a step.
+The last column is what an install names on a servo that still holds
+the old value:
 
-| field | policy | the servo holds | the rule gives | step | its install names |
-|---|---|---|---|---|---|
-| `stall_response` | `stall_response` yield | Fault | Yield | [protection-stall-response.json](scorecard/deviations/protection-stall-response.json) | `--protection` and `--loosen`: judged |
-| `pos_error_counts`, `pos_error_time_ticks` | `pos_error_deg` 9.9, `pos_error_time_ms` 100 | 400, 10000 | 199, 2000 | [protection-position-error.json](scorecard/deviations/protection-position-error.json) | `--protection`: both protect more |
-| `sensor_delta_max` | `sensor_delta_max_counts` 64 | 256 | 64 | [protection-sensor-delta.json](scorecard/deviations/protection-sensor-delta.json) | `--protection`: it protects more |
-| `v_undervolt_counts` | `v_undervolt_v` 3.70 | 720 | 922 | [protection-undervolt.json](scorecard/deviations/protection-undervolt.json) | `--protection`: it protects more |
-| `rail_fold_q8` | `rail_source_ohm` 0.8 | 1430 | 1467 | [protection-rail-fold.json](scorecard/deviations/protection-rail-fold.json) | `--protection` and `--loosen`: judged |
+| field | policy | the servo held | the set binds | its install names |
+|---|---|---|---|---|
+| `stall_response` | `stall_response` yield | Fault | Yield | `--protection` and `--loosen`: judged |
+| `pos_error_counts`, `pos_error_time_ticks` | `pos_error_deg` 9.9, `pos_error_time_ms` 100 | 400, 10000 | 199, 2000 | `--protection`: both protect more |
+| `sensor_delta_max` | `sensor_delta_max_counts` 64 | 256 | 64 | `--protection`: it protects more |
+| `v_undervolt_counts` | `v_undervolt_v` 3.70 | 720 | 922 | `--protection`: it protects more |
+| `rail_fold_q8` | `rail_source_ohm` 0.8 | 1430 | 1467 | `--protection` and `--loosen`: judged |
 
-A blocked horn then yields: the current limit folds to the continuous
+A blocked horn now yields: the current limit folds to the continuous
 current and the servo recovers on the next command, as the Feetech
 class does, with the 90 C cutoff as the backstop. The position error's
 100 ms is a time a healthy error never holds, and it catches a reversed
@@ -907,10 +986,11 @@ motor before it reaches a stop; it is interim with the angle, and the
 two are one step. The rail fold's slope is the shunt counts a rail
 count of sag gives through the source the policy designs for, 0.8 ohm,
 a soft supply such as a battery on a long lead; a stiffer setting
-protects less, and it never acts on the 5 V bench supply. The servo's
-1430 is that source through the board's nominal parts. Through the
-measured counts per amp and rail counts per volt the same source is
-1467, a steeper slope, which folds later, so the field is held.
+protects less, and it never acts on the 5 V bench supply. The 1430 the
+servo held is that source through the board's nominal parts. Through
+the measured counts per amp and rail counts per volt the same source
+is 1467, a steeper slope, which folds later, so its install is judged
+and named to loosen.
 
 The undervolt floor stands on a bench record, the rail walk of
 2026-11-14, kept as a dated file beside the set with its rows under
@@ -920,13 +1000,31 @@ to a supply of 3.70 V the chip's supply, which is the ADC's reference,
 holds, and the rail reading follows the rail. Under it the chip's
 supply follows the rail down and the reading stops: 860 to 861 counts
 at the edge, 3.45 V at the rail on stage 1's rail line, and 857 to 862
-at every level down to 2.70 V. The 720 counts the servo holds are under
-that floor, so the undervolt fault cannot trip on a rail the chip
+at every level down to 2.70 V. The 720 counts the servo held are under
+that floor, so the undervolt fault could not trip on a rail the chip
 survives. The policy's floor is 3.70 V at the rail, 0.25 V over the
 edge, for the 5 V bench supply, and its rule takes it through the
 measured rail line, offset and scale, to 922 counts, on the stretch
-that line is graded over. A 2S pack's floor waits for the pack on the
+that line is graded over, which is what the set binds. A 2S pack's
+floor waits for the pack on the
 board. The rail fold stands on the floor, so its band moves up with it.
+
+A servo that stores the set from before the releases, set
+`297f3cb4a544`, holds the plant the reference rung `14a-set-of-record`
+ran on and the thirteen protection fields at the values the tables
+above give as held. The install of the set of record on it writes the
+twelve plant fields with no name asked, and the gate asks for the
+thirteen, in the set's order:
+
+```
+--protection stall_response thermal_tau_s v_undervolt_counts thermal_tau2_s pos_error_time_ticks pos_error_counts sensor_delta_max rail_fold_q8 th_rise_q016 th_rise2_q016 ntc_t_ref_cc ntc_k1_q88 ntc_k2_q24
+--loosen stall_response thermal_tau_s thermal_tau2_s rail_fold_q8 th_rise_q016 ntc_t_ref_cc ntc_k1_q88 ntc_k2_q24
+```
+
+Eight are named to loosen: the seven that are judged, and the fast
+rise, which falls. The other five protect more. A deviation of the
+plant over the set asks for the same names on such a servo, since it
+moves no protection field. One test holds both lists to the gate.
 
 Of the loop gains, two carry a position unit: `v_kp_q88` and
 `v_ki_q412` are shunt counts per count/s, so they fall as the counts
@@ -938,7 +1036,7 @@ They stay as benched, in counts, which is a decision `policy.json`
 records under `why`, so neither is at a scale nothing recorded.
 `p_kp_q88` is count/s per count, a rate, and carries no position unit,
 nor do `v_kaw_q412` and the three gains of the current loop, which are
-held beside what their rule gives (above).
+bound at what their rule gives (above).
 
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. It then

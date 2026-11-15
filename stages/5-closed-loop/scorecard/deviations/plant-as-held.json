@@ -1,0 +1,17 @@
+{
+  "note": "the plant as the board held it before the holds of the set of record were released: every field of the plant the set binds at another value, pinned at the value the board held and the reference rung 14a-set-of-record ran on. The motor block, the current loop's three gains and the records a host keeps, together: the A/B of the constants of record against the ones they replaced",
+  "pins": {
+    "i_kp_q88": {"value": 275, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "i_ki_q412": {"value": 1580, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "i_kaw_q412": {"value": 3160, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "j_ff_q88": {"value": 789, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "l3_q88": {"value": 77, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "r_q12": {"value": 4541, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "recip_ke_q": {"value": 11817, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "b_i_q313": {"value": 2657, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "fric_fc_counts": {"value": 100, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "r0_q12": {"value": 0, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "ke_uvs_per_rad": {"value": 0, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "vdd_mv": {"value": 3300, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"}
+  }
+}

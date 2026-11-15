@@ -71,34 +71,9 @@
   "r_bemf_q12": "r_bemf.small_step"
  },
  "hold": {
-  "r_q12": "it moves on a rung of its own: the back-EMF boxcar subtracts it and the stall-safe open-loop duty is sized from it",
-  "recip_ke_q": "it moves on a rung of its own, with the resistance the boxcar subtracts: on an estimator without the on-time term a replay reads the speed worse with the record's pair",
-  "b_i_q313": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term",
-  "fric_fc_counts": "it moves on a rung of its own: the measured Coulomb term was benched alone and not kept",
-  "j_ff_q88": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term",
-  "l3_q88": "it moves on a rung of its own, with the rest of the block outside the back-EMF pair and the Coulomb term",
   "r_bemf_q12": "the servo's image has no such field yet",
-  "ntc_t_ref_cc": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C",
-  "ntc_k1_q88": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C",
-  "ntc_k2_q24": "it moves on a protection step of its own, the curve's three words together: the servo holds the host's tangent form about 25 C",
-  "thermal_tau_s": "it moves on a protection step of its own, the winding model's four together: the servo holds one node on the slow leak that carries the whole plateau",
-  "th_rise_q016": "it moves on a protection step of its own, the winding model's four together: the servo holds one node on the slow leak that carries the whole plateau",
-  "thermal_tau2_s": "it moves on a protection step of its own, the winding model's four together: the servo holds one node on the slow leak that carries the whole plateau",
-  "th_rise2_q016": "it moves on a protection step of its own, the winding model's four together: the servo holds one node on the slow leak that carries the whole plateau",
   "velocity_limit_cps": "it moves on a rung of its own, the motion limits together: typed in counts at the raw pot's scale, the same speed is more counts on the table",
   "accel_limit_q88": "it moves on a rung of its own, the motion limits together: typed in counts at the raw pot's scale, the same speed is more counts on the table",
-  "pos_error_counts": "it moves on a protection step of its own, the screen's angle and time together: the servo holds the boot default, a wider angle for a longer time",
-  "pos_error_time_ticks": "it moves on a protection step of its own, the screen's angle and time together: the servo holds the boot default, a wider angle for a longer time",
-  "stall_response": "it moves on a protection step of its own: the servo holds the boot default, a fault where the decision is to yield",
-  "sensor_delta_max": "it moves on a protection step of its own: the servo holds the boot default, a wider screen",
-  "v_undervolt_counts": "it moves on a protection step of its own: the servo holds the boot default, a floor under the lowest count the rail tap reads",
-  "rail_fold_q8": "it moves on a protection step of its own: the servo holds the slope of the same source through the board's nominal parts",
-  "i_kp_q88": "it moves on a release of its own, the current loop's three gains together: the servo holds an old identification fit of another servo",
-  "i_ki_q412": "it moves on a release of its own, the current loop's three gains together: the servo holds an old identification fit of another servo",
-  "i_kaw_q412": "it moves on a release of its own, the current loop's three gains together: the servo holds an old identification fit of another servo",
-  "r0_q12": "it moves on a release of its own, the records a host keeps on the servo together: the firmware never reads it",
-  "ke_uvs_per_rad": "it moves on a release of its own, the records a host keeps on the servo together: the firmware never reads it",
-  "fric_breakaway_counts": "it moves on a release of its own, the records a host keeps on the servo together: the firmware never reads it",
-  "vdd_mv": "it moves on a release of its own, the records a host keeps on the servo together: a host converts counts with it, the firmware never reads it"
+  "fric_breakaway_counts": "no result on record is the field's quantity: the field is a driven ramp's breakaway, and the stage 3 static friction its rule reads is the back-driven one, with the load arm on the horn"
  }
 }

@@ -25,6 +25,7 @@ import copy
 import hashlib
 import io
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -1962,29 +1963,87 @@ def test_the_plans_of_a_rung_on_the_table_rebuild_byte_for_byte_from_the_set_of_
             for g in sets["wide"] if g["test"] == "wide-hold"] == recorded
 
 
+# The deviation files the set of record has overtaken, each with why `derive` refuses it now: the holds it
+# released are released in the set of record, or the literal it pinned is what the set's rule binds. They
+# are history: the file a rung of record names stays as that rung ran it, and no rung runs on one again.
+NOT_HELD = "{}.json: {} is not held: a deviation releases a hold of policy.json"
+OVERTAKEN = {
+    **{name: NOT_HELD for name in (
+        "motor-r", "motor-model", "protection-ntc-curve", "protection-winding-model", "protection-position-error",
+        "protection-sensor-delta", "protection-undervolt", "protection-rail-fold", "protection-stall-response")},
+    "friction-measured": "{}.json: the deviation moves no field of the set",
+}
+
+
 def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what_it_names_alone():
     pair = sc.pair_of(SERVO, BOARD)
     base = cn.of_record(pair)
     files = sorted((results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations").glob("*.json"))
-    assert {f.stem for f in files} >= {"motor-r", "motor-model"}
+    assert {f.stem for f in files} >= {"motor-r", "motor-model"} and {f.stem for f in files} > set(OVERTAKEN)
     for f in files:
         dev = json.loads(f.read_text())
-        pins, release = dev.get("pins", {}), dev.get("release", [])
+        pins, release, policy = dev.get("pins", {}), dev.get("release", []), dev.get("policy", {})
+        assert dev["note"] and "/Users/" not in f.read_text() and "/home/" not in f.read_text(), f.name
+        if f.stem in OVERTAKEN:
+            continue
         doc, _ = cn.derive(base, f)
-        # a pin moves its field to its literal, a release a held field to what its rule gives
-        assert doc["deviation"]["fields"] == {
-            **{n: [base["fields"][n]["value"], pin["value"]] for n, pin in pins.items()},
-            **{n: [base["fields"][n]["value"], base["fields"][n]["would_be"]] for n in release}}, f.name
+        moved = doc["deviation"]["fields"]
+        if policy:
+            # a policy entry moves the fields whose rule reads it, a held one among them where the file
+            # releases its hold, each to what its rule gives at the entry
+            reads = {n for n in moved if any(f"policy:{k}" in doc["fields"][n]["inputs"] for k in policy)}
+            assert set(moved) == reads | set(pins) and set(release) <= reads, f.name
+            assert all(moved[n] == [base["fields"][n]["value"], doc["fields"][n]["value"]] for n in reads), f.name
+            assert all(moved[n] == [base["fields"][n]["value"], pin["value"]] for n, pin in pins.items()), f.name
+        else:
+            # a pin moves its field to its literal, a release a held field to what its rule gives
+            assert moved == {
+                **{n: [base["fields"][n]["value"], pin["value"]] for n, pin in pins.items()},
+                **{n: [base["fields"][n]["value"], base["fields"][n]["would_be"]] for n in release}}, f.name
         assert all(doc["fields"][n]["class"] == "pinned" and pin["why"] and pin["rung"] for n, pin in pins.items())
         # released, a field is bound by its rule: measured, or the policy's, which is no source where the
         # entry its rule reads is a default nobody decided
         assert all("held" in base["fields"][n] and base["fields"][n]["class"] == "none" for n in release)
         assert all("held" not in doc["fields"][n] and doc["fields"][n]["class"] in ("measured", "policy", "none")
                    for n in release) and dev["note"]
-        assert "/Users/" not in f.read_text() and "/home/" not in f.read_text()
     assert json.loads((files[0].parent / "motor-r.json").read_text())["release"] == ["r_q12"]
     assert json.loads((files[0].parent / "motor-model.json").read_text())["release"] == [
         "b_i_q313", "j_ff_q88", "l3_q88"]
+
+
+def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_binds_what_it_moved():
+    pair = sc.pair_of(SERVO, BOARD)
+    base = cn.of_record(pair)
+    fields = base["fields"]
+    folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
+    policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    for name, why in OVERTAKEN.items():
+        dev = json.loads((folder / f"{name}.json").read_text())
+        pins, release = dev.get("pins", {}), dev.get("release", [])
+        assert not dev.get("policy") and bool(pins) != bool(release), name
+        # no hold is left for it to release, and the set binds each field it released by its rule, with no
+        # value beside it; a literal it pinned is the value the set's rule gives
+        assert not set(release) & set(policy["hold"]), name
+        assert all("held" not in fields[n] and "would_be" not in fields[n] and "rule" in fields[n]
+                   for n in (*release, *pins)), name
+        assert all(fields[n]["value"] == pin["value"] and fields[n]["class"] == "measured"
+                   for n, pin in pins.items()), name
+        with pytest.raises(ValueError, match=re.escape(why.format(name, ", ".join(release)))):
+            cn.derive(base, folder / f"{name}.json")
+    # every other file derives, so the two lists are the folder
+    live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in OVERTAKEN)
+    assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "hold-band-8",
+                    "motion-200", "motion-400", "motion-limits", "observer-10hz", "observer-25hz", "plant-as-held"]
+    # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
+    # one it ran: what its release gave there is what the set of record binds now
+    named = {}
+    for result in sorted(sc.result_path(pair, "x").parent.glob("*.json")):
+        dev = json.loads(result.read_text()).get("deviation")
+        if dev and Path(dev["file"]).stem in OVERTAKEN:
+            named.setdefault(Path(dev["file"]).stem, []).append(result.stem)
+            assert sc.file_sha1(results.ROOT / dev["file"]) == dev["sha1"], result.name
+            assert {n: fields[n]["value"] for n in dev["fields"]} == {n: b for n, (_, b) in dev["fields"].items()}
+    assert named == {"motor-model": ["zz-ab-motor-model-2", "zz-ab-motor-model"]}
 
 
 def test_an_identity_rungs_plan_is_rebuilt_byte_for_byte():

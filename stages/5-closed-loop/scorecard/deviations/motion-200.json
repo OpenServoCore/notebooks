@@ -1,0 +1,5 @@
+{
+  "note": "the speed limit at 200 deg/s, half the speed ceiling, with the acceleration limit at the speed reached in 50 ms, 4000 deg/s^2, on the set's count in place of the boot default's counts the servo holds: the two holds released together. One point of the sweep under the speed ceiling that picks the limits of motion",
+  "policy": {"velocity_limit_deg_s": 200.0, "accel_limit_deg_s2": 4000.0},
+  "release": ["velocity_limit_cps", "accel_limit_q88"]
+}

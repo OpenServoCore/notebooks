@@ -1,0 +1,8 @@
+{
+  "note": "the current loop's three gains as the board held them, an old identification fit of another servo, in place of the placement at the policy's bandwidth on this motor's inductance and resistance: the three alone, the rest of the plant as the set of record binds it",
+  "pins": {
+    "i_kp_q88": {"value": 275, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "i_ki_q412": {"value": 1580, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
+    "i_kaw_q412": {"value": 3160, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"}
+  }
+}
