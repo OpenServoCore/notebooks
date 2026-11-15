@@ -1,0 +1,120 @@
+{
+  "label": "19a-lifecycle-heat-mean",
+  "fw": "32ea2f31",
+  "image_sha": "e8624f39e8c000bdcc2a0ec2f1c17a4e5f58f5a1",
+  "tool": {
+    "sha1": "f290ac5842d32f4c30e3608e91ac3e04e3903ddb",
+    "version": null
+  },
+  "note": "the head of the first re-implementation batch: main 32ea2f31 (one lifecycle state for the control path, the winding heats on the SLOW cycle's mean of the current squared) on the saved set 324e326794b5, the moves at the test set's own limits of motion, three runs alone after ten sweeps",
+  "utc": "2026-11-15T06:57:14+00:00",
+  "config_hash": "89238168ab990fd9afeec50c07daa5550bfd5b60443b5ab8523e952d49b6d9f6",
+  "constants_hash": "3efe07ed2e544f6cbf6c36c30827807e0376d647eb11b6f5ac656ea9ad7d6894",
+  "runs_asked": 3,
+  "set": {
+    "file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.constants.json",
+    "hash": {
+      "limits": "486d20cf63da5bdafcb83f420d7eb54c07f3aa15ba5afda664e34ebe42c71ac5",
+      "plant": "63286bc88d854be4d91d3b513c754296b2534877e50eb4dbf0e552317dcd4089",
+      "protection": "0ec27b5dbc84b94fd8809a725581f96f4ad5e2e44b1eed10daa62c2b2ed17745",
+      "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead",
+      "set": "324e326794b517bcb72f0c3d6bf5a885fef27371bf2e11d7c1b1653bfc9aa1d9"
+    },
+    "classes": {
+      "measured": 16,
+      "bench": 10,
+      "datasheet": 0,
+      "policy": 34,
+      "pinned": 1,
+      "none": 1
+    }
+  },
+  "deviation": null,
+  "protection": {
+    "hash": "0ec27b5dbc84b94fd8809a725581f96f4ad5e2e44b1eed10daa62c2b2ed17745",
+    "moved": {}
+  },
+  "motion": {
+    "from": "test set",
+    "velocity_limit_cps": 1500,
+    "accel_limit_q88": 3840,
+    "speed_deg_s": 74.528,
+    "accel_deg_s2": 1490.6
+  },
+  "wide_goals": [
+    {
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    },
+    {
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    }
+  ],
+  "load_waits": [
+    {
+      "run": "run-1",
+      "max_load": 6.0,
+      "load_1m_before": 12.5,
+      "load_1m_after": 5.98,
+      "waited_s": 200,
+      "went_on_over": false
+    },
+    {
+      "run": "run-2",
+      "max_load": 6.0,
+      "load_1m_before": 13.73,
+      "load_1m_after": 13.38,
+      "waited_s": 300,
+      "went_on_over": true
+    },
+    {
+      "run": "run-3",
+      "max_load": 6.0,
+      "load_1m_before": 13.4,
+      "load_1m_after": 5.72,
+      "waited_s": 190,
+      "went_on_over": false
+    }
+  ]
+}

@@ -1200,8 +1200,9 @@ bus id and rate among it, is saved with it. A refusal before the SAVE
 leaves flash as it was, and a reboot returns it.
 
 The bench servo stores set `324e326794b5`, the set of record, since
-the speed blend's session, and `18a-speed-blend` is the rung that ran
-on it; that save's record, under
+the speed blend's session, and `18a-speed-blend` and
+`19a-lifecycle-heat-mean` are the rungs that ran on it; that save's
+record, under
 `telemetry/<pair>/constants/324e326794b5/`, is not kept in the repo,
 as no save's record is.
 
@@ -1707,6 +1708,48 @@ Kept:
   degree overshoot leans up, 0.130 [0.006, 0.211] deg against 0.006
   [0, 0.211], and the rest error overlaps, 0.313 [0.294, 0.346] deg
   against 0.304 [0.304, 0.346]. Those four losses are open on it.
+- `19a-lifecycle-heat-mean`: firmware 32ea2f31 on the set of record,
+  set `324e326794b5`, which the servo has saved, three runs alone after
+  ten sweeps of the travel, at the test set's own limits of motion: the
+  reference for rungs on 32ea2f31, kept as that and not on its rows.
+  Two of the commits between 2e9cb678 and 32ea2f31 change the image:
+  dca48f5e steps the winding heats on the slow cycle's mean of the held
+  current squared, not on one sample, and 32ea2f31 holds the control
+  path's lifecycle in one state, so a mode change under torque enters
+  each mode on the loop states that physically hold it. cc7cf782,
+  bedb7c33 and dce52cea change tests only, bfc71a69 a document and a
+  comment. No fault. Recorded about three hours after `18a` and not
+  alternated with it, with the winding estimate 1.4 C cooler, 23.5 to
+  24.2 C over the segment polls against 24.9 to 25.7 C. 3 to 33 of a
+  run's ramp goals went out late, 21 to 33 on `18a`.
+  Both halves, as the median of three runs and their range against
+  `18a`, every row named having its ranges apart. One row reads worse:
+  the 60 degree move takes 90.2 [89.2, 91.5] mA against 87.1 [86.6,
+  88.1]. Ten read better, the lag at 1 % in both its rows. The duty
+  falls on the 2 degree move, 12.82 [12.74, 12.91] % against 13.49
+  [13.31, 13.58], and on the ramps, 8.21 [8.17, 8.22] against 8.45
+  [8.37, 8.47] at 1 %, 10.90 [10.86, 10.95] against 11.22 [10.99,
+  11.45] at 3 % and 18.46 [18.33, 18.54] against 18.82 [18.64, 18.90]
+  at 10 %. The 20 degree move settles in 350 [347, 354] ms against 362
+  [357, 373] and reverses 14.3 [13.5, 19.4] times a second against
+  21.6 [20.7, 31.8]. The 60 degree move settles in 891 [884, 892] ms
+  against 897 [893, 899], by a hair. The lag at 1 % is 0.0944 [0.0900,
+  0.0982] deg against 0.101 [0.0987, 0.110] and 15.2 [14.5, 15.8] ms
+  against 16.3 [15.9, 17.8], both by a hair, and the follow error's sd
+  at 3 % is 0.147 [0.144, 0.147] deg against 0.152 [0.148, 0.152], by
+  a hair.
+  No row is given to the two commits. The two rungs were not recorded
+  together, so the image was run back to back with 2e9cb678 in two
+  sessions (the lifecycle head's session, below). There the 60 degree
+  current is not apart for the worse in either, and the one row apart
+  the same way in both, the 2 degree move's reversals, is not apart in
+  a count over forty such moves. Of the four losses open on `18a`, the
+  20 degree overshoot reads 0.019 [0, 0.078] deg, the follow error's sd
+  at 10 % 0.477 [0.465, 0.489] deg, the worst drive after an arrival
+  596 [364, 1086] ms and the wide-code holds that hunt 0 [0, 1] of 8,
+  each overlapping `18a`'s range. They stay open on this rung, and so
+  do the 2 degree move's settle and reversals, rows whose range over
+  three runs understates their scatter between sessions.
 
 Tried, not kept:
 
@@ -2348,3 +2391,85 @@ What was written before the sessions, and how each held:
 - Main's reversals in Velocity mode are well above the other two:
   held, 264, 498 and 803 a second at 62, 200 and 400 deg/s against 0
   to 51.
+
+The lifecycle head's session:
+
+Two dead-man images, 2e9cb678, `18a`'s, and 32ea2f31, `19a`'s. Every
+side ran on set `324e326794b5` as the servo has it saved, on a free
+horn, and no run raised a fault. The scorecard's sides ran at the test
+set's own limits of motion, after ten 120 degree sweeps. Their result
+files are kept and their rows are not. As the median of three runs and
+their range, a row named having its ranges apart unless said.
+
+- `zz-ab-blend-head` (2e9cb678) and `zz-ab-lifecycle-head`
+  (32ea2f31), three rounds in the order ab, recorded in the half hour
+  after `19a` because `19a` and `18a` were not recorded together. 16
+  [2, 41] and 21 [11, 22] of a run's ramp goals went out late. The 60
+  degree move's current overlaps, 92.6 [90.6, 92.8] mA on 32ea2f31
+  against 90.9 [90.8, 94.2], so 2e9cb678 reads about 91 mA in this
+  session too. 32ea2f31 reads worse on the 2 degree move, its settle
+  66.0 [65.5, 67.0] ms against 62.3 [61.2, 64.3] and its reversals
+  42.1 [41.6, 43.8] a second against 31.7 [8.3, 32.0], and on the
+  speed report at 3 %, -1.74 [-2.78, -1.39] deg/s against -0.53
+  [-1.17, -0.10]. It reads better on the lag at 1 %, 15.1 [14.5, 15.4]
+  ms against 16.2 [15.5, 16.8], in degrees too, and on the 1 % ramp's
+  current and duty, 68.8 [67.3, 69.2] mA against 69.8 [69.5, 72.1] and
+  8.02 [7.88, 8.04] % against 8.12 [8.08, 8.40].
+- `zz-ab2-lifecycle-head` and `zz-ab2-blend-head`, the same three
+  rounds again in the order ba, recorded next. 15 [0, 22] and 10 [1,
+  67] of a run's ramp goals went out late. 32ea2f31's 2 degree move
+  reverses more often again, 39.9 [31.9, 74.9] a second against 21.4
+  [8.7, 29.1], and its 2 degree settle overlaps, 67.0 [59.1, 67.6] ms
+  against 66.9 [66.6, 67.7]. Its 60 degree move takes less current,
+  88.9 [88.7, 89.7] mA against 90.7 [89.7, 91.7], by a hair. It reads
+  worse on the 3 % ramp's current and duty, 80.2 [79.6, 82.9] mA
+  against 78.7 [78.2, 79.3] and 11.17 [11.14, 11.31] % against 10.97
+  [10.85, 11.02], and on the speed report at 1 %, -3.20 [-4.39, -2.96]
+  deg/s against -2.53 [-2.73, -1.23]. Across the two sessions
+  2e9cb678 alone reads the 2 degree settle at 62.3 and 66.9 ms. The 2
+  degree move's reversals read 31.7 and 21.4 a second on 2e9cb678 and
+  38.9 on `18a`, 42.1 and 39.9 on 32ea2f31 and 27.4 on `19a`. Of the
+  rows apart in either session, the 2 degree move's reversals alone
+  are apart the same way in both.
+- The 2 degree move's reversals counted, outside the scorecard. A
+  scorecard run holds four 2 degree moves of about 60 ms, so the row
+  stands on a few reversals a run. Each capture here holds forty 2
+  degree moves, `goal:1956@300,goal:1916@300` twenty times from the
+  scorecard's center after a first goal of 1916 held 600 ms, in
+  Position mode at the set's default limits of motion, 4025 count/s and
+  10305 as the fields hold them. Six captures, the two images
+  alternated three times, 2e9cb678 first. The count is the duty's sign
+  reversals by the scorecard's own definition, zero rows skipped, over
+  the first 100 ms
+  after each goal, summed over the forty moves. In the order recorded
+  it reads 318, 278 and 355 on 2e9cb678 against 239, 291 and 384 on
+  32ea2f31, the means 317 and 305, the two sets of three overlapping.
+  Over the whole 300 ms of each goal it reads 324, 285 and 364 against
+  242, 300 and 395. 32ea2f31's three rise in the order recorded, and
+  each image's last capture reads the highest of its three. No fault
+  on any capture. The captures lie under
+  `telemetry/<pair>/reversals-2deg/`, one folder a round and an image
+  in it, and are not kept, as the velocity test's are not.
+- Before the scorecard each image ran ten 120 degree sweeps from rest,
+  the winding estimate within 0.05 C of the board sensor at the start,
+  the estimate polled at the end of every leg and the sensor read
+  before the sweeps and after the 12 s of holds that followed them.
+  Against the sensor taken as a line between those two reads, the
+  estimate peaked 0.46 C over it on 2e9cb678 and 0.47 C on 32ea2f31,
+  and its mean over the twenty legs was 0.32 C against 0.30, 6 %
+  apart. The plan written before the session asked for the two within
+  15 % of each other.
+- The kernel's `budgets` probe on 32ea2f31's bench image passed three
+  times.
+
+What the session leaves on record, for reading the ladder:
+
+- A rung recorded hours from its reference carries no verdict on its
+  own rows. `19a`'s one loss against `18a`, the 60 degree current, is
+  not apart for the worse in either back to back session, where
+  2e9cb678 reads it at 90.9 and 90.7 mA against `18a`'s 87.1.
+- A row that stands on a few events per run has a range over three
+  runs narrower than its scatter between sessions. The 2 degree move's
+  settle on 2e9cb678 alone reads 62.3 and 66.9 ms in two sessions
+  recorded one after the other, and its reversals, apart the same way
+  in both sessions, are not apart when counted over forty moves.
