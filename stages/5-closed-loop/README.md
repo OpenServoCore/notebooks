@@ -34,11 +34,15 @@ every capture's `meta.json` carries.
   the same place and move the same angles. A servo whose soft range
   cannot fit the set is refused. Each capture writes a `plan.json` beside
   its rows naming every segment and the counts per degree it was planned
-  at, and every score in degrees is taken at that scale.
+  at, and every score in degrees is taken at that scale. Every move runs
+  at the test set's own limits of motion, a speed limit of 74.53 deg/s
+  and the acceleration that reaches it in 50 ms, 1490.6 deg/s^2
+  (`SPEED_DEG_S`, `ACCEL_DEG_S2`), and not at the set's default (below).
 - **The runs**, under `telemetry/<servo>__<board>/scorecard/<label>/`. A
   rung is one build at one label, `run-1` to `run-K` inside it, and
   `rung.json` with the label, the commit, the image sha, a note, the time,
-  a hash of the CONFIG it ran on, the constant set it ran on and the
+  a hash of the CONFIG it ran on, the constant set it ran on, the limits
+  of motion its moves ran at and the
   goals of the wide holds. Each run holds a `servo.json` beside its
   captures, the servo's constant state read off it before the run's
   first capture, with the rung's set installed: the bytes of CONFIG and
@@ -51,8 +55,9 @@ every capture's `meta.json` carries.
   named. A copy of the set lies beside `rung.json` as `constants.json`.
 - **The results**, one file per rung,
   `scorecard/results/<servo>__<board>/<label>.json`: every score as the
-  median over the rung's runs with their range as the bounds, and the
-  scale its current rows are at.
+  median over the rung's runs with their range as the bounds, the
+  scale its current rows are at and the limits of motion its moves ran
+  at.
 
 Every score reads the pot. How each one is taken is in the docstrings of
 `oscnb/scorecard.py`.
@@ -260,6 +265,37 @@ table's scale. `rung.json` names the set by its file, its three hashes
 and its fields by class, and protection as an entry of its own, the
 hash and what the install moved against the servo's values.
 
+The moves run at the test's own limits of motion, never at the set's
+default speed. A step row measures the speed the move ran at as much as
+the loop, so a rung at another speed does not compare with the ladder,
+and the default speed is the owner's to raise
+([the constant set](#the-constant-set)). On the set of record's count,
+the table's, the test's 74.53 deg/s and 1490.6 deg/s^2 are the 1500
+count/s of `velocity_limit_cps` and the 3840 of `accel_limit_q88`, the
+counts the servo held for every rung before the test set named them
+that did not move them itself. A rung that ran on the raw pot ran the
+same counts at 79.31 deg/s, on the pot's count. The runner takes the
+test's two to counts on the rung's set's count by the set's own rules,
+installs them over the set with it for the runs and checks the servo
+against the set at those counts before each run; the reboot after the
+runs brings the stored ones back. A set on another count runs the same
+speed at other counts. A rung on a deviation that moves either limit of
+motion runs at its set's two, the one it does not move at the set's
+value: the limits are what such a side tests. `rung.json` and the
+result name them under `motion`: `from` (`test set` or `deviation`),
+the two as the fields hold them, and what they are on the set's count
+in deg/s and deg/s^2, to five figures.
+
+A result recorded before rungs named their limits of motion has no
+`motion`, and its file is not rewritten. The tool reads it at the limits
+of its day: the ones its deviation moved (`zz-sweep-motion-200` and
+`-400`), else the ones its settings named (the `02a` to `02f` speed
+rungs, `06a`, `06b` and the two `pot-speed-half` A/B rungs), else 1500
+count/s and 3840: the counts every set held while the two were held,
+and the ones the config in every capture of every kept rung holds. `table` prints
+the two first, one row each; `carry` touches only the current rows and
+leaves them as they are.
+
 A rung that tries one thing runs on the set with one deviation, the
 file of `--deviation`: `{"policy": {...}, "pins": {field: {"value",
 "why", "rung"}}, "release": [field, ...]}`, policy entries, pins, holds
@@ -286,12 +322,22 @@ what the set's rule binds now, so `build --deviation` refuses it, the
 field named as not held or the file as moving nothing: `motor-r.json`,
 `motor-model.json`, `friction-measured.json` and the seven
 `protection-*.json` files, each the release of one protection step
-as it was written before the set of record took the step. Each stays
-as it was written, and no rung runs on one again. Three are files a
-rung of record ran, `motor-model.json` two rungs, `motor-r.json`
-`zz-ab-r-measured` and `protection-ntc-curve.json` `zz-ab-ntc-pinned`,
-and a result that names one keeps its sha1 and the fields it moved.
-One test names the ten and holds every other file to a build.
+as it was written before the set of record took the step, and the
+three files of the limits of motion, `motion-limits.json`,
+`motion-200.json` and `motion-400.json`, each a release of the two
+holds the set of record let go with the owner's default move speed
+([the constant set](#the-constant-set)). Each stays as it was written,
+and no rung runs on one again. Five are files a rung of record ran,
+`motor-model.json` two rungs, `motor-r.json` `zz-ab-r-measured`,
+`protection-ntc-curve.json` `zz-ab-ntc-pinned`, `motion-200.json`
+`zz-sweep-motion-200` and `motion-400.json` `zz-sweep-motion-400`, and
+a result that names one keeps its sha1 and the fields it moved. What
+`motion-200.json` moved is the set of record's own default now, so
+that rung ran the set of record itself, every hash alike; the 400
+deg/s point of `motion-400.json` is no value of the set, and its rung
+keeps it as the side it ran. Moving a speed with a deviation now takes
+a file of policy entries alone, with no hold to release. One test names
+the thirteen and holds every other file to a build.
 A deviation that pins a field the servo's image does not have is
 refused by the install, the field named, before anything is written.
 
@@ -441,15 +487,15 @@ its fields, and the reason and the need of the ones with none.
 Every verb prints the count per class, and the count of fields with no
 source whose value is per position count, which were fitted at a scale
 nothing recorded. On mg90-d with board D the set holds 62 fields: 16
-measured, 10 bench, no datasheet, 32 policy, one pinned and 3 with no
+measured, 10 bench, no datasheet, 34 policy, one pinned and one with no
 source. The pin is the board's nominal supply word, `vdd_mv` (below).
 Six of the policy's are the current loop's three gains and the
 observer's three, each bound by its rule at a bandwidth a bench sweep
 picked ([the ladder](#the-ladder), the constants session): they had no
 source while the bandwidths were an old tool's default targets nobody
-had decided. Of the 3, two are the limits of motion, held at the
-boot default's counts: their sweep recommends 200 deg/s and 4000
-deg/s^2, and the change waits for the owner (below). One is the
+had decided. Two are the limits of motion, the owner's default move
+speed and its acceleration (below): they had no source while they
+restated the boot default's counts. The one with no source is the
 breakaway record, held at a zero never written because no result on
 record is its quantity (below). Every other field whose rule gives
 another value than the servo held is bound at the rule's value: a
@@ -681,9 +727,9 @@ under `held`, what its rule gives beside it as `would_be` and the
 results the rule read still listed, so the set shows what the record
 gives next to what the servo holds and moves nothing. A held field the
 set never held stays out of
-it, and `build` says so with what its rule gives. Four holds are left:
-the two limits of motion, the breakaway record, and `r_bemf_q12`, held
-because no image has the field yet. A value held from before the set
+it, and `build` says so with what its rule gives. Two holds are left:
+the breakaway record, and `r_bemf_q12`, held because no image has the
+field yet. A value held from before the set
 existed is still counted as at an unknown scale where it is per count.
 
 The fields of the motor block whose rule gives another value than the
@@ -917,38 +963,39 @@ a policy entry in the unit a person sets it in and a rule that takes
 it to counts at the set's scale: a speed in deg/s and an angle in deg
 times the counts per degree, an acceleration in deg/s^2 times the
 counts per degree over the MEDIUM rate, since the kernel holds it as
-the speed one MEDIUM tick adds. The two limits of motion still restate
-the stored counts: their entries are what those were typed for at the
-raw pot's mid travel scale, to four figures, the firmware's boot
-defaults, which are round in counts (1500 count/s, reached in 50 ms).
-The two screens are decided.
+the speed one MEDIUM tick adds. The two limits of motion are the
+owner's default move speed and its acceleration, and the two screens
+are decided.
 
 | field | the kernel's use | policy | the servo held | which is, on the table | the rule gives |
 |---|---|---|---|---|---|
-| `velocity_limit_cps` | the cap of the profile's speed and of the position loop's command, count/s | 79.31 deg/s | 1500 | 74.53 deg/s | 1596 |
-| `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 1586 deg/s^2 | 3840 | 1491 deg/s^2 | 4086 |
+| `velocity_limit_cps` | the cap of the profile's speed and of the position loop's command, count/s | 200 deg/s | 1500 | 74.53 deg/s | 4025 |
+| `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 4000 deg/s^2 | 3840 | 1491 deg/s^2 | 10305 |
 | `stall_omega_max_cps` | a press over the continuous current counts toward a stall while the estimate's speed is under this, count/s | 24.84 deg/s | 500 | 24.84 deg/s | 500 |
 | `pos_error_counts` | the profile less the estimate, over this for the error time, faults; counts | 9.9 deg | 400 | 19.87 deg | 199 |
 
-The two limits of motion are of the plant, held and undecided, interim:
-the set keeps the 1500 and the 3840 the servo holds, and they move
-together on a rung.
-[motion-limits.json](scorecard/deviations/motion-limits.json)
-releases the two at the policy's entries: the acceleration limit was
-typed as the speed limit reached in 50 ms. The bench sweep under the
-speed ceiling ran the held limits against two faster sides, and
-recommends 200 deg/s and 4000 deg/s^2, interim until the load arm
-([the ladder](#the-ladder), the constants session). The set's limits
-stay as held: the change waits for the owner, because the limits are
-part of what the scorecard's step rows measure, and a rung at other
-limits does not compare with one at these. The two faster sides keep
-that 50 ms:
-[motion-200.json](scorecard/deviations/motion-200.json), 200 deg/s
-and 4000 deg/s^2, 4025 and 10305 as the fields hold them, and
-[motion-400.json](scorecard/deviations/motion-400.json), 400 deg/s
-and 8000 deg/s^2, 8051 and 20610. 400 deg/s is the speed ceiling
-itself, so its 8051 counts are the ceiling's and pass; a deg/s more is
-refused. The
+The servo has two speeds, the owner's decision. One is the speed
+ceiling, 400 deg/s, the most the output ever turns at, which protects
+the brushes: a bound of the set under `limits` that no field holds yet
+(above). The other is the move speed, which a user sets from 0 to the
+ceiling, held in `velocity_limit_cps` with its acceleration in
+`accel_limit_q88`, the two of the plant and moving together. Its
+default is 200 deg/s, half the ceiling, with the acceleration that
+reaches it in 50 ms, 4000 deg/s^2: 4025 and 10305 as the fields hold
+them on the set's count. It is interim until the load arm, and meant to
+rise toward the ceiling. The bench sweep under the ceiling ran the
+1500 count/s and 3840 the servo held, 74.5 deg/s and 1491 deg/s^2 on
+the table, against 200 and 400 deg/s, each side at the speed reached
+in 50 ms, and its rule, written before the session, keeps 200 deg/s
+([the ladder](#the-ladder), the constants session). 400 deg/s is the
+ceiling itself, so its 8051 counts are the ceiling's and pass; a deg/s
+more is refused. The default does not move what the scorecard
+measures: a rung runs at the test set's own limits of motion, the
+counts the servo held before, whatever the default
+([running it](#running-it)), so the ladder stays comparable. A rung
+at another speed is a deviation of policy entries; a rung at the
+default itself is none the tool runs yet, since a deviation that
+states the default moves nothing over the set. The
 stall speed is decided at the speed its counts are on the set's count,
 24.84 deg/s, four times the speed noise of a still shaft. Its rule
 then gives the 500 the servo held, so it bound as it stood, of class
@@ -2011,6 +2058,7 @@ servo's following.
   limits too, the lag at 1 % 17.4 [17.4, 17.5] ms at the held limits,
   9.8 [7.4, 12.2] at 200 deg/s and 4.7 [3.3, 6.2] at 400, with the
   ramp's current at 82, 109 and 166 mA, so a rung at other limits
-  does not compare with the rungs at these. The set keeps the held
-  limits, and the change of default waits for the owner
+  does not compare with the rungs at these. The owner took 200 deg/s
+  and 4000 deg/s^2 as the default move speed, interim until the load
+  arm, and a rung runs the test set's own limits whatever the default
   ([The constant set](#the-constant-set)).

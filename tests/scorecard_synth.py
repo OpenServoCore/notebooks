@@ -351,3 +351,17 @@ class Bench(Servo):
         """The calls that change the servo, the FETCH of a page left out."""
         return [c for c in self.log if c[0] in ("set", "run")
                 or (c[0] == "write" and not (c[1] == postable.WINDOW_ADDR and c[2][1] == postable.FETCH))]
+
+
+# the scorecard's test limits of motion on the raw pot's count of the pair's stage 3 pot-table result
+TEST_MOTION_RAW = {"velocity_limit_cps": 1410, "accel_limit_q88": 3609}
+
+
+class Moving(Bench):
+    """The fake servo with the limits of motion, stored at the
+    scorecard's own on the raw pot's count, so a rung on a set adopted
+    from it writes nothing."""
+
+    FIELDS = dict(sorted({**Bench.FIELDS, "velocity_limit_cps": (0x44, 2, "rw", "uint"),
+                          "accel_limit_q88": (0x46, 2, "rw", "uint")}.items(), key=lambda kv: kv[1][0]))
+    STORED = {**Bench.STORED, **TEST_MOTION_RAW}
