@@ -11,7 +11,6 @@
     "b_i_q313": {"value": 2657, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
     "fric_fc_counts": {"value": 100, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
     "r0_q12": {"value": 0, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
-    "ke_uvs_per_rad": {"value": 0, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"},
-    "vdd_mv": {"value": 3300, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"}
+    "ke_uvs_per_rad": {"value": 0, "why": "the value the board held, for the A/B against the constants of record", "rung": "14a-set-of-record"}
   }
 }
