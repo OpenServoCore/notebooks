@@ -265,8 +265,8 @@ table's scale. `rung.json` names the set by its file, its three hashes
 and its fields by class, and protection as an entry of its own, the
 hash and what the install moved against the servo's values.
 
-The moves run at the test's own limits of motion, never at the set's
-default speed. A step row measures the speed the move ran at as much as
+The moves run at the test's own limits of motion, not at the set's
+default speed unless the rung asks for it (below). A step row measures the speed the move ran at as much as
 the loop, so a rung at another speed does not compare with the ladder,
 and the default speed is the owner's to raise
 ([the constant set](#the-constant-set)). On the set of record's count,
@@ -281,10 +281,16 @@ against the set at those counts before each run; the reboot after the
 runs brings the stored ones back. A set on another count runs the same
 speed at other counts. A rung on a deviation that moves either limit of
 motion runs at its set's two, the one it does not move at the set's
-value: the limits are what such a side tests. `rung.json` and the
-result name them under `motion`: `from` (`test set` or `deviation`),
-the two as the fields hold them, and what they are on the set's count
-in deg/s and deg/s^2, to five figures.
+value: the limits are what such a side tests. `--motion set` on `run`,
+or `--a-motion set` on a side of `ab`, runs the rung at the set's own
+default instead, the set installed as it is, to score the speed a user
+gets; its step rows are not comparable with the ladder's, and its
+record says so with `from` `set`. A deviation that moves either limit
+still runs at its own with the flag given, and its record says
+`deviation`. `rung.json` and the result name them under `motion`:
+`from` (`test set`, `set` or `deviation`), the two as the fields hold
+them, and what they are on the set's count in deg/s and deg/s^2, to
+five figures.
 
 A result recorded before rungs named their limits of motion has no
 `motion`, and its file is not rewritten. The tool reads it at the limits
@@ -339,7 +345,9 @@ keeps its sha1 and the fields it moved. What
 that rung ran the set of record itself, every hash alike; the 400
 deg/s point of `motion-400.json` is no value of the set, and its rungs
 keep it as the sides they ran. Moving a speed with a deviation now takes
-a file of policy entries alone, with no hold to release. One test names
+a file of policy entries alone, with no hold to release:
+`motion-400-policy.json` is the 400 deg/s point on the set of record.
+One test names
 the thirteen and holds every other file to a build.
 A deviation that pins a field the servo's image does not have is
 refused by the install, the field named, before anything is written.

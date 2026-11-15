@@ -8,8 +8,9 @@ the runner's refusals with `osc` stubbed; then rungs end to end on a
 fake servo that takes an install: a rung on the pair's constant set of
 record, on that set with one deviation, on a set with a live table, the
 set and the deviation it records, the test set planned from it, the
-test set's own limits of motion over the set's default and a deviation
-that moves them, a result's limits of the day it was recorded, a servo
+test set's own limits of motion over the set's default, the set's
+default where a rung asks for it, and a deviation that moves them
+whatever the rung asks, a result's limits of the day it was recorded, a servo
 that is not the rung's set, and the rows read through the table and the
 slots of the rung's own record; an A/B of two rungs, each side on its
 own derived set and image, its flashes and refusals, and the flash's
@@ -789,27 +790,97 @@ def test_a_rung_runs_at_the_test_sets_limits_of_motion_and_not_at_the_sets_defau
     assert out["motion"] == doc["motion"] and sc.motion_of(out) == synth.TEST_MOTION_RAW
 
 
+def test_the_sets_own_limits_of_motion_are_its_default_installed_as_it_is():
+    doc = cn.of_record(PAIR)
+    default = {n: doc["fields"][n]["value"] for n in cn.MOTION}
+    ran, motion = sc.run_motion(doc, TS, "set")
+    # the set as it is, at the owner's default move speed and the acceleration that reaches it in 50 ms
+    assert ran is doc and default != sc.MOTION_OF_THEIR_DAY
+    assert motion == {"from": "set", **default, **dict(zip(("speed_deg_s", "accel_deg_s2"),
+                                                            five(cn.motion_deg(doc, default))))}
+    assert motion["speed_deg_s"] == pytest.approx(200, abs=0.5 / doc["scale"]["counts_per_deg"])
+    assert motion["accel_deg_s2"] == pytest.approx(4000, rel=1e-3)
+    with pytest.raises(ValueError, match="motion 'default' is not one of test, set"):
+        sc.run_motion(doc, TS, "default")
+
+
+def test_a_rung_at_the_sets_own_limits_of_motion_runs_at_its_default_and_says_so(bus, monkeypatch, tmp_path):
+    default = default_200(bus, tmp_path)
+    servo = bus["servo"]
+    seen = []
+    track = sc.osc.track
+
+    def tracked(out, mode, schedule, **kw):
+        seen.append({n: servo.decoded(n) for n in cn.MOTION})
+        return track(out, mode, schedule, **kw)
+
+    monkeypatch.setattr(sc.osc, "track", tracked)
+    rung = sc.run("00-at-default", "abc123", "f" * 40, runs=2, motion="set", servo=SERVO, board=BOARD)
+    # every capture ran at the set's 200 deg/s default, which the servo stores: nothing written, no reboot
+    assert default != synth.TEST_MOTION_RAW and seen == [default] * 8
+    assert servo.wrote() == []
+    doc = rung_json(rung)
+    assert doc["motion"] == {"from": "set", **default,
+                             **dict(zip(("speed_deg_s", "accel_deg_s2"), five(cn.motion_deg(bus["set"], default))))}
+    assert doc["motion"]["speed_deg_s"] == pytest.approx(200, abs=0.5 / bus["set"]["scale"]["counts_per_deg"])
+    assert doc["set"]["hash"] == bus["set"]["hash"] and cn.load(rung / sc.SET_COPY) == bus["set"]
+    assert all(constants(rung, k)["fields"][n] == default[n] for k in (1, 2) for n in cn.MOTION)
+    # the result keeps the record, and the ladder reads the rung at the default beside one at the test's
+    sc.score("00-at-default", servo=SERVO, board=BOARD)
+    out = json.loads(sc.result_path(PAIR, "00-at-default").read_text())
+    assert out["motion"] == doc["motion"] and sc.motion_of(out) == default
+    sc.run("00-at-test", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
+    sc.score("00-at-test", servo=SERVO, board=BOARD)
+    buf = io.StringIO()
+    sc.table(servo=SERVO, board=BOARD, file=buf)
+    lines = buf.getvalue().splitlines()
+    assert lines[0].split()[2:4] == ["00-at-default", "00-at-test"]
+    assert [r.split()[-2:] for r in lines[1:3]] == [[str(default[n]), str(synth.TEST_MOTION_RAW[n])]
+                                                    for n in cn.MOTION]
+
+
+def test_an_ab_side_at_the_sets_own_limits_of_motion_runs_at_them_and_the_other_at_the_tests(ab_bench, bus,
+                                                                                             tmp_path):
+    default = default_200(bus, tmp_path)
+    a, b = sc.ab(side(ab_bench, "16-a", "a"), side(ab_bench, "16-b", "a", motion="set"), rounds=2,
+                 servo=SERVO, board=BOARD)
+    # the image boots at the test's counts: the side at the test's installs nothing, the side at the set's
+    # installs the set's default around its own run alone
+    moved = [("set", n, str(v)) for n, v in default.items()]
+    expected = [("flash", "a.bin")]
+    for k in (1, 2):
+        expected += [("capture", "16-a", f"run-{k}", 40212), *moved, ("run", "stamp"),
+                     ("capture", "16-b", f"run-{k}", 40212), ("run", "reboot")]
+    assert events(bus) == expected
+    assert [rung_json(r)["motion"]["from"] for r in (a, b)] == ["test set", "set"]
+    assert [{n: constants(r, 2)["fields"][n] for n in cn.MOTION} for r in (a, b)] == [synth.TEST_MOTION_RAW, default]
+
+
+@pytest.mark.parametrize("motion", ["test", "set"], ids=["at the test's", "at the set's"])
 @pytest.mark.parametrize("policy, moves, runs_at", [
     ({"velocity_limit_deg_s": 400.0, "accel_limit_deg_s2": 8000.0}, ["velocity_limit_cps", "accel_limit_q88"],
      "deviation"),
     ({"velocity_limit_deg_s": 300.0}, ["velocity_limit_cps"], "deviation"),
-    (None, ["p_kp_q88"], "test set"),
+    (None, ["p_kp_q88"], None),
 ], ids=["both limits", "the speed limit alone", "another field"])
 def test_a_side_whose_deviation_moves_the_limits_of_motion_runs_at_its_own_two(bus, tmp_path, policy, moves,
-                                                                               runs_at):
+                                                                               runs_at, motion):
     default_200(bus, tmp_path)
     f = deviation(tmp_path, "dev", policy=policy, **({} if policy else {"p_kp_q88": 5026}))
-    rung = sc.run("01-dev", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
+    rung = sc.run("01-dev", "abc123", "f" * 40, runs=1, deviation=f, motion=motion, servo=SERVO, board=BOARD)
     doc, derived = rung_json(rung), cn.load(rung / sc.SET_COPY)
     assert list(doc["deviation"]["fields"]) == moves
     # a deviation that moves either limit runs at its set's two, the one it does not move at the set's
-    # default; any other runs at the test's
-    want = ({n: derived["fields"][n]["value"] for n in cn.MOTION} if runs_at == "deviation"
+    # default, whatever the rung asks; any other runs at the limits the rung asks, the test's or the set's
+    runs_at = runs_at or {"test": "test set", "set": "set"}[motion]
+    want = ({n: derived["fields"][n]["value"] for n in cn.MOTION} if runs_at != "test set"
             else synth.TEST_MOTION_RAW)
     assert doc["motion"]["from"] == runs_at and {n: doc["motion"][n] for n in cn.MOTION} == want
     assert {n: constants(rung, 1)["fields"][n] for n in cn.MOTION} == want
     if moves == ["velocity_limit_cps"]:
         assert want["accel_limit_q88"] == bus["set"]["fields"]["accel_limit_q88"]["value"] != 3609
+    if runs_at == "set":
+        assert want == {n: bus["set"]["fields"][n]["value"] for n in cn.MOTION} != synth.TEST_MOTION_RAW
     assert sc.motion_of(doc) == want
 
 
@@ -1406,11 +1477,14 @@ def test_the_cli_names_the_set_and_the_deviation_of_a_run_and_of_each_side(monke
     seen, loads = [], []
     monkeypatch.setattr(sc, "run", lambda *a, **kw: seen.append(a) or loads.append(kw) or Path("x"))
     sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s"])
-    assert seen[-1] == ("l", "f", "s", 3, "", None, None, [], [])
+    assert seen[-1] == ("l", "f", "s", 3, "", None, None, [], [], "test")
     sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s", "--set", "x.json", "--deviation", "d.json",
-             "--protection", "current_limit_counts", "stall_response", "--loosen", "stall_response"])
+             "--protection", "current_limit_counts", "stall_response", "--loosen", "stall_response",
+             "--motion", "set"])
     assert seen[-1][5:] == (Path("x.json"), Path("d.json"), ["current_limit_counts", "stall_response"],
-                            ["stall_response"])
+                            ["stall_response"], "set")
+    with pytest.raises(SystemExit):
+        sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s", "--motion", "default"])
     monkeypatch.setattr(sc, "ab", lambda *sides, **kw: seen.append((sides, kw)) or (Path("a"), Path("b")))
     two = ["ab", "--a-label", "a", "--a-fw", "f", "--a-image", "i", "--b-label", "b", "--b-fw", "g",
            "--b-image", "j", "--b-set", "x.json", "--b-deviation", "d.json", "--b-protection", "cutoff_cc",
@@ -1418,19 +1492,21 @@ def test_the_cli_names_the_set_and_the_deviation_of_a_run_and_of_each_side(monke
     sc.main(two)
     (a, b), kw = seen[-1]
     assert a == {"label": "a", "fw": "f", "image": Path("i"), "note": "", "set_file": None, "deviation": None,
-                 "protection": [], "loosen": [], "osc": None}
+                 "protection": [], "loosen": [], "motion": "test", "osc": None}
     assert b == {"label": "b", "fw": "g", "image": Path("j"), "note": "", "set_file": Path("x.json"),
-                 "deviation": Path("d.json"), "protection": ["cutoff_cc"], "loosen": ["cutoff_cc"], "osc": None}
+                 "deviation": Path("d.json"), "protection": ["cutoff_cc"], "loosen": ["cutoff_cc"], "motion": "test",
+                 "osc": None}
     assert kw == {"rounds": 3, "order": None, "max_load": None}
-    # a third side, each side's tool, the order within a round and the load gate
-    sc.main([*two, "--a-osc", "main/osc", "--c-label", "c", "--c-fw", "g", "--c-image", "j", "--c-osc", "new/osc",
-             "--c-deviation", "e.json", "--order", "cba", "--max-load", "4", "--rounds", "2"])
+    # a third side, each side's tool and limits of motion, the order within a round and the load gate
+    sc.main([*two, "--a-osc", "main/osc", "--b-motion", "set", "--c-label", "c", "--c-fw", "g", "--c-image", "j",
+             "--c-osc", "new/osc", "--c-deviation", "e.json", "--order", "cba", "--max-load", "4", "--rounds", "2"])
     (a, b, c), kw = seen[-1]
     assert (a["osc"], b["osc"], c["osc"]) == ("main/osc", None, "new/osc")
+    assert (a["motion"], b["motion"], c["motion"]) == ("test", "set", "test")
     assert c == {"label": "c", "fw": "g", "image": Path("j"), "note": "", "set_file": None,
-                 "deviation": Path("e.json"), "protection": [], "loosen": [], "osc": "new/osc"}
+                 "deviation": Path("e.json"), "protection": [], "loosen": [], "motion": "test", "osc": "new/osc"}
     assert kw == {"rounds": 2, "order": "cba", "max_load": 4.0}
-    for half in (["--c-note", "x"], ["--c-label", "c", "--c-image", "j"]):
+    for half in (["--c-note", "x"], ["--c-label", "c", "--c-image", "j"], ["--c-motion", "set"]):
         with pytest.raises(SystemExit):
             sc.main([*two, *half])
     sc.main(["run", "--label", "l", "--fw", "f", "--image-sha", "s", "--max-load", "2.5"])
@@ -2221,8 +2297,8 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
     # every other file derives, so the lists are the folder
     live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in OVERTAKEN and f.stem not in SWEEP_SIDES)
     assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "emf-pair-as-held",
-                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held", "observer-10hz",
-                    "observer-25hz", "plant-as-held", "r-as-held"]
+                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held", "motion-400-policy",
+                    "observer-10hz", "observer-25hz", "plant-as-held", "r-as-held"]
     # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
     # one it ran: what its release gave there is what the set of record binds now, and the 200 side's set is
     # the set of record itself. The rungs at 400 deg/s keep the point they ran
