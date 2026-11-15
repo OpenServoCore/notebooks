@@ -39,6 +39,18 @@ deviated], and protection as its own entry, the hash and what the
 install moved against the servo's values; a copy of the set the rung
 ran on lies beside it as `constants.json`, so the rung stays readable
 when the set of record moves.
+The moves run at the test set's own limits of motion, a speed and an
+acceleration in deg/s and deg/s^2 taken to counts on the set's count by
+the set's own rules, installed over the set with it and checked with it
+before each run (`run_motion`), whatever the set's default, so a step
+row compares down the ladder. A set whose deviation moves either of the
+two runs at its own two, which are what it tests. `rung.json` records
+them under `motion`: where they are from, the two as the fields hold
+them and what they are in deg/s and deg/s^2. A result recorded before
+rungs recorded them ran at the limits of its day (`motion_of`): the
+ones its deviation or its settings moved, else the counts every image
+and set held then; `table` reads them so, and `carry` leaves them as
+they are.
 `ab` records two or three such rungs at once, the sides a, b and c
 with the same flags each, one run of each per round in `--order`,
 flashing a side's image whenever the servo holds another, so all share
@@ -917,14 +929,15 @@ def differing(first, now):
 def record_constants(r, k):
     """The servo's constant state before run `k` of rung `r`, into the
     run's `servo.json`, with a copy of the rung's set beside `rung.json`
-    on the first. A servo that is not the rung's set, or whose data
+    on the first. A servo that is not the rung's set at the limits of
+    motion its runs ask (`run_motion`), or whose data
     state is not clean, is refused before anything is recorded or
     driven: the run does not start. The rung's first state is kept on
     `r`, for `rung.json`'s hash; a later run that reads another is
     refused the same way, what differs named."""
     cn = constants()
     now = servo_state()
-    off = cn.differences(r["set"], now)
+    off = cn.differences(r["ran"], now)
     if off or now["data_state"] != "clean":
         raise SystemExit(f"{shown(r['dir'])}: run-{k} does not start: the servo is not the rung's set (data state "
                          f"{now['data_state']}{''.join('; ' + d for d in off)})")
@@ -1011,10 +1024,36 @@ def new_rung(pair, label, fw, image_sha, runs, note="", set_file=None, deviation
         lines, stale = cn.status(doc, root)
         if stale:
             raise ValueError(f"the set is stale: {'; '.join(x for x in lines if x.startswith('stale: '))}")
+        ran, motion = run_motion(doc, testset())
     except (ValueError, settings.Refused) as e:
         raise SystemExit(f"{label}: {e}")
     return {"dir": rung, "label": label, "fw": fw, "image_sha": image_sha, "note": note, "runs": runs,
-            "set": doc, "set_file": named, "protection": tuple(protection), "loosen": tuple(loosen)}
+            "set": doc, "set_file": named, "ran": ran, "motion": motion, "protection": tuple(protection),
+            "loosen": tuple(loosen)}
+
+
+def run_motion(doc, ts):
+    """(the set a rung's runs install, what `rung.json` records of the
+    limits of motion its moves run at). They are the test set's own
+    (`ts.motion`) on the set's count, whatever the set's default, over
+    the set; on a set whose deviation moves either of the two they are
+    the set's two, which are what such a side tests. The record names
+    where they are from, the two as the fields hold them, and what they
+    are in deg/s and deg/s^2 on the set's count to five figures."""
+    cn = constants()
+    missing = [n for n in cn.MOTION if n not in doc["fields"]]
+    if missing:
+        raise ValueError(f"the set holds no {', '.join(missing)}: the test's limits of motion have no field to "
+                         f"run at")
+    moved = (doc.get("deviation") or {}).get("fields", {})
+    if any(n in moved for n in cn.MOTION):
+        ran, source = doc, "deviation"
+    else:
+        ran, source = cn.overlaid(doc, ts.motion(doc)), "test set"
+    values = {n: ran["fields"][n]["value"] for n in cn.MOTION}
+    speed, accel = cn.motion_deg(doc, values, results.ROOT)
+    return ran, {"from": source, **values, "speed_deg_s": float(f"{speed:.5g}"),
+                 "accel_deg_s2": float(f"{accel:.5g}")}
 
 
 def bench_sets(servo, board, pair, rungs):
@@ -1039,7 +1078,8 @@ def bench_sets(servo, board, pair, rungs):
 
 @contextmanager
 def applied(r):
-    """Rung `r`'s constant set on the servo for the body:
+    """Rung `r`'s constant set on the servo for the body, at the limits
+    of motion its runs ask (`run_motion`):
     `constants.install`, the one place a state is stamped, behind its
     protection gate, and the protection fields it moves against the
     servo's values kept on `r` for `rung.json`. A reboot brings the
@@ -1049,8 +1089,8 @@ def applied(r):
     cn = constants()
     try:
         state = servo_state()
-        r.setdefault("protection_moved", cn.protection_moves(r["set"], state))
-        wrote = cn.install(r["set"], r["protection"], r["loosen"], results.ROOT, state=state)
+        r.setdefault("protection_moved", cn.protection_moves(r["ran"], state))
+        wrote = cn.install(r["ran"], r["protection"], r["loosen"], results.ROOT, state=state)
     except (ValueError, settings.Refused) as e:
         raise SystemExit(f"{r['label']}: the rung's set does not install: {e}")
     gave_up = False
@@ -1089,7 +1129,8 @@ def record_run(r, k, s):
     the constant set by its file, its three hashes and its fields by
     class, the deviation with every field it moved as [of record,
     deviated], the protection hash with what the install moved against
-    the servo's values, the wide holds' goals, and the runs lost and
+    the servo's values, the limits of motion the moves ran at
+    (`run_motion`), the wide holds' goals, and the runs lost and
     the waits for the host's load before it, where there were any
     (`keep`)."""
     cn = constants()
@@ -1111,6 +1152,7 @@ def record_run(r, k, s):
                 "set": {"file": r["set_file"], "hash": r["set"]["hash"], "classes": cn.classes(r["set"])},
                 "deviation": r["set"].get("deviation"),
                 "protection": {"hash": r["set"]["hash"]["protection"], "moved": r["protection_moved"]},
+                "motion": r["motion"],
                 "wide_goals": wide or None,
                 **{key: r[key] for key in KEPT if key in r},
             }, indent=2) + "\n")
@@ -1337,9 +1379,37 @@ def cell(q):
     return f"{v:.3g} [{lo:.3g}, {hi:.3g}]"
 
 
+# The limits of motion of a rung recorded before rungs recorded theirs,
+# where neither its settings nor its deviation moved them: the image's
+# boot default, which every set held while the two were held, as the
+# config of every kept rung's captures holds them.
+MOTION_OF_THEIR_DAY = {"velocity_limit_cps": 1500, "accel_limit_q88": 3840}
+
+
+def motion_of(doc):
+    """The limits of motion a result's moves ran at, as the fields hold
+    them: what it records under `motion`, or on a result recorded
+    before rungs recorded theirs, the limits of its day: the ones its
+    deviation moved, else the ones its settings named, else
+    MOTION_OF_THEIR_DAY. Nothing is written to the result."""
+    cn = constants()
+    if doc.get("motion"):
+        return {n: doc["motion"][n] for n in cn.MOTION}
+    moved = (doc.get("deviation") or {}).get("fields", {})
+    named = doc.get("settings") or {}
+    return {n: moved[n][1] if n in moved else named.get(n, MOTION_OF_THEIR_DAY[n]) for n in cn.MOTION}
+
+
+def motion_unit(name):
+    """A limit of motion's unit as its rule names it, with its Q format."""
+    r = next(iter(constants().RULES[name].values()))
+    return f"{r.unit}, Q{r.q}" if r.q else r.unit
+
+
 def table(servo=None, board=None, file=None):
-    """The ladder: one row per score, one column per rung in label order,
-    other people's figures last where a row has one."""
+    """The ladder: first the limits of motion each rung's moves ran at
+    (`motion_of`), then one row per score, one column per rung in label
+    order, other people's figures last where a row has one."""
     servo = servo or servos.selected()
     board = board or boards.BOARDS[boards.DEFAULT]
     pair = pair_of(servo, board)
@@ -1349,7 +1419,8 @@ def table(servo=None, board=None, file=None):
     docs = [json.loads(p.read_text()) for p in files]
     keys = list(dict.fromkeys(k for d in docs for k in d["scores"]))
     head = ["score", "unit", *(d["label"] for d in docs), "others (STS3215, LX-16A)"]
-    body = []
+    motions = [motion_of(d) for d in docs]
+    body = [[n, motion_unit(n), *(str(m[n]) for m in motions), ""] for n in constants().MOTION]
     for k in keys:
         cells = [cell(d["scores"][k]) if k in d["scores"] else "-" for d in docs]
         body.append([k, UNITS[base_of(k)], *cells, OTHERS.get(base_of(k), "")])

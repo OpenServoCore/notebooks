@@ -7,7 +7,9 @@ goal item, the servo's speed and position reports against the pot, and
 the runner's refusals with `osc` stubbed; then rungs end to end on a
 fake servo that takes an install: a rung on the pair's constant set of
 record, on that set with one deviation, on a set with a live table, the
-set and the deviation it records, the test set planned from it, a servo
+set and the deviation it records, the test set planned from it, the
+test set's own limits of motion over the set's default and a deviation
+that moves them, a result's limits of the day it was recorded, a servo
 that is not the rung's set, and the rows read through the table and the
 slots of the rung's own record; an A/B of two rungs, each side on its
 own derived set and image, its flashes and refusals, and the flash's
@@ -529,12 +531,13 @@ def bus(monkeypatch, tmp_path):
         dst.parent.mkdir(parents=True)
         shutil.copy(src, dst)
     synth.wide_result(wc.result_file(BOARD.key), [(1023, 11)])
-    # the rules of the registry's gear fields bind nothing: the fake servo has none of them
-    monkeypatch.setattr(cn, "registry_of", lambda pair: {})
+    # the rules of the registry's gear fields bind nothing: the fake servo has none of them. The board's tick
+    # rate is there, which the acceleration limit's counts are per MEDIUM tick of
+    monkeypatch.setattr(cn, "registry_of", lambda pair: {"board": {"tick_hz": BOARD.tick_hz}})
     # nor does the rule of the record a host keeps that the results here would bind, the cold resistance off
     # the pair's stage 3 resistance: it has no r0_q12
     monkeypatch.delitem(cn.RULES, "r0_q12")
-    state["servo"] = synth.Bench().stub(monkeypatch, lambda: {"torque_enable": state["torque"]})
+    state["servo"] = synth.Moving().stub(monkeypatch, lambda: {"torque_enable": state["torque"]})
     monkeypatch.setattr(sc.osc, "bus_baud", lambda: state["baud"])
     monkeypatch.setattr(sc.osc, "identity", lambda: {"sha1": f"sha1 of {sc.osc.tool()}", "version": None})
     monkeypatch.setattr(sc.bench, "read_vsys", lambda board=None: state["vsys"])
@@ -594,6 +597,8 @@ def test_a_rung_end_to_end(bus):
                           "hash": bus["set"]["hash"], "classes": cn.classes(bus["set"])}
     assert doc["deviation"] is None
     assert doc["protection"] == {"hash": bus["set"]["hash"]["protection"], "moved": {}}
+    # and the limits of motion its moves ran at, the test set's own, which the servo stores here
+    assert doc["motion"]["from"] == "test set" and {n: doc["motion"][n] for n in cn.MOTION} == synth.TEST_MOTION_RAW
     assert not any(k in doc for k in ("settings", "pos_table", "wide_codes"))
     assert cn.load(rung / sc.SET_COPY) == bus["set"]
     # the servo held the set already: nothing was written to it, and nothing is rebooted away
@@ -641,6 +646,11 @@ def test_a_rung_end_to_end(bus):
 
 def sha1(path):
     return hashlib.sha1(Path(path).read_bytes()).hexdigest()
+
+
+def five(values):
+    """Numbers to five figures, as a rung records its limits of motion."""
+    return [float(f"{v:.5g}") for v in values]
 
 
 def rung_json(rung):
@@ -709,6 +719,142 @@ def test_a_rung_releases_a_hold_and_records_the_field_of_record_beside_deviated(
     assert constants(rung, 1)["fields"]["r_q12"] == gives and bus["servo"].decoded("r_q12") == 17100
 
 
+# --- the limits of motion a rung runs at ---
+
+DEFAULT_200 = {"velocity_limit_deg_s": 200.0, "accel_limit_deg_s2": 4000.0}
+
+
+def default_200(bus, root):
+    """The pair's set of record built again with a default of 200 deg/s
+    and the speed reached in 50 ms, the servo storing it as a saved set;
+    returns the default's counts."""
+    cn.set_path(PAIR, root).with_name(cn.POLICY).write_text(json.dumps(DEFAULT_200))
+    doc, _ = cn.build(PAIR, bus["set"], root=root)
+    bus["set"] = cn.load(cn.write(doc, cn.set_path(PAIR, root)))
+    default = {n: doc["fields"][n]["value"] for n in cn.MOTION}
+    servo = bus["servo"]
+    servo.STORED = {**servo.STORED, **default}
+    servo.reboot()
+    servo.log.clear()
+    return default
+
+
+def test_the_test_sets_limits_of_motion_are_the_counts_every_rung_ran_at_on_the_set_of_records_count():
+    doc = cn.of_record(PAIR)
+    # the acceleration limit reaches the speed limit in 50 ms, and on the set's count the two are the counts
+    # the servo held for every rung before the test set named them
+    assert TS.ACCEL_DEG_S2 == pytest.approx(TS.SPEED_DEG_S / 0.05)
+    on = TS.motion(doc)
+    assert {n: e["value"] for n, e in on.items()} == sc.MOTION_OF_THEIR_DAY == {
+        "velocity_limit_cps": 1500, "accel_limit_q88": 3840}
+    assert all(e["rule"] == next(iter(cn.RULES[n])) and e["protection"] is None for n, e in on.items())
+    ran, motion = sc.run_motion(doc, TS)
+    assert motion == {"from": "test set", "velocity_limit_cps": 1500, "accel_limit_q88": 3840,
+                      "speed_deg_s": 74.528, "accel_deg_s2": 1490.6}
+    assert {n: ran["fields"][n]["value"] for n in cn.MOTION} == sc.MOTION_OF_THEIR_DAY
+    assert ran["hash"] == cn.hashes(ran) and ran["fields"].keys() == doc["fields"].keys()
+    assert all(ran["fields"][n] == doc["fields"][n] for n in doc["fields"] if n not in cn.MOTION)
+
+
+def test_a_rung_runs_at_the_test_sets_limits_of_motion_and_not_at_the_sets_default(bus, monkeypatch, tmp_path):
+    default = default_200(bus, tmp_path)
+    servo = bus["servo"]
+    seen = []
+    track = sc.osc.track
+
+    def tracked(out, mode, schedule, **kw):
+        seen.append({n: servo.decoded(n) for n in cn.MOTION})
+        return track(out, mode, schedule, **kw)
+
+    monkeypatch.setattr(sc.osc, "track", tracked)
+    rung = sc.run("00-default", "abc123", "f" * 40, runs=2, servo=SERVO, board=BOARD)
+    # the set's default is 200 deg/s, and every capture ran at the test's 74.53 deg/s on the set's count
+    cpd = bus["set"]["scale"]["counts_per_deg"]
+    assert default == {"velocity_limit_cps": round(200 * cpd), "accel_limit_q88": round(4000 * cpd / 2000 * 256)}
+    assert default != synth.TEST_MOTION_RAW and seen == [synth.TEST_MOTION_RAW] * 8
+    assert servo.wrote() == [*(("set", n, str(v)) for n, v in synth.TEST_MOTION_RAW.items()), ("run", "stamp"),
+                             ("run", "reboot")]
+    doc = rung_json(rung)
+    assert doc["motion"] == {"from": "test set", **synth.TEST_MOTION_RAW,
+                             **dict(zip(("speed_deg_s", "accel_deg_s2"),
+                                        five(cn.motion_deg(bus["set"], synth.TEST_MOTION_RAW))))}
+    assert doc["motion"]["speed_deg_s"] == pytest.approx(TS.SPEED_DEG_S, abs=0.5 / cpd)
+    # the set it names, and its copy, hold the default; the servo's state before each run the test's
+    assert doc["set"]["hash"] == bus["set"]["hash"] and cn.load(rung / sc.SET_COPY) == bus["set"]
+    assert all(constants(rung, k)["fields"][n] == synth.TEST_MOTION_RAW[n] for k in (1, 2) for n in cn.MOTION)
+    # the reboot brought the stored default back, and the result says what the rung was scored at
+    assert {n: servo.decoded(n) for n in cn.MOTION} == default
+    sc.score("00-default", servo=SERVO, board=BOARD)
+    out = json.loads(sc.result_path(PAIR, "00-default").read_text())
+    assert out["motion"] == doc["motion"] and sc.motion_of(out) == synth.TEST_MOTION_RAW
+
+
+@pytest.mark.parametrize("policy, moves, runs_at", [
+    ({"velocity_limit_deg_s": 400.0, "accel_limit_deg_s2": 8000.0}, ["velocity_limit_cps", "accel_limit_q88"],
+     "deviation"),
+    ({"velocity_limit_deg_s": 300.0}, ["velocity_limit_cps"], "deviation"),
+    (None, ["p_kp_q88"], "test set"),
+], ids=["both limits", "the speed limit alone", "another field"])
+def test_a_side_whose_deviation_moves_the_limits_of_motion_runs_at_its_own_two(bus, tmp_path, policy, moves,
+                                                                               runs_at):
+    default_200(bus, tmp_path)
+    f = deviation(tmp_path, "dev", policy=policy, **({} if policy else {"p_kp_q88": 5026}))
+    rung = sc.run("01-dev", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
+    doc, derived = rung_json(rung), cn.load(rung / sc.SET_COPY)
+    assert list(doc["deviation"]["fields"]) == moves
+    # a deviation that moves either limit runs at its set's two, the one it does not move at the set's
+    # default; any other runs at the test's
+    want = ({n: derived["fields"][n]["value"] for n in cn.MOTION} if runs_at == "deviation"
+            else synth.TEST_MOTION_RAW)
+    assert doc["motion"]["from"] == runs_at and {n: doc["motion"][n] for n in cn.MOTION} == want
+    assert {n: constants(rung, 1)["fields"][n] for n in cn.MOTION} == want
+    if moves == ["velocity_limit_cps"]:
+        assert want["accel_limit_q88"] == bus["set"]["fields"]["accel_limit_q88"]["value"] != 3609
+    assert sc.motion_of(doc) == want
+
+
+def test_a_result_before_rungs_recorded_their_limits_of_motion_reads_the_limits_of_its_day():
+    day = sc.MOTION_OF_THEIR_DAY
+    assert sc.motion_of({}) == day
+    assert sc.motion_of({"deviation": None, "settings": None}) == day
+    # what its settings moved, the other field at the limit of the day
+    assert sc.motion_of({"settings": {"p_kp_q88": 5026, "velocity_limit_cps": 5900}}) == {
+        "velocity_limit_cps": 5900, "accel_limit_q88": 3840}
+    # what its deviation moved, as [of record, deviated]
+    moved = {"velocity_limit_cps": [1500, 4025], "accel_limit_q88": [3840, 10305]}
+    assert sc.motion_of({"deviation": {"fields": moved}}) == {"velocity_limit_cps": 4025, "accel_limit_q88": 10305}
+    # a record stands over both
+    said = {"from": "test set", "velocity_limit_cps": 1410, "accel_limit_q88": 3609}
+    assert sc.motion_of({"motion": said, "deviation": {"fields": moved}}) == {
+        "velocity_limit_cps": 1410, "accel_limit_q88": 3609}
+
+
+def test_every_result_of_record_reads_the_limits_of_motion_its_rows_ran_at():
+    """A result recorded before rungs recorded their limits of motion
+    reads the limits of its day: where its rows are kept, the config
+    every capture of its first run holds; where they are not, the
+    ladder reads what its settings or its deviation moved."""
+    docs = {p.stem: json.loads(p.read_text()) for p in sorted(sc.result_path(PAIR, "x").parent.glob("*.json"))}
+    kept = 0
+    for label, d in docs.items():
+        run = results.ROOT / d["capture"] / "run-1"
+        if not run.exists():
+            continue
+        for capture in (p for p in run.iterdir() if (p / "meta.json").exists()):
+            config = json.loads((capture / "meta.json").read_text())["config"]
+            assert sc.motion_of(d) == {n: config[n] for n in cn.MOTION}, (label, capture.name)
+        kept += 1
+    assert kept == 14 and not any("motion" in d for d in docs.values())
+    buf = io.StringIO()
+    sc.table(servo=SERVO, board=BOARD, file=buf)
+    lines = buf.getvalue().splitlines()
+    head, speed = lines[0].split(), lines[1].split()
+    assert speed[:2] == ["velocity_limit_cps", "count/s"] and lines[2].startswith("accel_limit_q88")
+    at = dict(zip(head[2:], speed[2:]))
+    assert (at["00-baseline"], at["02b-speed-half"], at["02e-speed-quarter"], at["17a-constants-of-record"],
+            at["zz-sweep-motion-200"], at["zz-sweep-motion-400"]) == ("1500", "5900", "2950", "1500", "4025", "8051")
+
+
 def test_a_rung_is_scored_at_the_current_scale_of_its_own_set(bus, tmp_path):
     scale = bus["set"]["scales"][cn.CURRENT]
     assert scale["value"] == CPA and scale["class"] == "measured"
@@ -746,7 +892,8 @@ def test_a_result_names_its_current_scale_and_one_whose_rows_were_not_kept_is_ca
     scored = json.loads(kept.read_text())
     assert scored["current_scale"] == {"counts_per_a": CPA, "from": "set", "hash": bus["set"]["hash"]["scales"]}
     # the same rung as a result scored at the board's nominal parts, before a result named its scale
-    old = {k: v for k, v in copy.deepcopy(scored).items() if k != "current_scale"} | {"label": "00-gone"}
+    old = {k: v for k, v in copy.deepcopy(scored).items() if k not in ("current_scale", "motion")} | {
+        "label": "00-gone"}
     ma = [k for k, q in old["scores"].items() if q["unit"] == "mA"]
     for k in ma:
         old["scores"][k].update({b: old["scores"][k][b] * CPA / BOARD.counts_per_a for b in ("value", "lo", "hi")})
@@ -761,9 +908,11 @@ def test_a_result_names_its_current_scale_and_one_whose_rows_were_not_kept_is_ca
         "carried": {"counts_per_a": BOARD.counts_per_a, "from": "the board's nominal parts",
                     "how": "the mA rows times nominal over measured counts per A, not scored again: "
                            "the rung's rows were not kept"}}
-    assert list(carried) == list(scored)
+    assert list(carried) == [k for k in scored if k != "motion"]
     assert {k: v for k, v in carried.items() if k not in ("current_scale", "scores")} == {
         k: v for k, v in old.items() if k != "scores"}
+    # it names no limits of motion, and is not given any: the ladder reads it at the limits of its day
+    assert "motion" not in carried and sc.motion_of(carried) == sc.MOTION_OF_THEIR_DAY
     # the mA rows are where scoring the rows at the measured scale puts them, and no other row moved
     assert len(ma) == 8 and any(scored["scores"][k]["value"] > 0 for k in ma)
     for k, q in carried["scores"].items():
@@ -843,6 +992,13 @@ def two_deviations(bus, root):
             "deviation": deviation(root, "two", r_q12=16000)}
 
 
+def no_motion(bus, root):
+    doc = copy.deepcopy(bus["set"])
+    for n in cn.MOTION:
+        del doc["fields"][n]
+    return {"set_file": cn.write({**doc, "hash": cn.hashes(doc)}, root / "still.constants.json")}
+
+
 def outside(bus, root):
     path = root.parent / f"{root.name}-outside.json"
     path.write_text(json.dumps({"pins": {"p_kp_q88": {"value": 5026, "why": "a test's", "rung": "x"}}}))
@@ -859,11 +1015,14 @@ def outside(bus, root):
     (lambda bus, root: {"deviation": deviation(root, "empty", pins={})},
      "a deviation holds policy entries, pins or holds to release"),
     (two_deviations, "the set already holds the deviation deviations/one.json"),
+    (no_motion, "the set holds no velocity_limit_cps, accel_limit_q88: the test's limits of motion have no field "
+                "to run at"),
     (outside, "is not a file of the repo: a deviation is named by its path in it"),
     (lambda bus, root: {"set_file": cn.write(bus["set"], root.parent / f"{root.name}-set.json")},
      "is not a file of the repo: the set a rung runs on is named by its path in it"),
 ], ids=["the set of another pair", "a set with a moved input", "a deviation that moves nothing",
         "a pin without its why and its rung", "a deviation of nothing", "a second deviation",
+        "a set without the limits of motion",
         "a deviation outside the repo", "a set outside the repo"])
 def test_a_rung_whose_set_does_not_stand_is_refused_with_the_bus_untouched(bus, tmp_path, make, match):
     kw = make(bus, tmp_path)
@@ -963,9 +1122,14 @@ def test_a_rung_on_a_set_with_a_live_table_installs_it_and_is_planned_and_read_t
     servo = bus["servo"]
     other, _ = cn.derive(bus["set"], deviation(tmp_path, "soft", p_kp_q88=5026), tmp_path)
     rung = sc.run("03-table", "abc123", "f" * 40, runs=1, servo=SERVO, board=BOARD)
-    # the install: the table's eight pages and the COMMIT, one stamp, and the reboot at the end
+    # the install: the table's eight pages and the COMMIT, the test's limits of motion on the table's count,
+    # other counts than the raw pot's the servo held, one stamp, and the reboot at the end
     wrote = servo.wrote()
-    assert [c[0] for c in wrote[:9]] == ["write"] * 9 and wrote[9:] == [("run", "stamp"), ("run", "reboot")]
+    on = {n: e["value"] for n, e in TS.motion(bus["set"]).items()}
+    assert [c[0] for c in wrote[:9]] == ["write"] * 9 and wrote[9:] == [
+        *(("set", n, str(v)) for n, v in on.items()), ("run", "stamp"), ("run", "reboot")]
+    assert on != synth.TEST_MOTION_RAW and rung_json(rung)["motion"] == {
+        "from": "test set", **on, **dict(zip(("speed_deg_s", "accel_deg_s2"), five(cn.motion_deg(bus["set"], on))))}
     assert len(bus["log"]) == 4 and servo.decoded("pos_lut_state") == postable.STATES.index("IDENTITY")
     # the plan: the table's scale, the raw center read through it, the wide goals the table's reading
     planned = json.loads((rung / "run-1" / "steps" / "plan.json").read_text())
@@ -1107,7 +1271,7 @@ def test_a_deviation_naming_a_field_an_image_lacks_is_refused_on_that_side_befor
     """A deviation that pins a field only the newer image has: the side
     on that image runs on it, the side on the older image is refused by
     the install, the field named."""
-    ab_bench["descriptors"]["b.bin"] = with_field(synth.Bench, "recip_ke_q", "r_bemf_q12", 0x84, 17000)
+    ab_bench["descriptors"]["b.bin"] = with_field(synth.Moving, "recip_ke_q", "r_bemf_q12", 0x84, 17000)
     f = deviation(tmp_path, "bemf", recip_ke_q=12000, r_bemf_q12=16500)
     a, b = sc.ab(side(ab_bench, "20-a", "a"), side(ab_bench, "20-b", "b", deviation=f), rounds=1,
                  servo=SERVO, board=BOARD)
@@ -1132,9 +1296,13 @@ def test_a_side_on_the_table_installs_it_around_its_own_runs_and_is_planned_in_i
     a, b = sc.ab(side(ab_bench, "12-a", "a", set_file=identity), side(ab_bench, "12-b", "a"), rounds=2,
                  servo=SERVO, board=BOARD)
     table = [c for c in bus["servo"].wrote() if c[0] == "write"][:9]
+    # the side on the table runs the test's limits of motion at the table's counts, the other at the raw pot's
+    moved = [("set", n, str(e["value"])) for n, e in TS.motion(bus["set"]).items()]
+    assert [rung_json(r)["motion"]["velocity_limit_cps"] for r in (a, b)] == [
+        synth.TEST_MOTION_RAW["velocity_limit_cps"], int(moved[0][2])]
     expected = [("flash", "a.bin")]
     for k in (1, 2):
-        expected += [("capture", "12-a", f"run-{k}", 40212), *table, ("run", "stamp"),
+        expected += [("capture", "12-a", f"run-{k}", 40212), *table, *moved, ("run", "stamp"),
                      ("capture", "12-b", f"run-{k}", 40212), ("run", "reboot")]
     assert events(bus) == expected
     pa, pb = (json.loads((r / "run-1" / "steps" / "plan.json").read_text()) for r in (a, b))
@@ -1687,7 +1855,7 @@ OTHER = "reads a constant state other than the one the rung's first run recorded
 ], ids=["a config field", "a bool", "the slots", "the table's state", "a table point", "the data state",
         "the stamp", "a byte no field names"])
 def test_what_a_later_run_reads_differently_is_named(bus, tmp_path, change, said):
-    r = {"dir": tmp_path / "rung", "set": bus["set"]}
+    r = {"dir": tmp_path / "rung", "set": bus["set"], "ran": bus["set"]}
     sc.record_constants(r, 1)
     sc.record_constants(r, 2)
     change(bus["servo"])
@@ -1702,6 +1870,7 @@ def test_a_servo_whose_descriptor_names_no_slots_records_none(bus, monkeypatch, 
     monkeypatch.setattr(sc.osc, "field", lambda name: None)
     doc = {**bus["set"], "wide_codes": None}
     r = {"dir": tmp_path / "rung", "set": {**doc, "hash": cn.hashes(doc)}}
+    r["ran"] = r["set"]
     sc.record_constants(r, 1)
     assert constants(r["dir"], 1)["wide_codes"] is None
 
@@ -1709,7 +1878,7 @@ def test_a_servo_whose_descriptor_names_no_slots_records_none(bus, monkeypatch, 
 def test_a_dump_that_names_no_control_field_is_refused(bus, monkeypatch, tmp_path):
     monkeypatch.setattr(sc.osc, "dump", lambda: [(0, "model_number", "ro", 257)])
     with pytest.raises(SystemExit, match="names no torque_enable"):
-        sc.record_constants({"dir": tmp_path / "rung", "set": bus["set"]}, 1)
+        sc.record_constants({"dir": tmp_path / "rung", "set": bus["set"], "ran": bus["set"]}, 1)
     assert not (tmp_path / "rung").exists()
 
 
@@ -1969,21 +2138,28 @@ NOT_HELD = "{}.json: {} is not held: a deviation releases a hold of policy.json"
 OVERTAKEN = {
     **{name: NOT_HELD for name in (
         "motor-r", "motor-model", "protection-ntc-curve", "protection-winding-model", "protection-position-error",
-        "protection-sensor-delta", "protection-undervolt", "protection-rail-fold", "protection-stall-response")},
+        "protection-sensor-delta", "protection-undervolt", "protection-rail-fold", "protection-stall-response",
+        "motion-limits")},
     "friction-measured": "{}.json: the deviation moves no field of the set",
 }
+# The two faster sides of the sweep under the speed ceiling, overtaken once the owner took the 200 deg/s side
+# as the default: each states the limits of motion as policy entries and releases their holds, which the set
+# of record no longer has. The 200 side is the set of record's own default; the 400 side, the ceiling itself,
+# stays the point its rung ran.
+SWEEP_SIDES = {"motion-200": NOT_HELD, "motion-400": NOT_HELD}
 
 
 def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what_it_names_alone():
     pair = sc.pair_of(SERVO, BOARD)
     base = cn.of_record(pair)
     files = sorted((results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations").glob("*.json"))
-    assert {f.stem for f in files} >= {"motor-r", "motor-model"} and {f.stem for f in files} > set(OVERTAKEN)
+    assert {f.stem for f in files} >= {"motor-r", "motor-model"} and {f.stem for f in files} > {
+        *OVERTAKEN, *SWEEP_SIDES}
     for f in files:
         dev = json.loads(f.read_text())
         pins, release, policy = dev.get("pins", {}), dev.get("release", []), dev.get("policy", {})
         assert dev["note"] and "/Users/" not in f.read_text() and "/home/" not in f.read_text(), f.name
-        if f.stem in OVERTAKEN:
+        if f.stem in OVERTAKEN or f.stem in SWEEP_SIDES:
             continue
         doc, _ = cn.derive(base, f)
         moved = doc["deviation"]["fields"]
@@ -2029,22 +2205,38 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
                    for n, pin in pins.items()), name
         with pytest.raises(ValueError, match=re.escape(why.format(name, ", ".join(release)))):
             cn.derive(base, folder / f"{name}.json")
-    # every other file derives, so the two lists are the folder
-    live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in OVERTAKEN)
+    # each side of the sweep states the two limits of motion and releases their two holds, and is refused the
+    # same way; the policy's entries are the 200 side's
+    for name, why in SWEEP_SIDES.items():
+        dev = json.loads((folder / f"{name}.json").read_text())
+        assert set(dev["policy"]) == set(cn.MOTION.values()) and dev["release"] == list(cn.MOTION), name
+        assert "pins" not in dev and not set(dev["release"]) & set(policy["hold"]), name
+        with pytest.raises(ValueError, match=re.escape(why.format(name, ", ".join(dev["release"])))):
+            cn.derive(base, folder / f"{name}.json")
+    sweep = json.loads((folder / "motion-200.json").read_text())["policy"]
+    assert {k: policy[k] for k in sweep} == sweep
+    # every other file derives, so the lists are the folder
+    live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in OVERTAKEN and f.stem not in SWEEP_SIDES)
     assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "emf-pair-as-held",
-                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held", "motion-200",
-                    "motion-400", "motion-limits", "observer-10hz", "observer-25hz", "plant-as-held", "r-as-held"]
+                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held", "observer-10hz",
+                    "observer-25hz", "plant-as-held", "r-as-held"]
     # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
-    # one it ran: what its release gave there is what the set of record binds now
+    # one it ran: what its release gave there is what the set of record binds now, and the 200 side's set is
+    # the set of record itself. The 400 side's rung keeps the point it ran
     named = {}
     for result in sorted(sc.result_path(pair, "x").parent.glob("*.json")):
-        dev = json.loads(result.read_text()).get("deviation")
-        if dev and Path(dev["file"]).stem in OVERTAKEN:
-            named.setdefault(Path(dev["file"]).stem, []).append(result.stem)
+        doc = json.loads(result.read_text())
+        dev = doc.get("deviation")
+        if dev and Path(dev["file"]).stem in (*OVERTAKEN, *SWEEP_SIDES):
+            stem = Path(dev["file"]).stem
+            named.setdefault(stem, []).append(result.stem)
             assert sc.file_sha1(results.ROOT / dev["file"]) == dev["sha1"], result.name
-            assert {n: fields[n]["value"] for n in dev["fields"]} == {n: b for n, (_, b) in dev["fields"].items()}
+            binds = {n: fields[n]["value"] for n in dev["fields"]} == {n: b for n, (_, b) in dev["fields"].items()}
+            assert binds == (stem != "motion-400"), result.name
+            assert (doc["set"]["hash"] == base["hash"]) == (stem == "motion-200"), result.name
     assert named == {"motor-model": ["zz-ab-motor-model-2", "zz-ab-motor-model"],
-                     "protection-ntc-curve": ["zz-ab-ntc-pinned"], "motor-r": ["zz-ab-r-measured"]}
+                     "protection-ntc-curve": ["zz-ab-ntc-pinned"], "motor-r": ["zz-ab-r-measured"],
+                     "motion-200": ["zz-sweep-motion-200"], "motion-400": ["zz-sweep-motion-400"]}
 
 
 def test_an_identity_rungs_plan_is_rebuilt_byte_for_byte():
@@ -2349,7 +2541,10 @@ def test_a_board_without_a_result_runs_no_wide_capture_and_its_rows_are_absent(b
     wide = {r.split()[0]: r.split()[1:] for r in lines if r.startswith("wide_hold_")}
     assert wide == {"wide_hold_hunting": ["holds", "-", "0"], "wide_hold_driven_share": ["share", "-", "0"],
                     "wide_hold_current_rms_ma": ["mA", "-", "0"]}
-    assert lines[1].startswith("overshoot_deg_2deg")
+    # the limits of motion each rung ran at lead, the test set's on both
+    assert [r.split() for r in lines[1:3]] == [["velocity_limit_cps", "count/s", "1410", "1410"],
+                                               ["accel_limit_q88", "(count/s)/tick,", "Q8", "3609", "3609"]]
+    assert lines[3].startswith("overshoot_deg_2deg")
 
 
 # --- a wide-codes rung's rows through the board's slots ---

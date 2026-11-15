@@ -1527,7 +1527,7 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     doc = cn.of_record(postable.default_pair())
     f = doc["fields"]
     assert not any(e["class"] in cn.WAS for e in f.values())
-    assert cn.classes(doc) == {"measured": 16, "bench": 10, "datasheet": 0, "policy": 32, "pinned": 1, "none": 3}
+    assert cn.classes(doc) == {"measured": 16, "bench": 10, "datasheet": 0, "policy": 34, "pinned": 1, "none": 1}
     by = {c: [n for n, e in f.items() if e["class"] == c] for c in cn.CLASSES}
     assert by["measured"] == ["j_ff_q88", "thermal_tau_s", "r_q12", "recip_ke_q", "b_i_q313", "fric_fc_counts",
                               "fric_fv_q016", "ke_vpc_q", "r0_q12", "th_rise_q016", "ntc_raw_ref", "ntc_t_ref_cc",
@@ -1535,9 +1535,10 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     # the one pin: the board's nominal supply word, which a capture is matched to its board by
     assert by["pinned"] == ["vdd_mv"]
     # the gains of the current loop and of the observer among them: a bandwidth is a target, and the policy
-    # holds each at the pick of its bench sweep
+    # holds each at the pick of its bench sweep; and the limits of motion, the owner's default move speed
     assert by["policy"] == ["pos_min_soft_counts", "pos_max_soft_counts", "i_kp_q88", "i_ki_q412", "i_kaw_q412",
-                            "duty_max_q15", "pos_deadband_counts", "current_limit_counts", "stall_response",
+                            "duty_max_q15", "pos_deadband_counts", "velocity_limit_cps", "accel_limit_q88",
+                            "current_limit_counts", "stall_response",
                             "stall_time_ticks", "stall_omega_max_cps", "i_cont_counts", "stall_release_counts",
                             "stall_tau_trip_counts", "oc_trip_counts", "oc_trip_ticks", "openloop_decay",
                             "openloop_zero_brake", "cutoff_cc", "v_undervolt_counts", "thermal_tau2_s",
@@ -1569,32 +1570,27 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     assert reading["date"] == "2026-11-05" and reading["how"] and "three recorded reads a stop" in reading["weak"]
     assert cn.weak(doc) == {reading["weak"]: ["pos_min_phys_counts", "pos_max_phys_counts", "raw_min", "raw_max"],
                             f["drive_polarity"]["weak"]: ["drive_polarity"]}
-    # the debt: 3 fields with no source, each with its reason and what would give it one from the set's
-    # own entry. A unit that gives a field a source brings the count down
+    # the debt: 1 field with no source, with its reason and what would give it one from the set's own
+    # entry. A unit that gives a field a source brings the count down
     debt = cn.unsourced(doc)
-    assert len(debt) == 3 and [name for name, *_ in debt] == by["none"] == [
-        "velocity_limit_cps", "accel_limit_q88", "fric_breakaway_counts"]
+    assert len(debt) == 1 and [name for name, *_ in debt] == by["none"] == ["fric_breakaway_counts"]
     assert all(f[n].get("reason") and f[n].get("needs") for n in by["none"])
-    # two wait for a decision, the limits of motion, whose sweep ran and recommends, and one for a capture
-    # no sitting has taken
+    # it waits for a capture no sitting has taken
     waits = {name: needs for name, _, _, needs, _ in debt}
-    assert all(needs.startswith("a decision") and "sweep" in needs for needs in list(waits.values())[:-1])
     assert waits["fric_breakaway_counts"].startswith("a driven-ramp breakaway capture")
     reasons = {}
     for name, _, reason, _, _ in debt:
         reasons.setdefault(reason, []).append(name)
-    assert {r: len(names) for r, names in reasons.items()} == {
-        "boot default restated at the raw pot's scale, no decision": 2, "never written": 1}
-    # no maker's value the repo records could supply one of them
+    assert {r: len(names) for r, names in reasons.items()} == {"never written": 1}
+    # no maker's value the repo records could supply it
     assert [name for name, *_, maker in debt if maker] == []
     lines, stale = cn.status(doc)
-    assert not stale and "no source, 3 fields, 0 of which a maker's value on record could supply:" in lines
-    assert sum(line.startswith("  ") for line in lines) == 3
-    # the three are held beside what their rule gives: the two limits of motion, whose sweep under the speed
-    # ceiling recommends and waits for the owner, and the breakaway, whose rule reads a result that is not
-    # the field's quantity
+    assert not stale and "no source, 1 fields, 0 of which a maker's value on record could supply:" in lines
+    assert sum(line.startswith("  ") for line in lines) == 1
+    # it is held beside what its rule gives: the breakaway's rule reads a result that is not the field's
+    # quantity
     held = [n for n in by["none"] if "held" in f[n]]
-    assert held == ["velocity_limit_cps", "accel_limit_q88", "fric_breakaway_counts"]
+    assert held == ["fric_breakaway_counts"]
     assert all(f[n]["would_be"] != f[n]["value"] for n in held)
     policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     assert set(policy["hold"]) == {*held, "r_bemf_q12"} and "r_bemf_q12" not in f
@@ -1637,13 +1633,17 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     assert {k: policy[k] for k in ("i_cont_ma", "stall_release_ma", "collision_trip", "hold_band_floor_counts")} == {
         "i_cont_ma": 250.0, "stall_release_ma": 90.0, "collision_trip": "off", "hold_band_floor_counts": 4}
     # an entry that restates a default nobody decided says that, under `undecided`, with what it needs: it
-    # is no decision, so it has no why, and a field whose rule reads it has no source. The two limits of
-    # motion are the ones left: the two bandwidths left the list with their sweeps
-    assert set(policy["undecided"]) == {"velocity_limit_deg_s", "accel_limit_deg_s2"} < set(policy)
-    assert not set(policy["undecided"]) & set(policy["why"])
-    assert all(e["reason"] and e["needs"] for e in policy["undecided"].values())
-    # their sweep ran under the speed ceiling, and what it recommends waits for the owner
-    assert all("sweep" in e["needs"] and "owner" in e["needs"] for e in policy["undecided"].values())
+    # is no decision, so it has no why, and a field whose rule reads it has no source. None is left: the two
+    # bandwidths left the list with their sweeps, and the two limits of motion with the owner's decision
+    assert policy["undecided"] == {}
+    # the default move speed and the acceleration that reaches it in 50 ms, each a decision with its why,
+    # which names the sweep under the speed ceiling it rests on and says it is interim
+    motion = {"velocity_limit_deg_s": 200.0, "accel_limit_deg_s2": 4000.0}
+    assert {k: policy[k] for k in motion} == motion and motion["accel_limit_deg_s2"] * 0.05 == motion[
+        "velocity_limit_deg_s"]
+    assert re.findall(r"zz-sweep-[a-z0-9-]+", policy["why"]["velocity_limit_deg_s"]) == [
+        f"zz-sweep-motion-{speed}" for speed in (75, 200, 400)]
+    assert all("interim" in policy["why"][k] and policy["why"][k].endswith(": the owner's decision") for k in motion)
     # the decisions on the screens, the supply terms and the open loop, each an entry in the unit a person
     # sets it in, with its why
     decided = {"stall_response": "yield", "stall_time_ms": 500.0, "stall_omega_max_deg_s": 24.84, "pos_error_deg": 9.9,
@@ -2059,20 +2059,20 @@ def test_the_set_of_record_holds_the_speed_ceiling_of_its_servo_class():
     assert doc["inputs"]["registry"]["servo"]["datasheet_class"] == "vorpal-mg90"
     assert doc["inputs"]["registry"]["servo"]["rated_v"] == servo.rated_v
     # it is in no hash of what the servo is to hold, and no field gained a source by it: the move's speed
-    # limit stays as it was, under the ceiling and still nobody's decision
+    # limit is the owner's default move speed, a policy entry of its own, under the ceiling
     assert doc["hash"]["limits"] == sc.config_hash({cn.CEILING: e["value"]})
     assert {k: v for k, v in doc["hash"].items() if k != "limits"} == cn.hashes(
         {k: v for k, v in doc.items() if k != "limits"})
     limit = doc["fields"]["velocity_limit_cps"]
-    assert (limit["value"], limit["class"]) == (1500, "none") and limit["value"] <= e["value"]
-    assert "velocity_limit_deg_s" in policy["undecided"] and cn.classes(doc)["datasheet"] == 0
+    assert (limit["value"], limit["class"]) == (4025, "policy") and limit["value"] <= e["value"]
+    assert limit["inputs"] == ["policy:velocity_limit_deg_s", "scale"] and cn.classes(doc)["datasheet"] == 0
     assert cn.over_limit(doc) == []
     lines, stale = cn.status(doc)
     assert not stale and (
         "speed ceiling: 8051 count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
         "maker's no-load speed at 4.8 V, the stated voltage nearest the servo's rated_v of 5 V by the policy "
         "(datasheet_speed_voltage), 600 deg/s, x 2/3 by the policy (datasheet_derate_speed); "
-        f"{sheet['document']}; it bounds velocity_limit_cps = 1500") in lines
+        f"{sheet['document']}; it bounds velocity_limit_cps = 4025") in lines
     assert "Vorpal Robotics wiki" in sheet["document"]
 
 
@@ -3135,25 +3135,25 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     typed_at = results.read_file(results.path("3-servo", "pot-table", doc["pair"]))["pot_scale_counts_per_deg"]["value"]
     table, medium = doc["scale"]["counts_per_deg"], board.tick_hz / cn.DECIM_MED
     assert (round(typed_at, 3), round(table, 3), round(table / typed_at, 4)) == (18.913, 20.127, 1.0642)
-    # the limits of motion: (what the servo holds, in its unit per count of position, the policy's entry, what
-    # the rule gives)
-    held = {"velocity_limit_cps": (1500, 1500, "velocity_limit_deg_s", 1596),
-            "accel_limit_q88": (3840, 3840 / 256 * medium, "accel_limit_deg_s2", 4086)}
-    for name, (stored, counts, key, gives) in held.items():
-        # the policy is what the stored counts were typed for at the raw pot's mid travel scale, four figures
-        assert policy[key] == float(f"{counts / typed_at:.4g}"), name
-        assert count_rule(c, name)["value"] == gives, name
-        assert (f[name]["value"], f[name]["class"], f[name]["would_be"]) == (stored, "none", gives), name
-        assert f[name]["scale"] == "unknown" and f[name]["held"] == policy["hold"][name], name
-        # and released it would have none either: its entry restates a boot default nobody decided, interim
-        # until a bench sweep under the speed ceiling picks the default
-        said = policy["undecided"][key]
-        assert (f[name]["reason"], f[name]["needs"]) == (said["reason"], said["needs"]), name
-        assert "interim" in said["needs"] and "sweep" in said["needs"], name
-    assert {n: policy[key] for n, (_, _, key, _) in held.items()} == {
+    # the limits of motion: the owner's default move speed and the acceleration that reaches it in 50 ms,
+    # bound by their rules on the set's count, of class `policy`, at a scale that is on record: (the policy's
+    # entry, what the rule gives)
+    motion = {"velocity_limit_cps": ("velocity_limit_deg_s", 4025), "accel_limit_q88": ("accel_limit_deg_s2", 10305)}
+    for name, (key, gives) in motion.items():
+        e = count_rule(c, name)
+        assert e["value"] == gives and f[name] == {**e, "protection": None}, name
+        assert (e["class"], e["scale_points_sha1"], e["inputs"][0]) == (
+            "policy", doc["scale"]["points_sha1"], f"policy:{key}"), name
+        assert name not in policy["hold"] and key in policy["why"] and key not in policy["undecided"], name
+    assert (raw(policy["velocity_limit_deg_s"] * table), raw(policy["accel_limit_deg_s2"] * table / medium, 8)) == (
+        4025, 10305)
+    # the boot default's counts the servo held before, 1500 count/s and 3840 count/s a MEDIUM tick in Q8, were
+    # typed for these at the raw pot's mid travel scale, four figures, and are 6.4 % less of each on the
+    # table's count
+    stored = {"velocity_limit_cps": 1500, "accel_limit_q88": 3840 / 256 * medium}
+    assert {n: float(f"{counts / typed_at:.4g}") for n, counts in stored.items()} == {
         "velocity_limit_cps": 79.31, "accel_limit_q88": 1586.0}
-    # and what the stored counts are on the table's count: 6.4 % less of each
-    assert {n: float(f"{counts / table:.4g}") for n, (_, counts, _, _) in held.items()} == {
+    assert {n: float(f"{counts / table:.4g}") for n, counts in stored.items()} == {
         "velocity_limit_cps": 74.53, "accel_limit_q88": 1491.0}
     # the stall speed is decided at the speed its counts are on the set's count, so its rule gives the counts
     # the servo holds: it binds, of class `policy`, at a scale that is on record, and has no step
@@ -3188,23 +3188,22 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
         (4, "policy", "deadband.pot_noise"), (64, "policy", "sensor_delta.policy")]
     assert f["sensor_delta_max"]["value"] == policy["sensor_delta_max_counts"] and ran["sensor_delta_max"] == 256
     assert "would_be" not in f["sensor_delta_max"] and "held" not in f["sensor_delta_max"]
-    # the velocity loop's two gains are a rung's, benched in counts: no field at a scale nothing recorded
-    # is left but held ones
+    # the velocity loop's two gains are a rung's, benched in counts: no field is left at a scale nothing
+    # recorded
     assert all(f[n]["class"] == "bench" and "scale" not in f[n] for n in ("v_kp_q88", "v_ki_q412"))
-    assert all("held" in e for e in f.values() if e.get("scale") == "unknown")
-    assert [n for n, e in f.items() if e.get("scale") == "unknown"] == list(MOTION)
-    assert cn.described(doc)[0] == ("62 fields: 16 measured, 10 bench, 0 datasheet, 32 policy, 1 pinned, 3 none "
-                                    "(no source); 2 per-count at an unknown scale")
+    assert [n for n, e in f.items() if e.get("scale") == "unknown"] == []
+    assert cn.described(doc)[0] == ("62 fields: 16 measured, 10 bench, 0 datasheet, 34 policy, 1 pinned, 1 none "
+                                    "(no source); 0 per-count at an unknown scale")
 
 
 def test_the_steps_of_the_fields_in_counts_name_what_their_install_needs():
     doc, _, _ = of_the_bench_pair()
     state = {"fields": {n: e["value"] for n, e in doc["fields"].items()}}
     folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
-    # the limits of motion are of the plant: a rung's own step, no gate
-    motion, _ = cn.derive(doc, folder / "motion-limits.json")
-    assert motion["deviation"]["fields"] == {"velocity_limit_cps": [1500, 1596], "accel_limit_q88": [3840, 4086]}
-    assert moved_hashes(doc, motion) == ["plant"] and cn.gate(motion, state) == []
+    # the limits of motion are of the plant: on a servo that holds the boot default's counts, the set's install
+    # moves them with no gate
+    held = {"fields": {**state["fields"], "velocity_limit_cps": 1500, "accel_limit_q88": 3840}}
+    assert not set(MOTION) & cn.PROTECTION and cn.gate(doc, held) == []
     # the position-error screen trips on a smaller error held for a shorter time: one protection step of the
     # angle and the time, built into the set of record. It protects more, so on a servo that holds the boot
     # default the install names the two and loosens nothing
@@ -3586,14 +3585,14 @@ LOOSEN = ("stall_response", "thermal_tau_s", "thermal_tau2_s", "rail_fold_q8", "
 def before_the_releases(doc):
     """(the set of record as it was before its holds were released, the
     fields of the plant the release moved, the protection fields the
-    steps moved): every field `plant-as-held.json` pins and every field
-    the file of a protection step released, at the value the reference
-    rung ran on."""
+    steps moved): every field `plant-as-held.json` pins, every field
+    the file of a protection step released and the limits of motion,
+    released since, at the value the reference rung ran on."""
     plant = list(json.loads((DEVIATIONS / "plant-as-held.json").read_text())["pins"])
     steps = [n for path in sorted(DEVIATIONS.glob("protection-*.json"))
              for n in json.loads(path.read_text())["release"]]
     ran = ran_on()
-    return deviated(doc, **{n: ran[n] for n in (*plant, *steps)}), plant, steps
+    return deviated(doc, **{n: ran[n] for n in (*plant, *steps, *MOTION)}), plant, steps
 
 
 def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_every_protection_step():
@@ -3607,7 +3606,7 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     assert before["hash"]["set"][:12] == BEFORE != doc["hash"]["set"][:12]
     state = {"fields": {n: e["value"] for n, e in before["fields"].items()}}
     differ = [n for n in f if state["fields"][n] != f[n]["value"]]
-    assert differ == [n for n in f if n in (*plant, *steps)] and (len(plant), len(steps)) == (11, 13)
+    assert differ == [n for n in f if n in (*plant, *steps, *MOTION)] and (len(plant), len(steps)) == (11, 13)
     assert not set(plant) & cn.PROTECTION and [n for n in f if n in steps] == list(STEPS)
     # the gate asks for every field the seven steps moved as a protection change, in the set's order, and
     # again to loosen for the eight that are judged or protect less
@@ -3647,15 +3646,11 @@ SIDES = {
     "current-loop-1500hz": {"i_kp_q88": [289, 433], "i_ki_q412": [1176, 1764], "i_kaw_q412": [2352, 3528]},
     "observer-10hz": {"l1_q016": [8640, 5894], "l2_q88": [3180, 1446], "l3_q88": [84, 25]},
     "observer-25hz": {"l1_q016": [8640, 13757], "l2_q88": [3180, 8433], "l3_q88": [84, 371]},
-    "motion-200": {"velocity_limit_cps": [1500, 4025], "accel_limit_q88": [3840, 10305]},
-    "motion-400": {"velocity_limit_cps": [1500, 8051], "accel_limit_q88": [3840, 20610]},
 }
 # the policy entries a point of a sweep states, and the holds it releases
 SWEPT = {
     "current-loop-500hz": ({"current_loop_hz": 500.0}, []), "current-loop-1500hz": ({"current_loop_hz": 1500.0}, []),
     "observer-10hz": ({"observer_hz": 10.0}, []), "observer-25hz": ({"observer_hz": 25.0}, []),
-    "motion-200": ({"velocity_limit_deg_s": 200.0, "accel_limit_deg_s2": 4000.0}, list(MOTION)),
-    "motion-400": ({"velocity_limit_deg_s": 400.0, "accel_limit_deg_s2": 8000.0}, list(MOTION)),
 }
 
 
@@ -3676,8 +3671,7 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
     assert cn.gate(derived, state, protection=STEPS, loosen=LOOSEN) == []
     if name in SWEPT:
         # a point of a sweep: policy entries at another value, through the rules. A bandwidth is the policy's,
-        # the pick of the sweep the point is a side of, so what it moves is of class policy. The limits of
-        # motion are undecided still, so with their two holds released what they move has no source
+        # the pick of the sweep the point is a side of, so what it moves is of class policy
         entries, release = SWEPT[name]
         assert (file.get("policy"), file.get("release", []), file.get("pins")) == (entries, release, None)
         assert all(policy[k] != v for k, v in entries.items())
@@ -3696,12 +3690,18 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
     assert all(derived["fields"][n]["class"] == "pinned" for n in SIDES[name])
     whole = list(SIDES["plant-as-held"])
     if name == "plant-as-held":
-        # every field of the plant the releases moved, so the derived plant is the one the reference rung ran
-        # on. The supply word is not among them: the set pins it at what the board held
+        # every field of the plant the releases moved, the supply word not among them: the set pins it at what
+        # the board held. The limits of motion moved since, and a rung runs at the scorecard's own, which on the
+        # set's count are the counts the reference rung ran at, so the plant a rung on it runs is the one the
+        # reference rung ran on
         rung = json.loads((results.ROOT / "telemetry" / doc["pair"] / "scorecard" / REFERENCE
                            / "rung.json").read_text())
-        assert derived["hash"]["plant"] == rung["set"]["hash"]["plant"] == before["hash"]["plant"]
-        assert whole == [n for n in f if n not in cn.PROTECTION and ran[n] != f[n]["value"]] and len(whole) == 11
+        ran_set, motion = sc.run_motion(derived, sc.testset())
+        assert motion["from"] == "test set" and derived["hash"]["plant"] != rung["set"]["hash"]["plant"]
+        assert ran_set["hash"]["plant"] == rung["set"]["hash"]["plant"] == before["hash"]["plant"]
+        assert [n for n in f if n not in cn.PROTECTION and ran[n] != f[n]["value"]] == [
+            n for n in f if n in (*whole, *MOTION)]
+        assert whole == [n for n in f if n in whole] and len(whole) == 11
         # the arms of the bisect and the current gains' side cut it in groups: the resistance, the back-EMF
         # constant, the model block and the friction term each alone, the current loop's three, and the two
         # records a host keeps, which no arm carries
@@ -3716,25 +3716,29 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
         assert (name != "current-gains-as-held") or tuple(SIDES[name]) == LOOP
 
 
-def test_the_sessions_speed_limit_at_the_ceiling_passes_and_one_over_it_is_refused(monkeypatch, tmp_path):
+def test_a_speed_limit_at_the_ceiling_passes_and_one_over_it_is_refused(monkeypatch, tmp_path):
     doc, _, _ = of_the_bench_pair()
     ceiling = doc["limits"][cn.CEILING]
     files = {speed: json.loads((DEVIATIONS / f"motion-{speed}.json").read_text())["policy"] for speed in (200, 400)}
-    # the acceleration limit of each is the speed limit reached in 50 ms
+    # the acceleration limit of each side of the sweep is the speed limit reached in 50 ms
     assert all(entries == {"velocity_limit_deg_s": speed, "accel_limit_deg_s2": speed / 0.05}
                for speed, entries in files.items())
-    # 400 deg/s is the ceiling itself, the same counts, and a field at its limit is not over it
+    # the set of record holds the 200 side's limits as its default, under the ceiling
+    assert {n: doc["fields"][n]["value"] for n in MOTION} == {"velocity_limit_cps": 4025, "accel_limit_q88": 10305}
+    assert doc["fields"]["velocity_limit_cps"]["value"] < ceiling["value"] and cn.over_limit(doc) == []
+    # the 400 side's entries over the set of record, its release left out, since the set holds the two no
+    # longer: 400 deg/s is the ceiling itself, the same counts, and a field at its limit is not over it
+    read, entries = cn.deviation_of, {}
+    monkeypatch.setattr(cn, "deviation_of", lambda path: {
+        "note": read(path)["note"], "policy": {**read(path)["policy"], **entries}})
     top, _ = cn.derive(doc, DEVIATIONS / "motion-400.json")
     assert files[400]["velocity_limit_deg_s"] == ceiling["deg_s"]
     assert top["fields"]["velocity_limit_cps"]["value"] == ceiling["value"] == 8051 and cn.over_limit(top) == []
-    half, _ = cn.derive(doc, DEVIATIONS / "motion-200.json")
-    assert half["fields"]["velocity_limit_cps"]["value"] == 4025 and cn.over_limit(half) == []
-    # the same file a deg/s over the ceiling is refused by its build, and a set that holds such a limit by load
+    # the same entries a deg/s over the ceiling are refused by their build, and a set that holds such a limit
+    # by load
     over = ("velocity_limit_cps: 8071 count/s is over the set's speed_ceiling_cps, 8051 count/s (400 deg/s): a "
             "field stays at or under the limit that bounds it")
-    read = cn.deviation_of
-    monkeypatch.setattr(cn, "deviation_of", lambda path: {
-        **read(path), "policy": {**read(path)["policy"], "velocity_limit_deg_s": 401.0}})
+    entries["velocity_limit_deg_s"] = 401.0
     with pytest.raises(ValueError, match=re.escape(over)):
         cn.derive(doc, DEVIATIONS / "motion-400.json")
     past = deviated({k: v for k, v in top.items() if k != "deviation"}, velocity_limit_cps=8071)

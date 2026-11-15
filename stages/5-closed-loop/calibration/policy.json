@@ -20,8 +20,8 @@
  "rail_source_ohm": 0.8,
  "openloop_decay": "slow",
  "openloop_zero_brake": "off",
- "velocity_limit_deg_s": 79.31,
- "accel_limit_deg_s2": 1586.0,
+ "velocity_limit_deg_s": 200.0,
+ "accel_limit_deg_s2": 4000.0,
  "stall_omega_max_deg_s": 24.84,
  "pos_error_deg": 9.9,
  "pos_error_time_ms": 100.0,
@@ -60,20 +60,17 @@
   "openloop_zero_brake": "zero duty coasts in open loop, which calibration relies on: the owner's decision",
   "gear_ratio_centi": "the family's tooth count, to be confirmed by counting this unit's teeth: the owner's decision",
   "v_kp_q88": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision",
-  "v_ki_q412": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision"
+  "v_ki_q412": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision",
+  "velocity_limit_deg_s": "the default move speed, 200 deg/s, half the speed ceiling: the servo has two speeds, the ceiling it never crosses and a move speed set from 0 to it, and this is the move speed's default. Of the bench sweep under the ceiling (zz-sweep-motion-75, zz-sweep-motion-200, zz-sweep-motion-400) it is the fastest side the rule written before its session keeps, no fault and no overshoot or settle row worse than at 75 deg/s, where 400 deg/s overshoots more and runs a 60 deg move above the continuous current; interim until the load arm, and meant to rise toward the ceiling: the owner's decision",
+  "accel_limit_deg_s2": "4000 deg/s^2, the default move speed reached in 50 ms, from the same sweep; interim with the speed: the owner's decision"
  },
- "undecided": {
-  "velocity_limit_deg_s": {"reason": "boot default restated at the raw pot's scale, no decision", "needs": "a decision, the owner's: the bench sweep under the speed ceiling (zz-sweep-motion-75, -200 and -400) recommends 200 deg/s, interim until the load arm, and the change waits for the owner because it changes what the scorecard's step rows measure"},
-  "accel_limit_deg_s2": {"reason": "boot default restated at the raw pot's scale, no decision", "needs": "a decision, the owner's, with the speed limit: the same sweep recommends 4000 deg/s^2, the speed limit reached in 50 ms, interim until the load arm, and the change waits with the speed limit's"}
- },
+ "undecided": {},
  "rule": {
   "r_q12": "r.rails_fit",
   "r_bemf_q12": "r_bemf.small_step"
  },
  "hold": {
   "r_bemf_q12": "the servo's image has no such field yet",
-  "velocity_limit_cps": "it moves on a rung of its own, the motion limits together: typed in counts at the raw pot's scale, the same speed is more counts on the table",
-  "accel_limit_q88": "it moves on a rung of its own, the motion limits together: typed in counts at the raw pot's scale, the same speed is more counts on the table",
   "fric_breakaway_counts": "no result on record is the field's quantity: the field is a driven ramp's breakaway, and the stage 3 static friction its rule reads is the back-driven one, with the load arm on the horn"
  }
 }

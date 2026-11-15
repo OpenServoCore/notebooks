@@ -41,6 +41,14 @@ the table, the place an identity set centers on. A wide code's goals are
 the table's reading of the raw goals, each segment keeping its raw goal
 as `raw_counts`.
 
+The moves run at the test set's own limits of motion, a speed limit
+and an acceleration limit in deg/s and deg/s^2 (SPEED_DEG_S,
+ACCEL_DEG_S2), taken to counts on the set's count by the set's own
+rules and installed with the set for the runs. They do not follow the
+set's default: a set whose default is another speed runs the test at
+these. Only a deviation that moves the limits of motion runs at its
+own, the two together, since those are what it tests.
+
 The file is not a `plan.py`: it runs under `python -m oscnb.scorecard`,
 never in a sitting.
 """
@@ -74,6 +82,19 @@ WIDE_APPROACH_COUNTS = 30           # from the span to the goal held before each
 FIT_MARGIN_DEG = 5
 CAP_MS = 100                        # the watchdog's current cap holds this long
 CAPTURES = ("steps", "follow", "hold", "wide")   # in run order; `wide` only where the set built one
+# The limits of motion every move of the test set runs at, the test's
+# own and not the set's default: the speed limit, and the acceleration
+# limit that reaches it in 50 ms. On the set of record's count they are
+# the 1500 count/s and the 3840 the servo held for every rung before the
+# test set named them, so a step row stays comparable down the ladder.
+SPEED_DEG_S = 74.53
+ACCEL_DEG_S2 = 1490.6
+
+
+def motion(doc):
+    """The entries of the limits of motion the test set runs at, on
+    constant set `doc`'s count (`constants.motion`)."""
+    return constants.motion(doc, SPEED_DEG_S, ACCEL_DEG_S2, results.ROOT)
 
 
 def inputs(servo, pair, board=None, doc=None):

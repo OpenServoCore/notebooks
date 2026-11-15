@@ -1149,6 +1149,48 @@ rule("velocity_limit_cps", "velocity_limit.policy", kind="u16", unit="count/s", 
      mirrors="core kernel/phases/loops/trajectory.rs vel_cap")(in_counts("velocity_limit_deg_s"))
 rule("accel_limit_q88", "accel_limit.policy", kind="u16", unit="(count/s)/tick", q=8, pos_unit=+1, cls="policy",
      mirrors="core kernel/phases/loops/trajectory.rs step_position")(in_counts("accel_limit_deg_s2", per_tick=True))
+# the limits of motion, which move together, each with the policy entry its rule reads
+MOTION = {"velocity_limit_cps": "velocity_limit_deg_s", "accel_limit_q88": "accel_limit_deg_s2"}
+
+
+def motion(doc, speed_deg_s, accel_deg_s2, root=results.ROOT, registry=None):
+    """The entries of the limits of motion (MOTION) that their rules
+    give at a speed limit, deg/s, and an acceleration limit, deg/s^2,
+    on set `doc`'s count, the policy file's entries and holds for the
+    two set aside."""
+    c = Context(doc["pair"], root, registry)
+    c.scale = doc.get("scale")
+    c.policies = {**c.policies, MOTION["velocity_limit_cps"]: speed_deg_s, MOTION["accel_limit_q88"]: accel_deg_s2}
+    return {n: {**evaluate(rule_of(c, n), c), "protection": protection_of(n)} for n in MOTION}
+
+
+def motion_deg(doc, values, root=results.ROOT, registry=None):
+    """(deg/s, deg/s^2): what the limits of motion `values`, {field: the
+    value as it holds it}, are on set `doc`'s count, the acceleration
+    the speed one MEDIUM tick adds at the MEDIUM rate."""
+    c = Context(doc["pair"], root, registry)
+    c.scale = doc.get("scale")
+    q = rule_of(c, "accel_limit_q88").q
+    return (values["velocity_limit_cps"] / c.counts_per_deg,
+            values["accel_limit_q88"] / (1 << q) * medium_hz(c) / c.counts_per_deg)
+
+
+def overlaid(doc, entries):
+    """Set `doc` with `entries`, {field: entry}, in place of its own
+    entries of those fields, its hashes those of the result: what a
+    servo holds where a run asks its own values of fields of the set.
+    It is never written as a set. Refused for a field the set does not
+    hold, and where a field would be over a limit that bounds it."""
+    missing = [n for n in entries if n not in doc["fields"]]
+    if missing:
+        raise ValueError(f"the set holds no {', '.join(missing)}")
+    out = {**doc, "fields": {n: copy.deepcopy(entries.get(n, e)) for n, e in doc["fields"].items()}}
+    over = over_limit(out)
+    if over:
+        raise ValueError("; ".join(over))
+    return {**out, "hash": hashes(out)}
+
+
 rule("stall_omega_max_cps", "stall_omega_max.policy", kind="u16", unit="count/s", pos_unit=+1, cls="policy",
      mirrors="core kernel/phases/loops/limits.rs fold")(in_counts("stall_omega_max_deg_s"))
 rule("pos_error_counts", "pos_error.policy", kind="u16", unit="counts", pos_unit=+1, cls="policy",
