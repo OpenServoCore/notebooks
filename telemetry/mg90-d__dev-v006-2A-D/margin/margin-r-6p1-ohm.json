@@ -1,0 +1,6 @@
+{
+  "note": "the winding resistance the back-EMF close subtracts raised toward the spinning small-signal value, alone: a test of what holds the speed loop's high-frequency plateau up at speed",
+  "pins": {
+    "r_q12": {"value": 5470, "why": "a test value for the margin sweep at the fast cruise", "rung": "margin sweep"}
+  }
+}
