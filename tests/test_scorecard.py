@@ -1916,7 +1916,7 @@ OTHER = "reads a constant state other than the one the rung's first run recorded
 
 
 @pytest.mark.parametrize("change, said", [
-    (lambda s: s.set("p_kp_q88", 5026), OFF + "clean; p_kp_q88: servo 5026, set 40212 [none])"),
+    (lambda s: s.set("p_kp_q88", 5026), OFF + "clean; p_kp_q88: servo 5026, set 40212 [none, held, p_kp.split])"),
     (lambda s: s.set("drive_polarity", 0), OFF + "clean; drive_polarity: servo off, set on [none])"),
     (lambda s: s.set(wc.FIELD, bytes(16)),
      OFF + f"clean; wide-code slots: servo {bytes(16).hex(' ')}, set {SLOTS.hex(' ')} [measured, slots.wide_codes])"),

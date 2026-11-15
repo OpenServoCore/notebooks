@@ -522,22 +522,23 @@ its fields, and the reason and the need of the ones with none.
 Every verb prints the count per class, and the count of fields with no
 source whose value is per position count, which were fitted at a scale
 nothing recorded. On mg90-d with board D the set holds 64 fields: 16
-measured, 10 bench, one datasheet, 35 policy, one pinned and one with no
+measured, 6 bench, one datasheet, 39 policy, one pinned and one with no
 source. The pin is the board's nominal supply word, `vdd_mv` (below).
 Six of the policy's are the current loop's three gains and the
 observer's three, each bound by its rule at a bandwidth a bench sweep
 picked ([the ladder](#the-ladder), the constants session): they had no
 source while the bandwidths were an old tool's default targets nobody
-had decided. Two are the limits of motion, the owner's default move
-speed and its acceleration (below): they had no source while they
-restated the boot default's counts. The one with no source is the
+had decided. Four are the gains of the speed and position loops, bound
+by their rule at three ratios the owner decided (below). Two are the
+limits of motion, the owner's default move speed and its acceleration
+(below): they had no source while they restated the boot default's
+counts. The one with no source is the
 breakaway record, held at a zero never written because no result on
 record is its quantity (below). Every other field whose rule gives
 another value than the servo held is bound at the rule's value: a
 constant with a source replaces one the board happened to hold, on
 principle, and a scorecard row that loses by it is an open item on
-top of it, not a reason to keep the old value. The
-bench fields are the four loop gains of rung `01b-gains-3hz-50hz`,
+top of it, not a reason to keep the old value. The bench fields are
 the stops, the drive's sign and the gear class. The stops are a hand
 reading of 2026-11-05, kept as a dated file beside the set that says of
 itself that it is a weak record, to be replaced by three recorded reads
@@ -1174,17 +1175,32 @@ rise, which falls. The other five protect more. A deviation of the
 plant over the set asks for the same names on such a servo, since it
 moves no protection field. One test holds both lists to the gate.
 
-Of the loop gains, two carry a position unit: `v_kp_q88` and
-`v_ki_q412` are shunt counts per count/s, so they fall as the counts
-per degree rise. The four gains of the position and velocity loops are
-of class `bench`: rung `01b-gains-3hz-50hz` chose them, and the set
-reads them from that rung's results file. The rung ran on the raw pot,
-and the same counts have run on the table since `12a-pos-table-live`.
-They stay as benched, in counts, which is a decision `policy.json`
-records under `why`, so neither is at a scale nothing recorded.
-`p_kp_q88` is count/s per count, a rate, and carries no position unit,
-nor do `v_kaw_q412` and the three gains of the current loop, which are
-bound at what their rule gives (above).
+The four gains of the speed and position loops are of class `policy`,
+bound by one rule over the motor's own constants and three ratios of
+`policy.json`. The speed loop's PI drives the plant gain B of the motor
+block, and on that rigid plant its proportional gain puts the crossover
+at w_c with the PI's zero r times under it, a phase margin of atan(r):
+`v_kp` = w_c / (B f_med) x r / sqrt(1 + r^2), `v_ki` = `v_kp` x w_c /
+(r f_med), f_med the MEDIUM rate. The crossover sits under the
+electromechanical frequency f_em = Ke / (2 pi sqrt(J L)), where the
+back-EMF stops reading the speed: w_c = 2 pi f_em / q. So `v_kp` goes
+as the root of J over L, and a heavier or loaded servo keeps its
+margins over the back-EMF floor, where a crossover fixed in Hz loses
+them. The anti-windup gain is `v_ki` / `v_kp`, a tracking time equal to
+the integral time, per tick whatever the scale of the count, and the
+position gain is the crossover over a split n, `p_kp` = w_c / n. The
+three ratios, `velocity_em_ratio` q 1.3455, `velocity_zero_ratio` r
+1.1965 and `position_split` n 19.107, are the ones that read the gains
+rung `01b-gains-3hz-50hz` chose back through the rule: 124, 311 and
+5026 exactly, a crossover of 59.7 Hz under the motor's 80.3 Hz, a rigid
+phase margin of 50.1 deg and a position gain of 19.6 /s. They stand,
+the owner's decision, pending the margin sweep. The anti-windup gain
+moved from that rung's 623, twice the integral gain and one more, to
+the rule's 642. Ke is the stage 3 ladder's, J the run-up's and L the
+locked bursts', so each gain carries the band of the three. `v_kp_q88`
+and `v_ki_q412` are shunt counts per count/s and carry a position
+unit, computed on the set's count; `v_kaw_q412`, `p_kp_q88` and the
+three gains of the current loop carry none.
 
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. It then

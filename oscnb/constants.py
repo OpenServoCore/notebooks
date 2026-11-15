@@ -1104,6 +1104,73 @@ rule("i_kaw_q412", "i_kaw.bandwidth", kind="u16", unit="vcounts/ccount per tick"
      mirrors="core kernel/phases/loops/current.rs step, ident gains.rs synthesize")(lambda c: 2 * loop_ki(c))
 
 
+# --- the speed and position loops ---
+#
+# The speed loop's PI (C = kp + ki / (z - 1), its zero at w_z = ki x
+# f_med / kp) drives the plant of the motor block's B, a shunt count of
+# current adding B count/s a MEDIUM tick. On that rigid plant, with
+# r = w_c / w_z, the loop crosses one at w_c when
+# kp = w_c / (B f_med) x r / sqrt(1 + r^2), and its phase margin is then
+# atan(r). The crossover is placed under the electromechanical frequency
+# f_em = Ke / (2 pi sqrt(J L)), SI, where the current's L di/dt cancels
+# the speed the back-EMF boxcar reads: f_c = f_em / q. Dividing by B
+# gives every servo the same margins at the same q and r while the loop
+# reads the observer; over the back-EMF floor the cancellation moves
+# with f_em, which falls as 1 / sqrt(J), and a crossover fixed in Hz
+# loses the blend's margin on a heavier or loaded servo where one under
+# f_em keeps it. So kp scales as sqrt(J / L). The anti-windup gain is
+# ki / kp, a tracking time equal to the integral time: at a held clip the
+# integrator rests at the clip less the feedforward whatever the error,
+# and the gain is per tick whatever the scale of the count. The position
+# loop is p_kp / s over the closed speed loop, its crossover the speed
+# loop's over the split n: p_kp = w_c / n. q, r and n are the policy's
+# ratios; Ke is the stage 3 ladder's, J the run-up's and L the locked
+# bursts', which the motor block and the current loop read.
+SPEED_EM_RATIO, SPEED_ZERO_RATIO, POSITION_SPLIT = "velocity_em_ratio", "velocity_zero_ratio", "position_split"
+
+
+def speed_rad_s(c):
+    """The speed loop's crossover w_c, rad/s: 2 pi f_em over the
+    policy's q."""
+    q = c.policy(SPEED_EM_RATIO)
+    ke, j, henry = ke_v_s_per_rad(c), c.q("3-servo/run-up", "j_kg_m2"), c.q(*INDUCTANCE) / 1000
+    return ke / math.sqrt(j * henry) / q
+
+
+def speed_kaw(c):
+    """w_c / (r f_med), the PI zero a MEDIUM tick: ki / kp, the
+    anti-windup gain, per tick."""
+    return speed_rad_s(c) / (c.policy(SPEED_ZERO_RATIO) * medium_hz(c))
+
+
+@rule("v_kp_q88", "v_kp.bandwidth", kind="u16", unit="ccounts/(count/s)", q=8, pos_unit=-1, cls="policy",
+      mirrors="core kernel/phases/loops/velocity.rs step")
+def v_kp(c):
+    """The proportional gain that puts the rigid loop's crossover at
+    w_c with the zero r under it."""
+    w, r = speed_rad_s(c), c.policy(SPEED_ZERO_RATIO)
+    return w / (b_gain(c) * medium_hz(c)) * r / math.sqrt(1 + r * r)
+
+
+@rule("v_ki_q412", "v_ki.bandwidth", kind="u16", unit="ccounts/(count/s) per tick", q=12, pos_unit=-1,
+      cls="policy", mirrors="core kernel/phases/loops/velocity.rs step")
+def v_ki(c):
+    """The integral gain that puts the PI's zero at w_c / r."""
+    return v_kp(c) * speed_kaw(c)
+
+
+rule("v_kaw_q412", "v_kaw.bandwidth", kind="u16", unit="per tick", q=12, cls="policy",
+     mirrors="core kernel/phases/loops/velocity.rs step")(speed_kaw)
+
+
+@rule("p_kp_q88", "p_kp.split", kind="u16", unit="(count/s)/count", q=8, cls="policy",
+      mirrors="core kernel/phases/loops/position.rs step")
+def p_kp(c):
+    """The position gain, the speed loop's crossover over the policy's
+    split."""
+    return speed_rad_s(c) / c.policy(POSITION_SPLIT)
+
+
 # --- the records a host keeps on the servo ---
 #
 # Two fields the kernel never reads, each a quantity of record a host

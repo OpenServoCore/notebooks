@@ -2,6 +2,9 @@
  "angle_cw_stop_deg": 0.0,
  "observer_hz": 15.0,
  "current_loop_hz": 1000.0,
+ "velocity_em_ratio": 1.3455,
+ "velocity_zero_ratio": 1.1965,
+ "position_split": 19.107,
  "i_cont_ma": 250.0,
  "stall_release_ma": 90.0,
  "oc_trip_ma": 2200.0,
@@ -33,6 +36,9 @@
  "why": {
   "observer_hz": "15 Hz, the middle of the sweep's 10, 15 and 25 Hz (zz-sweep-observer-10hz, zz-sweep-observer-15hz, zz-sweep-observer-25hz): 10 Hz loses the 20 degree landing and leaves a wide-code hold hunting in both rounds, and 25 Hz reads more reversals and more current on every move and ramp: the pick of a bench sweep under a rule written before its session",
   "current_loop_hz": "1 kHz, the middle of the sweep's 500, 1000 and 1500 Hz (zz-sweep-current-loop-500hz, zz-sweep-current-loop-1000hz, zz-sweep-current-loop-1500hz): the duty's reversals scale with the bandwidth, 500 Hz loses the lag at 1 % and 3 % and the drive after an arrival in both rounds, and of the other two the middle has the fewer reversals: the pick of a bench sweep under a rule written before its session",
+  "velocity_em_ratio": "the electromechanical frequency of this motor's Ke, J and L, 80.3 Hz, over the speed loop's crossover, 59.7 Hz: with velocity_zero_ratio and position_split, the gains rung 01b-gains-3hz-50hz chose on the bench, 124, 311 and 5026 as the speed loop's two and the position gain hold them, read through the rule, which gives the three exactly: interim, pending the margin sweep: the owner's decision",
+  "velocity_zero_ratio": "the speed loop's crossover over its PI's zero, a phase margin of 50.1 deg on the rigid plant: with velocity_em_ratio and position_split, the gains rung 01b-gains-3hz-50hz chose on the bench, 124, 311 and 5026 as the speed loop's two and the position gain hold them, read through the rule, which gives the three exactly: interim, pending the margin sweep: the owner's decision",
+  "position_split": "the speed loop's crossover over the position gain, 19.6 /s, 3.1 Hz: with velocity_em_ratio and velocity_zero_ratio, the gains rung 01b-gains-3hz-50hz chose on the bench, 124, 311 and 5026 as the speed loop's two and the position gain hold them, read through the rule, which gives the three exactly: interim, pending the margin sweep: the owner's decision",
   "cutoff_c": "one thermal limit, at 90 C: the owner's decision",
   "datasheet_derate_speed": "this servo never turns faster than two thirds of the no-load speed the maker of its class states, written as the ratio 2 over 3: the speed ceiling, which protects the brushes. A decision for this servo and no rule for another: the owner's decision",
   "datasheet_derate_default": "any other value taken from the maker's sheet is taken at 0.8 of it on this servo, to be safe; the current limit reads it. A decision for this servo and no rule for another: the owner's decision",
@@ -60,8 +66,6 @@
   "openloop_zero_brake": "zero duty coasts in open loop, which calibration relies on: the owner's decision",
   "brush_term": "the brush term of the back-EMF close is off while the brush learner is pending: its resistance and its speed are at the value that turns it off, and no identification of it is on record: the owner's decision",
   "gear_ratio_centi": "the family's tooth count, to be confirmed by counting this unit's teeth: the owner's decision",
-  "v_kp_q88": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision",
-  "v_ki_q412": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision",
   "velocity_limit_deg_s": "the default move speed, 200 deg/s, half the speed ceiling: the servo has two speeds, the ceiling it never crosses and a move speed set from 0 to it, and this is the move speed's default. Of the bench sweep under the ceiling (zz-sweep-motion-75, zz-sweep-motion-200, zz-sweep-motion-400) it is the fastest side the rule written before its session keeps, no fault and no overshoot or settle row worse than at 75 deg/s, where 400 deg/s overshoots more and runs a 60 deg move above the continuous current; interim until the load arm, and meant to rise toward the ceiling: the owner's decision",
   "accel_limit_deg_s2": "4000 deg/s^2, the default move speed reached in 50 ms, from the same sweep; interim with the speed: the owner's decision"
  },

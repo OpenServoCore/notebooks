@@ -839,7 +839,14 @@ NO_RESPONSE = "stall_response: held, policy.json has no stall_response"
 NO_COUNTS = [f"{n}: left out, policy.json has no {key}" for n, key in (
     ("velocity_limit_cps", "velocity_limit_deg_s"), ("accel_limit_q88", "accel_limit_deg_s2"),
     ("pos_error_counts", "pos_error_deg"), ("sensor_delta_max", "sensor_delta_max_counts"))]
-HELD_BLOCK = [*NO_RANGE, NO_LIMIT, NO_RESPONSE, NO_STALL, NO_R, f"recip_ke_q: held, {NO_LADDER}"]
+# and of the speed and position loops' gains under a policy with none of their ratios: the position gain, which
+# the fake servo holds, is held between the range and the band, in the servo's order, and the speed loop's three
+# are left out
+NO_RATIOS = "policy.json has no velocity_em_ratio"
+HELD_GAIN = f"p_kp_q88: held, {NO_RATIOS}"
+NO_GAINS = [f"{n}: left out, {NO_RATIOS}" for n in ("v_kp_q88", "v_ki_q412", "v_kaw_q412")]
+FRONT = [*NO_RANGE[:2], HELD_GAIN, NO_RANGE[2]]
+HELD_BLOCK = [*FRONT, NO_LIMIT, NO_RESPONSE, NO_STALL, NO_R, f"recip_ke_q: held, {NO_LADDER}"]
 # the current loop's gains under a policy with no bandwidth, and the times, the counts of samples and the
 # choices in words under one with none of their entries
 NO_LOOP = [f"{n}: left out, policy.json has no current_loop_hz" for n in ("i_kp_q88", "i_ki_q412", "i_kaw_q412")]
@@ -857,7 +864,7 @@ NO_BLOCK = [
                                                                                          "fric_fv_q016")),
     *(f"{n}: left out, {NO_LADDER}" for n in ("ke_vpc_q", "j_ff_q88")),
     *(f"{n}: left out, policy.json has no observer_hz" for n in ("l1_q016", "l2_q88", "l3_q88")),
-    *NO_LOOP,
+    *NO_LOOP, *NO_GAINS,
     f"ke_uvs_per_rad: left out, {NO_LADDER}",
     "fric_breakaway_counts: left out, 3-servo/friction has no result for synth__board",
     NO_WINDOW,
@@ -896,13 +903,15 @@ POT_NOISE = {"3-servo/pot-table": {"pot_rest_sd_counts": (1.0, 0.0, 1.5)}}
 CHOICE_POLICY = {"current_loop_hz": 1000.0, "stall_time_ms": 500.0, "pos_error_time_ms": 100.0, "oc_trip_samples": 8,
                  "sensor_bad_samples": 4, "openloop_zero_brake": "off",
                  "duty_max_share": 1.0, "v_undervolt_v": 3.0, "rail_source_ohm": 0.5}
+# the speed and position loops' three ratios
+GAIN_POLICY = {"velocity_em_ratio": 1.35, "velocity_zero_ratio": 1.2, "position_split": 19.0}
 # what a build of the plant over those inputs says, in the set's order: the fields in counts of position,
 # the current loop's gains and the choices, whose entries that policy lacks, and the protection fields the
 # inputs give a value, the one the fake servo holds carried with what it would be, the rest, which nothing
 # carries, left to a build that names them
 BLOCK_SAID = [
-    *NO_RANGE, "current_limit_counts: carried at 554, it would be 600: name it with --protection", NO_STALL,
-    *NO_LOOP, *NO_OFF, *NO_COUNTS,
+    *FRONT, "current_limit_counts: carried at 554, it would be 600: name it with --protection", NO_STALL,
+    *NO_LOOP, *NO_GAINS, *NO_OFF, *NO_COUNTS,
     *(f"{n}: left out, name it with --protection" for n in (
         "ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts",
         "oc_trip_counts", "stall_tau_trip_counts", "cutoff_cc", "thermal_tau_s", "thermal_tau2_s", "th_rise_q016",
@@ -1068,6 +1077,7 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
         f"scale: none -> {SCALE:.4f} counts/deg, the table one",
         "pos_min_soft_counts: 314 [none -> none, held, soft_min.stops]",
         "pos_max_soft_counts: 3560 [none -> none, held, soft_max.stops]",
+        "p_kp_q88: 40212 [none -> none, held, p_kp.split]",
         "pos_deadband_counts: 4 [none -> none, held, deadband.pot_noise]",
         "current_limit_counts: 554 [none -> none, held, current_limit.stall_derate]",
         "stall_response: Fault (0) [none -> none, held, stall_response.policy]",
@@ -1093,7 +1103,7 @@ def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
 def context(root, k=1.0, policy=None, **kw):
     """The Context a build gives its rules over `inputs(**kw)` and the
     plant's results, the scale of the count times `k`."""
-    inputs(root, policy={**BLOCK_POLICY, **COUNT_POLICY, **CHOICE_POLICY, **DERATE, "brush_term": "off",
+    inputs(root, policy={**BLOCK_POLICY, **COUNT_POLICY, **CHOICE_POLICY, **GAIN_POLICY, **DERATE, "brush_term": "off",
                          **(policy or {})}, **kw)
     plant(root, {**PLANT, **POT_NOISE})
     datasheet(root)
@@ -1183,9 +1193,9 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
         "wide-code slots: held, 1-board/wide-codes has no result for board",
         "scale: none, 3-servo/pot-table has no result for synth__board", NO_SCALE, *HELD_BLOCK,
         f"angle_min_cdeg: held, {no_table}", f"angle_max_cdeg: held, {no_table}", *NO_BLOCK]
-    # the gear's two fields have a source, the registry; every other one has none, 10 of them held
+    # the gear's two fields have a source, the registry; every other one has none, 11 of them held
     assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 1 policy, 0 pinned, 14 none")
-    assert sum("held" in e for e in doc["fields"].values()) == 10
+    assert sum("held" in e for e in doc["fields"].values()) == 11
     assert moved_hashes(first, doc) == [] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
     # held again on top of that set, the value still names the set it first came from
     again, _ = built_on(doc, tmp_path)
@@ -1508,8 +1518,10 @@ def test_a_bench_record_gives_its_field_the_value_it_holds(first, tmp_path):
                                             "weak": "a look at one unit"}})
     lone = built_on(doc, tmp_path)[0]["fields"]
     assert (lone["gear_class"]["record"], lone["gear_class"]["weak"]) == ("read off the part", "a look at one unit")
-    # a field the sources no longer name is carried at its value, with no source
-    assert lone["p_kp_q88"] == {"value": 5026, "class": "none", "protection": None}
+    # a field the sources no longer name falls to its rule, and with the rule's ratios not in the policy it is
+    # held at its value, with no source
+    assert lone["p_kp_q88"] == {"value": 5026, "class": "none", "rule": "p_kp.split", "held": NO_RATIOS,
+                                "carried_from": doc["hash"]["set"], "protection": None}
 
 
 @pytest.mark.parametrize("blocks, match", [
@@ -1569,9 +1581,11 @@ def test_a_field_with_no_source_says_why_and_what_would_give_it_one(first, tmp_p
         "pos_deadband_counts": {"reason": "boot default", "needs": "a decision"}})
     doc, notes = cn.build(PAIR, first, root=tmp_path, registry=BOARD_REG)
     f = doc["fields"]
-    # carried from the servo's state: the reason and the need the pair's sources state, and the maker's value
-    # that could supply it, a candidate and not its source
-    assert f["p_kp_q88"] == {**first["fields"]["p_kp_q88"], "reason": "boot default", "needs": "a decision",
+    # held at the servo's state, its rule's ratios not in the policy: the reason and the need the pair's sources
+    # state, and the maker's value that could supply it, a candidate and not its source
+    assert f["p_kp_q88"] == {"value": 40212, "class": "none", "rule": "p_kp.split", "held": NO_RATIOS,
+                             "carried_from": first["hash"]["set"], "protection": None, "reason": "boot default",
+                             "needs": "a decision",
                              "datasheet_candidate": "the maker's rated gain: a file of the repo, no document named"}
     # held by a missing input, and held by the policy, where the pair's word stands over the policy's
     assert {k: f["r_q12"][k] for k in ("class", "held", "reason")} == {
@@ -1621,7 +1635,7 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     doc = cn.of_record(postable.default_pair())
     f = doc["fields"]
     assert not any(e["class"] in cn.WAS for e in f.values())
-    assert cn.classes(doc) == {"measured": 16, "bench": 10, "datasheet": 1, "policy": 35, "pinned": 1, "none": 1}
+    assert cn.classes(doc) == {"measured": 16, "bench": 6, "datasheet": 1, "policy": 39, "pinned": 1, "none": 1}
     # no field the firmware no longer names
     assert not set(cn.RETIRED) & set(f)
     by = {c: [n for n, e in f.items() if e["class"] == c] for c in cn.CLASSES}
@@ -1633,9 +1647,11 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     # the one value of the maker's: the speed ceiling, read off the class's page
     assert by["datasheet"] == ["speed_ceiling_cps"]
     # the gains of the current loop and of the observer among them: a bandwidth is a target, and the policy
-    # holds each at the pick of its bench sweep; and the limits of motion, the owner's default move speed
+    # holds each at the pick of its bench sweep; the gains of the speed and position loops, at the ratios that
+    # read a rung's bench gains through their rule; and the limits of motion, the owner's default move speed
     assert by["policy"] == ["pos_min_soft_counts", "pos_max_soft_counts", "i_kp_q88", "i_ki_q412", "i_kaw_q412",
-                            "duty_max_q15", "pos_deadband_counts", "velocity_limit_cps", "accel_limit_q88",
+                            "duty_max_q15", "v_kp_q88", "v_ki_q412", "v_kaw_q412", "p_kp_q88",
+                            "pos_deadband_counts", "velocity_limit_cps", "accel_limit_q88",
                             "current_limit_counts", "stall_response",
                             "stall_time_ticks", "stall_omega_max_cps", "i_cont_counts", "stall_release_counts",
                             "stall_tau_trip_counts", "oc_trip_counts", "oc_trip_ticks",
@@ -1646,14 +1662,11 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     # the brush term off by the policy: the value that turns it off, no identification on record
     assert {n: (f[n]["value"], f[n]["rule"], f[n]["inputs"][0]) for n in ("r_brush_q12", "brush_cps")} == {
         "r_brush_q12": (0, "r_brush.off", "policy:brush_term"), "brush_cps": (0, "brush_cps.off", "policy:brush_term")}
-    # the bench fields: the loop gains a rung chose, read from its results file, the stops a dated hand
-    # reading, the drive's sign the state a rung of record ran on, the gear class read off the part
-    rung = "stages/5-closed-loop/scorecard/results/mg90-d__dev-v006-2A-D/01b-gains-3hz-50hz.json"
+    # the bench fields: the stops a dated hand reading, the drive's sign the state a rung of record ran on, the
+    # gear class read off the part
     stops = "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.stops-2026-11-05.json"
     ran = "telemetry/mg90-d__dev-v006-2A-D/scorecard/14a-set-of-record/run-1/servo.json"
-    records = {"p_kp_q88": f"{rung}:settings.p_kp_q88", "v_kp_q88": f"{rung}:settings.v_kp_q88",
-               "v_ki_q412": f"{rung}:settings.v_ki_q412", "v_kaw_q412": f"{rung}:settings.v_kaw_q412",
-               "pos_min_phys_counts": f"{stops}:pos_min_phys_counts",
+    records = {"pos_min_phys_counts": f"{stops}:pos_min_phys_counts",
                "pos_max_phys_counts": f"{stops}:pos_max_phys_counts", "raw_min": f"{stops}:raw_min",
                "raw_max": f"{stops}:raw_max", "drive_polarity": f"{ran}:fields.drive_polarity",
                "gear_class": "registry:gear_class"}
@@ -1716,13 +1729,13 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     assert set(policy["hold"]) <= set(cn.RULES)
     assert isinstance(policy["observer_hz"], float) and all(policy["hold"].values())
     # a choice that is a decision says so, under `why`, by the name of its entry, or of the field where the
-    # value is not the policy file's: the registry's gear ratio, the two loop gains benched in counts, the
-    # winding model's slow pair, the family's terms as a stage 4 result quotes them
+    # value is not the policy file's: the registry's gear ratio, the winding model's slow pair, the family's
+    # terms as a stage 4 result quotes them
     fields = cn.of_record(postable.default_pair())["fields"]
     assert policy["why"]["cutoff_c"] == "one thermal limit, at 90 C: the owner's decision"
     assert policy["cutoff_c"] == 90.0
-    assert {k for k in policy["why"] if k not in policy} == {"gear_ratio_centi", "v_kp_q88", "v_ki_q412",
-                                                             "thermal_tau2_s", "th_rise2_q016"} < set(fields)
+    assert {k for k in policy["why"] if k not in policy} == {"gear_ratio_centi", "thermal_tau2_s",
+                                                             "th_rise2_q016"} < set(fields)
     # a why ends in whose pick the entry is: the owner's decision, or a bench sweep's under a rule written
     # before its session. A why of the second kind names the sweep's rungs, each a results file in the repo,
     # and does not call the pick the owner's
@@ -2557,9 +2570,9 @@ def test_a_held_field_stands_beside_what_its_rule_gives_and_one_with_nothing_to_
     # a value carried from before the path is still at a scale nothing recorded: holding it gave it none
     unknown = [cn.described(d)[0].split("; ")[1] for d in (first, doc)]
     assert unknown == ["4 per-count at an unknown scale"] * 2
-    # the two the policy holds, and the range, the hold band and the stall speed, whose entries it lacks:
-    # held, they have no source still, and the four fields of the angle map and the gear have one
-    assert sum("held" in e for e in doc["fields"].values()) == 6
+    # the two the policy holds, and the range, the hold band, the stall speed and the position gain, whose
+    # entries it lacks: held, they have no source still, and the four fields of the angle map and the gear have one
+    assert sum("held" in e for e in doc["fields"].values()) == 7
     assert cn.classes(doc)["none"] == cn.classes(first)["none"] - 4 == len(cn.unsourced(doc))
 
 
@@ -3413,11 +3426,12 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
         (4, "policy", "deadband.pot_noise"), (64, "policy", "sensor_delta.policy")]
     assert f["sensor_delta_max"]["value"] == policy["sensor_delta_max_counts"] and ran["sensor_delta_max"] == 256
     assert "would_be" not in f["sensor_delta_max"] and "held" not in f["sensor_delta_max"]
-    # the velocity loop's two gains are a rung's, benched in counts: no field is left at a scale nothing
-    # recorded
-    assert all(f[n]["class"] == "bench" and "scale" not in f[n] for n in ("v_kp_q88", "v_ki_q412"))
+    # the speed loop's two per-count gains are bound by their rule on the set's count: no field is left at a
+    # scale nothing recorded
+    assert all(f[n]["class"] == "policy" and f[n]["scale_points_sha1"] == doc["scale"]["points_sha1"]
+               and f[n]["pos_unit"] == -1 and "scale" not in f[n] for n in ("v_kp_q88", "v_ki_q412"))
     assert [n for n, e in f.items() if e.get("scale") == "unknown"] == []
-    assert cn.described(doc)[0] == ("64 fields: 16 measured, 10 bench, 1 datasheet, 35 policy, 1 pinned, 1 none "
+    assert cn.described(doc)[0] == ("64 fields: 16 measured, 6 bench, 1 datasheet, 39 policy, 1 pinned, 1 none "
                                     "(no source); 0 per-count at an unknown scale")
 
 
@@ -3720,6 +3734,149 @@ def test_the_bench_pairs_observer_gains_move_with_the_policys_bandwidth():
     assert ran_on()["l3_q88"] == 77
 
 
+GAINS = ("v_kp_q88", "v_ki_q412", "v_kaw_q412", "p_kp_q88")
+RATIOS = ("velocity_em_ratio", "velocity_zero_ratio", "position_split")
+
+
+def test_the_bench_pairs_speed_and_position_gains_are_the_rule_at_the_ratios_that_read_back_its_bench_gains():
+    doc, c, board = of_the_bench_pair()
+    f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    ke = results.read("3-servo", "ladder", pair=doc["pair"])["ke_v_s_per_rad"]["value"]
+    j = results.read("3-servo", "run-up", pair=doc["pair"])["j_kg_m2"]["value"]
+    henry = results.read("3-servo", "inductance", pair=doc["pair"])["l_mh"]["value"] / 1000
+    per_a, medium = doc["scales"][cn.CURRENT]["value"], board.tick_hz / cn.DECIM_MED
+    per_rad = doc["scale"]["counts_per_deg"] * 180 / math.pi / doc["inputs"]["registry"]["servo"]["gear_ratio"]
+    b = ke / per_a / j * per_rad / medium
+    # the rule by hand on the record's inputs: the crossover f_em / q, the zero r under it, the split n
+    q, r, n = (policy[k] for k in RATIOS)
+    f_em = ke / (2 * math.pi * math.sqrt(j * henry))
+    w = 2 * math.pi * f_em / q
+    kp = w / (b * medium) * r / math.sqrt(1 + r * r)
+    by_hand = [raw(kp, 8), raw(kp * w / (r * medium), 12), raw(w / (r * medium), 12), raw(w / n, 8)]
+    es = {name: cn.evaluate(cn.rule_of(c, name), c) for name in GAINS}
+    assert [e["value"] for e in es.values()] == by_hand == [124, 311, 642, 5026]
+    assert (q, r, n) == (1.3455, 1.1965, 19.107)
+    assert (round(f_em, 1), round(w / 2 / math.pi, 1), round(math.degrees(math.atan(r)), 1)) == (80.3, 59.7, 50.1)
+    # the three gains rung 01b-gains-3hz-50hz chose are what the rule gives at those ratios; its anti-windup
+    # gain was twice the integral one and one more, and the rule's ki / kp is 3 % over it
+    rung = json.loads(sc.result_path(doc["pair"], "01b-gains-3hz-50hz").read_text())["settings"]
+    assert {name: rung[name] for name in GAINS} == {"v_kp_q88": 124, "v_ki_q412": 311, "v_kaw_q412": 623,
+                                                    "p_kp_q88": 5026}
+    assert all(es[name]["value"] == rung[name] for name in GAINS if name != "v_kaw_q412")
+    # the bands are the rule again at each end of Ke, J, L and the shunt's scale
+    assert [e["band"] for e in es.values()] == [[118, 130], [292, 326], [612, 673], [4793, 5266]]
+    reads = ["policy:velocity_em_ratio", "3-servo/ladder:ke_v_s_per_rad", "3-servo/run-up:j_kg_m2",
+             "3-servo/inductance:l_mh"]
+    assert es["v_kp_q88"]["inputs"] == es["v_ki_q412"]["inputs"] == [
+        *reads, "policy:velocity_zero_ratio", "1-board/current-scale:counts_per_a", "scale", "registry:gear_ratio",
+        "registry:tick_hz"]
+    assert es["v_kaw_q412"]["inputs"] == [*reads, "policy:velocity_zero_ratio", "registry:tick_hz"]
+    assert es["p_kp_q88"]["inputs"] == [*reads, "policy:position_split"]
+    # the set binds the four at the rule, of class `policy`: the two per-count gains on the set's count, the
+    # anti-windup and the position gain, rates, at none
+    for name, e in es.items():
+        assert f[name] == {**e, "protection": None} and e["class"] == "policy", name
+    assert [es[name]["pos_unit"] for name in GAINS] == [-1, -1, 0, 0]
+    assert [name in cn.PER_COUNT for name in GAINS] == [True, True, False, False]
+    assert not set(GAINS) & (cn.PROTECTION | set(policy["hold"]))
+    # the ratios are decisions, interim: the bench gains read through the rule until the margin sweep
+    for key in RATIOS:
+        why = policy["why"][key]
+        assert "01b-gains-3hz-50hz" in why and "pending the margin sweep" in why, key
+        assert why.endswith(": the owner's decision") and key not in policy["undecided"], key
+    assert not set(GAINS) & set(policy["why"])
+
+
+def test_the_speed_gain_scales_as_the_root_of_inertia_over_inductance_and_the_position_gain_with_the_crossover(
+        tmp_path):
+    def gains(name, **plant_):
+        root = tmp_path / name
+        c = context(root)
+        plant(root, {**PLANT, **POT_NOISE, **plant_})
+        return {g: cn.rule_of(c, g).fn(c) for g in GAINS}, cn.speed_rad_s(c)
+
+    one, w = gains("one")
+    j, henry = PLANT["3-servo/run-up"]["j_kg_m2"], PLANT["3-servo/inductance"]["l_mh"]
+    two, w2 = gains("twice-j", **{"3-servo/run-up": {"j_kg_m2": tuple(2 * x for x in j)}})
+    # twice the inertia at the same policy: f_em, the crossover and the anti-windup gain fall by root 2, the
+    # plant gain halves, so the proportional gain rises by root 2 and the integral gain stands
+    assert w2 / w == pytest.approx(1 / math.sqrt(2))
+    assert {g: two[g] / one[g] for g in GAINS} == pytest.approx({
+        "v_kp_q88": math.sqrt(2), "v_ki_q412": 1.0, "v_kaw_q412": 1 / math.sqrt(2), "p_kp_q88": 1 / math.sqrt(2)})
+    # and the position gain keeps its ratio to the crossover, the policy's split
+    assert one["p_kp_q88"] / w == two["p_kp_q88"] / w2 == pytest.approx(1 / GAIN_POLICY["position_split"])
+    # twice the inductance: the proportional gain falls by root 2, so it goes as the root of J over L
+    other, _ = gains("twice-l", **{"3-servo/inductance": {"l_mh": tuple(2 * x for x in henry)}})
+    assert other["v_kp_q88"] / one["v_kp_q88"] == pytest.approx(1 / math.sqrt(2))
+    # the proportional gain puts the rigid loop's crossover at w_c: |kp (1 + w_z / (j w)) x B f_med / (j w)| is 1
+    c = context(tmp_path / "one")
+    r, medium = GAIN_POLICY["velocity_zero_ratio"], cn.medium_hz(c)
+    loop = one["v_kp_q88"] * (1 + one["v_kaw_q412"] * medium / (1j * w)) * cn.b_gain(c) * medium / (1j * w)
+    assert abs(loop) == pytest.approx(1) and one["v_kaw_q412"] * medium == pytest.approx(w / r)
+    assert one["v_ki_q412"] == pytest.approx(one["v_kp_q88"] * one["v_kaw_q412"])
+
+
+@pytest.fixture
+def gained(first, tmp_path):
+    """The pair's set of record built over the plant with the gains'
+    ratios in the policy, written as the set of record."""
+    doc, _ = block(first, tmp_path, **GAIN_POLICY)
+    cn.write(doc, cn.set_path(PAIR, tmp_path))
+    return doc
+
+
+def test_a_deviation_of_the_gains_ratios_moves_the_gains_by_the_rule_and_a_pin_moves_its_field(gained, tmp_path):
+    base = gained
+    assert all(base["fields"][g]["class"] == "policy" for g in GAINS)
+    c = cn.Context(PAIR, tmp_path, BOARD_REG)
+    cn.table_of(c, base, cn.slots_of(c, base))
+
+    def by_rule(**entries):
+        c.policies = {**c.policies, **entries}
+        return {g: cn.evaluate(cn.rule_of(c, g), c)["value"] for g in GAINS}
+
+    # the crossover and the zero: the four move together, each to what the rule gives there, of class policy
+    point = {"velocity_em_ratio": 2.7, "velocity_zero_ratio": 3.0}
+    doc, _ = cn.derive(base, dev_file(tmp_path, "c4", policy=point), tmp_path, BOARD_REG)
+    gives = by_rule(**point)
+    assert doc["deviation"]["fields"] == {g: [base["fields"][g]["value"], gives[g]] for g in GAINS}
+    assert all(doc["fields"][g]["class"] == "policy" for g in GAINS) and moved_hashes(base, doc) == ["plant"]
+    c.policies = json.loads(cn.set_path(PAIR, tmp_path).with_name("policy.json").read_text())
+    # the split alone moves the position gain alone
+    doc, _ = cn.derive(base, dev_file(tmp_path, "split", policy={"position_split": 9.6}), tmp_path, BOARD_REG)
+    assert list(doc["deviation"]["fields"]) == ["p_kp_q88"]
+    assert doc["deviation"]["fields"]["p_kp_q88"][1] == by_rule(position_split=9.6)["p_kp_q88"]
+    # a candidate run as pins of the four, the way a sweep runs it: each field the literal, of class pinned
+    pins = {"v_kp_q88": 77, "v_ki_q412": 39, "v_kaw_q412": 129, "p_kp_q88": 5026}
+    doc, _ = cn.derive(base, dev_file(tmp_path, "pinned", pins={g: pin(v) for g, v in pins.items()}), tmp_path,
+                       BOARD_REG)
+    assert doc["deviation"]["fields"] == {g: [base["fields"][g]["value"], v] for g, v in pins.items()
+                                          if v != base["fields"][g]["value"]}
+    assert all(doc["fields"][g]["class"] == "pinned" and doc["fields"][g]["value"] == v for g, v in pins.items())
+    # and one pin moves its field alone
+    doc, _ = cn.derive(base, dev_file(tmp_path, "kp", pins={"v_kp_q88": pin(150)}), tmp_path, BOARD_REG)
+    assert doc["deviation"]["fields"] == {"v_kp_q88": [base["fields"]["v_kp_q88"]["value"], 150]}
+
+
+def test_a_gain_whose_input_is_missing_is_held_where_the_servo_held_it_and_left_out_where_nothing_was(first,
+                                                                                                       tmp_path):
+    inputs(tmp_path, policy={**BLOCK_POLICY, **GAIN_POLICY})
+    plant(tmp_path, {k: v for k, v in PLANT.items() if k != "3-servo/inductance"})
+    doc, notes = cn.build(PAIR, first, root=tmp_path, registry=BOARD_REG)
+    gone = "3-servo/inductance has no result for synth__board"
+    # the fake servo holds the position gain, which stands at its value with no source; the speed loop's
+    # three it never held are left out, each said
+    assert doc["fields"]["p_kp_q88"] == {"value": 40212, "class": "none", "rule": "p_kp.split", "held": gone,
+                                         "carried_from": first["hash"]["set"], "protection": None}
+    assert not {"v_kp_q88", "v_ki_q412", "v_kaw_q412"} & set(doc["fields"])
+    assert [n for n in notes if n.startswith(GAINS)] == [
+        f"p_kp_q88: held, {gone}", *(f"{g}: left out, {gone}" for g in GAINS[:3])]
+    # with the result on record the next build binds the four
+    plant(tmp_path)
+    again, _ = cn.build(PAIR, doc, root=tmp_path, registry=BOARD_REG)
+    assert all(again["fields"][g]["class"] == "policy" and "held" not in again["fields"][g] for g in GAINS)
+
+
 def test_the_bench_pairs_host_records_are_its_results_of_record_but_the_breakaway():
     doc, c, board = of_the_bench_pair()
     f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
@@ -3811,6 +3968,9 @@ ADDED = ("r_brush_q12", "brush_cps", "g_window_q016")
 REFIT = ("fric_fv_q016",)
 LOOSEN = ("stall_response", "thermal_tau_s", "thermal_tau2_s", "rail_fold_q8", "th_rise_q016", "ntc_t_ref_cc",
           "ntc_k1_q88", "ntc_k2_q24")   # of those, the judged ones and the fast rise, which falls
+# the field the speed and position gains' rule moved off the value the reference rung ran on: the anti-windup
+# gain at ki / kp, where the others are the counts the rung ran
+RULED = ("v_kaw_q412",)
 
 
 def before_the_releases(doc):
@@ -3821,7 +3981,8 @@ def before_the_releases(doc):
     released since, at the value the reference rung ran on; the cap at
     the 500 mA it was before it was read off the maker's sheet, no speed
     ceiling, which the table had no field for, the friction slope the
-    cruise refit moved since (REFIT) at the value the rung ran on, and
+    cruise refit moved since (REFIT) and the field the gains' rule moved
+    since (RULED) at the value the rung ran on, and
     the table of that day: the fields the firmware took out since (GONE)
     back at the values the rung ran on, the ones it added (ADDED) out."""
     plant = list(json.loads((DEVIATIONS / "plant-as-held.json").read_text())["pins"])
@@ -3833,7 +3994,7 @@ def before_the_releases(doc):
     for n in (cn.CEILING, *ADDED):
         del before["fields"][n]
     before["fields"].update({n: {"value": None, "protection": None} for n in GONE})
-    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT)},
+    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT, *RULED)},
                       current_limit_counts=cap)
     return before, plant, steps
 
@@ -3849,7 +4010,7 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     assert before["hash"]["set"][:12] == BEFORE != doc["hash"]["set"][:12]
     state = {"fields": {n: e["value"] for n, e in before["fields"].items()}}
     differ = [n for n in f if state["fields"].get(n) != f[n]["value"]]
-    assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *ADDED, *REFIT)]
+    assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *ADDED, *REFIT, *RULED)]
     assert (len(plant), len(steps)) == (11, 13) and set(GONE) == set(before["fields"]) - set(f)
     assert {n for n, less in cn.RETIRED.items() if less is None} == set(GONE)
     assert not set(plant) & cn.PROTECTION and [n for n in f if n in steps] == list(STEPS)
@@ -3966,7 +4127,7 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
         # reference rung ran on, the table of that day once more (`before_the_releases`)
         assert rung["set"]["hash"]["plant"] == before["hash"]["plant"] != derived["hash"]["plant"]
         assert [n for n in f if n not in cn.PROTECTION and ran.get(n) != f[n]["value"]] == [
-            n for n in f if n in (*whole, *MOTION, *ADDED, *REFIT)]
+            n for n in f if n in (*whole, *MOTION, *ADDED, *REFIT, *RULED)]
         assert [n for n in whole if n not in GONE] == [n for n in f if n in whole] and len(whole) == 11
         # the arms of the bisect and the current gains' side cut it in groups: the resistance, the back-EMF
         # constant, the model block and the friction term each alone, the current loop's three, and the two
