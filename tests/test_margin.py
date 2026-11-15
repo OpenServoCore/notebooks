@@ -4,6 +4,9 @@ that answers a period late, a position gain around it, at the medium
 rate, driven as the firmware drives a margin sweep (a cruise and a
 triangle summed into the speed reference, the three values published a
 period and held over its ten rows)."""
+import io
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -40,28 +43,30 @@ def closed_form(n):
     return lv, P_KP_Q88 / 256 * T / (1 - z1) * lv / (1 + lv)
 
 
-def burst(n, cruise, direction, rng=None, pause=None, hole=None, wave=None, amp=0.0):
-    """(rows, facts) of one burst. `pause` the period the triangle holds
-    off, `hole` the first of 16 rows lost, `wave` and `amp` a current
-    disturbance fixed in position, amp x sin(2 pi theta / wave)."""
+def burst(n, cruise, direction, rng=None, pause=None, hold=1, hole=None, wave=None, amp=0.0, noise=1.0):
+    """(rows, facts) of one burst. `pause` the first of `hold` periods the
+    triangle holds off, `hole` the first of 16 rows lost, `wave` and `amp`
+    a current disturbance fixed in position, amp x sin(2 pi theta / wave),
+    `noise` a scale on the pot-like noise."""
     goal = direction * cruise
     q = slope_q88(n)
     v, integ = float(goal), float(goal)
     theta = 500.0 if direction > 0 else 4000.0
     p = 0
+    held = range(pause, pause + hold) if pause is not None else range(0)
     rec = np.zeros((PERIODS, 3), np.int64)
     for k in range(-PREROLL, PERIODS):
         ref = goal << 16
-        if k >= 0 and k != pause:
+        if k >= 0 and k not in held:
             p += 1
             p = 0 if p >= 2 * n else p
             ref += (q * ((n >> 1) - abs(p - n))) << 8
-        w = v + (rng.normal(0, SIGMA_OMEGA) if rng else 0.0)
+        w = v + (rng.normal(0, noise * SIGMA_OMEGA) if rng else 0.0)
         e = ref / mg.Q16 - w
         integ += KI * e
         i = KP * e + integ
         if k >= 0:
-            th = theta + (rng.normal(0, SIGMA_THETA) if rng else 0.0)
+            th = theta + (rng.normal(0, noise * SIGMA_THETA) if rng else 0.0)
             rec[k] = round(th * mg.Q16), round(w * mg.Q16), ref
         if amp:
             i += amp * np.sin(2 * np.pi * theta / wave)
@@ -198,3 +203,253 @@ def test_a_sweep_reads_the_same_from_its_folder(tmp_path):
     a, b = mg.read(bursts), mg.read(mg.load(tmp_path))
     for loop in mg.LOOPS:
         assert [p["L"] for p in a[loop]["points"]] == [p["L"] for p in b[loop]["points"]]
+
+
+def test_the_half_period_is_read_at_most_512():
+    facts = {"inject_half_periods": 600, "inject_accel_q88": 150}
+    assert mg.HALF_PERIODS_MAX == 512
+    assert mg.half_periods(facts) == 512
+    assert mg.half_periods({**facts, "inject_half_periods": 512}) == 512
+
+
+def test_two_gain_margins_agree_within_1_db_or_both_at_twice_the_floor():
+    assert 2 * mg.GM_FLOOR_DB == 12.0
+    assert mg.gm_agree(5.0, 5.9)
+    assert not mg.gm_agree(5.0, 6.1)
+    assert mg.gm_agree(12.0, 25.0)
+    assert not mg.gm_agree(11.9, 25.0)
+
+
+def test_two_seeds_repeat_and_gain_margins_apart_under_twice_the_floor_do_not():
+    a, b = mg.read(sweep(seed=1)), mg.read(sweep(seed=2))
+    band = {"speed": set(SPEED_BAND), "position": set(POSITION_BAND)}
+    r = mg.repeat(a, b, band)
+    for loop in mg.LOOPS:
+        assert r[loop]["ok"], (loop, r[loop])
+        # a point either sweep's two-cruise check flags is left out
+        seen = {p[0] for p in r[loop]["points"]}
+        assert seen <= band[loop] and len(seen) >= len(band[loop]) - 1, (loop, seen)
+    # gain margins 1.5 dB apart under twice the floor do not repeat; 3 dB
+    # apart over it do
+    def gm(result, db):
+        return {**result, "speed": {**result["speed"], "gm_db": db}}
+    r = mg.repeat(gm(a, 8.0), gm(b, 9.5), band)
+    assert r["speed"]["gm"][2] is False and not r["speed"]["ok"]
+    assert r["position"]["ok"]
+    assert mg.repeat(gm(a, 13.0), gm(b, 16.0), band)["speed"]["ok"]
+
+
+def test_two_cruises_of_the_speed_band_are_two_readings_and_the_second_cruise_a_check():
+    fast = 2 * CRUISE
+
+    def tagged(bursts, reading):
+        return [(rows, {**facts, "reading_cps": reading}) for rows, facts in bursts]
+    slow = tagged(sweep(), CRUISE)
+    quick = tagged([burst(n, fast, d) for n in SPEED_BAND for d in (1, -1)], fast)
+    result = mg.readings(slow + quick)
+    assert sorted(result) == [CRUISE, fast]
+    assert all(p["two_cruise"] is None and p["cruise_cps"] == fast for p in result[fast]["speed"]["points"])
+    flags = {p["half_periods"]: p["two_cruise"] for p in result[CRUISE]["position"]["points"]}
+    assert all(flags[n] is False for n in POSITION_BAND)
+    for p in result[fast]["speed"]["points"]:
+        ref = closed_form(p["half_periods"])[0]
+        assert abs(p["db"] - mg.db(ref)) < DB and abs(p["deg"] - mg.deg(ref)) < DEG
+    # facts with no reading_cps are one reading, as before
+    assert list(mg.readings(sweep())) == [None]
+
+
+def burst_sum(bursts, key):
+    """L of one point with each burst's spectra summed over its cycles
+    before the cross spectrum."""
+    ss = [s for s in (mg.spectra(rows, facts) for rows, facts in bursts) if s["cycles"]]
+    u, w, th = ([s[k].sum() for s in ss] for k in ("U", "W", "TH"))
+    if key == "L_v":
+        return sum(b * np.conj(a) for a, b in zip(u, w)) / sum((a - b) * np.conj(a) for a, b in zip(u, w))
+    return sum(s["kp"] * t * np.conj(a) for s, a, t in zip(ss, u, th)) / sum(abs(a) ** 2 for a in u)
+
+
+def test_a_burst_with_no_pause_reads_as_its_burst_sum_to_1e_6_db(quiet):
+    for bursts in (quiet, mg.load(Path(__file__).parent / "margin_osc_lab")):
+        result = mg.read(bursts)
+        for loop, (key, _) in mg.LOOPS.items():
+            for p in result[loop]["points"]:
+                group = [(r, f) for r, f in bursts
+                         if f["inject_half_periods"] == p["half_periods"] and f["cruise_cps"] == p["cruise_cps"]]
+                ref = burst_sum(group, key)
+                assert abs(p["db"] - mg.db(ref)) < 1e-6, (loop, p["half_periods"])
+                assert abs(p["deg"] - mg.deg(ref)) < 1e-6, (loop, p["half_periods"])
+
+
+def test_a_paused_burst_that_cancels_summed_over_the_burst_reads_the_closed_form_a_cycle():
+    n = 25
+    off = {"burst sum": [], "a cycle": []}
+    for seed in (1, 2, 3):
+        rng = np.random.default_rng(seed)
+        # half a cycle held off mid burst: the cycles after it sit in antiphase with those before
+        bursts = [burst(n, CRUISE, d, rng, pause=mid_window(n, 56), hold=n) for d in (1, -1)]
+        for rows, facts in bursts:
+            s = mg.spectra(rows, facts)
+            assert s["pauses"] == 2 and s["holes"] == 0
+            assert abs(s["U"].sum()) < 0.05 * np.abs(s["U"]).sum()
+        result = mg.read(bursts)
+        for (loop, (key, _)), k in zip(mg.LOOPS.items(), (0, 1)):
+            want = closed_form(n)[k]
+            (p,) = result[loop]["points"]
+            assert p["readable"] and p["dropped"] == 4, loop
+            for name, got in (("burst sum", burst_sum(bursts, key)), ("a cycle", p["L"])):
+                off[name] += [(mg.db(got) - mg.db(want)) / p["se_db"], (mg.deg(got) - mg.deg(want)) / p["se_deg"]]
+    # in the point's own standard errors: the sum's cancelled reference lets the noise through
+    rms = {k: np.sqrt(np.mean(np.square(v))) for k, v in off.items()}
+    assert rms["a cycle"] < 2.0 and rms["burst sum"] > 10.0, rms
+
+
+def test_the_jackknife_is_the_scatter_of_a_point_from_seed_to_seed():
+    z = []
+    for one, two in ((1, 2), (3, 4)):
+        a, b = mg.read(sweep(seed=one)), mg.read(sweep(seed=two))
+        for loop, band in (("speed", SPEED_BAND), ("position", POSITION_BAND)):
+            for p, q in zip(a[loop]["points"], b[loop]["points"]):
+                if p["half_periods"] in band and p["readable"] and q["readable"]:
+                    z.append((p["db"] - q["db"]) / np.hypot(p["se_db"], q["se_db"]))
+                    z.append(((p["deg"] - q["deg"] + 180) % 360 - 180) / np.hypot(p["se_deg"], q["se_deg"]))
+    assert len(z) >= 60
+    assert 0.6 < np.sqrt(np.mean(np.square(z))) < 1.6
+
+
+def test_a_point_of_fewer_cycles_than_blocks_drops_one_cycle_at_a_time_and_one_cycle_reads_nothing():
+    rng = np.random.default_rng(3)
+    u = 10 * np.exp(1j * rng.uniform(0, 2 * np.pi, 5))
+    w = u * (0.5 + 0.05 * rng.normal(size=5))
+    num, den = w * np.conj(u), (u - w) * np.conj(u)
+    est = mg.cross(num, den, w / u)
+    loo = np.array([(num.sum() - num[i]) / (den.sum() - den[i]) for i in range(5)])
+    want = np.sqrt(4 / 5 * ((mg.db(loo) - mg.db(loo).mean()) ** 2).sum())
+    assert len(num) < mg.BLOCKS
+    assert est["se_db"] == pytest.approx(want, rel=1e-9)
+    one = mg.cross(num[:1], den[:1], (w / u)[:1])
+    assert np.isnan(one["se_db"]) and not mg.readable(one)
+
+
+def test_a_point_under_the_noise_is_marked_and_left_out_of_the_margins_and_the_repeats():
+    rng = np.random.default_rng(1)
+    bursts = [burst(n, c, d, rng, noise=100.0 if n == 4 else 1.0) for n, c, d in
+              [(n, CRUISE, d) for n in SPEED_BAND + POSITION_BAND for d in (1, -1)]]
+    result = mg.read(bursts)
+    sp = result["speed"]
+    by_n = {p["half_periods"]: p for p in sp["points"]}
+    assert not by_n[4]["readable"]
+    assert by_n[4]["se_db"] > mg.SE_DB_MAX or by_n[4]["se_deg"] > mg.SE_DEG_MAX \
+        or by_n[4]["response_z"] < mg.RESPONSE_SE_MIN
+    assert all(p["readable"] for n, p in by_n.items() if n != 4)
+    without = mg.margins([p for p in sp["points"] if p["half_periods"] != 4], "read")
+    assert {k: sp[k] for k in without} == without
+    out = io.StringIO()
+    mg.table(result, out)
+    speed = out.getvalue().split("position loop")[0].splitlines()
+    assert [s.split()[0] for s in speed if s.endswith("unreadable")] == ["4"]
+    r = mg.repeat(result, mg.read(sweep(seed=2)), {"speed": set(SPEED_BAND)})
+    assert 4 not in {p[0] for p in r["speed"]["points"]} and len(r["speed"]["points"]) == len(SPEED_BAND) - 1
+
+
+def flat(n, d, a, readable=True):
+    """A point of the margins' own fields."""
+    return {"half_periods": n, "hz": mg.PERIOD_HZ / (2 * n), "L": 10 ** (d / 20) * np.exp(1j * np.radians(a)),
+            "db": d, "deg": a, "readable": readable, "two_cruise": None}
+
+
+def test_a_gain_margin_whose_crossing_sits_next_to_an_unreadable_point_is_not_a_number():
+    pts = [flat(10, 6, -120), flat(5, 1, -160), flat(4, -2, -175), flat(3, -4, -190), flat(2, -6, -200)]
+    m = mg.margins(pts, "read")
+    assert m["gm_db"] == pytest.approx(2 + 2 / 3) and not m["gm_unread"]
+    pts[3] = flat(3, -4, -190, readable=False)
+    m = mg.margins(pts, "read")
+    assert m["gm_db"] is None and m["gm_hz"] is None and m["gm_unread"]
+    assert m["crossover_hz"] is not None
+    # read at Nyquist: the N = 1 point unreadable, or one under it
+    top = [flat(10, 6, -120), flat(5, 1, -150), flat(2, -6, -170)]
+    assert mg.margins(top + [flat(1, -9, -180)], "read")["gm_db"] == pytest.approx(9.0)
+    for pts in (top + [flat(1, -9, -180, readable=False)],
+                top[:2] + [flat(2, -6, -170, readable=False), flat(1, -9, -180)]):
+        m = mg.margins(pts, "read")
+        assert m["gm_db"] is None and m["gm_unread"]
+    # a bound over the readable points stands; none found with an unreadable point above is unread
+    low = [flat(70, 5, -95), flat(40, -1, -110)]
+    m = mg.margins(low + [flat(25, -6, -172), flat(20, -9, -176), flat(10, -20, -150, readable=False)], "bound")
+    assert m["gm_over"] and m["gm_db"] == pytest.approx(6.0) and not m["gm_unread"]
+    m = mg.margins(low + [flat(25, -6, -172, readable=False)], "bound")
+    assert m["gm_db"] is None and m["gm_unread"]
+
+
+def test_a_crossover_with_an_unreadable_point_between_its_readable_pair_is_not_read_and_decides_no_repeat():
+    pts = [flat(40, 6, -120), flat(25, 2, -130), flat(15, -1, -140), flat(10, -4, -150)]
+    m = mg.margins(pts, "read")
+    assert m["crossover_hz"] is not None and m["pm_deg"] is not None and not m["crossover_unread"]
+    pts[2] = flat(15, -1, -140, readable=False)
+    m = mg.margins(pts, "read")
+    assert m["crossover_hz"] is None and m["pm_deg"] is None and m["crossover_unread"]
+    # on synthetic rows: the speed loop crosses 0 dB between N = 10 and N = 8, and N = 10 is under the noise
+    rng = np.random.default_rng(1)
+    bursts = [burst(n, CRUISE, d, rng, noise=100.0 if n == 10 else 1.0) for n in SPEED_BAND for d in (1, -1)]
+    noisy, clean = mg.read(bursts), mg.read(sweep(seed=2))
+    sp = noisy["speed"]
+    assert not {p["half_periods"]: p for p in sp["points"]}[10]["readable"]
+    assert sp["crossover_hz"] is None and sp["pm_deg"] is None and sp["crossover_unread"]
+    assert clean["speed"]["pm_deg"] is not None
+    out = io.StringIO()
+    mg.table(noisy, out)
+    assert "no crossover read: its 0 dB crossing may sit next to an unreadable point" in out.getvalue()
+    r = mg.repeat(noisy, clean, {"speed": set(SPEED_BAND)})["speed"]
+    assert r["pm"][2] is None and r["ok"]
+
+
+def moved(result, loop, n, d_db, se_db):
+    """A copy of a read with the point N of `loop` moved by d_db and both
+    its standard errors in dB set to se_db."""
+    pts = [{**p, "db": p["db"] + d_db, "se_db": se_db} if p["half_periods"] == n else p
+           for p in result[loop]["points"]]
+    return {**result, loop: {**result[loop], "points": pts}}
+
+
+def test_two_sweeps_repeat_by_their_points_standard_errors_not_by_fixed_bounds():
+    a = mg.read(sweep(seed=1))
+    band = {"speed": set(SPEED_BAND), "position": set(POSITION_BAND)}
+    assert mg.repeat(a, a, band)["speed"]["ok"] and mg.repeat(a, a, band)["position"]["ok"]
+    assert mg.PAIR_FACTOR == 1.42 and mg.APART_SIGMA == 3.0
+    # 1.5 dB apart at 0.6 dB each: 1.25 of the combined 1.42 x 0.85 dB, a repeat over 1 dB
+    r = mg.repeat(moved(a, "position", 15, 0.0, 0.6), moved(a, "position", 15, 1.5, 0.6), band)["position"]
+    (p,) = [p for p in r["points"] if p[0] == 15]
+    assert p[1] == pytest.approx(1.5) and p[4] == pytest.approx(1.5 / (1.42 * np.hypot(0.6, 0.6)))
+    assert p[3] and r["ok"]
+    # 0.5 dB apart on points read finer than the floor: 5 sigma at the floor, no repeat under 1 dB
+    r = mg.repeat(moved(a, "speed", 12, 0.0, 0.001), moved(a, "speed", 12, 0.5, 0.001), band)["speed"]
+    (p,) = [p for p in r["points"] if p[0] == 12]
+    assert p[1] == pytest.approx(0.5) and p[4] == pytest.approx(0.5 / (1.42 * np.hypot(0.05, 0.05)))
+    assert not p[3] and not r["ok"]
+
+
+FIXTURE = Path(__file__).parent / "margin_osc_lab"
+
+
+def test_a_burst_osc_labs_own_writer_wrote_reads_its_rigs_plant():
+    """The folder `osc-lab`'s writer wrote for its test rig's plant
+    (`margin::tests::the_writer_writes_the_fixture_the_estimator_reads`,
+    which fails when the writer drifts from these files): the observer's
+    speed half the reference's departure from the cruise a period late and
+    its position the speed's sum, so L_v = (z^-1 / 2) / (1 - z^-1 / 2) and
+    L_p = kp z^-2 / (2 fm (1 - z^-1))."""
+    bursts = mg.load(FIXTURE)
+    assert len(bursts) == 1
+    rows, facts = bursts[0]
+    assert set(mg.FACTS) <= set(facts) and facts["reading_cps"] == facts["cruise_cps"]
+    assert mg.bands(bursts) == {"speed": {facts["inject_half_periods"]}}
+    result = mg.readings(bursts)
+    assert list(result) == [facts["cruise_cps"]]
+    n = facts["inject_half_periods"]
+    z1 = np.exp(-1j * np.pi / n)
+    lv = 0.5 * z1 / (1 - 0.5 * z1)
+    lp = facts["p_kp_q88"] / 256 * 0.5 * z1 ** 2 / (mg.PERIOD_HZ * (1 - z1))
+    for loop, want in (("speed", lv), ("position", lp)):
+        (p,) = result[facts["cruise_cps"]][loop]["points"]
+        assert p["half_periods"] == n and p["cycles"] == facts["cycles"] and p["dropped"] == 0
+        assert abs(p["db"] - mg.db(want)) < 0.05, loop
+        assert abs(p["deg"] - mg.deg(want)) < 0.5, loop

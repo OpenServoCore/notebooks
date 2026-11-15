@@ -280,13 +280,17 @@ README is stale. A stage with no `tldr.toml` is skipped.
 ## osc-lab
 
 `osc-lab` is the little Rust tool in [osc-lab/](osc-lab) that every capture
-records with. It has three commands. `osc-lab sweep` drives open-loop duty
+records with. It has four commands. `osc-lab sweep` drives open-loop duty
 rungs and streams the raw TEL rows into `sweep.csv`. `osc-lab burst` takes
 the high-rate shunt bursts from rest into `burst-K.csv`. `osc-lab track`
 drives a closed loop of the production image through a schedule of goals
 and streams the raw rows into `track.csv`, one segment of `segments.csv`
-per item. All three write a `meta.json` beside the data with the servo's
-constants at the time.
+per item. `osc-lab margin` sweeps the loop-margin stimulus of the `deadman`
+image, a triangle on the velocity loop's reference at a cruise, and
+streams one margin row a tick into `burst-K.csv` with its facts in
+`burst-K.json`, a burst a point, as `oscnb.margin` reads them. All four
+write a `meta.json` beside the data with the servo's constants at the
+time.
 
 It is the only capture instrument. Nothing in it fits, identifies or
 calibrates. It is a raw instrument on purpose, so a dataset never goes

@@ -661,6 +661,7 @@ mod tests {
                     vbus_raw: sel(t::VBUS_RAW).then_some(s.vbus_raw),
                     ntc_raw: sel(t::NTC_RAW).then_some(s.ntc_raw),
                     vref_raw: sel(t::VREF_RAW).then_some(s.vref_raw),
+                    ..TelFrame::default()
                 };
                 assert_eq!(*f, want, "{chunks:?}");
             }

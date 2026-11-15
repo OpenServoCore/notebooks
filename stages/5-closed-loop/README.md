@@ -2473,3 +2473,189 @@ What the session leaves on record, for reading the ladder:
   settle on 2e9cb678 alone reads 62.3 and 66.9 ms in two sessions
   recorded one after the other, and its reversals, apart the same way
   in both sessions, are not apart when counted over forty moves.
+
+The loop-margin sessions:
+
+The servo ran the dead-man image of firmware ec3051ea, which carries
+the loop-margin stimulus. The captures carry `fw` 65 and not the
+commit. Servo mg90-d on a free horn, on the set the servo has saved,
+`324e326794b5`: every capture's `meta.json` holds that set's CONFIG,
+and the captures on the saved set carry the plant stamp 0x6f9a with
+the verdict `match`. A sweep is one `osc-lab margin` call: in Velocity
+mode at a cruise, a triangle on the velocity loop's reference, one
+burst up and one down the travel a point, each point a half period N
+of the triangle, read at 1000 / N Hz. `uv run python -m oscnb.margin
+<capture> [<second>]` reads a sweep: each loop's gain and phase a
+point with a jackknife standard error, a point too noisy to place a
+crossing marked `unreadable` and left out of the margins and the
+repeats, the crossover with its phase margin, and the gain margin
+where one is read. Given a second sweep it says whether the two
+repeat by its own rule: each point both read within three of the
+pair's combined standard errors in dB and in deg, the phase margins
+within 5 deg, the gain margins within 1 dB or both at least 12 dB.
+Every number below is its reading of the captures,
+`telemetry/<pair>/margin/capture-1` to `capture-20`. Every sweep
+ended `ok`, with no row dropped, no frame missing and the stimulus
+fields at 0 after it.
+
+The numbers written before the sessions and in their running record
+were read by the estimator before it formed the cross spectrum a
+cycle and carried a noise a point. Where the two differ, the reading
+here stands. Three readings changed in kind: the two-cruise check
+flags none of the position points, where it flagged 4 of 8; the pair
+at `r_q12` 5470 reads no crossover and repeats, where it read one at
+61.8 Hz and did not repeat; and the 1 kHz point is unreadable in both
+sweeps of the method.
+
+- The method, `capture-1` and `capture-2`, one after the other: the
+  default plan, the speed band (N = 40, 30, 25, 20, 15, 12, 10, 8 and
+  1, 25 Hz to 1 kHz) and the position band (N = 512 to 50, 2 to 20
+  Hz) at 742 c/s, and the position band again at 928 c/s, the
+  two-cruise check. The speed loop crosses over at 52.9 and 52.7 Hz
+  with a phase margin of 52.9 and 53.6 deg, the position loop at 2.9
+  and 2.8 Hz with 87.3 and 85.9 deg. Neither loop's gain margin is
+  read, its -180 crossing possibly next to an unreadable point. Both
+  loops repeat, on 8 points each, the worst 0.6 of the pair's combined
+  standard errors in dB and 0.7 in deg. Every position point agrees
+  between the two cruises in both sweeps. The 1 kHz point reads
+  -17.80 +/- 1.62 dB and -44.03 +/- 43.75 dB, unreadable in both; its
+  burst's peak is 15 c/s by the plan. The plan's source check
+  (`source_checks` in `meta.json`) reads `omega_hat_src` 1, the source that carries the back-EMF's fast part,
+  on 33.7 and 36.9 % of 1000 periods at 742 c/s and 30.2 and 30.3 % at
+  928.
+- The fast cruise, `capture-3` and `capture-4`: the speed band alone at
+  2500 c/s, `omega_hat_src` 1 on 100 % of periods. The band holds no
+  crossover: the gain reads 18.50 and 18.63 dB at 25 Hz and 6.06 and
+  6.95 dB at 125 Hz, the phase -96 to -110 deg from 25 to 125 Hz. The
+  1 kHz point is unreadable in both. The pair repeats on 8 points.
+- The speed loop by cruise, on the extended band (N = 40, 25, 15, 10,
+  8, 7, 6, 5, 4, 3 and 2, 25 to 500 Hz), two sweeps a cruise on the
+  saved set. The share is that of `omega_hat_src` 1 in the source
+  check:
+
+  | capture | c/s | share | crossover, Hz | phase margin, deg | gain margin | 125 Hz, dB | 333 Hz, dB |
+  |---|---|---|---|---|---|---|---|
+  | 9 | 742 | 38.9 % | 53.9 | 55.5 | not read | -6.89 | -13.24 |
+  | 10 | 742 | 38.0 % | 53.8 | 57.4 | not read | -7.83 | -12.89 |
+  | 7 | 1500 | 63.8 % | 52.9 | 66.6 | not read | -7.47 | -5.81 |
+  | 8 | 1500 | 66.8 % | 51.7 | 60.9 | not read | -7.04 | unreadable |
+  | 5 | 2500 | 100 % | 283.7 | 43.6 | 4.00 dB at 457.6 Hz | 6.18 | -1.45 |
+  | 6 | 2500 | 100 % | 281.8 | 44.8 | not read | 6.32 | -1.40 |
+  | 15 | 3000 | 100 % | 265.9 | 50.0 | not read | 6.29 | -1.73 |
+  | 16 | 3000 | 100 % | 275.9 | 44.1 | 2.79 dB at 444.6 Hz | 5.12 | -1.56 |
+  | 17 | 3500 | 100 % | 283.5 | 41.0 | not read | 6.52 | -1.34 |
+  | 18 | 3500 | 100 % | 295.1 | 38.9 | not read | 6.73 | -1.14 |
+
+  The pairs at 742, 2500 and 3500 c/s repeat. The pair at 1500 c/s
+  does not: its 500 Hz point is 34.6 deg apart, 5.2 standard errors,
+  and its phase margins 5.7 deg. The pair at 3000 c/s does not: every
+  point repeats, and the phase margins are 5.8 deg apart. At 742 and
+  1500 c/s the crossover reads 51.7 to 53.9 Hz. Above it the gain
+  falls at 742 c/s, from -5.12 and -6.27 dB at 100 Hz to -13.24 and
+  -12.89 dB at 333 Hz, and at 1500 c/s it reads -4.5 to -7.6 dB at
+  every readable point from 100 to 500 Hz. At 2500 to 3500 c/s, over
+  the six sweeps, the crossover reads 266 to 295 Hz with a phase
+  margin of 39 to 50 deg, and a gain margin of 2.8 to 4.0 dB where one
+  is read, in two sweeps of six. A gain rule that holds a loop to 45
+  deg of phase margin and 6 dB of gain margin would find five of those
+  six under 45 deg, all but `capture-15`, and both gain margins read
+  under 6 dB.
+- The resistance test at 2500 c/s: the extended sweep with `r_q12`
+  installed volatile at 4290 (`capture-13` and `-14`), 4837 (`-11`
+  and `-12`) and 5470 (`-19` and `-20`), against the saved set's 3744
+  (`capture-5` and `-6`). Each install is the one pin of a deviation
+  file beside the captures, `telemetry/<pair>/margin/margin-r-4p8-ohm.json`,
+  `margin-r-5p4-ohm.json` and `margin-r-6p1-ohm.json` in that order. The
+  captures do not carry `r_q12`; they carry the plant stamp of the
+  install, 0x75c3, 0xa1a2 and 0x1fdb, where the saved set's is 0x6f9a.
+  `capture-15` to `-18`, recorded between the 4290 and the 5470 pairs,
+  carry 0x6f9a again.
+
+  | `r_q12` | captures | 125 Hz, dB | 250 Hz, dB | crossover, Hz | phase margin, deg | repeat |
+  |---|---|---|---|---|---|---|
+  | 3744 | 5, 6 | 6.18, 6.32 | 1.13, 0.99 | 283.7, 281.8 | 43.6, 44.8 | repeats |
+  | 4290 | 13, 14 | 4.21, 4.80 | 0.28, 0.10 | 257.8, 252.7 | 54.9, 58.2 | does not repeat |
+  | 4837 | 11, 12 | 1.71, 1.75 | -0.38, -2.70 | 193.3, 193.3 | 84.3, 84.6 | does not repeat |
+  | 5470 | 19, 20 | -1.55, -2.11 | -1.37, -2.68 | not read | not read | repeats, on 6 points |
+
+  At 4290 the 500 Hz point's phase is 19.8 deg apart, 6.4 standard
+  errors, and at 4837 the 250 Hz point's gain 2.32 dB, 3.4. At 5470
+  the estimator reads no crossover in either sweep, its 0 dB crossing
+  possibly next to an unreadable point, with 3 of 11 points unreadable
+  in each; the phase at 125 Hz reads -61.1 and -62.7 deg. On those two
+  sweeps the estimator drops cycles as pauses, a step of the
+  reference from one period to the next that is not the slope: 2 to
+  21 cycles a point on `capture-19` and 0 to 16 on `capture-20`, none
+  for a missing row. `capture-1` to `-18` drop none.
+- Two more records of the same night, on the same image and the saved
+  set, outside the margin sweeps. `openloop-legs` is three chains of
+  `osc-lab sweep --duty-pct 18@600,then:12@600,then:8@600`, open-loop
+  duty of 18, 12 and 8 % for 600 ms each in both directions, recorded
+  for the volts balance with no loop. `mode-edge` is nine `osc-lab
+  track` captures with a `mode:` item this repo's `osc-lab` does not
+  have, three rounds of Velocity mode at 800 c/s switched to Position
+  under torque at mid travel in each direction and of OpenLoop duty at
+  12 % switched to Current mode at 75 counts. Their readers are not in
+  this repo, so no number of theirs is carried here. The captures lie
+  under `telemetry/<pair>/openloop-legs/` and
+  `telemetry/<pair>/mode-edge/` and are not kept, as the velocity
+  test's are not.
+
+What was written before the sessions, and how each held:
+
+- The method on silicon: every point of both bands that the two-cruise
+  check does not flag within 1 dB and 10 deg between the two sweeps,
+  the phase margins within 5 deg, the gain margins within 1 dB or both
+  at least 12 dB, at most one flagged point a band, no row dropped, no
+  fault and the stimulus fields at 0 after each sweep. Held but for the
+  1 kHz point, which reads unreadable in both sweeps and is left out:
+  the other points of both bands are within 0.90 dB and 5.6 deg, no
+  point is flagged, and no gain margin is read to compare.
+- The source check at 742 c/s, recorded with no verdict: `omega_hat_src`
+  0 was expected on at least 99 % of periods. It reads 1 on 33.7 and
+  36.9 %, and on 38.9 and 38.0 % in the extended band's sweeps, so the
+  slow cruise is a mixed regime on this servo, not the pot observer
+  alone.
+- Predictions for the loops as the set holds them, from the sim and a
+  linear model: the speed loop at 742 c/s at 56 Hz, 42 to 45 deg and a
+  gain margin of 24 to 27 dB at Nyquist, the position loop at 3.0 Hz
+  and 88 deg, the speed loop at 2500 c/s at 46 Hz, 31 deg and 13 dB. A
+  crossover within 25 % and a phase margin within 10 deg was to say the
+  model holds. At 742 c/s every crossover is within 25 % and the
+  position loop's phase margins within 10 deg; the speed loop's, 52.9
+  and 53.6 deg, are 7.9 and 8.6 deg over the top of its range; no gain
+  margin is read. At 2500 c/s it did not hold: no crossover in the
+  default band, then 283.7 and 281.8 Hz on the extended band.
+- The fast cruise: `omega_hat_src` 1 on at least 99 % of periods, held
+  at 100 % at 2500, 3000 and 3500 c/s; the two sweeps at 2500 c/s to
+  repeat, held on the default and on the extended band.
+- The extended band at 742, 1500 and 2500 c/s: no prediction, a map.
+- The resistance test: at 4837 the gain from 125 to 250 Hz to fall by
+  at least 6 dB from the saved set's with the crossover under 150 Hz,
+  and at 4290 to land between; under 2 dB at 4837 to rule the
+  resistance out, 2 to 6 dB to give it a share. The 125 Hz gain fell
+  by 4.5 dB, from 6.18 and 6.32 to 1.71 and 1.75, the 250 Hz gain by
+  1.5 and 3.7 dB, and the crossover read 193.3 Hz in both: a share by
+  that reading. 4290 lands between, 4.21 and 4.80 dB at 125 Hz.
+- Two tests of an analysis outside this repo. At 3000 and 3500 c/s on
+  the saved set, a 125 Hz gain at 3500 c/s within 1 dB of 2500's was
+  to say that what lifts the gain at speed is fixed in speed, at or
+  over 8 dB that it grows with it: 6.52 and 6.73 dB against 6.18 and
+  6.32, fixed by that reading. At `r_q12` 5470 at 2500 c/s, -2.3 dB and
+  -70 deg at 125 Hz and a crossover at 57 Hz were predicted; a 125 Hz
+  gain within 1.5 dB of -2.3 with a crossover under 100 Hz was to
+  confirm the analysis, a 125 Hz gain over 0 dB or a crossover over 150
+  Hz to falsify it. The gain reads -1.55 and -2.11 dB and no crossover
+  is read: neither confirmed nor falsified.
+
+What the sessions leave open:
+
+- What in the winding or the drive lifts the speed loop's gain at 2500
+  c/s and over. Raising `r_q12` moves it by a share. An
+  analysis outside this repo fits it, and its numbers are not carried
+  here; a notebook over these captures would be where it is tested.
+- The fix for the speed loop at those cruises.
+- What drops the cycles of the 5470 pair as pauses, which no other
+  sweep shows.
+- The speed loop's gain margin at Nyquist at 742 c/s: the 1 kHz point
+  is unreadable at its burst's peak of 15 c/s.

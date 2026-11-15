@@ -1,0 +1,20 @@
+{
+  "band": "speed",
+  "cruise_cps": 2500,
+  "cycles": 498,
+  "direction": 1,
+  "garble_bytes": 0,
+  "inject_accel_q88": 3840,
+  "inject_half_periods": 2,
+  "p_kp_q88": 5026,
+  "periods": 2392,
+  "reading_cps": 2500,
+  "rows": 23920,
+  "rows_dropped": 0,
+  "rows_received": 23920,
+  "seq_holes": 0,
+  "start": 396,
+  "t_end": 1794734197.2806373,
+  "t_start": 1794734196.0834925,
+  "tick0": 25048
+}

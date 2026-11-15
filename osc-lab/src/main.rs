@@ -1,13 +1,14 @@
 //! `osc-lab` - the raw capture instrument the notebooks record with, driven
 //! through the osc-adapter: open-loop duty sweeps of TEL rungs (`sweep`),
-//! high-rate shunt bursts from rest (`burst`) and closed-loop goal
-//! schedules (`track`). Raw captures only: nothing
+//! high-rate shunt bursts from rest (`burst`), closed-loop goal schedules
+//! (`track`) and loop-margin sweeps (`margin`). Raw captures only: nothing
 //! here fits, identifies or calibrates. Every other verb (get, set, status,
 //! baud, cal) is `osc`'s.
 
 mod burst;
 mod descriptor;
 mod instrument;
+mod margin;
 mod rig;
 mod state;
 mod sweep;
@@ -44,6 +45,11 @@ enum Cmd {
     /// TEL bursts, raw rows under a host watchdog (track.csv, segments.csv
     /// + meta.json). Exit 2 refused before torque, 3 aborted.
     Track(track::Args),
+    /// Loop-margin sweep on the `deadman` image: a triangle on the velocity
+    /// loop's reference at a cruise, one TEL burst a point, raw margin rows
+    /// (burst-K.csv + burst-K.json a burst, meta.json) as `oscnb.margin`
+    /// reads them. Exit 2 refused, 3 aborted.
+    Margin(margin::Args),
 }
 
 pub(crate) fn parse_u16(s: &str) -> Result<u16> {
@@ -71,17 +77,20 @@ fn main() -> Result<()> {
     match &cli.cmd {
         Cmd::Sweep(args) => sweep::run(args, cli.bus.clone(), cli.id),
         Cmd::Burst(args) => burst::run(args, cli.bus.clone(), cli.id),
-        Cmd::Track(args) => {
-            let r = track::run(args, cli.bus.clone(), cli.id);
-            if let Err(e) = &r
-                && let Some(code) = track::exit_code(e)
-            {
-                eprintln!("osc-lab track: {e}");
-                std::process::exit(code);
-            }
-            r
-        }
+        Cmd::Track(args) => exit("track", track::run(args, cli.bus.clone(), cli.id)),
+        Cmd::Margin(args) => exit("margin", margin::run(args, cli.bus.clone(), cli.id)),
     }
+}
+
+/// A closed-loop run's refusal and abort as their exit codes.
+fn exit(verb: &str, r: Result<()>) -> Result<()> {
+    if let Err(e) = &r
+        && let Some(code) = track::exit_code(e)
+    {
+        eprintln!("osc-lab {verb}: {e}");
+        std::process::exit(code);
+    }
+    r
 }
 
 #[cfg(test)]
