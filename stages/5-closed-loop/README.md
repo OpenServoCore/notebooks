@@ -289,7 +289,8 @@ in deg/s and deg/s^2, to five figures.
 A result recorded before rungs named their limits of motion has no
 `motion`, and its file is not rewritten. The tool reads it at the limits
 of its day: the ones its deviation moved (`zz-sweep-motion-200` and
-`-400`), else the ones its settings named (the `02a` to `02f` speed
+`-400` and the three `zz-ab-400-` sides), else the ones its settings
+named (the `02a` to `02f` speed
 rungs, `06a`, `06b` and the two `pot-speed-half` A/B rungs), else 1500
 count/s and 3840: the counts every set held while the two were held,
 and the ones the config in every capture of every kept rung holds. `table` prints
@@ -330,12 +331,14 @@ holds the set of record let go with the owner's default move speed
 and no rung runs on one again. Five are files a rung of record ran,
 `motor-model.json` two rungs, `motor-r.json` `zz-ab-r-measured`,
 `protection-ntc-curve.json` `zz-ab-ntc-pinned`, `motion-200.json`
-`zz-sweep-motion-200` and `motion-400.json` `zz-sweep-motion-400`, and
-a result that names one keeps its sha1 and the fields it moved. What
+`zz-sweep-motion-200` and `motion-400.json` `zz-sweep-motion-400` and
+the three sides of the speed blend's session at 400 deg/s
+(`zz-ab-400-`, [the ladder](#the-ladder)), and a result that names one
+keeps its sha1 and the fields it moved. What
 `motion-200.json` moved is the set of record's own default now, so
 that rung ran the set of record itself, every hash alike; the 400
-deg/s point of `motion-400.json` is no value of the set, and its rung
-keeps it as the side it ran. Moving a speed with a deviation now takes
+deg/s point of `motion-400.json` is no value of the set, and its rungs
+keep it as the sides they ran. Moving a speed with a deviation now takes
 a file of policy entries alone, with no hold to release. One test names
 the thirteen and holds every other file to a build.
 A deviation that pins a field the servo's image does not have is
@@ -1188,6 +1191,12 @@ and the table's points, so what those regions hold outside the set, the
 bus id and rate among it, is saved with it. A refusal before the SAVE
 leaves flash as it was, and a reboot returns it.
 
+The bench servo stores set `324e326794b5`, the set of record, since
+the speed blend's session, and `18a-speed-blend` is the rung that ran
+on it; that save's record, under
+`telemetry/<pair>/constants/324e326794b5/`, is not kept in the repo,
+as no save's record is.
+
 A save is undone from its own record. `restore --from stored.json`
 installs the state the servo had stored, volatile, and it is made
 permanent again by adopting that record as the pair's set of record
@@ -1641,6 +1650,55 @@ Kept:
   overlap, the rest error at 0.304 [0.304, 0.346] deg and the lag at
   10 % at 38.3 [37.1, 38.4] ms among them. 26 to 52 of a run's ramp
   goals went out late.
+- `18a-speed-blend`: firmware 2e9cb678 on the set of record, set
+  `324e326794b5`, which the servo has saved, three runs alone after
+  ten sweeps of the travel: the reference for rungs on the speed
+  blend, kept as that and not on its rows. Two commits lie between
+  08c7beaf and 2e9cb678: a7d3b377 holds a back-EMF boxcar off through
+  the start-up half and voids a half that holds a drive flip, and
+  2e9cb678 feeds the velocity loop the pot observer's speed plus the
+  back-EMF's fast part in place of the source switch. Its image is the
+  one the blend's sides of the sessions below ran, the same sha1. The
+  set differs from `17a`'s, `b300d5e71e38`, in the default limits of
+  motion alone, and this is the first rung recorded at the test set's
+  own limits ([Running it](#running-it)): its `rung.json` names them
+  under `motion`, from `test set`, 1500 count/s and 3840 as the fields
+  hold them, the counts `17a` ran at as held, so its moves ran as
+  `17a`'s did. No fault. Recorded two hours after `17a` and not
+  alternated with it. 21 to 33 of a run's ramp goals went out late, 26
+  to 52 on `17a`.
+  Both halves, as the median of three runs and their range against
+  `17a`, every row named having its ranges apart unless said. The duty
+  reverses far less often: 38.9 [26.6, 40.6] a second against 249
+  [198, 252] on the 2 degree move, 21.6 [20.7, 31.8] against 312 [303,
+  326] on the 20 degree and 13.5 [12.1, 16.4] against 339 [332, 373]
+  on the 60 degree, 51.7 [50.7, 59.9] against 99 [96, 101] at 1 %,
+  58.4 [57.5, 69.7] against 177 [159, 191] at 3 % and 28.1 [20.3,
+  34.3] against 310 [265, 337] at 10 %. The current falls on every
+  move and ramp: 93.8 [93.7, 96.7] mA against 111 [106, 116], 85.8
+  [85.0, 85.9] against 134 [131, 139] and 87.1 [86.6, 88.1] against
+  133 [131, 138] on the 2, 20 and 60 degree moves, 71.6 [71.1, 72.1]
+  against 75.5 [73.5, 75.6], 82.6 [80.0, 82.9] against 92.1 [91.3,
+  92.9] and 96.3 [93.4, 96.8] against 154 [147, 159] at 1, 3 and 10 %,
+  and the duty with it. The 60 degree move settles in 897 [893, 899]
+  ms against 976 [971, 977]. The lag is shorter at 3 % and 10 %, 18.5
+  [18.5, 18.8] ms against 20.8 [20.0, 21.0] and 34.7 [34.0, 34.7]
+  against 38.3 [37.1, 38.4]; at 1 % it overlaps, 16.3 [15.9, 17.8]
+  against 15.6 [15.2, 16.5]. The speed report at 10 % reads 2.57
+  [2.09, 2.68] deg/s against 9.80 [1.05, 11.65], the ranges
+  overlapping. With them the crawl swings 0.197 [0.188, 0.200] deg
+  against 0.281 [0.265, 0.301], the speed ripple of a move is 27.0
+  [26.9, 28.9] % against 35.5 [33.6, 36.7] and the position report
+  error 0.038 [0.033, 0.049] deg against 0.060 [0.050, 0.073].
+  Against that: the 20 degree move overshoots, 0.161 [0.019, 0.171]
+  deg against 0 [0, 0]; the follow error's sd at 10 % is wider, 0.495
+  [0.462, 0.507] deg against 0.445 [0.430, 0.452]; the worst drive
+  after an arrival (`landing_drive_ms_worst`) is 626.5 [176.4, 726.8]
+  ms against 173.3 [91.8, 185.4], the ranges overlapping by a hair;
+  and a wide-code hold hunts, 1 [0, 1] of 8 against 0 [0, 0]. The 60
+  degree overshoot leans up, 0.130 [0.006, 0.211] deg against 0.006
+  [0, 0.211], and the rest error overlaps, 0.313 [0.294, 0.346] deg
+  against 0.304 [0.304, 0.346]. Those four losses are open on it.
 
 Tried, not kept:
 
@@ -2062,3 +2120,223 @@ servo's following.
   and 4000 deg/s^2 as the default move speed, interim until the load
   arm, and a rung runs the test set's own limits whatever the default
   ([The constant set](#the-constant-set)).
+
+The speed blend's sessions:
+
+Three firmwares: main a7d3b377; 06059d1e, the
+speed blend as a commit on a7d3b377, whose velocity loop reads the pot
+observer's speed plus the back-EMF's fast part, merged since as
+2e9cb678 with the same image; and e9b33fd6, a bench experiment on
+06059d1e whose velocity loop reads the pot observer's speed alone
+("pot only") and which never merges. Every side ran on set
+`b300d5e71e38`, or on it with one deviation, on a free horn, and no
+run raised a fault. Their result
+files are kept and their rows are not. The host limits what their
+follow rows can say: a run's ramp goals that went out late
+(`follow_late_items`) are given with each session, and a lag or a
+follow row carries them with the servo's following. As the median of
+the runs and their range, a row named having its ranges apart unless
+said.
+
+- `zz-ab-main-a7d3b377` and `zz-ab-speed-blend`, three rounds in the
+  order ab, after ten 120 degree sweeps. 28 [22, 32] and 25 [22, 31]
+  of a run's ramp goals went out late. The blend's duty reverses far
+  less often, 13.5 [8.9, 30.4] a second against
+  233 [204, 240] on the 2 degree move, 24.9 [21.8, 35.8] against 221
+  [217, 245] on the 20 degree, 17.2 [15.4, 17.8] against 253 [245,
+  267] on the 60 degree, 61.6 [58.9, 79.9] against 138 [113, 146] at
+  3 % and 65.5 [46.5, 70.0] against 240 [238, 245] at 10 %, and 71.4
+  [58.0, 77.8] against 88.0 [84.8, 88.5] at 1 %. Its current is lower
+  on every move and ramp, 94.2 [93.4, 97.7], 88.9 [88.4, 95.2] and
+  90.9 [89.7, 91.8] mA against 128 [125, 135], 132 [131, 139] and 131
+  [130, 131] on the moves, 71.8 [71.1, 72.5], 79.9 [79.1, 81.7] and
+  106 [99.3, 113] against 76.9 [75.8, 77.1], 92.7 [88.6, 96.0] and 165
+  [151, 180] at 1, 3 and 10 %. The 60 degree move settles in 893 [887,
+  896] ms against 951 [950, 962], the median drive after an arrival is
+  36.2 [33.3, 37.0] ms against 52.1 [47.6, 79.5] and the worst one 83.6
+  [81.1, 88.0] against 154 [111, 1010]; the lag is 18.7 [18.5, 19.0] ms
+  against 20.3 [19.6, 20.4] at 3 % and 33.7 [33.5, 34.5] against 36.2
+  [36.0, 36.3] at 10 %; the speed report at 10 % reads 2.57 [0.20,
+  3.91] deg/s against 14.7 [10.3, 15.2]. One row loses: the follow
+  error's sd at 10 %, 0.488 [0.479, 0.498] deg against 0.454 [0.426,
+  0.463]. The overshoots overlap, 0.112 [0.009, 0.112], 0.078 [0,
+  0.090] and 0.006 [0, 0.009] deg against 0.155 [0.050, 0.252], 0.130
+  [0.050, 0.130] and 0 [0, 0.211], and so does the rest error, 0.309
+  [0.304, 0.361] deg against 0.287 [0.268, 0.304]. Main's side against
+  `17a`, firmware 08c7beaf under an hour before it and not alternated,
+  reverses less often, 221 [217, 245] a second against 312 [303, 326]
+  on the 20 degree move, 253 [245, 267] against 339 [332, 373] on the
+  60 degree and 240 [238, 245] against 310 [265, 337] at 10 %, settles
+  the 60 degree move in 951 [950, 962] ms against 976 [971, 977], and
+  overshoots the 20 degree move, 0.130 [0.050, 0.130] deg against 0
+  [0, 0]: another session, so a soft read.
+- `zz-ab3-main-a7d3b377`, `zz-ab3-speed-blend` and `zz-ab3-pot-only`,
+  three rounds in the order abc. 2 [0, 15], 3 [0, 47] and 64 [22, 98]
+  of a run's ramp goals went out late, so pot only's follow rows carry
+  far more of the host than the other two. The blend against main
+  reads as in the first session: the duty reverses 63.5 [41.6, 67.5],
+  46.2 [32.7, 50.4] and 25.3 [25.1, 36.0] times a second against 212
+  [208, 229], 256 [237, 257] and 289 [256, 301] on the 2, 20 and 60
+  degree moves, and 79.8 [79.6, 84.8], 83.7 [79.8, 92.6] and 67.0
+  [56.1, 73.3] against 101 [99.7, 111], 160 [156, 167] and 259 [253,
+  273] at 1, 3 and 10 %; the current of the 20 and 60 degree moves is
+  101 [99.3, 125] and 94.7 [94.1, 96.7] mA against 147 [143, 162] and
+  142 [136, 147], with the 2 degree move's overlapping, 102 [99.8,
+  130] against 127 [126, 141]; the ramps take 73.3 [71.9, 73.4], 83.2
+  [83.0, 87.5] and 123 [115, 125] mA against 76.4 [75.9, 91.3], 97.2
+  [94.1, 99.3] and 174 [170, 174]; the 60 degree move settles in 902
+  [896, 914] ms against 964 [946, 965]; the lag is 18.3 [18.0, 18.6]
+  ms against 20.3 [19.8, 20.7] at 3 % and 34.7 [34.6, 35.0] against
+  36.4 [36.4, 36.9] at 10 %; and the follow error's sd at 10 % loses
+  again, 0.503 [0.486, 0.521] deg against 0.455 [0.449, 0.462]. The 2
+  degree overshoot leans up, 0.394 [0.193, 0.615] deg against 0.193
+  [0.109, 0.233], and the speed report at 10 % overlaps, -1.9 [-13.8,
+  3.8] deg/s against 6.7 [-1.1, 12.1].
+  The blend's two sides differ from each other, the second against
+  the first: the 2 degree overshoot, 0.394 [0.193, 0.615] deg against
+  0.112 [0.009, 0.112]; the reversals of the 2 and the 60 degree move,
+  63.5 [41.6, 67.5] and 25.3 [25.1, 36.0] a second against 13.5 [8.9,
+  30.4] and 17.2 [15.4, 17.8]; the current of every move, 102 [99.8,
+  130], 101 [99.3, 125] and 94.7 [94.1, 96.7] mA against 94.2 [93.4,
+  97.7], 88.9 [88.4, 95.2] and 90.9 [89.7, 91.8], and of the 10 % ramp,
+  123 [115, 125] against 106 [99.3, 113]; the worst drive after an
+  arrival, 200 [133, 296] ms against 83.6 [81.1, 88.0]; the crawl
+  swing, 0.486 [0.483, 0.521] deg against 0.238 [0.231, 0.246]; and the
+  rest error, lower, 0.248 [0.216, 0.303] deg against 0.309 [0.304,
+  0.361]. Main's two sides moved the same way on the current of the 20
+  and 60 degree moves, 147 [143, 162] and 142 [136, 147] mA against
+  132 [131, 139] and 131 [130, 131], and on the crawl swing, 0.369
+  [0.363, 0.571] deg against 0.217 [0.207, 0.250].
+  Pot only against the blend keeps the low reversals: 40.2 [36.2,
+  63.2], 53.3 [52.0, 55.6] and 36.4 [25.5, 37.0] a second on the
+  moves, the 20 degree's alone apart and higher, and 79.1 [79.0, 91.0],
+  80.9 [72.5, 85.1] and 69.2 [59.3, 95.1] on the ramps, overlapping.
+  It loses the landings: the 20 and 60 degree overshoot, 0.795 [0.795,
+  0.845] and 0.773 [0.515, 0.832] deg against 0.068 [0.068, 0.556] and
+  0.009 [0, 0.071]; the 20 degree settle, 1149 [1013, 1468] ms against
+  357 [339, 496], and the 60 degree's 1995 [904, 2000] against 902
+  [896, 914], the ranges overlapping; 2 [1, 2] landings of 13 driven in their tail against 0
+  [0, 0]; the worst drive after an arrival, 1156 [863, 1199] ms
+  against 200 [133, 296]. Its current is higher, 218 [210, 239] and
+  181 [116, 184] mA against 101 [99.3, 125] and 94.7 [94.1, 96.7] on
+  the 20 and 60 degree moves, 81.7 [79.3, 156], 97.9 [95.7, 136] and
+  145 [144, 173] against 73.3 [71.9, 73.4], 83.2 [83.0, 87.5] and 123
+  [115, 125] at 1, 3 and 10 %, and so is the crawl swing, 0.540
+  [0.535, 1.035] deg against 0.486 [0.483, 0.521]. Its lag is shorter,
+  11.9 [11.2, 12.7] ms against 15.0 [12.9, 15.0] at 1 %, 17.4 [17.0,
+  17.7] against 18.3 [18.0, 18.6] at 3 % and 30.7 [30.6, 30.8] against
+  34.7 [34.6, 35.0] at 10 %.
+- `zz-ab-400-main-a7d3b377`, `zz-ab-400-speed-blend` and
+  `zz-ab-400-pot-only`, two rounds in the order abc, each side on the
+  set with `motion-400.json`, 400 deg/s and 8000 deg/s^2, the side
+  `zz-sweep-motion-400` ran. The file is history now, and the three
+  results name it by its sha1 and the two fields it moved, 8051 and
+  20610 as they held them, a point the set of record does not hold
+  ([Running it](#running-it)): they stay the sides they ran. 31.5 [18,
+  45], 19.5 [16, 23] and 17.5 [16, 19] of a run's ramp goals went out
+  late. The blend against main reverses less often on the 20 and 60
+  degree moves, 100 [95.3, 105] and 49.6 [46.4, 52.8] a second against
+  476 [428, 525] and 569 [563, 574], and overlaps on the 2 degree, 327
+  [210, 445] against 406 [364, 449]; its current is lower on every
+  move, 195 [193, 198], 242 [241, 243] and 210 [201, 220] mA against
+  268 [256, 280], 278 [260, 296] and 284 [281, 287], and so is the worst
+  drive after an arrival, 94.7 [86.2, 103.2] ms against 211 [164,
+  257], and the speed ripple of a move, 13.2 [12.8, 13.6] % against
+  17.9 [17.4, 18.3]. Its overshoot is HIGHER than main's: 0.231 [0.211,
+  0.252] deg against 0.008 [0, 0.016] on the 20 degree move and 0.456
+  [0.397, 0.515] against 0.213 [0.183, 0.242] on the 60 degree. The
+  settle times overlap, 137 [134, 140] ms against 137 [122, 151] on
+  the 20 degree move and 264 [240, 287] against 254 [250, 259] on the
+  60 degree. Its lag at 1 % and 3 % is about twice main's, 22.8 [22.8,
+  22.8] ms against 10.4 [9.4, 11.4] and 21.7 [21.6, 21.8] against 9.3
+  [9.2, 9.4]. Pot only against the blend reverses 4 to 5 times as
+  often on the 20 and 60 degree moves, 505 [503, 508] and 220 [210,
+  229] a second against 100 [95.3, 105] and 49.6 [46.4, 52.8], and less
+  often on the 2 degree, 96.1 [82.1, 110] against 327 [210, 445]; its
+  60 degree overshoot is twice the blend's, 0.911 [0.814, 1.009] deg
+  against 0.456 [0.397, 0.515]; its current is higher on every move,
+  288 [278, 299], 286 [278, 293] and 251 [246, 255] mA; its worst drive
+  after an arrival is 218 [188, 248] ms against 94.7 [86.2, 103.2] and
+  its crawl swing 0.708 [0.658, 0.757] deg against 0.314 [0.281,
+  0.346].
+- The velocity test, two rounds of the three images, outside the
+  scorecard. In Velocity mode the servo holds a commanded speed on its
+  own estimate, with no position loop to correct it, so the pot's
+  speed over the commanded one is the estimate's level, read directly.
+  A capture per image, speed and round: a hold of 300 ms, then goals
+  of one speed alternating in sign, a half leg first and last and three
+  full legs between, then a goal of 0. The full legs are 3000 ms at 6
+  and 19 deg/s, 1200 ms at 62, 500 ms at 200 and 300 ms at 400; the
+  three slower speeds ran on the set as it stands, the two faster on
+  the set with `motion-400.json`. `uv run python -m
+  oscnb.velocity_test` reads every full leg over the middle of its
+  span, 30 to 85 %: the pot's slope
+  through the position table over the commanded speed, the ripple of
+  the slopes in windows of an eighth of the middle, the duty's reversals a
+  second, and the current rms over the capture's own zero, read the
+  way a current row of the scorecard is. A cell is the median of its
+  six legs and their range. Its result,
+  [velocity-test/results/](velocity-test/results), is read here; the
+  captures, with the two sets they ran on, lie under
+  `telemetry/<pair>/velocity-test/` and are not kept, as a `zz-`
+  rung's rows are not. No fault on any capture. The pot's speed over
+  the commanded:
+
+  | deg/s | a7d3b377, main | 06059d1e, the blend | e9b33fd6, pot only |
+  |---|---|---|---|
+  | 6.01 | 0.990 [0.963, 1.029] | 0.993 [0.956, 1.023] | 0.994 [0.980, 1.003] |
+  | 18.98 | 0.977 [0.961, 0.993] | 0.996 [0.994, 0.997] | 1.000 [0.999, 1.001] |
+  | 62.01 | 0.913 [0.910, 0.916] | 1.003 [1.000, 1.006] | 0.998 [0.998, 1.000] |
+  | 199.98 | 0.939 [0.934, 0.945] | 0.995 [0.985, 0.997] | 0.995 [0.994, 0.998] |
+  | 400.02 | 0.935 [0.915, 0.940] | 0.984 [0.963, 0.989] | 0.971 [0.970, 0.978] |
+
+  The duty's reversals a second, the speed ripple in % and the current
+  in mA, as medians:
+
+  | deg/s | a7d3b377, main | 06059d1e, the blend | e9b33fd6, pot only |
+  |---|---|---|---|
+  | 6.01 | 16, 44.2, 74 | 4, 34.2, 75 | 7, 51.0, 72 |
+  | 18.98 | 31, 4.3, 67 | 8, 2.0, 61 | 9, 2.8, 62 |
+  | 62.01 | 264, 3.9, 128 | 9, 3.7, 89 | 8, 2.5, 87 |
+  | 199.98 | 498, 5.7, 209 | 0, 5.3, 100 | 51, 3.2, 151 |
+  | 400.02 | 803, 9.0, 306 | 0, 5.3, 147 | 24, 6.4, 191 |
+
+  Pot only's reversals at 200 deg/s range from 0 to 385 a second over
+  its six legs.
+
+What was written before the sessions, and how each held:
+
+- The blend's reversals on the 20 and 60 degree moves and the 10 %
+  ramp fall by a third or more in all three rounds: held, the blend's
+  highest run under a third of main's lowest on each, in both
+  sessions.
+- The blend's cruise within 3 % of the commanded speed, on the 60
+  degree move, read off the raw pot: not shown. That read is no row of
+  the result files, and the raw pot's slope is not the table's count;
+  the velocity test reads the speed through the table.
+- The landings, at risk on the blend, with no sign predicted: no
+  overshoot or settle row of the blend's is worse than main's in all
+  three rounds of the first session, and none comes apart worse in the
+  second; the 60 degree move settles sooner in both. By the rule
+  written before the first session the blend passes.
+- Pot only keeps the low reversals and loses where the back-EMF's fast
+  part matters, overshoot or settle of the 20 and 60 degree moves,
+  the hold jitter or the follow error's spread: held, on the overshoot
+  and settle.
+- At 400 deg/s the blend has fewer reversals than main: held on the 20
+  and 60 degree moves, not on the 2 degree, where the ranges overlap.
+  No sign predicted for the overshoot: the blend's is higher.
+- At 400 deg/s blend and pot only read alike: did not hold. Pot only
+  reverses 4 to 5 times as often on the 20 and 60 degree moves and
+  overshoots the 60 degree move twice as far.
+- In Velocity mode main runs 5 % or more under the commanded speed at
+  62 deg/s and above: held, 8.7, 6.1 and 6.5 % under by the median.
+- Blend and pot only run within 2 % of the commanded at every speed,
+  and alike: held by the median, 0.984 to 1.003 on the blend and 0.994
+  to 1.000 on pot only, but for pot only at 400 deg/s, 2.9 % under,
+  where a full leg is 300 ms and its middle 165 ms. At 6 deg/s, where
+  no sign was predicted, the lowest leg reads 3.7, 4.4 and 2.0 % under
+  the commanded on main, the blend and pot only.
+- Main's reversals in Velocity mode are well above the other two:
+  held, 264, 498 and 803 a second at 62, 200 and 400 deg/s against 0
+  to 51.

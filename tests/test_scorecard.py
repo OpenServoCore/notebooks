@@ -833,7 +833,8 @@ def test_every_result_of_record_reads_the_limits_of_motion_its_rows_ran_at():
     """A result recorded before rungs recorded their limits of motion
     reads the limits of its day: where its rows are kept, the config
     every capture of its first run holds; where they are not, the
-    ladder reads what its settings or its deviation moved."""
+    ladder reads what its settings or its deviation moved. A result
+    that records them reads them, and so does every capture of it."""
     docs = {p.stem: json.loads(p.read_text()) for p in sorted(sc.result_path(PAIR, "x").parent.glob("*.json"))}
     kept = 0
     for label, d in docs.items():
@@ -844,7 +845,8 @@ def test_every_result_of_record_reads_the_limits_of_motion_its_rows_ran_at():
             config = json.loads((capture / "meta.json").read_text())["config"]
             assert sc.motion_of(d) == {n: config[n] for n in cn.MOTION}, (label, capture.name)
         kept += 1
-    assert kept == 14 and not any("motion" in d for d in docs.values())
+    assert kept == 15 and [label for label, d in docs.items() if "motion" in d] == ["18a-speed-blend"]
+    assert docs["18a-speed-blend"]["motion"]["from"] == "test set"
     buf = io.StringIO()
     sc.table(servo=SERVO, board=BOARD, file=buf)
     lines = buf.getvalue().splitlines()
@@ -852,7 +854,8 @@ def test_every_result_of_record_reads_the_limits_of_motion_its_rows_ran_at():
     assert speed[:2] == ["velocity_limit_cps", "count/s"] and lines[2].startswith("accel_limit_q88")
     at = dict(zip(head[2:], speed[2:]))
     assert (at["00-baseline"], at["02b-speed-half"], at["02e-speed-quarter"], at["17a-constants-of-record"],
-            at["zz-sweep-motion-200"], at["zz-sweep-motion-400"]) == ("1500", "5900", "2950", "1500", "4025", "8051")
+            at["18a-speed-blend"], at["zz-sweep-motion-200"], at["zz-sweep-motion-400"],
+            at["zz-ab-400-speed-blend"]) == ("1500", "5900", "2950", "1500", "1500", "4025", "8051", "8051")
 
 
 def test_a_rung_is_scored_at_the_current_scale_of_its_own_set(bus, tmp_path):
@@ -2145,7 +2148,7 @@ OVERTAKEN = {
 # The two faster sides of the sweep under the speed ceiling, overtaken once the owner took the 200 deg/s side
 # as the default: each states the limits of motion as policy entries and releases their holds, which the set
 # of record no longer has. The 200 side is the set of record's own default; the 400 side, the ceiling itself,
-# stays the point its rung ran.
+# stays the point its rungs ran.
 SWEEP_SIDES = {"motion-200": NOT_HELD, "motion-400": NOT_HELD}
 
 
@@ -2222,7 +2225,7 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
                     "observer-25hz", "plant-as-held", "r-as-held"]
     # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
     # one it ran: what its release gave there is what the set of record binds now, and the 200 side's set is
-    # the set of record itself. The 400 side's rung keeps the point it ran
+    # the set of record itself. The rungs at 400 deg/s keep the point they ran
     named = {}
     for result in sorted(sc.result_path(pair, "x").parent.glob("*.json")):
         doc = json.loads(result.read_text())
@@ -2236,7 +2239,9 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
             assert (doc["set"]["hash"] == base["hash"]) == (stem == "motion-200"), result.name
     assert named == {"motor-model": ["zz-ab-motor-model-2", "zz-ab-motor-model"],
                      "protection-ntc-curve": ["zz-ab-ntc-pinned"], "motor-r": ["zz-ab-r-measured"],
-                     "motion-200": ["zz-sweep-motion-200"], "motion-400": ["zz-sweep-motion-400"]}
+                     "motion-200": ["zz-sweep-motion-200"],
+                     "motion-400": ["zz-ab-400-main-a7d3b377", "zz-ab-400-pot-only", "zz-ab-400-speed-blend",
+                                    "zz-sweep-motion-400"]}
 
 
 def test_an_identity_rungs_plan_is_rebuilt_byte_for_byte():
