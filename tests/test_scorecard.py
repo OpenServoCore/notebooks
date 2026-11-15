@@ -916,8 +916,10 @@ def test_every_result_of_record_reads_the_limits_of_motion_its_rows_ran_at():
             config = json.loads((capture / "meta.json").read_text())["config"]
             assert sc.motion_of(d) == {n: config[n] for n in cn.MOTION}, (label, capture.name)
         kept += 1
-    assert kept == 15 and [label for label, d in docs.items() if "motion" in d] == ["18a-speed-blend"]
-    assert docs["18a-speed-blend"]["motion"]["from"] == "test set"
+    recorded = ["18a-speed-blend", "19a-lifecycle-heat-mean", "zz-ab-blend-head", "zz-ab-lifecycle-head",
+                "zz-ab2-blend-head", "zz-ab2-lifecycle-head"]
+    assert kept == 16 and [label for label, d in docs.items() if "motion" in d] == recorded
+    assert all(docs[label]["motion"]["from"] == "test set" for label in recorded)
     buf = io.StringIO()
     sc.table(servo=SERVO, board=BOARD, file=buf)
     lines = buf.getvalue().splitlines()

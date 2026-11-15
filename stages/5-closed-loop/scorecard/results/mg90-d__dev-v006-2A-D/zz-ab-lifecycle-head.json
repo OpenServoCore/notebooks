@@ -1,0 +1,474 @@
+{
+  "label": "zz-ab-lifecycle-head",
+  "fw": "32ea2f31",
+  "image_sha": "e8624f39e8c000bdcc2a0ec2f1c17a4e5f58f5a1",
+  "tool": {
+    "sha1": "f290ac5842d32f4c30e3608e91ac3e04e3903ddb",
+    "version": null
+  },
+  "note": "main 32ea2f31 (one lifecycle state, the heats on the SLOW cycle's mean) on the saved set 324e326794b5, back to back with the blend head, order ab",
+  "utc": "2026-11-15T07:23:01+00:00",
+  "config_hash": "89238168ab990fd9afeec50c07daa5550bfd5b60443b5ab8523e952d49b6d9f6",
+  "constants_hash": "3efe07ed2e544f6cbf6c36c30827807e0376d647eb11b6f5ac656ea9ad7d6894",
+  "runs_asked": 3,
+  "set": {
+    "file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.constants.json",
+    "hash": {
+      "limits": "486d20cf63da5bdafcb83f420d7eb54c07f3aa15ba5afda664e34ebe42c71ac5",
+      "plant": "63286bc88d854be4d91d3b513c754296b2534877e50eb4dbf0e552317dcd4089",
+      "protection": "0ec27b5dbc84b94fd8809a725581f96f4ad5e2e44b1eed10daa62c2b2ed17745",
+      "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead",
+      "set": "324e326794b517bcb72f0c3d6bf5a885fef27371bf2e11d7c1b1653bfc9aa1d9"
+    },
+    "classes": {
+      "measured": 16,
+      "bench": 10,
+      "datasheet": 0,
+      "policy": 34,
+      "pinned": 1,
+      "none": 1
+    }
+  },
+  "deviation": null,
+  "protection": {
+    "hash": "0ec27b5dbc84b94fd8809a725581f96f4ad5e2e44b1eed10daa62c2b2ed17745",
+    "moved": {}
+  },
+  "motion": {
+    "from": "test set",
+    "velocity_limit_cps": 1500,
+    "accel_limit_q88": 3840,
+    "speed_deg_s": 74.528,
+    "accel_deg_s2": 1490.6
+  },
+  "wide_goals": [
+    {
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    },
+    {
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    }
+  ],
+  "load_waits": [
+    {
+      "run": "run-1",
+      "max_load": 8.0,
+      "load_1m_before": 8.18,
+      "load_1m_after": 7.84,
+      "waited_s": 5,
+      "went_on_over": false
+    },
+    {
+      "run": "run-2",
+      "max_load": 8.0,
+      "load_1m_before": 8.01,
+      "load_1m_after": 7.93,
+      "waited_s": 5,
+      "went_on_over": false
+    }
+  ],
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/scorecard/zz-ab-lifecycle-head",
+  "current_scale": {
+    "counts_per_a": 1135.013429521035,
+    "from": "set",
+    "hash": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead"
+  },
+  "scores": {
+    "overshoot_deg_2deg": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.17079360595424303,
+      "unit": "deg"
+    },
+    "settle_ms_2deg": {
+      "value": 65.99999999999994,
+      "lo": 65.45000000000034,
+      "hi": 66.9500000000004,
+      "unit": "ms"
+    },
+    "move_current_rms_ma_2deg": {
+      "value": 91.0641338654938,
+      "lo": 89.41934087746938,
+      "hi": 91.45532421702329,
+      "unit": "mA"
+    },
+    "move_reversals_per_s_2deg": {
+      "value": 42.06098843322816,
+      "lo": 41.640641265875516,
+      "hi": 43.763676148796684,
+      "unit": "1/s"
+    },
+    "move_duty_rms_pct_2deg": {
+      "value": 12.823118067758838,
+      "lo": 12.67185469882974,
+      "hi": 12.84614944739914,
+      "unit": "% of the rail"
+    },
+    "overshoot_deg_20deg": {
+      "value": 0.015526691450385731,
+      "lo": 0.0,
+      "hi": 0.19253097398478305,
+      "unit": "deg"
+    },
+    "settle_ms_20deg": {
+      "value": 353.9500000000012,
+      "lo": 349.8500000000001,
+      "hi": 355.9500000000001,
+      "unit": "ms"
+    },
+    "move_current_rms_ma_20deg": {
+      "value": 88.33381050685213,
+      "lo": 87.76027900654668,
+      "hi": 95.00333579220307,
+      "unit": "mA"
+    },
+    "move_reversals_per_s_20deg": {
+      "value": 22.408126680609477,
+      "lo": 20.131976289005674,
+      "hi": 22.62608568717613,
+      "unit": "1/s"
+    },
+    "move_duty_rms_pct_20deg": {
+      "value": 17.05916342809412,
+      "lo": 17.00980915321639,
+      "hi": 17.430927718723282,
+      "unit": "% of the rail"
+    },
+    "overshoot_deg_60deg": {
+      "value": 0.006210676580154292,
+      "lo": 0.0,
+      "hi": 0.07142278067177436,
+      "unit": "deg"
+    },
+    "settle_ms_60deg": {
+      "value": 894.8000000000002,
+      "lo": 893.8499999999988,
+      "hi": 897.8500000000001,
+      "unit": "ms"
+    },
+    "move_current_rms_ma_60deg": {
+      "value": 92.64554571108928,
+      "lo": 90.58119483998695,
+      "hi": 92.80528735708238,
+      "unit": "mA"
+    },
+    "move_reversals_per_s_60deg": {
+      "value": 15.571252636496185,
+      "lo": 14.925793460812733,
+      "hi": 21.87999663384667,
+      "unit": "1/s"
+    },
+    "move_duty_rms_pct_60deg": {
+      "value": 18.52979007059702,
+      "lo": 18.421862343179587,
+      "hi": 18.553620645585823,
+      "unit": "% of the rail"
+    },
+    "speed_ripple_pct": {
+      "value": 30.732655581846668,
+      "lo": 30.564301051219665,
+      "hi": 31.23966284919711,
+      "unit": "%"
+    },
+    "rest_error_deg": {
+      "value": 0.2916434609553511,
+      "lo": 0.2888834017552161,
+      "hi": 0.35354777894516215,
+      "unit": "deg"
+    },
+    "two_sided_deg": {
+      "value": 0.4369792545843103,
+      "lo": 0.20169561875039174,
+      "hi": 0.4485903507435265,
+      "unit": "deg"
+    },
+    "landing_buzz_share": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "share"
+    },
+    "landing_tail_driven": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "landings"
+    },
+    "landing_drive_ms": {
+      "value": 70.90000000000008,
+      "lo": 48.75000000000019,
+      "hi": 72.05000000000005,
+      "unit": "ms"
+    },
+    "landing_drive_ms_worst": {
+      "value": 105.79999999999868,
+      "lo": 94.40000000000038,
+      "hi": 109.09999999999987,
+      "unit": "ms"
+    },
+    "enable_kick_deg": {
+      "value": 0.040369397771002895,
+      "lo": 0.040369397771002895,
+      "hi": 0.08073879554200579,
+      "unit": "deg"
+    },
+    "position_report_error_deg": {
+      "value": 0.07447883991183807,
+      "lo": 0.04154204224203915,
+      "hi": 0.13020975324050438,
+      "unit": "deg"
+    },
+    "enable_drive_ms": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "ms"
+    },
+    "hold_jitter_deg": {
+      "value": 0.05107533418841856,
+      "lo": 0.05080732724567225,
+      "hi": 0.051421488524088316,
+      "unit": "deg"
+    },
+    "hold_buzz_share": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "share"
+    },
+    "hold_current_rms_ma": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "mA"
+    },
+    "wide_hold_hunting": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "holds"
+    },
+    "wide_hold_driven_share": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "share"
+    },
+    "wide_hold_current_rms_ma": {
+      "value": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "unit": "mA"
+    },
+    "lag_deg_1pct": {
+      "value": 0.09386348222099797,
+      "lo": 0.0896616051957027,
+      "hi": 0.09532434644370327,
+      "unit": "deg"
+    },
+    "lag_ms_1pct": {
+      "value": 15.131177699026948,
+      "lo": 14.454541680609816,
+      "hi": 15.366418502160561,
+      "unit": "ms"
+    },
+    "follow_error_sd_deg_1pct": {
+      "value": 0.10929393855602886,
+      "lo": 0.10663464202567395,
+      "hi": 0.12279067069282815,
+      "unit": "deg"
+    },
+    "follow_current_rms_ma_1pct": {
+      "value": 68.80700182712258,
+      "lo": 67.30988353866115,
+      "hi": 69.2022245779784,
+      "unit": "mA"
+    },
+    "follow_reversals_per_s_1pct": {
+      "value": 79.09168915473866,
+      "lo": 73.62176816604693,
+      "hi": 80.5799768705622,
+      "unit": "1/s"
+    },
+    "follow_duty_rms_pct_1pct": {
+      "value": 8.016653097414695,
+      "lo": 7.884994123552878,
+      "hi": 8.038408722201165,
+      "unit": "% of the rail"
+    },
+    "ramp_speed_deg_s_1pct": {
+      "value": 6.203316363605598,
+      "lo": 6.203005752578106,
+      "hi": 6.2034199075276,
+      "unit": "deg/s"
+    },
+    "speed_report_error_deg_s_1pct": {
+      "value": -3.060167348090257,
+      "lo": -3.1098739518058616,
+      "hi": -2.1298881361910875,
+      "unit": "deg/s"
+    },
+    "crawl_speed_ripple_pct": {
+      "value": 32.03524319554699,
+      "lo": 28.75253655892195,
+      "hi": 35.46657738896942,
+      "unit": "%"
+    },
+    "crawl_swing_deg": {
+      "value": 0.19646959207203146,
+      "lo": 0.19546470671495375,
+      "hi": 0.19913395003908854,
+      "unit": "deg"
+    },
+    "lag_deg_3pct": {
+      "value": 0.3459522916736494,
+      "lo": 0.3397360236361573,
+      "hi": 0.35213584275415677,
+      "unit": "deg"
+    },
+    "lag_ms_3pct": {
+      "value": 18.608931571540072,
+      "lo": 18.27743340703495,
+      "hi": 18.944232177149512,
+      "unit": "ms"
+    },
+    "follow_error_sd_deg_3pct": {
+      "value": 0.1536285556139121,
+      "lo": 0.15061565264173774,
+      "hi": 0.16625459208982687,
+      "unit": "deg"
+    },
+    "follow_current_rms_ma_3pct": {
+      "value": 80.81667461869989,
+      "lo": 79.5067508501147,
+      "hi": 82.84922601264068,
+      "unit": "mA"
+    },
+    "follow_reversals_per_s_3pct": {
+      "value": 61.70531039640991,
+      "lo": 58.89226454779154,
+      "hi": 70.11967090501113,
+      "unit": "1/s"
+    },
+    "follow_duty_rms_pct_3pct": {
+      "value": 11.025728979472053,
+      "lo": 10.900915316481601,
+      "hi": 11.150211210022368,
+      "unit": "% of the rail"
+    },
+    "ramp_speed_deg_s_3pct": {
+      "value": 18.588024020255737,
+      "lo": 18.58773144293846,
+      "hi": 18.59065848803153,
+      "unit": "deg/s"
+    },
+    "speed_report_error_deg_s_3pct": {
+      "value": -1.7445117381073323,
+      "lo": -2.7756315523477824,
+      "hi": -1.3872384627867786,
+      "unit": "deg/s"
+    },
+    "lag_deg_10pct": {
+      "value": 2.1498952621954777,
+      "lo": 2.139439797985259,
+      "hi": 2.1816085877154685,
+      "unit": "deg"
+    },
+    "lag_ms_10pct": {
+      "value": 34.88655758618074,
+      "lo": 34.72066053837874,
+      "hi": 35.39733462553195,
+      "unit": "ms"
+    },
+    "follow_error_sd_deg_10pct": {
+      "value": 0.5054689389701297,
+      "lo": 0.5002868356788089,
+      "hi": 0.5159322536459032,
+      "unit": "deg"
+    },
+    "follow_current_rms_ma_10pct": {
+      "value": 100.54549582436448,
+      "lo": 100.28720617889029,
+      "hi": 102.04494739857628,
+      "unit": "mA"
+    },
+    "follow_reversals_per_s_10pct": {
+      "value": 35.85346843335948,
+      "lo": 35.85067414854646,
+      "hi": 42.095416276894234,
+      "unit": "1/s"
+    },
+    "follow_duty_rms_pct_10pct": {
+      "value": 19.156161779096728,
+      "lo": 19.013336159836573,
+      "hi": 19.38753884098108,
+      "unit": "% of the rail"
+    },
+    "ramp_speed_deg_s_10pct": {
+      "value": 61.62531963449136,
+      "lo": 61.61863757230118,
+      "hi": 61.632001697152745,
+      "unit": "deg/s"
+    },
+    "speed_report_error_deg_s_10pct": {
+      "value": 0.5083355216177661,
+      "lo": 0.18863417062369647,
+      "hi": 2.83159799748895,
+      "unit": "deg/s"
+    },
+    "follow_late_items": {
+      "value": 21.0,
+      "lo": 11.0,
+      "hi": 22.0,
+      "unit": "items"
+    }
+  },
+  "runs": [
+    "run-1",
+    "run-2",
+    "run-3"
+  ],
+  "skipped": []
+}
