@@ -1727,31 +1727,37 @@ def test_a_set_carries_the_current_scale_it_is_scored_with_under_a_hash_of_its_o
 
 # --- the limits no field holds ---
 
-CLASS = "synth-class"                                       # the class the fake servo is a clone of
+CLASS = "synth-class"                                       # the class the fake servo is of
 CLASS_REG = {**BOARD_REG, "servo": {**REG["servo"], "datasheet_class": CLASS}}
+RAIL_REG = {**CLASS_REG, "servo": {**CLASS_REG["servo"], "rated_v": 5.0}}     # and the rail it runs on
 CLASS_SHEET = f"stages/5-closed-loop/calibration/{CLASS}.datasheet.json"
 DOCUMENT = "the maker's page, at its address, read on a day"
 DERATE = {"datasheet_derate_speed": [2, 3]}
 CEILING = round(400 * SCALE)        # two thirds of 60 deg in 0.10 s, counts per second on the fake's table
 NO_TIME = "the datasheet record states no one no-load time at its operating voltage, 5 V"
+VOLTS_RANGE = (4.8, 6.6)            # a range of operating voltage, with both of the sheet's two speeds in it
+BY_RAIL = {**DERATE, "datasheet_speed_voltage": "rated_v"}
+IN_RANGE = "in its operating range, 4.8 V to 6.6 V"
 
 
 def datasheet(root, volts=4.8):
     """The datasheet record of the fake servo's class under `root`: an
-    operating voltage and the no-load time over 60 deg at two."""
+    operating voltage, a range of it for a (min, max), and the no-load
+    time over 60 deg at two."""
     path = root / CLASS_SHEET
     path.parent.mkdir(parents=True, exist_ok=True)
+    of = dict(zip(("min", "max"), volts)) if isinstance(volts, tuple) else {"value": volts}
     path.write_text(json.dumps({
         "what": "what the maker states of the class", "class": CLASS, "document": DOCUMENT,
-        "stated": {"operating_voltage": {"value": volts, "unit": "V"},
+        "stated": {"operating_voltage": {**of, "unit": "V"},
                    "no_load_time": [{"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
                                     {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}]}}))
     return path
 
 
-def classed(previous, root):
-    """A build for the fake servo as a clone of its class."""
-    return cn.build(PAIR, previous, root=root, registry=CLASS_REG)
+def classed(previous, root, registry=CLASS_REG):
+    """A build for the fake servo as one of its class."""
+    return cn.build(PAIR, previous, root=root, registry=registry)
 
 
 def test_the_speed_ceiling_is_the_makers_no_load_speed_derated_at_the_sets_scale(first, tmp_path):
@@ -1851,6 +1857,82 @@ def test_a_ceiling_whose_input_is_missing_is_held_and_does_not_guess(first, tmp_
             classed(first, tmp_path)
 
 
+def test_a_range_of_operating_voltage_reads_the_speed_at_the_voltage_the_policy_says(first, tmp_path):
+    def at(policy, rail=5.0, volts=VOLTS_RANGE, previous=first):
+        inputs(tmp_path, policy=policy)
+        datasheet(tmp_path, volts)
+        return classed(previous, tmp_path, {**RAIL_REG, "servo": {**RAIL_REG["servo"], "rated_v": rail}})
+
+    def read(doc):
+        e = doc["limits"][cn.CEILING]
+        return e["at_v"], e["stated_deg_s"], e["deg_s"], e["value"]
+
+    # a sheet with one operating voltage names one speed, the policy and the rail unread, and one with a range
+    # that holds both of its speeds names none: the policy says the stated voltage nearest the rail the
+    # registry holds, 4.8 V on 5 V, and the ceiling is the single sheet's
+    single, _ = at(DERATE, volts=4.8)
+    assert "voltage" not in single["limits"][cn.CEILING] and "rated_v" not in single["inputs"]["registry"]["servo"]
+    doc, notes = at(BY_RAIL)
+    assert doc["limits"] == {cn.CEILING: {
+        **single["limits"][cn.CEILING], "voltage": "rated_v",
+        "inputs": ["policy:datasheet_derate_speed", "registry:datasheet_class", "datasheet:operating_voltage",
+                   "datasheet:no_load_time", "policy:datasheet_speed_voltage", "registry:rated_v", "scale"]}}
+    assert read(doc) == (4.8, 600.0, 400.0, CEILING) and not any(cn.CEILING in n for n in notes)
+    assert doc["inputs"]["registry"] == {"servo": RAIL_REG["servo"]} and doc["hash"] == single["hash"]
+    lines, stale = cn.status(doc, tmp_path, RAIL_REG)
+    assert not stale and (
+        f"speed ceiling: {CEILING} count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
+        f"maker's no-load speed at 4.8 V, the stated voltage nearest the servo's rated_v of 5 V by the policy "
+        f"(datasheet_speed_voltage), 600 deg/s, x 2/3 by the policy (datasheet_derate_speed); {DOCUMENT}; it "
+        f"bounds velocity_limit_cps, not in the set") in lines
+    out = cn.write(doc, tmp_path / "x.constants.json")
+    assert cn.load(out) == doc and cn.render(at(BY_RAIL)[0]) == out.read_text()
+    # the rail is the registry's: one that moves makes the set stale, and the nearest stated voltage follows
+    # it, the lower of two as near and never one outside the range
+    lines, stale = cn.status(doc, tmp_path, {**RAIL_REG, "servo": {**RAIL_REG["servo"], "rated_v": 6.0}})
+    assert stale and lines[0].startswith("stale: the registry's servo rated_v was 5.0, it is 6.0")
+    for rail, row in ((4.0, 4.8), (5.3, 4.8), (5.4, 4.8), (5.5, 6.0), (6.0, 6.0), (7.4, 6.0)):
+        assert read(at(BY_RAIL, rail)[0])[0] == row, rail
+    assert read(at(BY_RAIL, 6.0)[0]) == (6.0, 750.0, 500.0, round(500 * SCALE))
+    assert read(at(BY_RAIL, 7.4, volts=(4.8, 5.5))[0]) == (4.8, 600.0, 400.0, CEILING)
+    # a number of volts is the stated voltage itself, and status says the policy named it
+    named, _ = at({**DERATE, "datasheet_speed_voltage": 6})
+    assert read(named) == (6.0, 750.0, 500.0, round(500 * SCALE))
+    assert named["limits"][cn.CEILING]["voltage"] == 6 and type(named["limits"][cn.CEILING]["at_v"]) is float
+    assert "registry:rated_v" not in named["limits"][cn.CEILING]["inputs"]
+    assert any("the maker's no-load speed at 6 V, the voltage the policy names (datasheet_speed_voltage), 750 deg/s"
+               in line for line in cn.status(named, tmp_path, RAIL_REG)[0])
+    # a voltage the record has no speed at, an entry nobody decided, a rail the registry does not hold and a
+    # range with no speed in it: the ceiling the set had stands, the input named, and is left out with none
+    for policy, volts, why in (
+            ({**DERATE, "datasheet_speed_voltage": 5.0}, VOLTS_RANGE,
+             f"the datasheet record states no one no-load time at 5 V, the voltage policy.json names "
+             f"(datasheet_speed_voltage), {IN_RANGE}"),
+            ({**DERATE, "datasheet_speed_voltage": 7.4}, VOLTS_RANGE,
+             f"the datasheet record states no one no-load time at 7.4 V, the voltage policy.json names "
+             f"(datasheet_speed_voltage), {IN_RANGE}"),
+            ({**DERATE, "datasheet_speed_voltage": 6.0}, (4.8, 5.5),
+             "the datasheet record states no one no-load time at 6 V, the voltage policy.json names "
+             "(datasheet_speed_voltage), in its operating range, 4.8 V to 5.5 V"),
+            (DERATE, VOLTS_RANGE, "policy.json has no datasheet_speed_voltage"),
+            ({**DERATE, "datasheet_speed_voltage": "pack_v"}, VOLTS_RANGE,
+             "the registry has no servo pack_v for synth__board"),
+            (BY_RAIL, (5.0, 5.5),
+             "the datasheet record states no one no-load time at a voltage of its operating range, 5 V to 5.5 V")):
+        held, notes = at(policy, volts=volts, previous=doc)
+        assert held["limits"] == {cn.CEILING: {
+            "value": CEILING, "class": "none", "rule": "speed_ceiling.datasheet", "held": why,
+            "carried_from": doc["hash"]["set"], "unit": "count/s", "bounds": ["velocity_limit_cps"]}}
+        assert f"speed_ceiling_cps: held, {why}" in notes and held["hash"] == doc["hash"]
+        none, notes = at(policy, volts=volts)
+        assert "limits" not in none and f"speed_ceiling_cps: left out, {why}" in notes
+    # the entry is a number of volts or the registry's name of a voltage, and nothing else
+    for bad in ([4.8], True, None, "gear_class"):
+        with pytest.raises(ValueError, match="datasheet_speed_voltage is .*: it is a voltage the sheet states a "
+                                             "speed at, in volts, or the registry's name of a voltage"):
+            at({**DERATE, "datasheet_speed_voltage": bad})
+
+
 def test_a_set_whose_speed_limit_is_over_the_ceiling_is_refused(first, tmp_path):
     datasheet(tmp_path)
     plant(tmp_path, POT_NOISE)
@@ -1894,35 +1976,57 @@ def test_the_set_of_record_holds_the_speed_ceiling_of_its_servo_class():
     servo = cn.servos.SERVOS[pair.partition("__")[0]]
     path = cn.sheet_path(pair, servo.datasheet_class)
     sheet = json.loads(path.read_text())
-    # the record: the maker's page with its address and the day it was read, what it states and what it
-    # does not, and why the class's sheet stands for a clone with none of its own
-    assert (sheet["class"], sheet["maker"], sheet["read"]) == (servo.datasheet_class, "TowerPro", "2026-11-14")
-    assert sheet["url"].startswith("https://www.towerpro.com.tw/product/mg90s") and sheet["url"] in sheet["document"]
-    assert sheet["read"] in sheet["document"]
+    # the record: the servo's own maker's page with its address, the day it was last edited and the day it
+    # was read, what it states and what it does not
+    assert (sheet["class"], sheet["maker"], sheet["read"]) == (servo.datasheet_class, "Vorpal Robotics", "2026-11-14")
+    assert servo.datasheet_class == "vorpal-mg90" and sheet["last_edited"] == "2018-08-01"
+    assert sheet["url"] == "https://www.vorpalrobotics.com/wiki/index.php/Vorpal_MG90_Micro_Servo"
+    assert all(sheet[k] in sheet["document"] for k in ("url", "last_edited", "read"))
+    assert "the maker's own page" in sheet["document"]
     assert sheet["stated"] == {
-        "operating_voltage": {"value": 4.8, "unit": "V"},
+        "operating_voltage": {"min": 4.8, "max": 6.6, "unit": "V"},
         "no_load_time": [{"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
                          {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}],
-        "stall_torque": [{"value": 1.8, "unit": "kg cm", "at_v": 4.8}],
-        "temperature_min": {"value": 0, "unit": "C"}, "temperature_max": {"value": 55, "unit": "C"}}
-    assert "a clone of the class with no sheet of its own" in sheet["stands_for"][servo.key]
-    assert sheet["stands_for"][servo.key].endswith(": the owner's decision")
-    assert all(word in sheet["not_stated"] for word in ("current", "travel", "voltage range"))
-    assert "/Users/" not in path.read_text() and "/home/" not in path.read_text()
-    # this servo's derates are decisions for it, with their why, and no rule for another servo
+        "stall_torque": [{"value": 1.8, "unit": "kg cm", "at_v": 4.8}, {"value": 2.2, "unit": "kg cm", "at_v": 6.0}]}
+    assert "Operating voltage: 4.8V to 6.6V" in sheet["as_printed"]
+    assert "Operating speed: 0.10sec/60degree (4.8V); 0.08sec/60degree (6.0V)" in sheet["as_printed"]
+    assert all(word in sheet["not_stated"] for word in ("current", "travel", "temperature range"))
+    # the servo is the maker's own, and nothing says it is a clone with no sheet
+    assert "its own maker's statement" in sheet["stands_for"][servo.key]
+    assert "clone" not in path.read_text() and "no sheet" not in path.read_text()
+    # what the maker says of the TowerPro MG90S is quoted as the maker's claim, and no value rests on it
+    claim = sheet["maker_claim"]
+    assert claim["quoted"] == ["We contracted directly with Tower Pro to create these servos",
+                               "The gears and plastic housing are identical to standard Tower Pro MG90S servos"]
+    assert claim["standing"].startswith("the maker's claim, quoted") and "no value" in claim["standing"]
+    assert "/Users/" not in path.read_text() and "/home/" not in path.read_text() and path.read_text().isascii()
+    # this servo's derates and the voltage its speed is read at are decisions for it, with their why, and
+    # no rule for another servo; the voltage's why says what the other row would give and that it is not taken
     policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     assert (policy["datasheet_derate_speed"], policy["datasheet_derate_default"]) == ([2, 3], 0.8)
-    for key in ("datasheet_derate_speed", "datasheet_derate_default"):
+    assert policy[cn.SPEED_VOLTAGE] == "rated_v" and servo.rated_v == 5.0
+    for key in ("datasheet_derate_speed", "datasheet_derate_default", cn.SPEED_VOLTAGE):
         assert "for this servo and no rule for another" in policy["why"][key] and key not in policy["undecided"]
-    # the ceiling: 600 deg/s no load at the sheet's 4.8 V, two thirds of it, at the pair's own scale
+    why = policy["why"][cn.SPEED_VOLTAGE]
+    assert "nearest the rail this servo runs on" in why and why.endswith(": the owner's decision")
+    assert "The 6.0 V row, 750 deg/s, would give 500 deg/s and is not taken" in why
+    # the ceiling: of the two voltages the page states a speed at, 4.8 V is the nearest the servo's rail,
+    # 600 deg/s no load there, two thirds of it, at the pair's own scale
     e = doc["limits"][cn.CEILING]
-    assert (e["stated_deg_s"], e["at_v"], e["derate"], e["deg_s"]) == (600.0, 4.8, [2, 3], 400.0)
+    speeds = {q["at_v"]: q["per_deg"] / q["value"] for q in sheet["stated"]["no_load_time"]}
+    assert min(speeds, key=lambda v: abs(v - servo.rated_v)) == e["at_v"] == 4.8
+    assert (e["stated_deg_s"], e["voltage"], e["derate"], e["deg_s"]) == (speeds[4.8], "rated_v", [2, 3], 400.0)
+    assert speeds == {4.8: 600.0, 6.0: 750.0}
     assert e["value"] == round(400 * doc["scale"]["counts_per_deg"]) == 8051 and e["unit"] == "count/s"
     assert (e["class"], e["document"], e["record"]) == ("datasheet", sheet["document"], sheet["what"])
     assert e["scale_points_sha1"] == doc["scale"]["points_sha1"] and e["bounds"] == ["velocity_limit_cps"]
+    assert e["inputs"] == ["policy:datasheet_derate_speed", "registry:datasheet_class",
+                           "datasheet:operating_voltage", "datasheet:no_load_time",
+                           "policy:datasheet_speed_voltage", "registry:rated_v", "scale"]
     assert doc["inputs"]["datasheet"] == {"file": path.relative_to(results.ROOT).as_posix(),
                                           "sha1": sc.file_sha1(path)}
-    assert doc["inputs"]["registry"]["servo"]["datasheet_class"] == "mg90s"
+    assert doc["inputs"]["registry"]["servo"]["datasheet_class"] == "vorpal-mg90"
+    assert doc["inputs"]["registry"]["servo"]["rated_v"] == servo.rated_v
     # it is in no hash of what the servo is to hold, and no field gained a source by it: the move's speed
     # limit stays as it was, under the ceiling and still nobody's decision
     assert doc["hash"]["limits"] == sc.config_hash({cn.CEILING: e["value"]})
@@ -1935,8 +2039,40 @@ def test_the_set_of_record_holds_the_speed_ceiling_of_its_servo_class():
     lines, stale = cn.status(doc)
     assert not stale and (
         "speed ceiling: 8051 count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
-        "maker's no-load speed at 4.8 V, 600 deg/s, x 2/3 by the policy (datasheet_derate_speed); "
+        "maker's no-load speed at 4.8 V, the stated voltage nearest the servo's rated_v of 5 V by the policy "
+        "(datasheet_speed_voltage), 600 deg/s, x 2/3 by the policy (datasheet_derate_speed); "
         f"{sheet['document']}; it bounds velocity_limit_cps = 1500") in lines
+    assert "Vorpal Robotics wiki" in sheet["document"]
+
+
+def test_a_datasheet_record_stands_for_the_servos_that_name_its_class():
+    folder = results.ROOT / cn.FOLDER
+    records = {path.name.removesuffix(".datasheet.json"): json.loads(path.read_text())
+               for path in sorted(folder.glob("*.datasheet.json"))}
+    assert sorted(records) == ["mg90s", "vorpal-mg90"]
+    # a record is of its class, names its page and the day it was read, and stands for the servos of the
+    # registry that name the class, each with why, and for no other
+    for name, sheet in records.items():
+        assert sheet["class"] == name and sheet["url"] in sheet["document"] and sheet["read"] in sheet["document"]
+        assert sorted(sheet["stands_for"]) == sorted(k for k, s in cn.servos.SERVOS.items()
+                                                     if s.datasheet_class == name)
+        assert all(sheet["stands_for"].values())
+    # the TowerPro page is the record of its own class and stands for no servo: the bench servo has a maker
+    # of its own, and nothing says it is a clone with no sheet
+    sheet, text = records["mg90s"], (folder / "mg90s.datasheet.json").read_text()
+    assert sheet["stands_for"] == {} and "clone" not in text and "mg90-d" not in text
+    assert (sheet["maker"], sheet["read"]) == ("TowerPro", "2026-11-14")
+    assert sheet["url"].startswith("https://www.towerpro.com.tw/product/mg90s")
+    assert sheet["stated"] == {
+        "operating_voltage": {"value": 4.8, "unit": "V"},
+        "no_load_time": [{"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
+                         {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}],
+        "stall_torque": [{"value": 1.8, "unit": "kg cm", "at_v": 4.8}],
+        "temperature_min": {"value": 0, "unit": "C"}, "temperature_max": {"value": 55, "unit": "C"}}
+    assert all(word in sheet["not_stated"] for word in ("current", "travel", "voltage range"))
+    assert "/Users/" not in text and "/home/" not in text and text.isascii()
+    # the two pages state the same two speeds, so the ceiling stands where the TowerPro record put it
+    assert sheet["stated"]["no_load_time"] == records["vorpal-mg90"]["stated"]["no_load_time"]
 
 
 # --- a deviation ---

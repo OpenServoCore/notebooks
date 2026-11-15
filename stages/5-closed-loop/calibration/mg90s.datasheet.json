@@ -6,9 +6,7 @@
  "url": "https://www.towerpro.com.tw/product/mg90s-3/",
  "same_text_at": "https://www.towerpro.com.tw/product/mg90s/",
  "read": "2026-11-14",
- "stands_for": {
-  "mg90-d": "a clone of the class with no sheet of its own, so the class's sheet stands for it: the owner's decision"
- },
+ "stands_for": {},
  "stated": {
   "operating_voltage": {"value": 4.8, "unit": "V"},
   "no_load_time": [

@@ -46,7 +46,11 @@ control table has no field for yet. The first is the speed ceiling
 protects the brushes: the no-load speed the maker of the servo's class
 states at the sheet's operating voltage, times the derate `policy.json`
 decides for this servo, in deg/s and in the counts per second of the
-set's scale. What a maker states of a class is a record beside the
+set's scale. Where the sheet states a range of operating voltage, the
+policy says which stated voltage of it the speed is read at
+(`datasheet_speed_voltage`): a number of volts, or the registry's name
+of the voltage the servo runs on, the stated one nearest which is
+taken. What a maker states of a class is a record beside the
 sets, `<class>.datasheet.json`, with the document, where it was read
 and when; the registry names the class a servo is of, and a servo that
 names none has no limit from a sheet. A limit is on no servo, so
@@ -1398,16 +1402,22 @@ def rail_fold(c):
 # voltage, times the policy's derate of a datasheet speed on this
 # servo, in the counts per second of the set's scale, and it bounds the
 # move's speed limit (core kernel/phases/loops/trajectory.rs vel_cap).
+# A sheet that states a range of operating voltage names no one speed
+# by it: the policy then says which stated voltage of the range the
+# speed is read at.
 #
 # What a maker states of a servo class is a record of the repo beside
 # the sets, `<class>.datasheet.json`: the document, where it was read
 # and when, and under `stated` each value as a quantity, one stated at
-# several voltages as a list with the voltage of each. The registry
-# names the class a servo is of (`datasheet_class`); a servo that names
-# none has no sheet, and so no limit from one.
+# several voltages as a list with the voltage of each, a range as its
+# `min` and `max`. The registry names the class a servo is of
+# (`datasheet_class`); a servo that names none has no sheet, and so no
+# limit from one.
 SHEET = "datasheet"                 # the input a set names the class's datasheet record by
 CEILING = "speed_ceiling_cps"
 SPEED_DERATE = "datasheet_derate_speed"     # the policy entry, a ratio as [numerator, denominator]
+# the policy entry a range of operating voltage is resolved by: volts, or the registry's name of a servo voltage
+SPEED_VOLTAGE = "datasheet_speed_voltage"
 BOUNDS = {CEILING: ("velocity_limit_cps",)}     # the fields each limit bounds: none is ever over it
 
 
@@ -1439,12 +1449,32 @@ def stated(c, key):
 def no_load(c):
     """(the no-load speed the maker states at the sheet's operating
     voltage, deg/s, that voltage): the angle the sheet times over the
-    time it states for it."""
-    volts = stated(c, "operating_voltage")["value"]
-    at = [q for q in stated(c, "no_load_time") if q["at_v"] == volts]
+    time it states for it. Of a range of operating voltage it is the
+    stated voltage the policy says (SPEED_VOLTAGE): a number of volts
+    is that voltage, and the registry's name of a voltage of the servo,
+    the one it runs on, is the stated voltage nearest it, the lower of
+    two as near. A time stated outside the range is none of it."""
+    op = stated(c, "operating_voltage")
+    lo, hi = (op["value"], op["value"]) if "value" in op else (op["min"], op["max"])
+    times = [q for q in stated(c, "no_load_time") if lo <= q["at_v"] <= hi]
+    volts, where = lo, f"its operating voltage, {lo:g} V"
+    if lo != hi:
+        at = c.policy(SPEED_VOLTAGE)
+        rail = c.reg("servo", at) if isinstance(at, str) else None
+        if type(rail) in (int, float):
+            volts = min((q["at_v"] for q in times), key=lambda v: (round(abs(v - rail), 9), v), default=None)
+            where = f"a voltage of its operating range, {lo:g} V to {hi:g} V"
+        elif type(at) in (int, float):
+            volts, where = at, (f"{at:g} V, the voltage {POLICY} names ({SPEED_VOLTAGE}), in its operating range, "
+                                f"{lo:g} V to {hi:g} V")
+        else:
+            raise ValueError(f"{POLICY}: {SPEED_VOLTAGE} is {at!r}: it is a voltage the sheet states a speed at, in "
+                             f"volts, or the registry's name of a voltage of the servo, the stated one nearest "
+                             f"which is taken")
+    at = [q for q in times if q["at_v"] == volts]
     if len(at) != 1:
-        raise Missing(f"the datasheet record states no one no-load time at its operating voltage, {volts:g} V")
-    return at[0]["per_deg"] / at[0]["value"], volts
+        raise Missing(f"the datasheet record states no one no-load time at {where}")
+    return at[0]["per_deg"] / at[0]["value"], at[0]["at_v"]
 
 
 def speed_ceiling_deg_s(c):
@@ -1467,6 +1497,7 @@ def limits_of(c, previous):
     """The set's limits, None for a set with none: the speed ceiling of
     a pair whose servo names a datasheet class, by its rule, with the
     speed in deg/s, what the maker states and at which voltage, the
+    policy's choice of that voltage where the sheet states a range, the
     derate, the record and its document, and the fields it bounds. With
     an input missing it is held at the previous set's value, the input
     named, and left out where there is nothing to carry."""
@@ -1477,6 +1508,7 @@ def limits_of(c, previous):
         e = evaluate(SPEED_CEILING, c)
         (speed, volts), doc = no_load(c), sheet(c)
         e = {**e, "deg_s": speed_ceiling_deg_s(c), "stated_deg_s": speed, "at_v": volts,
+             **({"voltage": c.policies[SPEED_VOLTAGE]} if f"policy:{SPEED_VOLTAGE}" in e["inputs"] else {}),
              "derate": c.policies[SPEED_DERATE], "record": doc["what"], "document": doc["document"]}
     except Missing as m:
         c.notes.append(f"{CEILING}: {'left out' if carried is None else 'held'}, {m}")
@@ -1522,8 +1554,9 @@ def limits_loaded(doc, where):
 def ceiling_said(doc):
     """What `status` says of a set's speed ceiling, a line, none for a
     set without: its counts per second and deg/s, what the maker states
-    and the derate that give it, the document, and the field it bounds
-    at the value the set holds."""
+    and the derate that give it, how the policy chose the voltage of a
+    range, the document, and the field it bounds at the value the set
+    holds."""
     e = (doc.get("limits") or {}).get(CEILING)
     if e is None:
         return []
@@ -1532,9 +1565,15 @@ def ceiling_said(doc):
     if "held" in e:
         return [f"speed ceiling: {e['value']} {e['unit']} [{tagged(e)}]: {e['held']}; it bounds {bounds}"]
     num, den = e["derate"]
+    by, chosen = e.get("voltage"), ""
+    if isinstance(by, str):
+        chosen = (f", the stated voltage nearest the servo's {by} of {doc['inputs']['registry']['servo'][by]:g} V "
+                  f"by the policy ({SPEED_VOLTAGE})")
+    elif by is not None:
+        chosen = f", the voltage the policy names ({SPEED_VOLTAGE})"
     return [f"speed ceiling: {e['value']} {e['unit']}, {e['deg_s']:g} deg/s at the set's scale [{tagged(e)}]: the "
-            f"maker's no-load speed at {e['at_v']:g} V, {e['stated_deg_s']:g} deg/s, x {num}/{den} by the policy "
-            f"({SPEED_DERATE}); {e['document']}; it bounds {bounds}"]
+            f"maker's no-load speed at {e['at_v']:g} V{chosen}, {e['stated_deg_s']:g} deg/s, x {num}/{den} by the "
+            f"policy ({SPEED_DERATE}); {e['document']}; it bounds {bounds}"]
 
 
 # --- build ---

@@ -14,10 +14,10 @@
   "3-servo/run-up": {"file": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "0293b324b5bb7c0030930964dffa4f6856d02283"},
   "3-servo/steps": {"file": "stages/3-servo/steps/results/mg90-d__dev-v006-2A-D.json", "inputs_recorded": false, "sha1": "06987086aefe0619e015c979d9ce1266ed4996ca"},
   "4-estimators/winding-temperature": {"file": "stages/4-estimators/winding-temperature/results/mg90-d__dev-v006-2A-D.json", "sha1": "97572d64c5fd200d635e678a51c50794db66cee6"},
-  "datasheet": {"file": "stages/5-closed-loop/calibration/mg90s.datasheet.json", "sha1": "6b695c3b3cdb23a3771e8bfecc1970aba1b57891"},
-  "policy": {"file": "stages/5-closed-loop/calibration/policy.json", "sha1": "74f75dc27aa86b6257eb5b41de99a57885561704"},
+  "datasheet": {"file": "stages/5-closed-loop/calibration/vorpal-mg90.datasheet.json", "sha1": "9b890b42877683522fdb9909bdc5bdafe0a7bd4e"},
+  "policy": {"file": "stages/5-closed-loop/calibration/policy.json", "sha1": "31c1f794256a504f5b5d8eda1d8789e1c24ca755"},
   "pos_table": {"file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json", "sha1": "904c4575899f8215f5daec1d2bdd227a1ee9c4c3"},
-  "registry": {"board": {"tick_hz": 20000}, "servo": {"gear_ratio": 308.0533, "gear_class": "metal", "datasheet_class": "mg90s"}},
+  "registry": {"board": {"tick_hz": 20000}, "servo": {"gear_ratio": 308.0533, "gear_class": "metal", "datasheet_class": "vorpal-mg90", "rated_v": 5.0}},
   "sources": {"file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.sources.json", "sha1": "48693dd29f3f655c903a7a3239be4990b00b8fd2"},
   "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.stops-2026-11-05.json": {"file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.stops-2026-11-05.json", "sha1": "bec7be5d0007c97a2fd3be1aefa7973d14bbcdfa"},
   "stages/5-closed-loop/scorecard/results/mg90-d__dev-v006-2A-D/01b-gains-3hz-50hz.json": {"file": "stages/5-closed-loop/scorecard/results/mg90-d__dev-v006-2A-D/01b-gains-3hz-50hz.json", "sha1": "f1841faf1f5de1d1cad8f2b4f97f82cbb9095857"},
@@ -31,7 +31,7 @@
   "current_counts_per_a": {"value": 1135.013429521035, "class": "measured", "hi": 1136.2501461238103, "inputs": ["1-board/current-scale:counts_per_a"], "lo": 1133.7767129182598, "rule": "scales.current", "unit": "counts/A"}
  },
  "limits": {
-  "speed_ceiling_cps": {"value": 8051, "class": "datasheet", "at_v": 4.8, "bounds": ["velocity_limit_cps"], "deg_s": 400.0, "derate": [2, 3], "document": "TowerPro MG90S product page (manufacturer), https://www.towerpro.com.tw/product/mg90s-3/, read 2026-11-14", "inputs": ["policy:datasheet_derate_speed", "registry:datasheet_class", "datasheet:operating_voltage", "datasheet:no_load_time", "scale"], "pos_unit": 1, "q": 0, "record": "what the maker states of the TowerPro MG90S, a servo class: ratings and nominals, no measurement", "rule": "speed_ceiling.datasheet", "rule_rev": 1, "scale_points_sha1": "e169fd753bddf3632413e1644932a01b08c17b44", "stated_deg_s": 600.0, "unit": "count/s"}
+  "speed_ceiling_cps": {"value": 8051, "class": "datasheet", "at_v": 4.8, "bounds": ["velocity_limit_cps"], "deg_s": 400.0, "derate": [2, 3], "document": "Vorpal Robotics wiki, Vorpal MG90 Micro Servo (the maker's own page for the servo; it links no PDF sheet), https://www.vorpalrobotics.com/wiki/index.php/Vorpal_MG90_Micro_Servo, page last edited 2018-08-01, read 2026-11-14", "inputs": ["policy:datasheet_derate_speed", "registry:datasheet_class", "datasheet:operating_voltage", "datasheet:no_load_time", "policy:datasheet_speed_voltage", "registry:rated_v", "scale"], "pos_unit": 1, "q": 0, "record": "what the maker states of the Vorpal MG90 Micro Servo, a servo class: ratings and nominals, no measurement", "rule": "speed_ceiling.datasheet", "rule_rev": 1, "scale_points_sha1": "e169fd753bddf3632413e1644932a01b08c17b44", "stated_deg_s": 600.0, "unit": "count/s", "voltage": "rated_v"}
  },
  "fields": {
   "pos_min_phys_counts": {"value": 82, "class": "bench", "inputs": ["sources:bench.pos_min_phys_counts", "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.stops-2026-11-05.json:pos_min_phys_counts"], "protection": null, "record": "the low stop, a hand reading of 2026-11-05", "weak": "a hand reading with no capture behind it, written down here after the day from a bench note: it awaits three recorded reads a stop at a stated seat"},
