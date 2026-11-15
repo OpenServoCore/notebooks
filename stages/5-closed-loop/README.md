@@ -454,20 +454,34 @@ The set carries one more thing that is on no servo, under `limits`: a
 bound on its own fields that the control table has no field for yet.
 The first is the speed ceiling, the most the output is ever to turn
 at. It protects the brushes, and it is a speed, not an effective
-voltage. Its source is a maker's sheet. mg90-d is a clone of the
-TowerPro MG90S with no sheet of its own, so by the owner's decision
-the class's sheet stands for it. What that sheet states is a record
-beside the set,
+voltage. Its source is a maker's sheet. mg90-d is a Vorpal MG90, and
+its own maker states it: Vorpal Robotics' page for the Vorpal MG90
+Micro Servo, which links no PDF sheet. What the page states is a
+record beside the set,
+[calibration/vorpal-mg90.datasheet.json](calibration/vorpal-mg90.datasheet.json),
+with the page's address, the day it was last edited and the day it was
+read: a stall torque and a no-load time over 60 deg, each at 4.8 V and
+at 6.0 V, and an operating voltage of 4.8 V to 6.6 V, and no current,
+travel or temperature range. The page also says that Vorpal
+contracted with Tower Pro to make the servos, the gears and the
+plastic housing identical to the standard MG90S's: the record quotes
+that as the maker's claim, and no value is taken on its strength.
+TowerPro's own MG90S page stays the record of
+its class,
 [calibration/mg90s.datasheet.json](calibration/mg90s.datasheet.json),
-with the page it was read from and the date: a stall torque, a no-load
-time over 60 deg at two voltages, one operating voltage and a
-temperature range, and no current, travel or voltage range. The
-registry names the class a servo is of, so a table of classes can grow
-from such records later. A value of the sheet is not taken whole:
+which no servo of the registry names; it states the same two speeds.
+The registry names the class a servo is of, so a table of classes can
+grow from such records later. A value of the sheet is not taken whole:
 `policy.json` holds this servo's derates, two thirds for a speed and
 0.8 for any other value, decisions for this servo and not a rule for
-every servo. The ceiling is the no-load speed at the sheet's operating
-voltage times the speed derate, 600 deg/s x 2/3 = 400 deg/s, which is
+every servo. The page states a range of operating voltage, so the
+sheet's operating voltage names no one speed, and the policy says
+which stated voltage the speed is read at: the one nearest the rail
+the servo runs on, the registry's 5.0 V, which is the 4.8 V row. That
+is the owner's decision: the 6.0 V row, 750 deg/s, would give
+500 deg/s and is not taken, 400 deg/s being a speed measured not to
+damage the brushes. The ceiling is the no-load speed at that voltage times the
+speed derate, 600 deg/s x 2/3 = 400 deg/s, which is
 8051 counts per second at the table's 20.13 counts per degree. The set
 refuses a `velocity_limit_cps` over it, `status` prints it with its
 source, and it has a hash of its own, `limits`, outside `set`. No

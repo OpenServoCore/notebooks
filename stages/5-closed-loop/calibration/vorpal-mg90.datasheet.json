@@ -1,0 +1,41 @@
+{
+ "what": "what the maker states of the Vorpal MG90 Micro Servo, a servo class: ratings and nominals, no measurement",
+ "class": "vorpal-mg90",
+ "maker": "Vorpal Robotics",
+ "document": "Vorpal Robotics wiki, Vorpal MG90 Micro Servo (the maker's own page for the servo; it links no PDF sheet), https://www.vorpalrobotics.com/wiki/index.php/Vorpal_MG90_Micro_Servo, page last edited 2018-08-01, read 2026-11-14",
+ "url": "https://www.vorpalrobotics.com/wiki/index.php/Vorpal_MG90_Micro_Servo",
+ "last_edited": "2018-08-01",
+ "read": "2026-11-14",
+ "stands_for": {
+  "mg90-d": "a Vorpal MG90, so the page is its own maker's statement: the owner's word. Its motor and its body are of two new servos of the brand, not a factory pair (the registry's notes)"
+ },
+ "stated": {
+  "operating_voltage": {"min": 4.8, "max": 6.6, "unit": "V"},
+  "no_load_time": [
+   {"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
+   {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}
+  ],
+  "stall_torque": [
+   {"value": 1.8, "unit": "kg cm", "at_v": 4.8},
+   {"value": 2.2, "unit": "kg cm", "at_v": 6.0}
+  ]
+ },
+ "as_printed": [
+  "Weight: 13.4g",
+  "Dimension: 22.8x12.2x28.5mm",
+  "Stall torque: 1.8kg/cm (4.8V); 2.2kg/cm (6.0V)",
+  "Operating speed: 0.10sec/60degree (4.8V); 0.08sec/60degree (6.0V)",
+  "Operating voltage: 4.8V to 6.6V",
+  "servo wire length: 25 cm"
+ ],
+ "maker_claim": {
+  "of": "its relation to the TowerPro MG90S",
+  "quoted": [
+   "We contracted directly with Tower Pro to create these servos",
+   "The gears and plastic housing are identical to standard Tower Pro MG90S servos"
+  ],
+  "standing": "the maker's claim, quoted as the page prints it: nothing here checks it, and no value of the TowerPro record (mg90s.datasheet.json) is taken on its strength"
+ },
+ "not_stated": "the page states no current of any kind, travel, dead band, pulse range, temperature range, motor type or gear material",
+ "left_out": "the page also states the weight, the size and the lead, in the lines as printed: no limit is taken from them. The page prints the multiplication sign in the size, written x here, and the torque's unit as kg/cm, recorded as kg cm"
+}
