@@ -1,0 +1,8 @@
+{
+  "note": "the model gain, the inertia feedforward and the observer's disturbance gain as the board held them, the three together, the rest of the plant as the set of record binds it: one arm of the bisect of what the constants of record changed against the plant as held",
+  "pins": {
+    "b_i_q313": {"value": 2657, "why": "the value the board held, for the bisect of the constants of record", "rung": "14a-set-of-record"},
+    "j_ff_q88": {"value": 789, "why": "the value the board held, for the bisect of the constants of record", "rung": "14a-set-of-record"},
+    "l3_q88": {"value": 77, "why": "the value the board held, for the bisect of the constants of record", "rung": "14a-set-of-record"}
+  }
+}

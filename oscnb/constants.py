@@ -14,8 +14,9 @@ A field has one class, which says where its value comes from.
 result on this servo, read from the record and never typed,
 `datasheet` a value the maker of the servo or of a part states, a
 rating or a nominal and no measurement, with the document named and
-read from where the repo records it, `policy` a rule over a decision,
-`pinned` a literal typed for the pair, and `none`
+read from where the repo records it, `policy` a rule over a decision
+or over a target a bench sweep picked, `pinned` a literal typed for
+the pair, and `none`
 a value with no source. A value has none when the servo held it before
 its set existed (`origin`), when it is carried while its rule may not
 bind (`held`), or when its rule reads a policy entry nobody decided;
@@ -97,7 +98,9 @@ it was computed for. A field with no rule, no pin and no record is
 carried at its value, with no source.
 `policy.json`, beside the sets and one for every pair, holds the
 choices that are no measurement, in physical units: under `why` the
-reason of each one that is a decision, under `undecided` the entries
+reason of each one that is a decision, or the pick of a bench sweep
+under a rule written before its session with the sweep's rungs named,
+under `undecided` the entries
 that restate a default nobody decided, each with its `reason` and what
 it `needs`, so a field whose rule reads one has no source, and under
 `hold` the fields it holds back with the reason: a held field stays at
@@ -1071,14 +1074,21 @@ rule("i_kaw_q412", "i_kaw.bandwidth", kind="u16", unit="vcounts/ccount per tick"
 
 # --- the records a host keeps on the servo ---
 #
-# Four fields the kernel never reads, each a quantity of record a host
+# Three fields the kernel never reads, each a quantity of record a host
 # reads back: the winding's cold resistance, at the 25 C the field is
-# stated at, the back-EMF constant in uV s/rad, the static friction as
-# a current, and the chip's supply, which is the ADC's reference. The
-# resistance of the rails fit is the winding's at the board temperature
-# its result states, the pair the identification takes together
-# (oscnb.speed.motor_of), and goes to 25 C along copper's slope
-# (oscnb.winding.r_of_t).
+# stated at, the back-EMF constant in uV s/rad, and the static friction
+# as a current. The resistance of the rails fit is the winding's at the
+# board temperature its result states, the pair the identification
+# takes together (oscnb.speed.motor_of), and goes to 25 C along
+# copper's slope (oscnb.winding.r_of_t).
+#
+# The supply word, vdd_mv, is no such record and has no rule. It is a
+# word of the sense block a capture carries in its meta.json and is
+# matched to its board by (oscnb.boards.Board.sense), so it is the
+# board entry's nominal supply, typed for the pair as a pin. The supply
+# as measured is the stage 1 terminal chain's `vdd_v` and stays in that
+# result: a set that binds it writes a servo whose captures match no
+# board entry.
 R0_AT_C = 25.0      # C, where the cold resistance is stated (core regions/calib.rs CalibWinding)
 
 
@@ -1096,11 +1106,6 @@ def ke_uvs(c):
       mirrors="core regions/calib.rs CalibMotorExt")
 def fric_breakaway(c):
     return c.q(FRICTION, "load_static_friction_uNm_motor") * 1e-6 / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
-
-
-@rule("vdd_mv", "vdd.terminal_chain", kind="u16", unit="mV", mirrors="core regions/calib.rs CalibSense")
-def vdd(c):
-    return c.q(CHAIN, "vdd_v") * 1000
 
 
 # --- the fields in counts of position ---

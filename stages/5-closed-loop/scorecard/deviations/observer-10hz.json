@@ -1,0 +1,4 @@
+{
+  "note": "the observer's bandwidth at 10 Hz in place of the policy's 15 Hz, which nobody decided: its three gains move with it, the position and the speed gain and the disturbance gain. One point of the sweep that picks the bandwidth",
+  "policy": {"observer_hz": 10.0}
+}

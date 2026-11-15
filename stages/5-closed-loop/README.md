@@ -280,6 +280,18 @@ moves the protection fields of one step only
 [of record, deviated]. The deviation files of the ladder are in
 [scorecard/deviations/](scorecard/deviations), for example
 `--deviation stages/5-closed-loop/scorecard/deviations/hold-band-8.json`.
+A file there that the set of record has overtaken is history. Its
+holds are released in the set of record, or the literal it pins is
+what the set's rule binds now, so `build --deviation` refuses it, the
+field named as not held or the file as moving nothing: `motor-r.json`,
+`motor-model.json`, `friction-measured.json` and the seven
+`protection-*.json` files, each the release of one protection step
+as it was written before the set of record took the step. Each stays
+as it was written, and no rung runs on one again. Three are files a
+rung of record ran, `motor-model.json` two rungs, `motor-r.json`
+`zz-ab-r-measured` and `protection-ntc-curve.json` `zz-ab-ntc-pinned`,
+and a result that names one keeps its sha1 and the fields it moved.
+One test names the ten and holds every other file to a build.
 A deviation that pins a field the servo's image does not have is
 refused by the install, the field named, before anything is written.
 
@@ -407,7 +419,12 @@ rung's results file or a dated reading, read from the record and never
 typed; `datasheet`, a value the maker of the servo or of a part
 states, a rating or a nominal and no measurement, read from where the
 repo records it with the document named; and `policy`, a rule over a
-decision, whose reason `policy.json` gives under `why`. `pinned` is a
+choice that is no measurement, whose reason `policy.json` gives under
+`why`. The choice is a decision, the owner's, or a target a bench
+sweep picked: a bandwidth is a target and no quantity of the servo,
+the sweep is its record, its rungs named in the `why`, and the pick
+was made under a rule written before the sweep's session and is not
+the owner's decision. `pinned` is a
 literal typed for the pair with the rung that chose it. Every other
 field is of class `none`, no source: what the servo held before its
 set existed, which may be another servo's since a board is moved
@@ -423,11 +440,22 @@ its fields, and the reason and the need of the ones with none.
 
 Every verb prints the count per class, and the count of fields with no
 source whose value is per position count, which were fitted at a scale
-nothing recorded. On mg90-d with board D the set holds 62 fields: 4
-measured, 10 bench, no datasheet, 18 policy and 30 with no source. Of
-the 30, 28 are held beside what a result or a decision on record gives
-and wait for a release or a protection step, and two are the
-observer's gains, bound at a bandwidth nobody decided. The
+nothing recorded. On mg90-d with board D the set holds 62 fields: 16
+measured, 10 bench, no datasheet, 32 policy, one pinned and 3 with no
+source. The pin is the board's nominal supply word, `vdd_mv` (below).
+Six of the policy's are the current loop's three gains and the
+observer's three, each bound by its rule at a bandwidth a bench sweep
+picked ([the ladder](#the-ladder), the constants session): they had no
+source while the bandwidths were an old tool's default targets nobody
+had decided. Of the 3, two are the limits of motion, held at the
+boot default's counts: their sweep recommends 200 deg/s and 4000
+deg/s^2, and the change waits for the owner (below). One is the
+breakaway record, held at a zero never written because no result on
+record is its quantity (below). Every other field whose rule gives
+another value than the servo held is bound at the rule's value: a
+constant with a source replaces one the board happened to hold, on
+principle, and a scorecard row that loses by it is an open item on
+top of it, not a reason to keep the old value. The
 bench fields are the four loop gains of rung `01b-gains-3hz-50hz`,
 the stops, the drive's sign and the gear class. The stops are a hand
 reading of 2026-11-05, kept as a dated file beside the set that says of
@@ -561,40 +589,78 @@ every rule to it.
 | `i_kaw_q412` | its anti-windup gain, twice the integral gain | the same | no |
 | `r0_q12` | the cold resistance, the rails fit taken to 25 C along copper's slope | the stage 3 resistance and the board temperature that result states | no |
 | `ke_uvs_per_rad` | Ke, uV s/rad | the stage 3 ladder | no |
-| `fric_breakaway_counts` | the static friction as a current, Ts / Ke x shunt counts per A | the stage 3 static friction, measured with the load on the horn | no |
-| `vdd_mv` | the chip's supply, mV | the stage 1 terminal chain's `vdd_v` | no |
+| `fric_breakaway_counts` | the static friction as a current, Ts / Ke x shunt counts per A | the stage 3 static friction, back-driven with the load on the horn, which is not the field's quantity: held (below) | no |
 
 Each rule names in the module the firmware function that uses its
 field. The feedforward and the three observer gains are the firmware
 repo's own synthesis (`ident/src/gains.rs`), and one test holds the
 rules to the fields that file's code gives on its own test plant. The
 three observer gains are the policy's by their rule: the bandwidth is a
-choice. It is one nobody has made: 15 Hz is an old tool's default
-target, listed under `undecided`, so the gains bound at it have no
-source. A deviation's `observer_hz` moves them: 10 Hz gives 5894, 1446
-and 25 for `l1_q016`, `l2_q88` and `l3_q88`, 15 Hz 8640, 3180 and 84,
-25 Hz 13757, 8433 and 371, the last of each with its hold released.
+target, not a quantity of the servo. 15 Hz was an old tool's default
+target; it is now the pick of a bench sweep, which is its record, and
+the gains bound at it are of class `policy`. A deviation's
+`observer_hz` moves them: 10 Hz gives 5894,
+1446 and 25 for `l1_q016`, `l2_q88` and `l3_q88`, 15 Hz 8640, 3180 and
+84, 25 Hz 13757, 8433 and 371. The two ends are deviation files,
+[observer-10hz.json](scorecard/deviations/observer-10hz.json) and
+[observer-25hz.json](scorecard/deviations/observer-25hz.json), the
+sides of the sweep that ran on the bench. The pick was made under a
+rule written before the session, which keeps 15 Hz
+([the ladder](#the-ladder), the constants session), and `policy.json`
+says so under `why` with the three rungs named.
 
 The current loop's three gains are that file's placement too. The
 proportional gain cancels the winding's electrical pole, w L, the
 integral gain sets the crossover, w R a FAST tick, and the anti-windup
 gain is twice the integral one, with L and R in counts through the
 measured stage 1 scales. The bandwidth is the policy's
-`current_loop_hz`, 1 kHz, the old tool's default target, listed under
-`undecided`: a sweep rung picks it. On this motor's 0.82 mH and
-4.18 ohm the rules give 289, 1176 and 2352, where the servo holds 275,
+`current_loop_hz`, 1 kHz, a target as the observer's is: the old
+tool's default, and now the pick of a bench sweep, its record. On
+this motor's 0.82 mH and
+4.18 ohm the rules give 289, 1176 and 2352, where the servo held 275,
 1580 and 3160, an old identification fit of another servo. The three
-are held together. A deviation's `current_loop_hz` moves them in
-proportion: 144, 588 and 1176 at 500 Hz, 433, 1764 and 3528 at 1.5 kHz.
+are bound at the placement, of class `policy`. A deviation's
+`current_loop_hz` moves them in
+proportion: 144, 588 and 1176 at 500 Hz, 433, 1764 and 3528 at 1.5 kHz,
+the deviation files
+[current-loop-500hz.json](scorecard/deviations/current-loop-500hz.json)
+and
+[current-loop-1500hz.json](scorecard/deviations/current-loop-1500hz.json),
+the sides of the sweep that ran on the bench. The pick was made under
+a rule written before the session, which keeps 1 kHz, and
+`policy.json` says so under `why` with the three rungs named.
+[current-gains-as-held.json](scorecard/deviations/current-gains-as-held.json)
+pins the three at the old fit, for the A/B of the placement against
+it ([the ladder](#the-ladder), the constants session).
 
-Four fields are records a host keeps on the servo, which the kernel
+Three fields are records a host keeps on the servo, which the kernel
 never reads: the cold resistance `r0_q12`, the back-EMF constant
-`ke_uvs_per_rad`, the static friction `fric_breakaway_counts` and the
-chip's supply `vdd_mv`. Their rules give 3725, 1159, 97 and 3293, where
-the servo holds three zeros never written and the board's nominal
-3300. The cold resistance is the rails fit, 4.177 ohm at the 26.26 C
-its result states, taken to the 25 C the field is stated at. The four
-are held together, for a release of their own.
+`ke_uvs_per_rad` and the static friction `fric_breakaway_counts`.
+Their rules give 3725, 1159 and 97, where the servo held three zeros
+never written. The cold resistance is the rails fit, 4.177 ohm at the
+26.26 C its result states, taken to the 25 C the field is stated at.
+Two of the three are bound at what their rules give. The breakaway is
+not: the
+field means the current at which a driven ramp first moves the horn,
+and the static friction on record is the back-driven one, measured
+with the load arm on the horn. So the field stays held at its zero,
+with no source, the 97 beside it as what the rule would give, until a
+driven-ramp breakaway capture gives a result it can bind to.
+
+The supply word, `vdd_mv`, is not such a record. It is a word of the
+sense block every capture carries in its `meta.json`, read from the
+servo, and a capture is matched to its board by that block
+(`oscnb/boards.py`). So the field holds the board entry's nominal
+supply, 3300 mV, typed for the pair as a pin in
+`<pair>.pins.json`, of class `pinned`. The supply as measured, 3.293
+V, is the stage 1 terminal chain's `vdd_v` and stays in that result.
+A rule bound it to the field once, 3293: the first rungs on that set
+ran clean on the servo and could not be scored, since their captures
+matched no board entry; those runs are not in the repo. The rule is
+removed, so a field left without
+its pin is carried as it stands and is not bound at the measured
+supply again, and one test holds the set's `vdd_mv` to the board
+entry's sense word and a capture of the reference rung to the board.
 
 The resistance is on record four ways in stage 3, each a rule:
 `rails_fit`, the fit over three rails with the edge lags at stage 1's
@@ -615,31 +681,58 @@ under `held`, what its rule gives beside it as `would_be` and the
 results the rule read still listed, so the set shows what the record
 gives next to what the servo holds and moves nothing. A held field the
 set never held stays out of
-it, and `build` says so with what its rule gives. The fields of the
-motor block whose rule gives another value than the servo holds are
-held, each to move on a rung of its own: the back-EMF pair, `r_q12`
-and `recip_ke_q`, which a replay reads worse on an estimator without
-the on-time term; the Coulomb term, benched alone as
+it, and `build` says so with what its rule gives. Four holds are left:
+the two limits of motion, the breakaway record, and `r_bemf_q12`, held
+because no image has the field yet. A value held from before the set
+existed is still counted as at an unknown scale where it is per count.
+
+The fields of the motor block whose rule gives another value than the
+servo held were each held to move on a rung of its own: the back-EMF
+pair, `r_q12` and `recip_ke_q`, which a replay reads worse on an
+estimator without the on-time term; the Coulomb term, benched alone as
 `08a-friction-measured` and not kept; and `b_i_q313`, `j_ff_q88` and
-`l3_q88`, whose stored values sit inside their rules' bands.
-`r_bemf_q12` is held because no image has the field yet. `l1_q016` and
-`l2_q88` bind: their rules give what the servo holds. `fric_fv_q016`
-and `ke_vpc_q` bind at what their rules give, 812 and 315 where the
-servo held 289 and 355, the two stored values of the block outside
-their rule's band: their release was benched on the saved set and
-kept (below). A value held from before the
-set existed is still counted as at an unknown scale where it is per
-count.
+`l3_q88`, whose stored values sit inside their rules' bands. Those
+holds are released, and with the current loop's gains and the host's
+records the set binds each at what its rule gives:
+
+| field | the servo held | the set binds | class |
+|---|---|---|---|
+| `r_q12` | 4541 | 3744 | measured |
+| `recip_ke_q` | 11817 | 13315 | measured |
+| `b_i_q313` | 2657 | 2434 | measured |
+| `j_ff_q88` | 789 | 862 | measured |
+| `l3_q88` | 77 | 84 | policy: the observer's bandwidth, the pick of its sweep |
+| `fric_fc_counts` | 100 | 54 | measured |
+| `i_kp_q88`, `i_ki_q412`, `i_kaw_q412` | 275, 1580, 3160 | 289, 1176, 2352 | policy: the loop's bandwidth, the pick of its sweep |
+| `r0_q12`, `ke_uvs_per_rad` | 0, 0 | 3725, 1159 | measured |
+
+`l1_q016` and `l2_q88` bind at the values the servo held, which their
+rules give. `fric_fv_q016` and `ke_vpc_q` bind at what their rules
+give, 812 and 315 where the servo held 289 and 355, the two stored
+values of the block outside their rule's band: their release was
+benched on the saved set and kept (below).
+[plant-as-held.json](scorecard/deviations/plant-as-held.json) pins
+the eleven fields of the table at what the servo held, the values the
+reference rung `14a-set-of-record` ran on, so one deviation is the
+plant as it was: the A/B of the constants of record against the ones
+they replaced. Five more files pin a part of it, the arms of the
+bisect of that A/B: [r-as-held.json](scorecard/deviations/r-as-held.json),
+[ke-as-held.json](scorecard/deviations/ke-as-held.json),
+[emf-pair-as-held.json](scorecard/deviations/emf-pair-as-held.json),
+[model-block-as-held.json](scorecard/deviations/model-block-as-held.json)
+and [friction-as-held.json](scorecard/deviations/friction-as-held.json).
 
 A rung releases a hold with a deviation: `"release": [field, ...]`
 names held fields, and the derived set binds each at what its rule
 gives, `rung.json` showing it as [of record, deviated] like any field
 a deviation moves. Nothing else of the policy is restated, and the
 other holds stand. A release of a field that is not held is refused,
-as is one whose rule has no value to bind. The releases of record are
-[motor-model.json](scorecard/deviations/motor-model.json), the model
-gain, the inertia feedforward and the observer's disturbance gain, and
-[motor-r.json](scorecard/deviations/motor-r.json), `r_q12` alone.
+as is one whose rule has no value to bind. The releases benched so far
+were [motor-model.json](scorecard/deviations/motor-model.json), the
+model gain, the inertia feedforward and the observer's disturbance
+gain, and [motor-r.json](scorecard/deviations/motor-r.json), `r_q12`
+alone. The set of record has released those holds itself, so the two
+files no longer build ([Running it](#running-it)).
 
 The first release benched was the block outside the back-EMF pair and
 the Coulomb term, five fields together, against the saved set of
@@ -657,23 +750,33 @@ their rule's band, against `b_i_q313`, `j_ff_q88` and `l3_q88`, the
 three inside it. No row was worse on either half in both sets, the
 1 % ramp's duty rms among them (9.49 against 9.30 and 9.32 %, 9.65
 against 9.74 and 9.14 %), so the first step's row did not repeat on
-either half. The first half binds. The second stays held: its values
-are inside their bands, so the record does not tell them from the
-stored ones, and its reversal rows leaned up, each apart in one set
-(the 60 degree move's 498 against 528 a second in the first set, the
-1 % ramp's 156 against 186 and the 10 % ramp's 416 against 514 in the
-second). The 20 degree landing ran its hold out hunting, a settle
+either half. The first half was bound on that result. The second
+stayed held then: its values are inside their bands, so the record
+does not tell them from the stored ones, and its reversal rows leaned
+up, each apart in one set (the 60 degree move's 498 against 528 a
+second in the first set, the 1 % ramp's 156 against 186 and the 10 %
+ramp's 416 against 514 in the second). It is bound now with the rest
+of the block, on the principle above, and those reversal rows are an
+open item on top of it. The 20 degree landing ran its hold out hunting, a settle
 over 1000 ms, in 3 of 6 runs of the first step's released side and
 none of its control's, and in the split in 2 of 6 runs of the control
 itself, 2 of 6 of the first half and 1 of 6 of the second: it lands on
 a stuck code's gap and flips from run to run on the set of record
 alone.
 
-Every protection field has a rule. The NTC curve's and the winding
-model's are held, so the set shows what the record gives beside what
-protects the servo now, and so are the screens and the supply terms
-whose decision is another value than the servo holds (below); the
-current limits', the thermal limit's and the rest are bound.
+Every protection field has a rule, and every one is bound. The
+current limits, the thermal limit and the decisions the servo already
+held were bound first. The rest came
+in seven protection steps, one build a step with `--protection`
+naming the step's fields and nothing of the plant moving: the NTC
+curve's three words, the winding model's four fields, the
+position-error screen's angle and time, the sensor screen, the
+undervolt floor, the rail fold and the stall response. Each is said
+below with what the servo held before it. A servo that still stores
+the set from before these steps, set `297f3cb4a544`, differs from the
+set of record in those thirteen fields and in the eleven of the plant
+above, and an install on it names the thirteen (below, after the
+undervolt floor).
 
 The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
@@ -686,9 +789,10 @@ effects are taken out. The result's `refit_*` curve and its
 fitted beta are fits against a thermocouple shown to read low and are
 not design constants. `ntc_raw_ref` is the count that result names for
 its design curve (`design_raw_ref`), 2048, which is also the count the
-servo holds, so it binds as it stands. The other three words are held:
-the servo holds another curve, the host's
-tangent form about 25 C. What each reads on the bench board, through
+servo held, so it bound as it stood. The other three words are bound
+as one protection step, in place of the curve the servo held and
+stored, the host's tangent form about 25 C. What each reads on the
+bench board, through
 the kernel's own conversion and with the part's nominal equation as
 the truth:
 
@@ -737,18 +841,19 @@ node the family's, of class `policy` until a lock hold measures this
 motor's. The policy's `winding_plateau_reading` names the reading of
 the plateau the two rises take, and it is `high`, the owner's decision:
 of the two readings it alone reads at least as hot as what the servo
-holds in every case computed. The rules give 2 / 434 / 129 / 1274, and
+held in every case computed. The rules give 2 / 434 / 129 / 1274, and
 the kernel runs the two leaks at 2.048 and 131.072 s (the rounding as
 firmware 08c7beaf has it, mirrored in `oscnb.winding`). The four are
-held, so the set keeps the servo's one node on the slow leak, 115 /
-1143 / 0 / 0, until a bench session installs
-[protection-winding-model.json](scorecard/deviations/protection-winding-model.json).
-No direction field by field says what that step does, so its build and
-its install print what the estimate reads over the board NTC under the
-four held and under the four wanted, by the kernel's integers: a hold
+bound as one protection step, in place of the one node on the slow
+leak the servo held, 115 / 1143 / 0 / 0.
+No direction field by field says what that step does, so an install
+on a servo that holds another four prints what the estimate reads
+over the board NTC under the servo's four and under the set's, by the
+kernel's integers: a hold
 from rest at the continuous current and at the limit, the rest after
 it, four duty cycles, and whether the wanted four read at least as hot
-in every case. The install still names all four as `--protection`, and
+in every case. Over the four the servo held they do, in every case.
+The install still names all four as `--protection`, and
 the two leaks, which are judged, and the fast rise, which falls, as
 `--loosen` too.
 
@@ -795,11 +900,12 @@ model's four a third and the position-error screen's angle and time a
 fourth, a protection field in none is a step alone, and a
 release of one field of a step releases every held field of it, so no
 curve of two fits, no limits at two scales, no model of two halves and
-no screen of one decision and one default are built. The NTC curve's
-step of record is
-[protection-ntc-curve.json](scorecard/deviations/protection-ntc-curve.json).
-Its install names every field it moves as `--protection` and again as
-`--loosen`: the curve's words are judged. The current limits' step
+no screen of one decision and one default are built. A build of the
+set of record takes a step the same way, its fields named together
+with `--protection`. An install of the NTC curve's step on a servo
+that holds the stored curve names the three words it moves as
+`--protection` and again as `--loosen`: the curve's words are judged.
+The current limits' step
 was installed the same way, the continuous current judged and the
 other three moving up.
 
@@ -817,7 +923,7 @@ raw pot's mid travel scale, to four figures, the firmware's boot
 defaults, which are round in counts (1500 count/s, reached in 50 ms).
 The two screens are decided.
 
-| field | the kernel's use | policy | the servo holds | which is, on the table | the rule gives |
+| field | the kernel's use | policy | the servo held | which is, on the table | the rule gives |
 |---|---|---|---|---|---|
 | `velocity_limit_cps` | the cap of the profile's speed and of the position loop's command, count/s | 79.31 deg/s | 1500 | 74.53 deg/s | 1596 |
 | `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 1586 deg/s^2 | 3840 | 1491 deg/s^2 | 4086 |
@@ -825,19 +931,34 @@ The two screens are decided.
 | `pos_error_counts` | the profile less the estimate, over this for the error time, faults; counts | 9.9 deg | 400 | 19.87 deg | 199 |
 
 The two limits of motion are of the plant, held and undecided, interim:
-a bench sweep under the speed ceiling picks the default, and they move
-together on a rung,
-[motion-limits.json](scorecard/deviations/motion-limits.json): the
-acceleration limit was typed as the speed limit reached in 50 ms. The
+the set keeps the 1500 and the 3840 the servo holds, and they move
+together on a rung.
+[motion-limits.json](scorecard/deviations/motion-limits.json)
+releases the two at the policy's entries: the acceleration limit was
+typed as the speed limit reached in 50 ms. The bench sweep under the
+speed ceiling ran the held limits against two faster sides, and
+recommends 200 deg/s and 4000 deg/s^2, interim until the load arm
+([the ladder](#the-ladder), the constants session). The set's limits
+stay as held: the change waits for the owner, because the limits are
+part of what the scorecard's step rows measure, and a rung at other
+limits does not compare with one at these. The two faster sides keep
+that 50 ms:
+[motion-200.json](scorecard/deviations/motion-200.json), 200 deg/s
+and 4000 deg/s^2, 4025 and 10305 as the fields hold them, and
+[motion-400.json](scorecard/deviations/motion-400.json), 400 deg/s
+and 8000 deg/s^2, 8051 and 20610. 400 deg/s is the speed ceiling
+itself, so its 8051 counts are the ceiling's and pass; a deg/s more is
+refused. The
 stall speed is decided at the speed its counts are on the set's count,
 24.84 deg/s, four times the speed noise of a still shaft. Its rule
-then gives the 500 the servo holds, so it binds, of class `policy`, at
-a scale that is on record, and has no step. The position-error screen
+then gives the 500 the servo held, so it bound as it stood, of class
+`policy`, at a scale that is on record, and had no step. The
+position-error screen
 is decided at 9.9 deg, twice the worst healthy following error on
 record, 4.4 deg on a free horn, interim until the load arm confirms
-it. That is 199 counts on the set's count where the servo holds 400,
-so the field is held, and moves with the screen's time as one
-protection step (below).
+it. That is 199 counts on the set's count where the servo held 400,
+so the field moved, with the screen's time, as one protection step
+(below).
 
 Three more fields are counts of position and move with no table. The
 soft limits are positions: `osc cal` typed them a sixteenth of the
@@ -866,9 +987,9 @@ counts is a decision, said under `why`. The band at 8
 counts, over half the train's play, stays a pin of its own deviation.
 The sensor screen is the policy's `sensor_delta_max_counts`, raw
 counts between two MEDIUM samples. It is decided at 64, twice the worst
-healthy step of the pot on 5 V, 32 counts, where the servo holds the
-boot default's 256: the band binds, and the screen is held at 256
-until its protection step is installed.
+healthy step of the pot on 5 V, 32 counts, where the servo held the
+boot default's 256: the band bound as it stood, and the screen is
+bound at 64 by a protection step of its own.
 
 The other screens, the supply terms and the open loop's two choices
 each have a policy entry in the unit a person sets it in, its reason
@@ -887,19 +1008,20 @@ decision is the value the servo holds, the field binds, of class
 | `openloop_decay` | `openloop_decay` slow | Slow | the off-time brake: smooth current, torque in proportion to duty |
 | `openloop_zero_brake` | `openloop_zero_brake` off | off | zero duty coasts in open loop, which calibration relies on |
 
-Where the decision is another value, the field is held at the servo's
-with the decision's beside it, until a bench session installs its
-protection step:
+Where the decision is another value than the servo held, a protection
+step of its own bound the field at the decision's, one build a step.
+The last column is what an install names on a servo that still holds
+the old value:
 
-| field | policy | the servo holds | the rule gives | step | its install names |
-|---|---|---|---|---|---|
-| `stall_response` | `stall_response` yield | Fault | Yield | [protection-stall-response.json](scorecard/deviations/protection-stall-response.json) | `--protection` and `--loosen`: judged |
-| `pos_error_counts`, `pos_error_time_ticks` | `pos_error_deg` 9.9, `pos_error_time_ms` 100 | 400, 10000 | 199, 2000 | [protection-position-error.json](scorecard/deviations/protection-position-error.json) | `--protection`: both protect more |
-| `sensor_delta_max` | `sensor_delta_max_counts` 64 | 256 | 64 | [protection-sensor-delta.json](scorecard/deviations/protection-sensor-delta.json) | `--protection`: it protects more |
-| `v_undervolt_counts` | `v_undervolt_v` 3.70 | 720 | 922 | [protection-undervolt.json](scorecard/deviations/protection-undervolt.json) | `--protection`: it protects more |
-| `rail_fold_q8` | `rail_source_ohm` 0.8 | 1430 | 1467 | [protection-rail-fold.json](scorecard/deviations/protection-rail-fold.json) | `--protection` and `--loosen`: judged |
+| field | policy | the servo held | the set binds | its install names |
+|---|---|---|---|---|
+| `stall_response` | `stall_response` yield | Fault | Yield | `--protection` and `--loosen`: judged |
+| `pos_error_counts`, `pos_error_time_ticks` | `pos_error_deg` 9.9, `pos_error_time_ms` 100 | 400, 10000 | 199, 2000 | `--protection`: both protect more |
+| `sensor_delta_max` | `sensor_delta_max_counts` 64 | 256 | 64 | `--protection`: it protects more |
+| `v_undervolt_counts` | `v_undervolt_v` 3.70 | 720 | 922 | `--protection`: it protects more |
+| `rail_fold_q8` | `rail_source_ohm` 0.8 | 1430 | 1467 | `--protection` and `--loosen`: judged |
 
-A blocked horn then yields: the current limit folds to the continuous
+A blocked horn now yields: the current limit folds to the continuous
 current and the servo recovers on the next command, as the Feetech
 class does, with the 90 C cutoff as the backstop. The position error's
 100 ms is a time a healthy error never holds, and it catches a reversed
@@ -907,10 +1029,11 @@ motor before it reaches a stop; it is interim with the angle, and the
 two are one step. The rail fold's slope is the shunt counts a rail
 count of sag gives through the source the policy designs for, 0.8 ohm,
 a soft supply such as a battery on a long lead; a stiffer setting
-protects less, and it never acts on the 5 V bench supply. The servo's
-1430 is that source through the board's nominal parts. Through the
-measured counts per amp and rail counts per volt the same source is
-1467, a steeper slope, which folds later, so the field is held.
+protects less, and it never acts on the 5 V bench supply. The 1430 the
+servo held is that source through the board's nominal parts. Through
+the measured counts per amp and rail counts per volt the same source
+is 1467, a steeper slope, which folds later, so its install is judged
+and named to loosen.
 
 The undervolt floor stands on a bench record, the rail walk of
 2026-11-14, kept as a dated file beside the set with its rows under
@@ -920,13 +1043,31 @@ to a supply of 3.70 V the chip's supply, which is the ADC's reference,
 holds, and the rail reading follows the rail. Under it the chip's
 supply follows the rail down and the reading stops: 860 to 861 counts
 at the edge, 3.45 V at the rail on stage 1's rail line, and 857 to 862
-at every level down to 2.70 V. The 720 counts the servo holds are under
-that floor, so the undervolt fault cannot trip on a rail the chip
+at every level down to 2.70 V. The 720 counts the servo held are under
+that floor, so the undervolt fault could not trip on a rail the chip
 survives. The policy's floor is 3.70 V at the rail, 0.25 V over the
 edge, for the 5 V bench supply, and its rule takes it through the
 measured rail line, offset and scale, to 922 counts, on the stretch
-that line is graded over. A 2S pack's floor waits for the pack on the
+that line is graded over, which is what the set binds. A 2S pack's
+floor waits for the pack on the
 board. The rail fold stands on the floor, so its band moves up with it.
+
+A servo that stores the set from before the releases, set
+`297f3cb4a544`, holds the plant the reference rung `14a-set-of-record`
+ran on and the thirteen protection fields at the values the tables
+above give as held. The install of the set of record on it writes the
+eleven plant fields with no name asked, and the gate asks for the
+thirteen, in the set's order:
+
+```
+--protection stall_response thermal_tau_s v_undervolt_counts thermal_tau2_s pos_error_time_ticks pos_error_counts sensor_delta_max rail_fold_q8 th_rise_q016 th_rise2_q016 ntc_t_ref_cc ntc_k1_q88 ntc_k2_q24
+--loosen stall_response thermal_tau_s thermal_tau2_s rail_fold_q8 th_rise_q016 ntc_t_ref_cc ntc_k1_q88 ntc_k2_q24
+```
+
+Eight are named to loosen: the seven that are judged, and the fast
+rise, which falls. The other five protect more. A deviation of the
+plant over the set asks for the same names on such a servo, since it
+moves no protection field. One test holds both lists to the gate.
 
 Of the loop gains, two carry a position unit: `v_kp_q88` and
 `v_ki_q412` are shunt counts per count/s, so they fall as the counts
@@ -938,7 +1079,7 @@ They stay as benched, in counts, which is a decision `policy.json`
 records under `why`, so neither is at a scale nothing recorded.
 `p_kp_q88` is count/s per count, a rate, and carries no position unit,
 nor do `v_kaw_q412` and the three gains of the current loop, which are
-held beside what their rule gives (above).
+bound at what their rule gives (above).
 
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. It then
@@ -1327,6 +1468,132 @@ Kept:
   `-2`) it hunted to the end of its hold in 2 of 12 runs. The rows that
   take that landing in move with it: the 20 degree move's current, 113
   [113, 118] mA against 193 [190, 211], its duty, the landing rows.
+- `15a-set-of-record`: firmware 3dcca8ff on the set of record as it
+  then stood, set `297f3cb4a544`: `14a`'s plant, with the current
+  limits at the mA they were typed for and the one thermal limit at
+  90 C ([The constant set](#the-constant-set)). Four commits lie
+  between 624e29d3 and 3dcca8ff: the run-time drive check is removed,
+  the reference's volts are commanded through the winding under the
+  shunt floor, the winding estimate's cutoff is the one thermal limit,
+  and the winding resistance follows the estimate's temperature. The
+  rung is kept as the reference on that firmware, not on its rows. It
+  is one side of three alternated in the order abc, and was not
+  alternated with `14a`, recorded six hours before it. Every run
+  started over the host's load limit after the full wait, and 18 to
+  91 of a run's ramp goals went out late where `14a` had none, so its
+  follow rows are not a comparison with `14a`'s.
+  As the median of three runs and their range, against `14a`, on the
+  moves: the duty reverses a quarter to a half as often, 114 [70, 189]
+  a second against 267 [244, 304] on the 2 degree move, 134 [101, 161]
+  against 523 [511, 616] on the 20 degree and 117 [114, 120] against
+  446 [435, 450] on the 60 degree; the landings lose, the overshoot
+  0.453 [0.413, 1.286] deg against 0.323 [0.267, 0.332], 0.646 [0.273,
+  0.745] against 0.106 [0.016, 0.174] and 0.183 [0.124, 0.242] against
+  0.009 [0, 0.065], the worst drive after an arrival 1044 [449, 1211]
+  ms against 345 [156, 348], the 20 degree settle 634 [293, 1494] ms
+  against 302 [302, 303]; the rest error is lower, 0.227 [0.211,
+  0.247] deg against 0.305 [0.304, 0.339], and the 60 degree move
+  settles sooner, 852 [847, 858] ms against 910 [906, 912]. Six
+  changes lie between the two rungs, the four commits, the current
+  limits and the thermal limit, and no row is given to one of them.
+  Its two other sides are `zz-ab-r-measured` and `zz-ab-ntc-pinned`.
+  The first is the set with `r_q12` alone at the stage 3 rails fit,
+  3744 in place of 4541: the duty reverses 1.6 to 3.0 times as often
+  on the moves and the two faster ramps (340 [309, 411] a second
+  against 114 [70, 189] on the 2 degree move, 229 [213, 278] against
+  134 [101, 161] on the 20 degree, 219 [186, 227] against 117 [114,
+  120] on the 60 degree, 129 [125, 143] against 82 [79, 85] at 3 % and
+  229 [221, 243] against 125 [101, 162] at 10 %), the 60 degree
+  overshoot falls to 0 [0, 0.031] deg from 0.183 [0.124, 0.242], and
+  the lag at 3 % and 10 % and the hold jitter grow (19.75 [19.72,
+  19.94] ms against 17.73 [17.35, 17.98], 33.05 [32.82, 33.35] against
+  30.35 [30.16, 30.48], 0.064 [0.060, 0.064] deg against 0.053 [0.052,
+  0.056]). The second is the set with the NTC curve's protection step
+  alone: no row's ranges come apart from this rung's.
+- `16a-plant-as-held`: firmware 08c7beaf on the set of record, set
+  `b300d5e71e38`, with
+  [plant-as-held.json](scorecard/deviations/plant-as-held.json): the
+  eleven plant fields the release moved pinned at what the board held,
+  and the seven protection steps installed. It is the plant of `15a`
+  on the next firmware commit, in which the back-EMF boxcar closes on
+  its own phase, two ticks ahead of the observer, and it is the first
+  side of the session that scored the constants of record (`16b`),
+  kept as that side. No fault on any run. Against `15a`, four hours
+  earlier and not alternated, with the commit and the protection steps
+  between them, as the median of three runs and their range: the 60
+  degree landing loses, its overshoot 0.714 [0.301, 0.714] deg against
+  0.183 [0.124, 0.242], its current 175 [123, 190] mA against 113
+  [109, 117], with the median drive after an arrival 84.15 [84.05,
+  90.55] ms against 51.15 [49.65, 67.30]; the 1 % ramp costs more, 91.5 [82.2,
+  98.1] mA against 72.1 [71.3, 77.1] with an error sd of 0.159 [0.153,
+  0.167] deg against 0.129 [0.128, 0.129]; the rest error is lower,
+  0.159 [0.132, 0.187] deg against 0.227 [0.211, 0.247], and so is
+  the lag at 3 % and 10 %, 16.92 [16.73, 17.10] ms against 17.73
+  [17.35, 17.98] and 29.75 [29.25, 30.10] against 30.35 [30.16,
+  30.48]. The duty's reversals overlap on every move and ramp. 26 to
+  34 of a run's ramp goals went out late, 18 to 91 on `15a`.
+- `16b-constants-with-sources`: firmware 08c7beaf on the set of
+  record, set `b300d5e71e38`: every constant of the plant that has a
+  source at what this motor's results give, the current loop at the
+  rule's 1 kHz, and the seven protection steps
+  ([The constant set](#the-constant-set)). Alternated with `16a` in
+  three rounds, the order abc, `zz-ab-current-gains-as-held` the
+  third side, so it differs from `16a` in the plant alone. No fault on
+  any run, and 24 to 35 of a run's ramp goals went out late, 26 to 34
+  on `16a`.
+  The rung is kept, and not by the ladder's rule: rows lose on it. It
+  is kept by the owner's decision that the constants measured on this
+  motor are the canonical ones, and what it loses is open on top of
+  it. Both halves, as the median of three runs and their range against
+  `16a`, every row named having its ranges apart.
+  The landings are better: the overshoot reads 0.152 [0.112, 0.233]
+  deg against 0.413 [0.354, 0.655] on the 2 degree move, 0.161 [0,
+  0.161] against 0.543 [0.373, 0.814] on the 20 degree and 0.009 [0,
+  0.031] against 0.714 [0.301, 0.714] on the 60 degree; the 20 degree
+  move settles in 362 [356, 379] ms against 564 [422, 671]; the median
+  drive after an arrival is 38.65 [25.40, 44.90] ms against 84.15
+  [84.05, 90.55]; the crawl swings 0.362 [0.334, 0.384] deg against 0.691
+  [0.477, 0.738]; the 1 % ramp takes 77.3 [74.8, 77.7] mA against 91.5
+  [82.2, 98.1] with an error sd of 0.130 [0.129, 0.138] deg against
+  0.159 [0.153, 0.167], and the 2 degree move 119 [117, 121] mA
+  against 149 [133, 163]. The 60 degree move settles in 970 [954, 983]
+  ms where `16a` reads 1997 [840, 2000], out of its window in two runs
+  of three, the ranges overlapping.
+  The duty reverses 2 to 3 times as often: 187 [137, 222] a second
+  against 99 [76, 112] on the 2 degree move, 293 [246, 332] against
+  116 [114, 132] on the 20 degree, 316 [289, 331] against 131 [102,
+  145] on the 60 degree, 186 [167, 192] against 85 [82, 95] at 3 % and
+  320 [269, 327] against 106 [87, 118] at 10 %; at 1 % it is 108 [104,
+  114] against 93 [83, 94].
+  The rest error and the lag are worse: the rest error reads 0.367
+  [0.305, 0.380] deg against 0.159 [0.132, 0.187] and the two-sided
+  error 0.289 [0.229, 0.337] against 0.190 [0.180, 0.209]; the lag is
+  15.5 [14.3, 15.8] ms against 4.4 [4.3, 5.6] at 1 %, 20.2 [19.6,
+  21.6] against 16.9 [16.7, 17.1] at 3 % and 37.44 [36.91, 38.65]
+  against 29.75 [29.25, 30.10] at 10 %. With them the duty at 3 % and 10 % is
+  higher, 12.7 [11.5, 12.8] % against 10.8 [10.6, 11.1] and 24.7
+  [22.7, 24.7] against 22.2 [21.1, 22.3], the current at 3 % is 96.1
+  [89.3, 96.9] mA against 83.8 [82.5, 84.9], and the speed report at
+  1 % reads -3.0 [-3.3, -1.5] deg/s against -1.0 [-1.3, -0.6].
+  What carries each half is bisected below (the constants session).
+- `17a-constants-of-record`: firmware 08c7beaf on the set of record,
+  set `b300d5e71e38`, three runs alone after ten sweeps of the travel:
+  the reference for rungs on the constants of record, kept as that and
+  not on its rows. It is `16b`'s set and firmware 70 minutes later and
+  not as one side of three, after the sweeps of the session kept the
+  current loop at 1 kHz and the observer at 15 Hz and with the limits
+  of motion as held. No fault. Against `16b`, as the median of three
+  runs and their range, six rows' ranges come apart: the crawl swings
+  0.281 [0.265, 0.301] deg against 0.362 [0.334, 0.384], the 1 % ramp
+  reads an error sd of 0.116 [0.114, 0.121] deg against 0.130 [0.129,
+  0.138] and 99 [96, 101] reversals a second against 108 [104, 114],
+  the 2 degree move takes 111 [106, 116] mA against 119 [117, 121],
+  and the 60 degree move reads 339 [332, 373] reversals a second
+  against 316 [289, 331] and a duty of 21.8 [21.7, 22.5] % against
+  21.4 [20.7, 21.5], both by a hair. Every other row's ranges
+  overlap, the rest error at 0.304 [0.304, 0.346] deg and the lag at
+  10 % at 38.3 [37.1, 38.4] ms among them. 26 to 52 of a run's ramp
+  goals went out late.
 
 Tried, not kept:
 
@@ -1571,3 +1838,179 @@ The controls, and what they say about reading the ladder:
   one row whose ranges come apart in both sets does so in opposite
   directions: the 20 degree move's reversals read 421 against 610 per
   second in the first set and 459 against 406 in the second.
+
+The constants session, its bisect and its sweeps:
+
+Every rung here is firmware 08c7beaf on the set of record, set
+`b300d5e71e38`, or on that set with one deviation, the seven
+protection steps installed, and no run of any raised a fault. Their
+result files are kept and their rows are not. The session has no
+notebook: the numbers below are the medians and ranges of the result
+files. The host limits what the follow rows of this session can say:
+24 to 52 of a run's ramp goals went out late on `16a`, `16b` and
+`17a` and 3 to 115 on a side of the bisect or of a sweep, and on the
+reference rung `15a` 18 to 91, each of its three runs after the 300 s
+wait for the host's load ran out with the load still over its limit,
+so a lag or a follow row here carries the host's late goals with the
+servo's following.
+
+- `zz-ab-current-gains-as-held`, the third side of `16a` and `16b`,
+  three rounds: the set with the current loop's three gains as the
+  board held them, 275, 1580 and 3160 in place of the placement's
+  289, 1176 and 2352. Against `16b` thirteen rows' ranges come apart,
+  the lag at 10 % in both its rows, and they do not point one way. Lower on the held gains: the 2
+  degree move's current (110 [102, 116] mA against 119 [117, 121]),
+  the 20 degree settle (350.8 [343.5, 353.0] ms against 362.4 [355.5,
+  378.7]),
+  the crawl swing (0.267 [0.257, 0.310] deg against 0.362 [0.334,
+  0.384]), the 3 % ramp's reversals (164 [154, 166] a second against
+  186 [167, 192]), the lag at 10 % (36.1 [35.9, 36.5] ms against 37.4
+  [36.9, 38.7]), the hold jitter and the 1 % ramp's error sd. Higher:
+  the duty of the 20 and the 60 degree move (24.1 [22.2, 24.2] %
+  against 21.1 [20.2, 21.9], 23.9 [21.9, 24.3] against 21.4 [20.7,
+  21.5]), the 60 degree move's current (147 [135, 150] mA against 131
+  [126, 133]) and the 10 % ramp's current and duty (167 [164, 172] mA
+  against 157 [145, 160], 26.3 [25.7, 27.0] % against 24.7 [22.7,
+  24.7]). The reversals of the moves and of the 10 % ramp overlap.
+  The set keeps the placement, a rule over this motor's inductance
+  and resistance.
+- The bisect of `16b` against `16a`, five arms of two rounds each,
+  recorded in the half hour after those two. An arm is the set of
+  record with one part of the plant pinned as the board held it:
+  `zz-bisect-r-as-held`, `r_q12` at 4541 in place of 3744;
+  `zz-bisect-ke-as-held`, `recip_ke_q` at 11817 in place of 13315;
+  `zz-bisect-emf-pair-as-held`, those two together, the pair the
+  back-EMF speed is formed with; `zz-bisect-model-block-as-held`,
+  `b_i_q313`, `j_ff_q88` and `l3_q88` at 2657, 789 and 77 in place of
+  2434, 862 and 84; `zz-bisect-friction-as-held`, `fric_fc_counts` at
+  100 in place of 54. The four single arms and the current gains' side
+  above cut `16a`'s eleven pins in groups, the two host records left
+  out, which no loop reads. As medians, the two ends over three runs
+  and an arm over two, the ranges in the result files:
+
+  | row | `16b` | Ke | model block | friction | R | R and Ke | `16a` |
+  |---|---|---|---|---|---|---|---|
+  | reversals a second, 2 deg move | 187 | 169 | 164 | 325 | 62 | 66 | 99 |
+  | reversals a second, 20 deg move | 293 | 216 | 336 | 396 | 165 | 132 | 116 |
+  | reversals a second, 60 deg move | 316 | 177 | 332 | 358 | 110 | 86 | 131 |
+  | reversals a second, 3 % ramp | 186 | 161 | 162 | 196 | 110 | 105 | 85 |
+  | reversals a second, 10 % ramp | 320 | 252 | 319 | 345 | 167 | 122 | 106 |
+  | overshoot, 2 deg move, deg | 0.15 | 0.14 | 0.04 | 0.32 | 0.11 | 0.24 | 0.41 |
+  | overshoot, 20 deg move, deg | 0.16 | 0.13 | 0.12 | 0.02 | 0.50 | 0.59 | 0.54 |
+  | overshoot, 60 deg move, deg | 0.01 | 0.02 | 0.00 | 0.05 | 0.11 | 0.41 | 0.71 |
+  | settle, 20 deg move, ms | 362 | 335 | 358 | 345 | 907 | 536 | 564 |
+  | rest error, deg | 0.37 | 0.34 | 0.30 | 0.32 | 0.36 | 0.24 | 0.16 |
+  | lag, 1 % ramp, ms | 15.5 | 14.0 | 15.1 | 6.8 | 13.1 | 13.3 | 4.4 |
+  | lag, 10 % ramp, ms | 37.4 | 34.6 | 37.9 | 36.6 | 32.6 | 30.5 | 29.7 |
+  | crawl swing, deg | 0.36 | 0.32 | 0.33 | 0.40 | 0.47 | 0.61 | 0.69 |
+  | speed report, 10 % ramp, deg/s | +2.8 | -4.1 | 0.0 | -3.2 | -10.3 | -12.0 | -4.1 |
+
+  The back-EMF pair carries both halves of `16b` against `16a`. With
+  the two as the board held them the reversals are near `16a`'s on
+  every move and ramp, and so are the 20 degree overshoot, the crawl
+  swing and the lag at 10 %. With the two as the record gives them,
+  on `16b` and on the model block's and the friction's arms, the
+  reversals are 1.7 to 3.4 times `16a`'s and the 20 and 60 degree
+  landings are clean. `r_q12` is the larger share of
+  both and `recip_ke_q` the smaller: the resistance alone as held
+  takes the reversals down to 62 to 167 a second and brings the 20
+  degree overshoot back, 0.50 deg, with a settle of 907 [313, 1500]
+  ms over its two runs, and the back-EMF constant alone as held takes
+  them to 161 to 252 with the landings as on `16b`. The friction term
+  carries the lag of the crawl: as held, the lag at 1 % is 6.8 ms
+  against 15.5 on `16b` and 4.4 on `16a`, and the 2 degree move pays
+  for it, an overshoot of 0.32 deg and 325 reversals a second. The
+  model block moves the 2 degree overshoot, 0.04 [0.03, 0.05] deg as
+  held against 0.15 [0.11, 0.23], and little else. The rest error
+  follows no single arm: 0.30 to 0.36 deg on each, 0.24 [0.18, 0.30]
+  with the pair as held, 0.37 on `16b` and 0.16 on `16a`.
+  A hypothesis that these rows fit and do not test: with the record's
+  pair the back-EMF speed reads higher against the pot in the driven
+  loop, so the speed loop is fed more speed than there is, which
+  damps a landing more and puts more gain on the reading's noise, and
+  the two halves are one effect.
+- The current loop's bandwidth, two rounds in the order abc:
+  `zz-sweep-current-loop-500hz`, `zz-sweep-current-loop-1000hz`, the
+  set itself, and `zz-sweep-current-loop-1500hz`, the gains at 144,
+  588 and 1176, at 289, 1176 and 2352 and at 433, 1764 and 3528. The
+  rule was written before the session: the side with no landing, hold
+  or lag row worse than the middle side in both rounds and the fewest
+  reversals, a tie keeping the middle. The reversals scale with the
+  bandwidth. At 500 Hz they are 0.65 to 0.70 of the middle's on the
+  moves and the 10 % ramp (168 a second against 242 on the 2 degree
+  move, 218 against 335, 243 against 366, 238 against 363), 0.88 at
+  3 % (164 against 186) and the same at 1 %; at 1500 Hz they are 1.4
+  to 1.7 times it on every move and ramp (365, 547 and 611 on the
+  moves, 149, 254 and 556 on the ramps). 500 Hz loses the lag at 1 %
+  and 3 %, 18.2 [17.9, 18.5] ms against 16.5 [15.9, 17.1] and 22.2
+  [22.2, 22.3] against 21.4 [21.3, 21.5], and the median drive after
+  an arrival, 62.98 [59.30, 66.65] ms against 51.43 [50.00, 52.85].
+  1500 Hz
+  gains the lag, 14.5 [13.8, 15.2], 20.6 [20.4, 20.7] and 35.3 [34.9,
+  35.6] ms against 16.5, 21.4 and 38.7 [38.6, 38.8], and the drive
+  after an arrival, 42.03 [39.00, 45.05] ms. By the rule 500 Hz is out,
+  and of the other two the middle has the fewer reversals: 1 kHz
+  stays.
+- The observer's bandwidth, two rounds in the order abc:
+  `zz-sweep-observer-10hz`, `zz-sweep-observer-15hz`, the set itself,
+  and `zz-sweep-observer-25hz`, the gains at 5894, 1446 and 25, at
+  8640, 3180 and 84 and at 13757, 8433 and 371, under the same rule.
+  10 Hz has fewer reversals (153 a second against 293 on the 2 degree
+  move, 304 against 390 on the 20 degree, 92 against 122 at 1 %, 138
+  against 196 at 3 %), 9 to 22 % less current on every move and ramp
+  and a crawl swing of 0.311 [0.251, 0.371] deg against 0.536 [0.528,
+  0.544]. It loses the 20 degree landing, an overshoot of 0.151
+  [0.130, 0.171] deg against 0 and a settle of 511 [386, 637] ms
+  against 365 [363, 367], with the median drive after an arrival 68.63
+  [65.55, 71.70] ms against 36.25 [30.25, 42.25], and one wide-code hold
+  hunts in both rounds where none does at 15 Hz. 25 Hz reads 15 to
+  84 % more reversals and 20 to 46 % more current on every move and
+  ramp, a 2 degree overshoot of 0.253 [0.233, 0.273] deg against 0.151
+  [0.109, 0.193] and a lag at 3 % of 22.6 [22.3, 23.0] ms against 21.6
+  [21.4, 21.7]; its rest error is lower, 0.243 [0.195, 0.291] deg
+  against 0.337 [0.329, 0.345], and so by a hair is the 3 % ramp's
+  error sd. By the rule both ends are out: 15 Hz stays.
+- The limits of motion, two rounds in the order abc:
+  `zz-sweep-motion-75`, the set itself at the held 1500 count/s and
+  3840, 74.5 deg/s and 1491 deg/s^2 on the table,
+  `zz-sweep-motion-200`, 200 deg/s and 4000 deg/s^2, and
+  `zz-sweep-motion-400`, the speed ceiling and 8000 deg/s^2, the
+  position-error screen at 9.9 deg for 100 ms on every side. As
+  medians over the two rounds and their range:
+
+  | row | 75 deg/s | 200 deg/s | 400 deg/s |
+  |---|---|---|---|
+  | settle, 60 deg move, ms | 971 [967, 975] | 421 [417, 425] | 266 [262, 270] |
+  | settle, 20 deg move, ms | 355 [348, 363] | 185 [171, 199] | 136 [135, 137] |
+  | overshoot, 2 deg move, deg | 0.172 [0.071, 0.273] | 0.340 [0.267, 0.413] | 0.343 [0.314, 0.373] |
+  | overshoot, 20 deg move, deg | 0.061 [0, 0.121] | 0 | 0.068 [0.016, 0.121] |
+  | overshoot, 60 deg move, deg | 0 | 0 | 0.095 [0.065, 0.124] |
+  | reversals a second, 60 deg move | 340 [313, 367] | 638 [629, 647] | 659 [627, 691] |
+  | current rms, 60 deg move, mA | 135 [128, 142] | 211 [208, 214] | 290 [288, 292] |
+  | worst drive after an arrival, ms | 95 [88, 102] | 150 [109, 191] | 254 [176, 332] |
+  | wide-code holds that hunt | 0 | 0.5 [0, 1] | 0 |
+
+  The rule, written before the session: the fastest side with no
+  fault, a peak following error at most two thirds of the screen, and
+  no overshoot or settle row worse than the 75 deg/s side in both
+  rounds. The peak following error is no row of the result files, and
+  the session's own reading of it is not carried here. 400 deg/s is
+  out on the rows: its 2 and 60 degree overshoot are worse than the
+  slow side's in both rounds, and its 60 degree move's current, 290
+  mA rms, is over the 250 mA continuous current on a free horn. 200
+  deg/s has no overshoot or settle row worse in both rounds, the 2
+  degree overshoot's ranges overlapping by a hair, settles the 60
+  degree move in under half the time, and runs it at 211 mA. So the
+  session recommends 200 deg/s and 4000 deg/s^2, interim until the
+  load arm. Against it: the reversals are 1.8 to 1.9 times the slow
+  side's on the moves, the worst drive after an arrival
+  (`landing_drive_ms_worst`) is longer in both rounds, 150 [109, 191]
+  ms against 95 [88, 102], a landing row the rule's overshoot and
+  settle do not count, the 2 degree overshoot leans up, and one wide-code
+  hold hunted in one round of two. The ramps' rows move with the
+  limits too, the lag at 1 % 17.4 [17.4, 17.5] ms at the held limits,
+  9.8 [7.4, 12.2] at 200 deg/s and 4.7 [3.3, 6.2] at 400, with the
+  ramp's current at 82, 109 and 166 mA, so a rung at other limits
+  does not compare with the rungs at these. The set keeps the held
+  limits, and the change of default waits for the owner
+  ([The constant set](#the-constant-set)).

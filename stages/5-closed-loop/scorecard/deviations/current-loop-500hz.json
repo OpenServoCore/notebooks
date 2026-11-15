@@ -1,0 +1,4 @@
+{
+  "note": "the current loop's bandwidth at 500 Hz in place of the policy's 1 kHz, which nobody decided: the three gains move in proportion to it. One point of the sweep that picks the bandwidth",
+  "policy": {"current_loop_hz": 500.0}
+}

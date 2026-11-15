@@ -1,0 +1,199 @@
+{
+  "label": "16a-plant-as-held",
+  "fw": "08c7beaf",
+  "image_sha": "f051fdce7e0eb40e2028aa840f6ccbdb63340a47",
+  "tool": {
+    "sha1": "f290ac5842d32f4c30e3608e91ac3e04e3903ddb",
+    "version": null
+  },
+  "note": "main 08c7beaf on the constants of record with the plant pinned as the board held it (the protection steps installed), order abc",
+  "utc": "2026-11-15T00:32:49+00:00",
+  "config_hash": "8f3afa9e9be14b1f4f58c31ed167b5fb7b29a1f229d50f189beb006d1c0e1db2",
+  "constants_hash": "92bd982799d48fa505aa09e5fca2d6e0f7fd7ff30026ba51579ebcfe2d1d3d94",
+  "runs_asked": 3,
+  "set": {
+    "file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.constants.json",
+    "hash": {
+      "plant": "73c86b79f2506eb86d14039479d4758fe42ab2e5f7ad1ef055654a625c38b662",
+      "protection": "0ec27b5dbc84b94fd8809a725581f96f4ad5e2e44b1eed10daa62c2b2ed17745",
+      "set": "623f20382e1b8c0411bbb5b5737329b77680c8ea29ab786270297aee4212abe9",
+      "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead",
+      "limits": "486d20cf63da5bdafcb83f420d7eb54c07f3aa15ba5afda664e34ebe42c71ac5"
+    },
+    "classes": {
+      "measured": 9,
+      "bench": 10,
+      "datasheet": 0,
+      "policy": 26,
+      "pinned": 12,
+      "none": 5
+    }
+  },
+  "deviation": {
+    "file": "stages/5-closed-loop/scorecard/deviations/plant-as-held.json",
+    "sha1": "8cc1d0cddafc096127175a91c671477774f515bd",
+    "fields": {
+      "i_kp_q88": [
+        289,
+        275
+      ],
+      "i_ki_q412": [
+        1176,
+        1580
+      ],
+      "i_kaw_q412": [
+        2352,
+        3160
+      ],
+      "j_ff_q88": [
+        862,
+        789
+      ],
+      "l3_q88": [
+        84,
+        77
+      ],
+      "r_q12": [
+        3744,
+        4541
+      ],
+      "recip_ke_q": [
+        13315,
+        11817
+      ],
+      "b_i_q313": [
+        2434,
+        2657
+      ],
+      "fric_fc_counts": [
+        54,
+        100
+      ],
+      "r0_q12": [
+        3725,
+        0
+      ],
+      "ke_uvs_per_rad": [
+        1159,
+        0
+      ]
+    }
+  },
+  "protection": {
+    "hash": "0ec27b5dbc84b94fd8809a725581f96f4ad5e2e44b1eed10daa62c2b2ed17745",
+    "moved": {
+      "stall_response": [
+        "Fault (0)",
+        "Yield (1)"
+      ],
+      "thermal_tau_s": [
+        115,
+        2
+      ],
+      "v_undervolt_counts": [
+        720,
+        922
+      ],
+      "thermal_tau2_s": [
+        0,
+        129
+      ],
+      "pos_error_time_ticks": [
+        10000,
+        2000
+      ],
+      "pos_error_counts": [
+        400,
+        199
+      ],
+      "sensor_delta_max": [
+        256,
+        64
+      ],
+      "rail_fold_q8": [
+        1430,
+        1467
+      ],
+      "th_rise_q016": [
+        1143,
+        434
+      ],
+      "th_rise2_q016": [
+        0,
+        1274
+      ],
+      "ntc_t_ref_cc": [
+        2500,
+        2430
+      ],
+      "ntc_k1_q88": [
+        563,
+        474
+      ],
+      "ntc_k2_q24": [
+        5779,
+        19934
+      ]
+    }
+  },
+  "wide_goals": [
+    {
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    },
+    {
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    }
+  ],
+  "load_waits": [
+    {
+      "run": "run-1",
+      "max_load": 5.0,
+      "load_1m_before": 5.43,
+      "load_1m_after": 4.88,
+      "waited_s": 40,
+      "went_on_over": false
+    }
+  ]
+}

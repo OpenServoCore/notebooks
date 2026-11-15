@@ -1,0 +1,154 @@
+{
+  "capture": "steps",
+  "center_counts": 1916,
+  "guard_counts": [
+    314,
+    3560
+  ],
+  "counts_per_deg": 20.126631678008682,
+  "no_load_deg_s": 623.7219681271883,
+  "goal_period_s": 0.0256,
+  "sources": {
+    "counts_per_deg": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json target counts_per_deg, the table's linearized counts per deg",
+    "no_load_deg_s": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json no_load_speed_rev_s / servos mg90-d gear_ratio x 360",
+    "current_cap_ma": "servos mg90-d lock_hold_a",
+    "wide_codes": "stages/1-board/wide-codes/results/dev-v006-2A-D.json wide_codes, the codes that take a slot",
+    "center_counts": "the raw middle of the soft range read through stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json"
+  },
+  "segments": [
+    {
+      "seg": 0,
+      "item": "hold@1000",
+      "test": "enable",
+      "goal_counts": null,
+      "goal_deg": null
+    },
+    {
+      "seg": 1,
+      "item": "goal:1916@1200",
+      "test": "lead",
+      "goal_counts": 1916,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 2,
+      "item": "goal:1956@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": 1,
+      "leg": "out",
+      "goal_counts": 1956,
+      "goal_deg": 1.9874165056493736
+    },
+    {
+      "seg": 3,
+      "item": "goal:1916@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": -1,
+      "leg": "back",
+      "goal_counts": 1916,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 4,
+      "item": "goal:1876@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": -1,
+      "leg": "out",
+      "goal_counts": 1876,
+      "goal_deg": -1.9874165056493736
+    },
+    {
+      "seg": 5,
+      "item": "goal:1916@1200",
+      "test": "step",
+      "size_deg": 2,
+      "direction": 1,
+      "leg": "back",
+      "goal_counts": 1916,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 6,
+      "item": "goal:2319@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": 1,
+      "leg": "out",
+      "goal_counts": 2319,
+      "goal_deg": 20.02322129441744
+    },
+    {
+      "seg": 7,
+      "item": "goal:1916@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": -1,
+      "leg": "back",
+      "goal_counts": 1916,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 8,
+      "item": "goal:1513@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": -1,
+      "leg": "out",
+      "goal_counts": 1513,
+      "goal_deg": -20.02322129441744
+    },
+    {
+      "seg": 9,
+      "item": "goal:1916@1500",
+      "test": "step",
+      "size_deg": 20,
+      "direction": 1,
+      "leg": "back",
+      "goal_counts": 1916,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 10,
+      "item": "goal:3124@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": 1,
+      "leg": "out",
+      "goal_counts": 3124,
+      "goal_deg": 60.01997847061108
+    },
+    {
+      "seg": 11,
+      "item": "goal:1916@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": -1,
+      "leg": "back",
+      "goal_counts": 1916,
+      "goal_deg": 0.0
+    },
+    {
+      "seg": 12,
+      "item": "goal:708@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": -1,
+      "leg": "out",
+      "goal_counts": 708,
+      "goal_deg": -60.01997847061108
+    },
+    {
+      "seg": 13,
+      "item": "goal:1916@2000",
+      "test": "step",
+      "size_deg": 60,
+      "direction": 1,
+      "leg": "back",
+      "goal_counts": 1916,
+      "goal_deg": 0.0
+    }
+  ]
+}
