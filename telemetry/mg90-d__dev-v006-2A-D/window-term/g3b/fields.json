@@ -1,0 +1,21 @@
+{
+  "what": "the fields the sitting read off the servo with torque off before it set the friction words, as its log prints them, then the two words it set, saved and read back after the reboot with g_window_q016 unchanged (the sitting stops unless all three read back); the image 1a35457f, plant stamp 0xec1d after the save",
+  "read": {
+    "g_window_q016": 1178,
+    "fric_fc_counts": 40,
+    "fric_fv_q016": 728,
+    "speed_ceiling_cps": 8050,
+    "velocity_limit_cps": 4025,
+    "r_hat_q12": 3676,
+    "vbus_counts": 1238,
+    "tick_over_count": 0,
+    "tick_lost_count": 0,
+    "tel_drop_count": 0,
+    "write_late_count": 0,
+    "fault_code": 0
+  },
+  "set": {
+    "fric_fc_counts": 43,
+    "fric_fv_q016": 947
+  }
+}

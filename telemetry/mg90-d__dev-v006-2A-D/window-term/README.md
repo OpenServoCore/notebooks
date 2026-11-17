@@ -9,3 +9,5 @@ One servo, 5 V, free horn unless said. Each capture's `meta.json` carries its bo
 | `g1/ol-1` | the same onsets with the reading the firmware takes (`i_tick_counts`, TEL chunk 0x240+12) beside the raw sample | 1a35457f, `g_window_q016` 1178 | friction 40 / 728, speed ceiling 8050 |
 | `g3/c{300,800,1500,4025}` | Velocity cruises, 300 to 4025 c/s, both ways, 1.2 s legs, the integrator's held current | 1a35457f, `g_window_q016` 1178 | friction 40 / 728 |
 | `g3b/c{300,800,1500,4025}` | the same cruises on the refit friction line | 1a35457f, `g_window_q016` 1178 | friction 43 / 947 |
+
+`g3/fields.json` and `g3b/fields.json` hold the fields each sitting read off the servo with torque off before its first cruise (and, for `g3b`, the two friction words it set and read back after the save), copied from the sitting's log: the window field, the friction words and `r_hat_q12` the cruise replay needs are in no row and no `meta.json`.
