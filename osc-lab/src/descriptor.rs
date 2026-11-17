@@ -196,7 +196,7 @@ mod tests {
         for name in &stamp.covered {
             assert!(d.field(name).is_some(), "{name} not a field");
         }
-        for name in ["openloop_decay", "openloop_zero_brake", "tel_count"] {
+        for name in ["openloop_zero_brake", "tel_count"] {
             assert!(field(&d, name).is_ok(), "{name}");
         }
         let id = d.field("id").unwrap();
@@ -212,7 +212,7 @@ mod tests {
     #[test]
     fn a_missed_field_name_suggests_near_ones() {
         let d = builtin();
-        let e = field(&d, "decay").unwrap_err().to_string();
-        assert!(e.contains("openloop_decay"), "{e}");
+        let e = field(&d, "zero_brake").unwrap_err().to_string();
+        assert!(e.contains("openloop_zero_brake"), "{e}");
     }
 }

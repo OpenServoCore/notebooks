@@ -89,21 +89,6 @@ impl Dirs {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
-pub(crate) enum Decay {
-    Slow,
-    Fast,
-}
-
-impl Decay {
-    pub(crate) fn as_str(self) -> &'static str {
-        match self {
-            Decay::Slow => "slow",
-            Decay::Fast => "fast",
-        }
-    }
-}
-
 /// One schedule entry: a drive rung, a chained drive, or a zero-duty
 /// coast/brake segment. Drive and Then carry an optional per-step window in
 /// ms, overriding `--window-ms`. A rung is one unpolled burst that nothing can
@@ -212,9 +197,6 @@ pub struct Args {
     duty_pct: Vec<Step>,
     #[arg(long, value_enum, default_value_t = Dirs::Both)]
     dirs: Dirs,
-    /// openloop_decay for the capture bursts; seeks and brakes stay slow.
-    #[arg(long, value_enum, default_value_t = Decay::Slow)]
-    decay: Decay,
     /// Capture per rung; samples = window_ms x 20 ticks.
     #[arg(long, default_value_t = 150)]
     window_ms: u32,
@@ -286,7 +268,6 @@ pub struct Args {
 pub(crate) struct Cfg {
     pub(crate) steps: Vec<Step>,
     pub(crate) dirs: Dirs,
-    pub(crate) decay: Decay,
     pub(crate) window_ms: u32,
     pub(crate) rest_ms: u32,
     pub(crate) baseline_ms: u32,
@@ -336,7 +317,6 @@ impl Cfg {
         Ok(Self {
             steps: a.duty_pct.clone(),
             dirs: a.dirs,
-            decay: a.decay,
             window_ms: a.window_ms,
             rest_ms: a.rest_ms,
             baseline_ms: a.baseline_ms,
@@ -581,8 +561,8 @@ fn seek_stop<S: Servo>(
     bail!("no end stop in 10 s driving {dir:+} at {duty} q15")
 }
 
-/// Dynamic brake after a rung: with openloop_decay Slow, a token duty holds
-/// the idle H-bridge leg HIGH for the rest of each PWM period - the winding
+/// Dynamic brake after a rung: a token duty holds the idle H-bridge leg
+/// HIGH for the rest of each PWM period (slow decay) - the winding
 /// shorts through the driver and momentum dies in a few hundred counts.
 /// A plain duty-0 write is COAST (motor.rs maps zero ticks to both-low);
 /// at battery volts the freewheel from a top rung crosses the remaining
@@ -731,7 +711,6 @@ pub(crate) fn meta<P: Pipe>(
     let servo = servo_meta(c, id)?;
     let mut m = serde_json::json!({
         "schedule": cfg.steps.iter().map(Step::to_string).collect::<Vec<_>>(),
-        "decay": cfg.decay.as_str(),
         "dirs": cfg.dirs.signs(),
         "window_ms": cfg.window_ms,
         "rung_tries": cfg.rung_tries,
@@ -813,7 +792,6 @@ pub(crate) fn drive(
 
 /// The descriptor-placed registers the run toggles.
 pub(crate) struct Regs {
-    pub(crate) decay: Reg,
     pub(crate) zero_brake: Reg,
 }
 
@@ -832,7 +810,6 @@ pub(crate) fn resolve_regs<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<Regs> {
         })
     };
     Ok(Regs {
-        decay: field_reg("openloop_decay")?,
         zero_brake: field_reg("openloop_zero_brake")?,
     })
 }
@@ -850,11 +827,10 @@ pub(crate) fn record<S: Servo>(
     let id = s.id();
     let regs = resolve_regs(s.client(), id)?;
     let r = guard(s, |s| chains(s, cfg, &regs, &mut on_seg));
-    // Belt for a run cut mid-burst: brake flag clear, decay back to slow,
-    // guards back on. The permit is RAM-only so a power cycle clears it
-    // anyway, but a servo left unguarded until someone reboots it is a trap.
+    // Belt for a run cut mid-burst: brake flag clear, guards back on. The
+    // permit is RAM-only so a power cycle clears it anyway, but a servo left
+    // unguarded until someone reboots it is a trap.
     let _ = s.write(regs.zero_brake, 0);
-    let _ = s.write(regs.decay, Decay::Slow as i32);
     let _ = s.write(control::STALL_PERMIT, 0);
     r
 }
@@ -878,7 +854,6 @@ fn chains<S: Servo>(
         Ok(())
     };
 
-    s.write(regs.decay, Decay::Slow as i32)?;
     s.write(regs.zero_brake, 0)?;
     let mut lease = Lease::new(cfg.stall || cfg.static_load, s.experiment()?);
     // the servo's clock carries the timeline, anchored once to unix time
@@ -986,11 +961,6 @@ fn chains<S: Servo>(
                     if matches!(step, Step::Brake(_)) {
                         s.write(regs.zero_brake, 1)?;
                     }
-                    // Fast decay only inside the burst: the seek and the post-step
-                    // brake need slow decay to move and to stop.
-                    if cfg.decay == Decay::Fast {
-                        s.write(regs.decay, Decay::Fast as i32)?;
-                    }
                     let t_start = anchor + s.now_ms() / 1000.0;
                     let (frames, st) = if let Step::Hold(..) = step {
                         s.write(control::GOAL_DUTY, duty)?;
@@ -1003,9 +973,6 @@ fn chains<S: Servo>(
                         s.stream(samples, Some((control::GOAL_DUTY, duty)), chunks)?
                     };
                     let t_end = anchor + s.now_ms() / 1000.0;
-                    if cfg.decay == Decay::Fast {
-                        s.write(regs.decay, Decay::Slow as i32)?;
-                    }
                     if matches!(step, Step::Brake(_)) {
                         s.write(regs.zero_brake, 0)?;
                     }
@@ -1351,7 +1318,6 @@ mod tests {
         let grid: Vec<Step> = (1..=20u8).map(|k| Step::Drive(k * 5, None)).collect();
         assert_eq!(cfg.steps, grid);
         assert_eq!(cfg.dirs, Dirs::Both);
-        assert_eq!(cfg.decay, Decay::Slow);
         assert_eq!(cfg.window_ms, 150);
         assert_eq!(cfg.rest_ms, 500);
         assert_eq!(cfg.baseline_ms, 1000);
@@ -1421,7 +1387,6 @@ mod tests {
         Cfg {
             steps,
             dirs: Dirs::Both,
-            decay: Decay::Fast,
             window_ms: 20,
             rest_ms: 500,
             baseline_ms: 10,
@@ -1501,9 +1466,9 @@ mod tests {
         for k in on {
             assert_eq!(rig.writes[k + 1], (control::STALL_PERMIT, 1));
         }
-        // the guard's SAFE writes, then the belt: brake flag, decay, permit
+        // the guard's SAFE writes, then the belt: brake flag, permit
         let n = rig.writes.len();
-        assert_eq!(rig.writes[n - 9..n - 3], crate::rig::servo::SAFE);
+        assert_eq!(rig.writes[n - 8..n - 2], crate::rig::servo::SAFE);
         assert_eq!(rig.writes[n - 1], (control::STALL_PERMIT, 0));
         let id = rig.id();
         for reg in [control::TORQUE_ENABLE, control::STALL_PERMIT] {
@@ -1705,13 +1670,14 @@ mod tests {
 
     /// The meta a sweep writes on the in-process servo stack carries every
     /// key a committed capture's does, nested blocks included, less the
-    /// host build's sha; and nothing else.
+    /// host build's sha and the decay the firmware has no choice of; and
+    /// nothing else.
     #[test]
     fn meta_keys_match_a_committed_capture() {
         let want: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(fixture("meta.json")).unwrap()).unwrap();
         let mut want = keys(&want);
-        want.retain(|k| k != "host_git_sha");
+        want.retain(|k| k != "host_git_sha" && k != "decay");
 
         let mut rig = Rig::bench();
         let id = rig.id();
