@@ -1360,7 +1360,6 @@ rule("th_rise2_q016", "th_rise2.family", kind="u16", unit="cC/count^2", q=16, cl
 # dump` prints the field: an enum's name with its number, a flag as on
 # or off.
 STALL_RESPONSES = ("fault", "yield")    # core regions/config.rs StallResponse, by number
-DECAYS = ("slow", "fast")               # core traits/control.rs DecayMode, by number
 DUTY_FULL_Q15 = 32767                   # the whole rail, the field's largest value (core regions/config.rs)
 
 
@@ -1395,8 +1394,6 @@ rule("oc_trip_ticks", "oc_trip_ticks.policy", kind="u8", unit="samples", cls="po
      mirrors="core kernel/phases/fast.rs measure")(decided("oc_trip_samples"))
 rule("sensor_bad_count", "sensor_bad.policy", kind="u8", unit="samples", cls="policy",
      mirrors="core kernel/phases/loops/faults.rs sensor_sample")(decided("sensor_bad_samples"))
-rule("openloop_decay", "openloop_decay.policy", kind="u8", unit="decay", cls="policy",
-     mirrors="core kernel/phases/fast.rs drive")(named("openloop_decay", DECAYS))
 
 
 @rule("openloop_zero_brake", "openloop_zero_brake.policy", kind="u8", unit="flag", cls="policy",

@@ -840,8 +840,7 @@ NO_LOOP = [f"{n}: left out, policy.json has no current_loop_hz" for n in ("i_kp_
 NO_CHOICES = [f"{n}: left out, policy.json has no {key}" for n, key in (
     ("stall_time_ticks", "stall_time_ms"), ("pos_error_time_ticks", "pos_error_time_ms"),
     ("oc_trip_ticks", "oc_trip_samples"), ("sensor_bad_count", "sensor_bad_samples"),
-    ("openloop_decay", "openloop_decay"), ("openloop_zero_brake", "openloop_zero_brake"),
-    ("duty_max_q15", "duty_max_share"))]
+    ("openloop_zero_brake", "openloop_zero_brake"), ("duty_max_q15", "duty_max_share"))]
 NO_BLOCK = [
     f"r_bemf_q12: left out, {NO_RULE.format('r_bemf_q12', *['r_bemf'] * 4)}",
     f"b_i_q313: left out, {NO_LADDER}",
@@ -879,7 +878,7 @@ POT_NOISE = {"3-servo/pot-table": {"pot_rest_sd_counts": (1.0, 0.0, 1.5)}}
 # the policy entries the other rules read: the current loop's bandwidth, the times, the counts of samples,
 # the choices in words and the supply terms
 CHOICE_POLICY = {"current_loop_hz": 1000.0, "stall_time_ms": 500.0, "pos_error_time_ms": 100.0, "oc_trip_samples": 8,
-                 "sensor_bad_samples": 4, "openloop_decay": "slow", "openloop_zero_brake": "off",
+                 "sensor_bad_samples": 4, "openloop_zero_brake": "off",
                  "duty_max_share": 1.0, "v_undervolt_v": 3.0, "rail_source_ohm": 0.5}
 # what a build of the plant over those inputs says, in the set's order: the fields in counts of position,
 # the current loop's gains and the choices, whose entries that policy lacks, and the protection fields the
@@ -3249,12 +3248,10 @@ def test_a_time_a_count_of_samples_a_choice_in_words_and_the_supply_terms_are_th
     assert gives("stall_time_ticks")["inputs"] == ["policy:stall_time_ms", "registry:tick_hz"]
     assert gives("pos_error_time_ticks", pos_error_time_ms=0.25)["value"] == 5
     # a choice between named behaviors is the policy's word, written as `osc dump` prints the field
-    words = {"stall_response": ("fault", "yield"), "openloop_decay": ("slow", "fast")}
-    assert {n: [gives(n, **{n: w})["value"] for w in of] for n, of in words.items()} == {
-        "stall_response": ["Fault (0)", "Yield (1)"], "openloop_decay": ["Slow (0)", "Fast (1)"]}
+    assert [gives("stall_response", stall_response=w)["value"] for w in ("fault", "yield")] == [
+        "Fault (0)", "Yield (1)"]
     assert [gives("openloop_zero_brake", openloop_zero_brake=w)["value"] for w in ("off", "on")] == ["off", "on"]
     for name, word, match in (("stall_response", "coast", "stall_response is 'coast': it is one of fault, yield"),
-                              ("openloop_decay", "Slow", "openloop_decay is 'Slow': it is one of slow, fast"),
                               ("openloop_zero_brake", "no", "openloop_zero_brake is 'no': it is off or on")):
         with pytest.raises(ValueError, match=f"policy.json: {match}"):
             gives(name, **{name: word})
@@ -3273,11 +3270,11 @@ def test_a_time_a_count_of_samples_a_choice_in_words_and_the_supply_terms_are_th
     assert (fold["value"], fold["q"]) == (raw(1000.0 / (248.0 * 0.5), 8), 8)
     assert fold["band"] == [raw(990.0 / (248.0 * 0.5), 8), raw(1010.0 / (248.0 * 0.5), 8)]
     assert gives("rail_fold_q8", rail_source_ohm=1.0)["value"] == raw(1000.0 / 248.0, 8)
-    # every one of them is a decision, and all but the open loop's two are protection fields
+    # every one of them is a decision, and all but the open loop's brake flag are protection fields
     named = ("stall_response", "stall_time_ticks", "pos_error_time_ticks", "oc_trip_ticks", "sensor_bad_count",
-             "duty_max_q15", "v_undervolt_counts", "rail_fold_q8", "openloop_decay", "openloop_zero_brake")
+             "duty_max_q15", "v_undervolt_counts", "rail_fold_q8", "openloop_zero_brake")
     assert all(gives(n)["class"] == "policy" and gives(n)["pos_unit"] == 0 for n in named)
-    assert [n for n in named if n not in cn.PROTECTION] == ["openloop_decay", "openloop_zero_brake"]
+    assert [n for n in named if n not in cn.PROTECTION] == ["openloop_zero_brake"]
 
 
 def test_the_position_error_screen_moves_as_one_step_and_the_stall_response_as_one_alone(monkeypatch, tmp_path):
@@ -3332,7 +3329,7 @@ def test_the_bench_pairs_decisions_are_bound_the_ones_the_servo_held_and_the_one
     stand = {"duty_max_q15": ("duty_max_share", 32767), "stall_time_ticks": ("stall_time_ms", 10000),
              "stall_omega_max_cps": ("stall_omega_max_deg_s", 500), "oc_trip_counts": ("oc_trip_ma", 2497),
              "oc_trip_ticks": ("oc_trip_samples", 8), "sensor_bad_count": ("sensor_bad_samples", 4),
-             "openloop_decay": ("openloop_decay", "Slow (0)"), "openloop_zero_brake": ("openloop_zero_brake", "off")}
+             "openloop_zero_brake": ("openloop_zero_brake", "off")}
     for name, (key, gives) in stand.items():
         e = cn.evaluate(cn.rule_of(c, name), c)
         assert (e["value"], e["class"], e["inputs"][0]) == (gives, "policy", f"policy:{key}"), name
