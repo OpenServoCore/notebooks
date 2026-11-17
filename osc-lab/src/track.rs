@@ -2149,7 +2149,7 @@ mod tests {
             resolve_set(&d, "velocity_limit_cps", "800").unwrap(),
             (
                 Reg {
-                    addr: 0x44,
+                    addr: 0x46,
                     width: 2
                 },
                 800
@@ -3391,12 +3391,12 @@ mod tests {
         );
         let (_, ran, res) = drive(&mut r, &mut c);
         res.unwrap();
-        let k = r.writes.iter().position(|w| w.0.addr == 0x44).unwrap();
+        let k = r.writes.iter().position(|w| w.0.addr == 0x46).unwrap();
         assert_eq!(
             r.writes[k],
             (
                 Reg {
-                    addr: 0x44,
+                    addr: 0x46,
                     width: 2
                 },
                 777
@@ -3421,7 +3421,7 @@ mod tests {
     #[test]
     fn set_fields_go_back_after_torque_off() {
         const VEL: Reg = Reg {
-            addr: 0x44,
+            addr: 0x46,
             width: 2,
         };
         let mut r = rig_at(2029, 0);
@@ -3483,7 +3483,7 @@ mod tests {
     #[test]
     fn an_abort_puts_the_fields_back_after_torque_off() {
         const VEL: Reg = Reg {
-            addr: 0x44,
+            addr: 0x46,
             width: 2,
         };
         let mut r = rig_at(2029, 0);
@@ -3521,7 +3521,7 @@ mod tests {
         let vel0 = reg_at(
             &mut r,
             Reg {
-                addr: 0x44,
+                addr: 0x46,
                 width: 2,
             },
         );

@@ -292,7 +292,7 @@ impl Ask {
 pub(crate) struct Bounds {
     /// Linearized counts the bursts stay inside.
     pub(crate) guard: (i32, i32),
-    pub(crate) velocity_limit_cps: u16,
+    pub(crate) speed_ceiling_cps: u16,
     /// Q8.8 c/s per medium period: the cruise's run-up and its stop.
     pub(crate) accel_limit_q88: u16,
     pub(crate) tick_hz: f64,
@@ -452,11 +452,11 @@ pub(crate) fn plan(ask: &Ask, b: &Bounds) -> Result<Plan, String> {
                 ));
             }
             let top = cruise as f64 + peak_cps(slope, n);
-            if top > b.velocity_limit_cps as f64 {
+            if top > b.speed_ceiling_cps as f64 {
                 return Err(format!(
                     "N={n} at {cruise} c/s: the cruise and the triangle's peak reach {top:.0} \
-                     c/s, over the servo's velocity_limit_cps {}, where the clamp would cut it",
-                    b.velocity_limit_cps
+                     c/s, over the servo's speed_ceiling_cps {}, where the clamp would cut it",
+                    b.speed_ceiling_cps
                 ));
             }
             kinds.push((
@@ -494,12 +494,12 @@ pub(crate) fn plan(ask: &Ask, b: &Bounds) -> Result<Plan, String> {
 pub(crate) fn print_plan(plan: &Plan, b: &Bounds) {
     let fm = b.tick_hz / DECIM as f64;
     println!(
-        "margin plan: guard {}..{}, starts {} counts inside, velocity limit {} c/s, accel {} c/s \
+        "margin plan: guard {}..{}, starts {} counts inside, speed ceiling {} c/s, accel {} c/s \
          a period, {} Hz medium rate, {} head periods",
         b.guard.0,
         b.guard.1,
         plan.edge,
-        b.velocity_limit_cps,
+        b.speed_ceiling_cps,
         b.accel_limit_q88 as f64 / 256.0,
         fm,
         plan.head_periods
@@ -787,7 +787,7 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<(Cfg, Sweep)> {
     let cap = s.burst_cap()?;
     let bounds = Bounds {
         guard: cfg.wd.guard,
-        velocity_limit_cps: read_named(s, &d, "velocity_limit_cps")? as u16,
+        speed_ceiling_cps: read_named(s, &d, "speed_ceiling_cps")? as u16,
         accel_limit_q88: read_named(s, &d, "accel_limit_q88")? as u16,
         tick_hz: cfg.tick_hz,
         cap_rows: cap.rows,
@@ -1025,7 +1025,7 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg, sweep: &Sweep, a: &Args) -> Result<serde
         "limits": {
             "soft": [cfg.soft.0, cfg.soft.1],
             "guard": [cfg.wd.guard.0, cfg.wd.guard.1],
-            "velocity_limit_cps": b.velocity_limit_cps,
+            "speed_ceiling_cps": b.speed_ceiling_cps,
             "accel_limit_q88": b.accel_limit_q88,
             "current_limit_counts": cfg.i_lim,
             "p_kp_q88": sweep.p_kp_q88,
@@ -1190,12 +1190,12 @@ mod tests {
         <Cli as clap::Parser>::try_parse_from(v).unwrap().args
     }
 
-    /// A servo of soft limits 314..3560, velocity limit 4025 c/s and the
+    /// A servo of soft limits 314..3560, speed ceiling 4025 c/s and the
     /// default accel limit, on a 20 kHz tick with the whole TEL burst.
     fn servo() -> Bounds {
         Bounds {
             guard: (314, 3560),
-            velocity_limit_cps: 4025,
+            speed_ceiling_cps: 4025,
             accel_limit_q88: 3840,
             tick_hz: 20_000.0,
             cap_rows: u16::MAX,
@@ -1334,10 +1334,7 @@ mod tests {
         let b = servo();
         let refused = |argv: &[&str], b: &Bounds| plan(&Ask::of(&parse(argv)), b).unwrap_err();
         let e = refused(&["--position-cruise-cps", "3950"], &b);
-        assert!(
-            e.contains("over the servo's velocity_limit_cps 4025"),
-            "{e}"
-        );
+        assert!(e.contains("over the servo's speed_ceiling_cps 4025"), "{e}");
         let e = refused(&["--position-cruise-cps", "3800", "--no-second-cruise"], &b);
         assert!(
             e.contains("N=512 at 3800 c/s: 1 whole cycles") && e.contains("under the 4 asked"),
@@ -1613,7 +1610,7 @@ mod tests {
         let e = prepare(&mut r, &parse(&["--speed-cruise-cps", "1400"]))
             .err()
             .unwrap();
-        assert!(e.to_string().contains("velocity_limit_cps 1500"), "{e}");
+        assert!(e.to_string().contains("speed_ceiling_cps 1500"), "{e}");
         assert!(r.writes.is_empty());
     }
 

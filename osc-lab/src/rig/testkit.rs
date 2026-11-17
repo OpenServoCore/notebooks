@@ -17,14 +17,18 @@ use osc_servo_core::kernel::DECIM_MED;
 use osc_servo_core::regions::control::{INJECT_HALF_PERIODS_MAX, Mode as CtMode};
 
 /// The in-process servo stack at `rate`, calibrated and identified like the
-/// bench servo: limit 280, stall yield 168 released under 84, soft limits
-/// 432..3626 inside stops 232..3849, its rail ADC reading `vbus_raw`
-/// (1961 is 7.9 V, 1090 4.39 V) and its published rail 3204 vcounts.
+/// bench servo: limit 280, speed ceiling 1500 c/s, stall yield 168
+/// released under 84, soft limits 432..3626 inside stops 232..3849, its
+/// rail ADC reading `vbus_raw` (1961 is 7.9 V, 1090 4.39 V) and its
+/// published rail 3204 vcounts.
 pub(crate) fn table_at(rate: BaudRate, vbus_raw: u16) -> (Client<FakePipe>, Id) {
     let mut pipe = FakePipe::new(rate, &[1]);
     pipe.seed_calibrated(0);
     let (mut c, id) = (Client::connect(pipe).unwrap(), Id::new(1));
     rail_at(&mut c, vbus_raw, 3204);
+    c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+        t.config.loop_position.speed_ceiling_cps = 1500;
+    });
     for (reg, v) in [
         (config::CURRENT_LIMIT_COUNTS, 280),
         (config::STALL_RESPONSE, 1),

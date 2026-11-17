@@ -20,23 +20,23 @@ pub mod config {
     pub const POS_MIN_SOFT_COUNTS: Reg = reg(0x0028, 4);
     pub const POS_MAX_SOFT_COUNTS: Reg = reg(0x002c, 4);
     pub const POS_DEADBAND_COUNTS: Reg = reg(0x0042, 2);
-    pub const CURRENT_LIMIT_COUNTS: Reg = reg(0x0048, 2);
+    pub const CURRENT_LIMIT_COUNTS: Reg = reg(0x004c, 2);
     /// 0 = a stall latches a fault, 1 = it folds the limit to the
     /// continuous current.
-    pub const STALL_RESPONSE: Reg = reg(0x004a, 1);
-    pub const DRIVE_POLARITY: Reg = reg(0x004b, 1);
-    pub const STALL_TIME_TICKS: Reg = reg(0x004c, 4);
+    pub const STALL_RESPONSE: Reg = reg(0x004e, 1);
+    pub const DRIVE_POLARITY: Reg = reg(0x004f, 1);
+    pub const STALL_TIME_TICKS: Reg = reg(0x0050, 4);
     /// The continuous current: a press over it on a still shaft trips and
     /// folds to it; 0 reads as the limit.
-    pub const I_CONT_COUNTS: Reg = reg(0x0052, 2);
+    pub const I_CONT_COUNTS: Reg = reg(0x0056, 2);
     /// The fold holds while the held current reads this or more.
-    pub const STALL_RELEASE_COUNTS: Reg = reg(0x0054, 2);
+    pub const STALL_RELEASE_COUNTS: Reg = reg(0x0058, 2);
     /// The collision trip on the disturbance estimate; `u16::MAX` (the boot
     /// value) trips nothing.
-    pub const STALL_TAU_TRIP_COUNTS: Reg = reg(0x0056, 2);
+    pub const STALL_TAU_TRIP_COUNTS: Reg = reg(0x005a, 2);
     /// Centi-C where the winding estimate latches the overtemperature
     /// fault: the one thermal limit.
-    pub const CUTOFF_CC: Reg = reg(0x0060, 2);
+    pub const CUTOFF_CC: Reg = reg(0x0064, 2);
 }
 
 pub mod calib {
