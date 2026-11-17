@@ -1,0 +1,181 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/window-term/g3, telemetry/mg90-d__dev-v006-2A-D/window-term/g3b",
+  "notes": "stage 5 cruise friction of mg90-d on dev-v006-2A-D: the friction line the velocity loop holds under the window term, from window-term/g3 (Velocity cruises at 300, 800, 1500 and 4025 c/s, both ways, g_window_q016 at the window-term result's field, friction 40 / 728 installed) and its repeat window-term/g3b on the refit words. Each leg's current-loop reference is replayed from its rows with the board's integer reading (settle gain, window term, the polled bias) and the set of record's loop gains and Ke; the held mean is the reading on read rows and the reference, averaged over its MEDIUM period, on the rest, over the leg's middle half. The line is a least squares fit of the held mean of the 18 whole legs at 300 to 1500 c/s and the one 4025 c/s leg whose speed held within 2 % across its steady rows, against the goal; coulomb_ma and viscous_ma_s_per_rad are what the set's rules read, the words report only. The repeat on the refit words grades it; the joint_* keys are both sittings fitted together, report only.",
+  "inputs": {
+    "stages/1-board/bridge-states/results/dev-v006-2A-D.json": "d5e050edaf991630ba778cb78f44f3073b8f40cb",
+    "stages/1-board/current-scale/results/dev-v006-2A-D.json": "5fbdb93bd77174824fffb47a5b58e6d50e8d66e1",
+    "stages/1-board/sample-timing/results/dev-v006-2A-D.json": "6de39d5aa7818cba119048a5ef59028760a03420",
+    "stages/1-board/terminal-chain/results/dev-v006-2A-D.json": "e1249f71a80bcad5c4c1d64301560f66c0bd8582",
+    "stages/3-servo/window-term/results/mg90-d__dev-v006-2A-D.json": "2e2f0bdb28a715eae542c80e3910a4c282922c22"
+  },
+  "coulomb_ma": {
+    "value": 37.641718709849386,
+    "lo": 37.239809698353085,
+    "hi": 38.043627721345686,
+    "unit": "mA, the line's intercept: the loop's held current at zero speed, se bounds"
+  },
+  "viscous_ma_per_kcps": {
+    "value": 12.727793018511766,
+    "lo": 12.427703539809801,
+    "hi": 13.027882497213731,
+    "unit": "mA per 1000 count/s of the set's table, se bounds"
+  },
+  "viscous_ma_s_per_rad": {
+    "value": 0.04764539919426953,
+    "lo": 0.046522040023833616,
+    "hi": 0.04876875836470544,
+    "unit": "mA per motor rad/s, the same slope at the table's counts per degree and the gear ratio"
+  },
+  "counts_per_motor_rad": {
+    "value": 3.7434140486863923,
+    "lo": null,
+    "hi": null,
+    "unit": "table counts a motor radian the slope was converted at"
+  },
+  "rms_ma": {
+    "value": 1.0548635917435614,
+    "lo": null,
+    "hi": null,
+    "unit": "mA, the line's residual rms"
+  },
+  "legs": {
+    "value": 19.0,
+    "lo": null,
+    "hi": null,
+    "unit": "legs fitted"
+  },
+  "window_field_q016": {
+    "value": 1178.0,
+    "lo": null,
+    "hi": null,
+    "unit": "g_window_q016 the cruises ran on"
+  },
+  "fric_fc_counts": {
+    "value": 43.0,
+    "lo": null,
+    "hi": null,
+    "unit": "the intercept in shunt counts, report: the set's rule gives the field"
+  },
+  "fric_fv_q016": {
+    "value": 947.0,
+    "lo": null,
+    "hi": null,
+    "unit": "the slope in Q0.16 shunt counts per count/s, report"
+  },
+  "held_ma": {
+    "300": {
+      "value": 42.080311624268326,
+      "lo": 41.7050289569395,
+      "hi": 42.45559429159715,
+      "unit": "mA, held mean of the whole legs, se"
+    },
+    "800": {
+      "value": 47.03721606156075,
+      "lo": 46.60366383224024,
+      "hi": 47.47076829088126,
+      "unit": "mA, held mean of the whole legs, se"
+    },
+    "1500": {
+      "value": 56.82322095859436,
+      "lo": 56.41514307777668,
+      "hi": 57.23129883941204,
+      "unit": "mA, held mean of the whole legs, se"
+    },
+    "4025": {
+      "value": 91.8574153294349,
+      "lo": 89.3311016088915,
+      "hi": 94.3837290499783,
+      "unit": "mA, held mean of the whole legs, se"
+    }
+  },
+  "residual_ma": {
+    "300": {
+      "value": 0.6202550088654147,
+      "lo": 0.24497234153658876,
+      "hi": 0.9955376761942407,
+      "unit": "mA, the legs' residual, se"
+    },
+    "800": {
+      "value": -0.7867370630980481,
+      "lo": -1.2202892924185564,
+      "hi": -0.3531848337775398,
+      "unit": "mA, the legs' residual, se"
+    },
+    "1500": {
+      "value": 0.0898127209773314,
+      "lo": -0.3182651598403444,
+      "hi": 0.4978906017950072,
+      "unit": "mA, the legs' residual, se"
+    },
+    "4025": {
+      "value": 0.4600159995322457,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, the one leg's residual"
+    }
+  },
+  "integrator_installed_ma": {
+    "300": {
+      "value": 3.916366061276951,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, the integrator's share on the line installed during the capture (40 / 728)"
+    },
+    "800": {
+      "value": 3.9035088110924243,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, the integrator's share on the line installed during the capture (40 / 728)"
+    },
+    "1500": {
+      "value": 6.674067890928259,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, the integrator's share on the line installed during the capture (40 / 728)"
+    },
+    "4025": {
+      "value": 17.207063769406957,
+      "lo": null,
+      "hi": null,
+      "unit": "mA, the integrator's share on the line installed during the capture (40 / 728)"
+    }
+  },
+  "integrator_refit_ma": {
+    "300": {
+      "value": -0.3925600918914611,
+      "lo": -1.1224405610325565,
+      "hi": 0.3373203772496344,
+      "unit": "mA, the integrator's share on the refit words in the repeat, sd over legs"
+    },
+    "800": {
+      "value": -0.9600587677512019,
+      "lo": -2.414274942455801,
+      "hi": 0.49415740695339727,
+      "unit": "mA, the integrator's share on the refit words in the repeat, sd over legs"
+    },
+    "1500": {
+      "value": 0.9211260161511774,
+      "lo": -0.30626655590170926,
+      "hi": 2.1485185882040643,
+      "unit": "mA, the integrator's share on the refit words in the repeat, sd over legs"
+    },
+    "4025": {
+      "value": 3.616559036169626,
+      "lo": 2.3477076119638554,
+      "hi": 4.885410460375397,
+      "unit": "mA, the integrator's share on the refit words in the repeat, sd over legs"
+    }
+  },
+  "joint_coulomb_ma": {
+    "value": 36.97320850506725,
+    "lo": 36.68904061772681,
+    "hi": 37.257376392407686,
+    "unit": "mA, both sittings with the repeat's 4025 legs, each leg's inertia current off, report"
+  },
+  "joint_viscous_ma_per_kcps": {
+    "value": 13.622977239662498,
+    "lo": 13.463266906309096,
+    "hi": 13.7826875730159,
+    "unit": "mA per 1000 count/s, the same, report"
+  }
+}
