@@ -239,6 +239,14 @@ pub struct Args {
     /// a goal goes out as soon as the host is ready].
     #[arg(long)]
     goal_period_ms: Option<f64>,
+    /// One more read right behind each poll a segments.csv row carries:
+    /// ADDR:LEN, the address hex (0x optional), 1 to 64 bytes. Its bytes
+    /// land as lowercase hex in a last segments.csv column, `extra_hex`,
+    /// empty where the read failed or came back short and counted in
+    /// meta.json (`extra_poll_failures`); the run goes on either way. A poll
+    /// the watchdog trips on takes no extra read.
+    #[arg(long, value_name = "ADDR:LEN", value_parser = parse_extra)]
+    poll_extra: Option<Extra>,
 }
 
 /// The guards every closed-loop run keeps: the watchdog's caps, the bus
@@ -418,6 +426,62 @@ impl Poll {
     }
 }
 
+/// `--poll-extra`: one range read right behind a poll, recorded as it came.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Extra {
+    pub(crate) addr: u16,
+    pub(crate) len: u16,
+}
+
+/// The longest `--poll-extra` range, bytes.
+const EXTRA_MAX: u16 = 64;
+
+/// ADDR:LEN, the address hex with or without `0x`, the length decimal.
+pub(crate) fn parse_extra(s: &str) -> Result<Extra, String> {
+    let (addr, len) = s.split_once(':').ok_or_else(|| {
+        format!("--poll-extra is ADDR:LEN (hex address, decimal bytes), got {s:?}")
+    })?;
+    let hex = addr.strip_prefix("0x").unwrap_or(addr);
+    let addr = u16::from_str_radix(hex, 16)
+        .map_err(|_| format!("bad address {addr:?} in {s:?}: hex, 0x optional"))?;
+    let len: u16 = len
+        .parse()
+        .map_err(|_| format!("bad length {len:?} in {s:?}: decimal bytes"))?;
+    if len == 0 || len > EXTRA_MAX {
+        return Err(format!("{s:?}: the length is 1 to {EXTRA_MAX} bytes"));
+    }
+    if addr.checked_add(len - 1).is_none() {
+        return Err(format!("{s:?}: the range runs past 0xffff"));
+    }
+    Ok(Extra { addr, len })
+}
+
+impl Extra {
+    /// The range as lowercase hex; None when the read failed or came back
+    /// short.
+    fn read_on<P: Pipe>(self, c: &mut Client<P>, id: Id) -> Option<String> {
+        let raw = c.read(id, self.addr, self.len).ok()?;
+        let b = raw.get(..self.len as usize)?;
+        Some(b.iter().map(|b| format!("{b:02x}")).collect())
+    }
+}
+
+/// The extra range read right behind a poll that passed: its hex, or empty
+/// and counted when it failed. Never fails the run.
+pub(crate) fn poll_extra<S: Servo>(s: &mut S, x: Extra, ran: &mut Ran) -> String {
+    let id = s.id();
+    let read = x.read_on(s.client(), id);
+    ran.extra(read)
+}
+
+/// `--poll-extra` and its failures in the meta; nothing without it.
+pub(crate) fn meta_extra(m: &mut serde_json::Value, x: Option<Extra>, failures: u32) {
+    if let Some(x) = x {
+        m["poll_extra"] = serde_json::json!({ "addr": x.addr, "len": x.len });
+        m["extra_poll_failures"] = failures.into();
+    }
+}
+
 pub(crate) fn fault_name(code: u8) -> &'static str {
     match code {
         CODE_DEADMAN => "deadman",
@@ -570,6 +634,7 @@ pub(crate) struct Cfg {
     pub(crate) inject: bool,
     pub(crate) soft: (i32, i32),
     pub(crate) i_lim: u16,
+    pub(crate) extra: Option<Extra>,
 }
 
 /// The goal period's grid. The first goal of a train (a `goal:` item with
@@ -864,6 +929,7 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
         }
     }
     cfg.items = a.schedule.clone();
+    cfg.extra = a.poll_extra;
     standing(s, &cfg.wd)?;
     Ok(cfg)
 }
@@ -977,6 +1043,7 @@ pub(crate) fn preflight<S: Servo>(
         inject: lists_inject(&d),
         soft: lim.soft,
         i_lim: lim.i_lim,
+        extra: None,
     })
 }
 
@@ -1087,6 +1154,8 @@ pub(crate) struct Seg {
     pub(crate) t_end: f64,
     /// A goal aimed at a grid point; None for an item off the grid.
     pub(crate) held: Option<Held>,
+    /// `--poll-extra`'s bytes behind `poll`, hex; None without it.
+    pub(crate) extra: Option<String>,
 }
 
 /// What a run reports beside its segments.
@@ -1103,6 +1172,16 @@ pub(crate) struct Ran {
     pub(crate) restored: Vec<Kept>,
     /// `data_flags` once the put-back ran.
     pub(crate) data_flags_after: Option<u8>,
+    /// `--poll-extra` reads that failed or came back short.
+    pub(crate) extra_failures: u32,
+}
+
+impl Ran {
+    /// An extra read as recorded: empty, and counted, when it failed.
+    pub(crate) fn extra(&mut self, read: Option<String>) -> String {
+        self.extra_failures += read.is_none() as u32;
+        read.unwrap_or_default()
+    }
 }
 
 /// Before a `set:` of a CONFIG field, its value as the run found it, read
@@ -1328,6 +1407,10 @@ fn run_item<S: Servo>(
         Some(_) => Poll::default(),
         None => watch(s, &mut cfg.wd)?,
     };
+    let extra = match (slot, cfg.extra) {
+        (None, Some(x)) => Some(poll_extra(s, x, ran)),
+        (_, x) => x.map(|_| String::new()),
+    };
     let t_start = anchor + s.now_ms() / 1000.0;
     let mut seg = Seg {
         idx: k,
@@ -1340,6 +1423,7 @@ fn run_item<S: Servo>(
         t_start,
         t_end: t_start,
         held: None,
+        extra,
     };
     match &item {
         Item::Set { .. } => {
@@ -1366,13 +1450,18 @@ fn run_item<S: Servo>(
             let mut polled = None;
             let burst = {
                 let wd = &mut cfg.wd;
+                let extra = cfg.extra;
                 let mut staged = |c: &mut Client<S::P>| -> Result<()> {
                     let poll = Poll::read_on(c, id)?;
                     let verdict = wd.poll(&poll);
                     if verdict.is_err() {
                         pump::write_reg(c, id, control::TORQUE_ENABLE, 0)?;
                     }
-                    polled = Some((poll, verdict));
+                    let read = match (&verdict, extra) {
+                        (Ok(()), Some(x)) => Some(x.read_on(c, id)),
+                        _ => None,
+                    };
+                    polled = Some((poll, verdict, read));
                     Ok(())
                 };
                 let between: Option<Between<'_, S::P>> = match slot {
@@ -1381,8 +1470,11 @@ fn run_item<S: Servo>(
                 };
                 s.stream_at(samples, g, cfg.chunks, slot, between)
             };
-            if let Some((poll, verdict)) = polled {
+            if let Some((poll, verdict, read)) = polled {
                 seg.poll = poll;
+                if let Some(read) = read {
+                    seg.extra = Some(ran.extra(read));
+                }
                 if let Err(reason) = verdict {
                     if let Ok((frames, stats)) = burst {
                         (seg.frames, seg.stats, seg.samples) = (frames, stats, samples);
@@ -1626,7 +1718,8 @@ pub(crate) fn write_rows(w: &mut impl Write, g: &Seg) -> Result<()> {
 /// long before its point the host had it staged, the room the period left
 /// it (0 for a late one); how long after its point its COMMIT went out (0
 /// on time, what the wait itself ran over by, or a late goal's lateness);
-/// and the whole periods of that, the grid points it went past.
+/// and the whole periods of that, the grid points it went past. With
+/// `--poll-extra` a last column, `extra_hex`, carries its bytes.
 pub(crate) const SEGMENTS_HEADER: &str = "seg,kind,field,value,ms,tick0,slot_wait_ms,slot_late_ms,slots_missed,rows,rows_dropped,t_start,t_end,vbus_raw,ntc_raw,theta_hat_q16,omega_hat_cps,t_winding_cc,i_lim_counts,limit_flags,fault_flags,pos,i_tick_counts,current_bias_counts,fault_code,omega_hat_src";
 
 pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
@@ -1644,7 +1737,7 @@ pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
         ),
         None => Default::default(),
     };
-    writeln!(
+    write!(
         w,
         "{},{},{field},{value},{ms},{},{wait},{late},{missed},{},{},{:.3},{:.3},{},{},{},{},{},{},{},{},{},{},{},{},{}",
         g.idx,
@@ -1668,6 +1761,10 @@ pub(crate) fn write_segment(w: &mut impl Write, g: &Seg) -> Result<()> {
         p.fault_code,
         p.omega_hat_src,
     )?;
+    if let Some(x) = &g.extra {
+        write!(w, ",{x}")?;
+    }
+    writeln!(w)?;
     Ok(())
 }
 
@@ -1708,6 +1805,7 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<serde_json::Value> {
         "data_flags_after": serde_json::Value::Null,
         "ended": serde_json::Value::Null,
     });
+    meta_extra(&mut m, cfg.extra, 0);
     if let Some(o) = m.as_object_mut() {
         o.extend(servo);
     }
@@ -1719,6 +1817,7 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<serde_json::Value> {
 /// and how it ended.
 fn land(meta: &mut serde_json::Value, cfg: &Cfg, ran: &Ran, r: &Result<()>) {
     meta["rows_dropped"] = ran.rows_dropped.into();
+    meta_extra(meta, cfg.extra, ran.extra_failures);
     if let Some(p) = &cfg.pace {
         meta["goal_period"]["held"] = p.held.into();
         meta["goal_period"]["late"] = p.late.into();
@@ -1771,7 +1870,11 @@ pub(crate) fn capture<S: Servo>(s: &mut S, a: &Args, out: &Path) -> Result<()> {
         Ok(w)
     };
     let mut rows = create("track.csv", CSV_HEADER)?;
-    let mut segs = create("segments.csv", SEGMENTS_HEADER)?;
+    let segs_header = match cfg.extra {
+        Some(_) => format!("{SEGMENTS_HEADER},extra_hex"),
+        None => SEGMENTS_HEADER.to_string(),
+    };
+    let mut segs = create("segments.csv", &segs_header)?;
 
     let mut ran = Ran::default();
     let r = record(s, &mut cfg, &mut ran, |g| {
@@ -3549,5 +3652,260 @@ mod tests {
             .count();
         assert_eq!(rows, 1 + 400, "what was captured before the abort");
         std::fs::remove_dir_all(&out).unwrap();
+    }
+
+    /// `--poll-extra` takes a hex address with or without 0x and a decimal
+    /// length of 1 to 64 bytes inside the address space.
+    #[test]
+    fn the_extra_range_parses_as_the_user_writes_it() {
+        let want = Extra {
+            addr: 0x3d4,
+            len: 44,
+        };
+        for s in ["0x3D4:44", "3d4:44", "0x3d4:44", "3D4:44"] {
+            assert_eq!(parse_extra(s), Ok(want), "{s}");
+        }
+        assert_eq!(parse_extra("0:64"), Ok(Extra { addr: 0, len: 64 }));
+        assert_eq!(
+            parse_extra("fff0:16"),
+            Ok(Extra {
+                addr: 0xfff0,
+                len: 16
+            })
+        );
+        for bad in [
+            "3d4:0", "3d4:65", "3d4:1000", "3d4", "3d4:", ":44", "0xg:4", "3d4:0x2c", "3d4:-1",
+            "fff0:17", "10000:1",
+        ] {
+            assert!(parse_extra(bad).is_err(), "{bad}");
+        }
+        let argv = ["--mode", "position", "--schedule", "hold@10"];
+        assert_eq!(parse(&argv).poll_extra, None);
+        let with = [&argv[..], &["--poll-extra", "0x3D4:44"]].concat();
+        assert_eq!(parse(&with).poll_extra, Some(want));
+        let zero = [&argv[..], &["--poll-extra", "3d4:0"]].concat();
+        let mut v = vec!["track", "--out", "unused"];
+        v.extend_from_slice(&zero);
+        assert!(<Cli as clap::Parser>::try_parse_from(v).is_err());
+    }
+
+    /// The files and the wire of one capture with `--poll-extra` as given.
+    struct Captured {
+        track: String,
+        segments: String,
+        meta: serde_json::Value,
+        sent: Vec<crate::rig::testkit::Sent>,
+        r: Result<()>,
+    }
+
+    fn captured(schedule: &str, extra: Option<&str>, after: Option<i32>) -> Captured {
+        static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let out =
+            std::env::temp_dir().join(format!("osc-lab-track-extra-{n}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&out);
+        let mut r = rig_at(2029, 0);
+        if let Some(pos) = after {
+            r.after_burst = Some(Box::new(move |c, _| at(c, pos as u16, 0, 1913)));
+        }
+        let mut argv = vec!["--mode", "position", "--schedule", schedule];
+        if let Some(x) = extra {
+            argv.extend(["--poll-extra", x]);
+        }
+        r.sent();
+        let res = capture(&mut r, &parse(&argv), &out);
+        let read = |n: &str| std::fs::read_to_string(out.join(n)).unwrap();
+        let c = Captured {
+            track: read("track.csv"),
+            segments: read("segments.csv"),
+            meta: serde_json::from_str(&read("meta.json")).unwrap(),
+            sent: r.sent(),
+            r: res,
+        };
+        std::fs::remove_dir_all(&out).unwrap();
+        c
+    }
+
+    /// segments.csv's rows with the host's clock masked, `drop_last`
+    /// columns off the end.
+    fn masked(segments: &str, drop_last: usize) -> Vec<Vec<String>> {
+        segments
+            .lines()
+            .skip(1)
+            .map(|l| {
+                let mut c: Vec<String> = l.split(',').map(String::from).collect();
+                c.truncate(c.len() - drop_last);
+                (c[11], c[12]) = (String::new(), String::new());
+                c
+            })
+            .collect()
+    }
+
+    fn without_extra_keys(m: &serde_json::Value) -> serde_json::Value {
+        let mut m = m.clone();
+        let o = m.as_object_mut().unwrap();
+        o.remove("poll_extra");
+        o.remove("extra_poll_failures");
+        m
+    }
+
+    const EXTRA_SCHEDULE: &str = "goal:2100@20,rest@100,set:velocity_limit_cps=777,hold@10";
+
+    /// With `--poll-extra` the range is read right behind each poll a
+    /// segments.csv row carries and lands in a last column, `extra_hex`,
+    /// lowercase hex (the pot at 2029 is `ed07`), with the range and the
+    /// failures in meta.json. Without it the files carry no column and no
+    /// key, and are what a run with it writes less those; the wire carries
+    /// the extra reads and nothing else more.
+    #[test]
+    fn the_extra_range_rides_each_segments_poll() {
+        use crate::rig::testkit::Sent;
+        let plain = captured(EXTRA_SCHEDULE, None, None);
+        let with = captured(EXTRA_SCHEDULE, Some("0x238:2"), None);
+        plain.r.unwrap();
+        with.r.unwrap();
+        assert_eq!(plain.segments.lines().next(), Some(SEGMENTS_HEADER));
+        assert!(plain.segments.lines().all(|l| l.split(',').count() == 26));
+        assert!(plain.meta.get("poll_extra").is_none());
+        assert!(plain.meta.get("extra_poll_failures").is_none());
+
+        let head = format!("{SEGMENTS_HEADER},extra_hex");
+        assert_eq!(with.segments.lines().next(), Some(head.as_str()));
+        let rows: Vec<&str> = with.segments.lines().skip(1).collect();
+        assert_eq!(rows.len(), 4);
+        assert!(
+            rows.iter()
+                .all(|l| l.split(',').count() == 27 && l.ends_with(",ed07"))
+        );
+        assert_eq!(
+            with.meta["poll_extra"],
+            serde_json::json!({ "addr": 0x238, "len": 2 })
+        );
+        assert_eq!(with.meta["extra_poll_failures"], 0);
+
+        assert_eq!(with.track, plain.track);
+        assert_eq!(masked(&with.segments, 1), masked(&plain.segments, 0));
+        assert_eq!(without_extra_keys(&with.meta), plain.meta);
+        let extra = Sent::Read(0x238, 2);
+        let polls: Vec<usize> = (0..with.sent.len())
+            .filter(|&i| with.sent[i] == extra)
+            .collect();
+        assert_eq!(polls.len(), 4, "one a segment");
+        assert!(
+            polls
+                .iter()
+                .all(|&i| with.sent[i - 1] == Sent::Read(POLL_BASE, POLL_LEN)),
+            "right behind a poll"
+        );
+        let less: Vec<Sent> = with.sent.into_iter().filter(|s| *s != extra).collect();
+        assert_eq!(less, plain.sent);
+    }
+
+    /// An extra read that fails leaves the capture as it was: the same
+    /// rows, the same segments and the same ending, clean or aborted, each
+    /// failure an empty `extra_hex` counted in meta.json.
+    #[test]
+    fn a_failing_extra_read_changes_nothing_but_its_column_and_count() {
+        let plain = captured(EXTRA_SCHEDULE, None, None);
+        let with = captured(EXTRA_SCHEDULE, Some("0xfff0:16"), None);
+        plain.r.unwrap();
+        with.r.unwrap();
+        assert!(with.segments.lines().skip(1).all(|l| l.ends_with(",")));
+        assert_eq!(with.meta["extra_poll_failures"], 4);
+        assert_eq!(with.meta["ended"], "ok");
+        assert_eq!(with.track, plain.track);
+        assert_eq!(masked(&with.segments, 1), masked(&plain.segments, 0));
+        assert_eq!(without_extra_keys(&with.meta), plain.meta);
+
+        let schedule = "goal:2100@20,hold@10";
+        let plain = captured(schedule, None, Some(3700));
+        let with = captured(schedule, Some("0xfff0:16"), Some(3700));
+        let (pe, we) = (plain.r.unwrap_err(), with.r.unwrap_err());
+        assert_eq!(exit_code(&we), Some(3));
+        assert_eq!(we.to_string(), pe.to_string());
+        assert_eq!(with.track, plain.track);
+        assert_eq!(masked(&with.segments, 1), masked(&plain.segments, 0));
+        assert_eq!(with.meta["extra_poll_failures"], 1);
+        assert_eq!(without_extra_keys(&with.meta), plain.meta);
+    }
+
+    /// Inside a train the extra read sits right behind the poll between two
+    /// bursts, ahead of the COMMIT; a poll the watchdog trips on takes none,
+    /// so torque goes off as soon as it did, and its row's `extra_hex` is
+    /// empty and not counted.
+    #[test]
+    fn the_extra_range_follows_the_train_poll_and_skips_a_tripped_one() {
+        use crate::rig::testkit::Sent::{Commit, Hold, Read, Write};
+        let argv = |schedule: &str| {
+            vec![
+                "--goal-period-ms".to_string(),
+                "25.6".into(),
+                "--no-center".into(),
+                "--mode".into(),
+                "position".into(),
+                "--schedule".into(),
+                schedule.into(),
+                "--poll-extra".into(),
+                "0x238:2".into(),
+            ]
+        };
+        let schedule = train(3);
+        let v = argv(&schedule);
+        let mut r = rig_at(2029, 0);
+        let mut c = cfg(&mut r, &v.iter().map(String::as_str).collect::<Vec<_>>());
+        r.sent();
+        let mut extras = Vec::new();
+        let mut ran = Ran::default();
+        record(&mut r, &mut c, &mut ran, |g| {
+            extras.push(g.extra.clone());
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(extras, vec![Some("ed07".to_string()); 3]);
+        assert_eq!(ran.extra_failures, 0);
+        let sent = r.sent();
+        let (poll, extra) = (Read(POLL_BASE, POLL_LEN), Read(0x238, 2));
+        let goal = Hold(control::GOAL_POSITION.addr);
+        let arm = Hold(control::CHUNK0_ADDR.addr);
+        let second = sent.iter().enumerate().filter(|(_, s)| **s == goal).nth(1);
+        let second = second.unwrap().0;
+        assert_eq!(sent[second..second + 5], [goal, arm, poll, extra, Commit]);
+
+        let schedule = train(4);
+        let v = argv(&schedule);
+        let mut r = rig_at(2029, 0);
+        let mut c = cfg(&mut r, &v.iter().map(String::as_str).collect::<Vec<_>>());
+        r.after_burst = Some(Box::new(|c, k| {
+            if k == 1 {
+                c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                    t.telemetry.common.fault_flags = 1 << 2;
+                    t.telemetry.mode.fault_code = 3;
+                });
+            }
+        }));
+        r.sent();
+        let mut extras = Vec::new();
+        let mut ran = Ran::default();
+        let e = record(&mut r, &mut c, &mut ran, |g| {
+            extras.push(g.extra.clone());
+            Ok(())
+        })
+        .unwrap_err();
+        assert_eq!(e.downcast_ref::<Abort>().unwrap().seg, Some(2), "{e}");
+        assert_eq!(
+            extras,
+            [
+                Some("ed07".to_string()),
+                Some("ed07".into()),
+                Some(String::new())
+            ]
+        );
+        assert_eq!(ran.extra_failures, 0);
+        let sent = r.sent();
+        let last = sent.iter().rposition(|s| *s == Commit).unwrap();
+        assert_eq!(
+            sent[last - 4..=last],
+            [goal, arm, poll, Write(control::TORQUE_ENABLE.addr), Commit]
+        );
     }
 }
