@@ -1,0 +1,134 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/window-term/onsets-A, telemetry/mg90-d__dev-v006-2A-D/window-term/onsets-A-brake",
+  "notes": "stage 3 window term of mg90-d on dev-v006-2A-D, horn free, 5 V, the OpenLoop onsets from rest of window-term/onsets-A (each after 500 ms of coast) and window-term/onsets-A-brake (each after a 300 ms brake released about 3 ms before), 25 / 27 / 29 % both ways, gated and fitted together. The reading over each onset's own trough zero, the board's settle gain by the row's width, is fitted over read periods 1 to 12 as the winding current of a whole-pulse train (stage 1's edges at the sweeps' rail, sample instant and low-side loop; L and R free on a grid) plus g x (1 - D) x V_on. g_over_mean_ms is the quantity the field holds, g plus the sample's lateness, in mS; the field is g_over_mean_ms x counts_per_a / terminal_counts_per_v x 65536 on stage 1's scales. Bounds are the bootstrap sd over onsets (2000 draws within direction, seeded) unless the unit says otherwise. The fit cannot tell g from a first pulse that starts late (first_pulse_slope_ms_per_tick): g is good only as far as the first pulse after rest is an ordinary one.",
+  "inputs": {
+    "stages/1-board/bridge-states/results/dev-v006-2A-D.json": "d5e050edaf991630ba778cb78f44f3073b8f40cb",
+    "stages/1-board/current-scale/results/dev-v006-2A-D.json": "5fbdb93bd77174824fffb47a5b58e6d50e8d66e1",
+    "stages/1-board/sample-timing/results/dev-v006-2A-D.json": "6de39d5aa7818cba119048a5ef59028760a03420",
+    "stages/1-board/terminal-chain/results/dev-v006-2A-D.json": "e1249f71a80bcad5c4c1d64301560f66c0bd8582",
+    "stages/1-board/wide-codes/results/dev-v006-2A-D.json": "68f01864e8cba762cf8c680f3078df4ecd4b77fc",
+    "stages/3-servo/inductance/results/mg90-d__dev-v006-2A-D.json": "89124e02f9b3303723bfb0dc0570a9d04948e318",
+    "stages/3-servo/resistance/results/mg90-d__dev-v006-2A-D.json": "aeac82cbb9299ae6d23e31753d8010797bc7a25d"
+  },
+  "g_over_mean_ms": {
+    "value": 3.932556090386423,
+    "lo": 3.8907643008204267,
+    "hi": 3.9743478799524197,
+    "unit": "mS, the window term the reading carries over the period's mean, g alone plus the sample's lateness, on (1 - D) V_on; bounds the bootstrap sd of g over the 105 onsets"
+  },
+  "g_ms": {
+    "value": 3.8064067642348016,
+    "lo": 3.764614974668805,
+    "hi": 3.848198553800798,
+    "unit": "mS, g alone at the shunt sample's instant, bootstrap sd over onsets"
+  },
+  "lateness_ms": {
+    "value": 0.12614932615162153,
+    "lo": null,
+    "hi": null,
+    "unit": "mS, the sample's place after the window's middle at the fit's L"
+  },
+  "g_choices_ms": {
+    "value": 3.8064067642348016,
+    "lo": 3.616510051332039,
+    "hi": 4.054055031058962,
+    "unit": "mS, g alone with the edges, the sample and the window moved one at a time, the range as bounds"
+  },
+  "g_over_mean_choices_ms": {
+    "value": 3.932556090386423,
+    "lo": 3.852838159408369,
+    "hi": 4.027110885313025,
+    "unit": "mS, the same for g plus the lateness"
+  },
+  "l_mh": {
+    "value": 0.790000000000001,
+    "lo": null,
+    "hi": null,
+    "unit": "mH, the fit's L, grid step 0.01"
+  },
+  "r_ohm": {
+    "value": 4.380000000000001,
+    "lo": null,
+    "hi": null,
+    "unit": "ohm, the fit's R, grid step 0.02"
+  },
+  "tau_periods": {
+    "value": 3.6073059360730633,
+    "lo": null,
+    "hi": null,
+    "unit": "PWM periods, the fit's L/R"
+  },
+  "rms_ma": {
+    "value": 0.4379721831835019,
+    "lo": null,
+    "hi": null,
+    "unit": "mA, residual rms over read periods 1 to 12, 9 dof"
+  },
+  "v_on_v": {
+    "value": 4.874908158203244,
+    "lo": null,
+    "hi": null,
+    "unit": "V, the on-window volts, mean"
+  },
+  "n_onsets": {
+    "value": 105.0,
+    "lo": null,
+    "hi": null,
+    "unit": "onsets fitted"
+  },
+  "g_ms_A": {
+    "value": 3.8650605446271658,
+    "lo": 3.803776950710388,
+    "hi": 3.9263441385439437,
+    "unit": "mS, the same fit on this session alone"
+  },
+  "g_over_mean_ms_A": {
+    "value": 3.9911429108326186,
+    "lo": null,
+    "hi": null,
+    "unit": "mS, its g plus its lateness"
+  },
+  "g_ms_brake": {
+    "value": 3.8038314559650512,
+    "lo": 3.749755665857452,
+    "hi": 3.8579072460726507,
+    "unit": "mS, the same fit on this session alone"
+  },
+  "g_over_mean_ms_brake": {
+    "value": 3.928470038486619,
+    "lo": null,
+    "hi": null,
+    "unit": "mS, its g plus its lateness"
+  },
+  "forward_less_reverse_ms": {
+    "value": -0.15119657173571976,
+    "lo": -0.1829965850570276,
+    "hi": -0.11939655841441195,
+    "unit": "mS, per-onset g with L and R pinned, forward less reverse, se"
+  },
+  "first_pulse_slope_ms_per_tick": {
+    "value": 0.029843731303168024,
+    "lo": null,
+    "hi": null,
+    "unit": "mS a tick the first pulse after rest starts late"
+  },
+  "meter_less_lateness_ms": {
+    "value": 4.619573266613316,
+    "lo": null,
+    "hi": null,
+    "unit": "mS, stage 3's meter g less this lateness, like for like"
+  },
+  "fence": {
+    "value": 0.13077408075332642,
+    "lo": null,
+    "hi": null,
+    "unit": "g_window_q016 x r_q12 over 2^25 at the field this value gives"
+  },
+  "checks": {
+    "per-period rms <= 1 mA": true,
+    "L/R inside 2 to 8 periods": true,
+    "directions within 0.4 mS": true,
+    "session-direction sd <= 0.4 mS": true,
+    "fence 0 < g_window_q016 x r_q12 <= 2^25": true
+  }
+}
