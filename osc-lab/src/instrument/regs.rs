@@ -44,25 +44,25 @@ pub mod calib {
 
     pub const R_Q12: Reg = reg(0x0080, 2);
     /// The pot stops.
-    pub const RAW_MIN: Reg = reg(0x00a0, 2);
-    pub const RAW_MAX: Reg = reg(0x00a2, 2);
+    pub const RAW_MIN: Reg = reg(0x00a4, 2);
+    pub const RAW_MAX: Reg = reg(0x00a6, 2);
     /// The board NTC's counts-to-centi-C quadratic about its reference.
-    pub const NTC_RAW_REF: Reg = reg(0x0094, 2);
-    pub const NTC_T_REF_CC: Reg = reg(0x0096, 2);
-    pub const NTC_K1_Q88: Reg = reg(0x0098, 2);
-    pub const NTC_K2_Q24: Reg = reg(0x009a, 2);
-    pub const SHUNT_R_MOHM: Reg = reg(0x00ac, 2);
-    pub const GAIN_MILLI: Reg = reg(0x00ae, 2);
-    pub const VMOTOR_DIV_TOP: Reg = reg(0x00b0, 2);
-    pub const VMOTOR_DIV_BOT: Reg = reg(0x00b2, 2);
-    pub const VDD_MV: Reg = reg(0x00b4, 2);
-    pub const TICK_HZ: Reg = reg(0x00b6, 2);
-    pub const I_WINDOW_MIN_TICKS: Reg = reg(0x00b8, 2);
-    pub const VBUS_DIV_TOP_OHM: Reg = reg(0x00bc, 2);
-    pub const VBUS_DIV_BOT_OHM: Reg = reg(0x00be, 2);
-    pub const RAIL_DROP_MV: Reg = reg(0x00c8, 2);
+    pub const NTC_RAW_REF: Reg = reg(0x0098, 2);
+    pub const NTC_T_REF_CC: Reg = reg(0x009a, 2);
+    pub const NTC_K1_Q88: Reg = reg(0x009c, 2);
+    pub const NTC_K2_Q24: Reg = reg(0x009e, 2);
+    pub const SHUNT_R_MOHM: Reg = reg(0x00b0, 2);
+    pub const GAIN_MILLI: Reg = reg(0x00b2, 2);
+    pub const VMOTOR_DIV_TOP: Reg = reg(0x00b4, 2);
+    pub const VMOTOR_DIV_BOT: Reg = reg(0x00b6, 2);
+    pub const VDD_MV: Reg = reg(0x00b8, 2);
+    pub const TICK_HZ: Reg = reg(0x00ba, 2);
+    pub const I_WINDOW_MIN_TICKS: Reg = reg(0x00bc, 2);
+    pub const VBUS_DIV_TOP_OHM: Reg = reg(0x00c0, 2);
+    pub const VBUS_DIV_BOT_OHM: Reg = reg(0x00c2, 2);
+    pub const RAIL_DROP_MV: Reg = reg(0x00cc, 2);
     /// The PWM period, compare counts: TEL `duty_counts`' full scale. RO.
-    pub const PWM_PERIOD_TICKS: Reg = reg(0x00ce, 2);
+    pub const PWM_PERIOD_TICKS: Reg = reg(0x00d2, 2);
 }
 
 pub mod control {
@@ -174,7 +174,7 @@ pub mod telemetry {
     pub const TEL_DROP_COUNT: Reg = reg(0x03c6, 2);
     /// The velocity loop's reference as it reads it, csQ16; 0 on an image
     /// that carries no stimulus.
-    pub const OMEGA_REF_CPS: Reg = reg(0x03d0, 4);
+    pub const OMEGA_REF_CPS: Reg = reg(0x03d4, 4);
 }
 
 #[cfg(test)]

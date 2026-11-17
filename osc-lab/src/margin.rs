@@ -1687,7 +1687,7 @@ mod tests {
             meta["inject_after"],
             serde_json::json!({ "inject_accel_q88": 0, "inject_half_periods": 0 })
         );
-        assert_eq!(meta["row"], serde_json::json!([[0x258, 8], [0x3d0, 4]]));
+        assert_eq!(meta["row"], serde_json::json!([[0x258, 8], [0x3d4, 4]]));
         assert_eq!(meta["plan"]["steps"].as_array().unwrap().len(), 3);
         assert_eq!(meta["limits"]["guard"], serde_json::json!([432, 3626]));
         for k in [
