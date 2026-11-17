@@ -2228,6 +2228,9 @@ OVERTAKEN = {
 # of record no longer has. The 200 side is the set of record's own default; the 400 side, the ceiling itself,
 # stays the point its rungs ran.
 SWEEP_SIDES = {"motion-200": NOT_HELD, "motion-400": NOT_HELD}
+# The 400 deg/s point as policy entries: the move speed rounds to the nearest count, 8051, and the ceiling, a
+# derated cap, down to 8050, so the point is one count over the ceiling and its build is refused.
+OVER = {"motion-400-policy": "velocity_limit_cps: 8051 count/s is over the set's speed_ceiling_cps, 8050 count/s"}
 
 
 def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what_it_names_alone():
@@ -2235,12 +2238,12 @@ def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what
     base = cn.of_record(pair)
     files = sorted((results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations").glob("*.json"))
     assert {f.stem for f in files} >= {"motor-r", "motor-model"} and {f.stem for f in files} > {
-        *OVERTAKEN, *SWEEP_SIDES}
+        *OVERTAKEN, *SWEEP_SIDES, *OVER}
     for f in files:
         dev = json.loads(f.read_text())
         pins, release, policy = dev.get("pins", {}), dev.get("release", []), dev.get("policy", {})
         assert dev["note"] and "/Users/" not in f.read_text() and "/home/" not in f.read_text(), f.name
-        if f.stem in OVERTAKEN or f.stem in SWEEP_SIDES:
+        if f.stem in OVERTAKEN or f.stem in SWEEP_SIDES or f.stem in OVER:
             continue
         doc, _ = cn.derive(base, f)
         moved = doc["deviation"]["fields"]
@@ -2296,14 +2299,17 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
             cn.derive(base, folder / f"{name}.json")
     sweep = json.loads((folder / "motion-200.json").read_text())["policy"]
     assert {k: policy[k] for k in sweep} == sweep
+    for name, why in OVER.items():
+        with pytest.raises(ValueError, match=re.escape(why)):
+            cn.derive(base, folder / f"{name}.json")
     # every other file derives, so the lists are the folder
-    live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in OVERTAKEN and f.stem not in SWEEP_SIDES)
+    live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in {*OVERTAKEN, *SWEEP_SIDES, *OVER})
     assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "emf-pair-as-held",
-                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held", "motion-400-policy",
+                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held",
                     "observer-10hz", "observer-25hz", "plant-as-held", "r-as-held"]
     # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
-    # one it ran: what its release gave there is what the set of record binds now, and the 200 side's set is
-    # the set of record itself. The rungs at 400 deg/s keep the point they ran
+    # one it ran: what its release gave there is what the set of record binds now, the 200 side's limits of
+    # motion among it. The rungs at 400 deg/s keep the point they ran
     named = {}
     for result in sorted(sc.result_path(pair, "x").parent.glob("*.json")):
         doc = json.loads(result.read_text())
@@ -2314,7 +2320,6 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
             assert sc.file_sha1(results.ROOT / dev["file"]) == dev["sha1"], result.name
             binds = {n: fields[n]["value"] for n in dev["fields"]} == {n: b for n, (_, b) in dev["fields"].items()}
             assert binds == (stem != "motion-400"), result.name
-            assert (doc["set"]["hash"] == base["hash"]) == (stem == "motion-200"), result.name
     assert named == {"motor-model": ["zz-ab-motor-model-2", "zz-ab-motor-model"],
                      "protection-ntc-curve": ["zz-ab-ntc-pinned"], "motor-r": ["zz-ab-r-measured"],
                      "motion-200": ["zz-sweep-motion-200"],

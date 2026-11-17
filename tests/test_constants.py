@@ -611,7 +611,8 @@ def test_a_looser_limit_needs_loosen(stored, bench, tmp_path):
     ("stall_response", "Fault (0)", "Yield (1)", True), ("stall_response", "Yield (1)", "Fault (0)", True),
     ("i_cont_counts", 277, 0, True), ("i_cont_counts", 277, 200, True), ("rail_fold_q8", 1430, 0, True),
     ("ntc_k1_q88", 563, 212, True), ("cutoff_cc", 10000, "9000", True), ("cutoff_cc", 10000, 9000, False),
-    ("derate_start_cc", 8000, 9000, True),
+    ("derate_start_cc", 8000, 9000, True), ("speed_ceiling_cps", 8051, 8244, True),
+    ("speed_ceiling_cps", 8051, 4025, False),
 ])
 def test_looser_reads_a_direction_and_takes_what_it_cannot_read_as_less(name, on_servo, wanted, less):
     assert cn.looser(name, on_servo, wanted) is less
@@ -619,7 +620,7 @@ def test_looser_reads_a_direction_and_takes_what_it_cannot_read_as_less(name, on
 
 def test_every_protection_field_has_one_way_to_protect_less():
     assert cn.PROTECTION == {*cn.LOOSER, *cn.RETIRED} and set(cn.LOOSER.values()) == {"up", "down", "judged"}
-    assert len(cn.LOOSER) == 25 and not cn.PROTECTION & {*cn.COMMS, cn.STAMP, wc.FIELD}
+    assert len(cn.LOOSER) == 26 and not cn.PROTECTION & {*cn.COMMS, cn.STAMP, wc.FIELD}
     # a field the firmware no longer names keeps the way it had, for the sets written while it stood: it is
     # no field of the table now, and nothing binds it
     assert cn.RETIRED == {"derate_start_cc": "up"} and not set(cn.RETIRED) & {*cn.LOOSER, *cn.RULES}
@@ -822,7 +823,10 @@ NO_SCALE = "current_counts_per_a: left out, 1-board/current-scale has no result 
 WAYS = ("rails_fit", "locked_laps", "small_step", "take_back")
 NO_RULE = "policy.json names no rule for {} of " + ", ".join(f"{{}}.{w}" for w in WAYS)
 NO_LADDER = "3-servo/ladder has no result for synth__board"
-NO_LIMIT = "current_limit_counts: held, policy.json has no current_limit_ma"
+# and of a servo that names no class: no value is read off a maker's sheet
+NO_CLASS = "the registry has no servo datasheet_class for synth__board"
+NO_LIMIT = f"current_limit_counts: held, {NO_CLASS}"
+NO_CEILING = f"speed_ceiling_cps: left out, {NO_CLASS}"
 NO_R = f"r_q12: held, {NO_RULE.format('r_q12', *['r'] * 4)}"
 # and of the fields in counts of position under a policy with none of their entries: the range, the hold band
 # and the stall speed, which the fake servo holds, are held, the rest left out
@@ -862,11 +866,16 @@ NO_BLOCK = [
     *(f"{n}: left out, policy.json has no winding_plateau_reading" for n in ("th_rise_q016", "th_rise2_q016")),
     *NO_CHOICES,
     "v_undervolt_counts: left out, 1-board/terminal-chain has no result for board",
-    "rail_fold_q8: left out, 1-board/current-scale has no result for board"]
-# the registry with the board's tick rate, and the policy entries the rules of the motor block and of the
-# protection fields read
-BOARD_REG = {**REG, "board": {"tick_hz": 20_000}}
-LIMITS_MA = {"current_limit_ma": 500.0, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
+    "rail_fold_q8: left out, 1-board/current-scale has no result for board", NO_CEILING]
+# the registry with the board's tick rate and the class the fake servo is of, whose datasheet record a build
+# reads the speed ceiling and the current limit off, and the policy entries the rules of the motor block and
+# of the protection fields read: the current limit is the stall at 4.8 V through the rails fit's 4 ohm, at
+# half, 600 counts at 1000 counts per A
+CLASS = "synth-class"
+CLASS_SHEET = f"stages/5-closed-loop/calibration/{CLASS}.datasheet.json"
+DOCUMENT = "the maker's page, at its address, read on a day"
+BOARD_REG = {"servo": {**REG["servo"], "datasheet_class": CLASS}, "board": {"tick_hz": 20_000}}
+LIMITS_MA = {"datasheet_derate_default": 0.5, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
 BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_q12": "r.rails_fit", "r_bemf_q12": "r_bemf.small_step"},
                 **LIMITS_MA, "collision_trip": "off", "cutoff_c": 90.0, "winding_plateau_reading": "high",
                 "stall_response": "fault"}
@@ -885,7 +894,7 @@ CHOICE_POLICY = {"current_loop_hz": 1000.0, "stall_time_ms": 500.0, "pos_error_t
 # inputs give a value, the one the fake servo holds carried with what it would be, the rest, which nothing
 # carries, left to a build that names them
 BLOCK_SAID = [
-    *NO_RANGE, "current_limit_counts: carried at 554, it would be 500: name it with --protection", NO_STALL,
+    *NO_RANGE, "current_limit_counts: carried at 554, it would be 600: name it with --protection", NO_STALL,
     *NO_LOOP, *NO_COUNTS,
     *(f"{n}: left out, name it with --protection" for n in (
         "ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts",
@@ -893,7 +902,8 @@ BLOCK_SAID = [
         "th_rise2_q016")),
     *NO_CHOICES,
     "v_undervolt_counts: left out, policy.json has no v_undervolt_v",
-    "rail_fold_q8: left out, policy.json has no rail_source_ohm"]
+    "rail_fold_q8: left out, policy.json has no rail_source_ohm",
+    "speed_ceiling_cps: left out, policy.json has no datasheet_derate_speed"]
 PLANT = {
     "1-board/current-scale": {"counts_per_a": (1000.0, 990.0, 1010.0)},
     "1-board/ntc-curve": {"design_raw_ref": (2048.0,), "design_t_ref_cc": (2600.0,), "design_k1_q88": (200.0,),
@@ -1030,8 +1040,8 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
                                "carried_from": first["hash"]["set"], "scale": "unknown", "protection": None}
     # the plant moved and the protection fields did not; the same inputs give the same bytes; the file loads
     # a protection field whose rule has nothing to read is held where it stood too: no value of it moves
-    assert f["current_limit_counts"] == {"value": 554, "class": "none", "rule": "current_limit.policy",
-                                         "held": "policy.json has no current_limit_ma",
+    assert f["current_limit_counts"] == {"value": 554, "class": "none", "rule": "current_limit.stall_derate",
+                                         "held": NO_CLASS,
                                          "carried_from": first["hash"]["set"], "protection": {"looser": "up"}}
     assert moved_hashes(first, doc) == ["plant"]
     assert cn.render(built_on(first, tmp_path)[0]) == cn.render(doc)
@@ -1050,7 +1060,7 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
         "pos_min_soft_counts: 314 [none -> none, held, soft_min.stops]",
         "pos_max_soft_counts: 3560 [none -> none, held, soft_max.stops]",
         "pos_deadband_counts: 4 [none -> none, held, deadband.pot_noise]",
-        "current_limit_counts: 554 [none -> none, held, current_limit.policy]",
+        "current_limit_counts: 554 [none -> none, held, current_limit.stall_derate]",
         "stall_response: Fault (0) [none -> none, held, stall_response.policy]",
         "stall_omega_max_cps: 500 [none -> none, held, stall_omega_max.policy]",
         "r_q12: 17100 [none -> none, held]",
@@ -1074,8 +1084,9 @@ def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
 def context(root, k=1.0, policy=None, **kw):
     """The Context a build gives its rules over `inputs(**kw)` and the
     plant's results, the scale of the count times `k`."""
-    inputs(root, policy={**BLOCK_POLICY, **COUNT_POLICY, **CHOICE_POLICY, **(policy or {})}, **kw)
+    inputs(root, policy={**BLOCK_POLICY, **COUNT_POLICY, **CHOICE_POLICY, **DERATE, **(policy or {})}, **kw)
     plant(root, {**PLANT, **POT_NOISE})
+    datasheet(root)
     c = cn.Context(PAIR, root, BOARD_REG)
     cn.table_of(c, None, cn.slots_of(c, None))
     c.scale = {**c.scale, "counts_per_deg": c.scale["counts_per_deg"] * k}
@@ -1136,6 +1147,10 @@ def test_a_field_that_does_not_fit_is_refused(first, tmp_path):
     assert [cn.encode(r, x) for x in (1.5, 0.001953125, 0.0019, 255.998)] == [384, 1, 0, 65535]
     assert cn.encode(dataclasses.replace(r, kind="i16", q=0), -2.5) == -3
     assert cn.encode(r, "2 (metal)") == "2 (metal)"
+    # a cap derated from a maker's value rounds down, never past its derate: the two datasheet derates
+    cap = dataclasses.replace(r, cap=True)
+    assert [cn.encode(cap, x) for x in (1.5, 0.0039, 255.998)] == [384, 0, 65535]
+    assert {r.name for r in cn.rules() if r.cap} == {"speed_ceiling.datasheet", "current_limit.stall_derate"}
     for x in (256.0, -0.01):
         with pytest.raises(ValueError, match="does not fit its u16"):
             cn.encode(r, x)
@@ -1256,8 +1271,8 @@ def test_one_build_moves_one_hash(first, limited, tmp_path):
     assert moved_hashes(doc, named) == ["protection"] and notes == [
         "1-board/wide-codes: the results it read are not recorded",
         "current_counts_per_a: left out, 1-board/current-scale has no counts_per_a",
-        *(n for n in HELD_BLOCK if n != NO_LIMIT), *NO_BLOCK[:-1],
-        "rail_fold_q8: left out, 1-board/current-scale has no counts_per_a"]
+        *(n for n in HELD_BLOCK if n != NO_LIMIT), *NO_BLOCK[:-2],
+        "rail_fold_q8: left out, 1-board/current-scale has no counts_per_a", NO_CEILING]
     assert named["fields"]["current_limit_counts"] == {
         "value": 500, "class": "policy", "rule": "current_limit.class", "rule_rev": 1, "unit": "ccounts", "q": 0,
         "pos_unit": 0, "inputs": ["1-board/current-scale:half_limit_counts"], "band": [490, 520],
@@ -1526,13 +1541,15 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     doc = cn.of_record(postable.default_pair())
     f = doc["fields"]
     assert not any(e["class"] in cn.WAS for e in f.values())
-    assert cn.classes(doc) == {"measured": 16, "bench": 10, "datasheet": 0, "policy": 34, "pinned": 1, "none": 1}
+    assert cn.classes(doc) == {"measured": 16, "bench": 10, "datasheet": 1, "policy": 34, "pinned": 1, "none": 1}
     by = {c: [n for n, e in f.items() if e["class"] == c] for c in cn.CLASSES}
     assert by["measured"] == ["j_ff_q88", "thermal_tau_s", "r_q12", "recip_ke_q", "b_i_q313", "fric_fc_counts",
                               "fric_fv_q016", "ke_vpc_q", "r0_q12", "th_rise_q016", "ntc_raw_ref", "ntc_t_ref_cc",
                               "ntc_k1_q88", "ntc_k2_q24", "ke_uvs_per_rad", "angle_max_cdeg"]
     # the one pin: the board's nominal supply word, which a capture is matched to its board by
     assert by["pinned"] == ["vdd_mv"]
+    # the one value of the maker's: the speed ceiling, read off the class's page
+    assert by["datasheet"] == ["speed_ceiling_cps"]
     # the gains of the current loop and of the observer among them: a bandwidth is a target, and the policy
     # holds each at the pick of its bench sweep; and the limits of motion, the owner's default move speed
     assert by["policy"] == ["pos_min_soft_counts", "pos_max_soft_counts", "i_kp_q88", "i_ki_q412", "i_kaw_q412",
@@ -1755,15 +1772,13 @@ def test_a_set_carries_the_current_scale_it_is_scored_with_under_a_hash_of_its_o
         cn.load(out)
 
 
-# --- the limits no field holds ---
+# --- the values read off the maker's sheet ---
 
-CLASS = "synth-class"                                       # the class the fake servo is of
-CLASS_REG = {**BOARD_REG, "servo": {**REG["servo"], "datasheet_class": CLASS}}
+CLASS_REG = BOARD_REG
 RAIL_REG = {**CLASS_REG, "servo": {**CLASS_REG["servo"], "rated_v": 5.0}}     # and the rail it runs on
-CLASS_SHEET = f"stages/5-closed-loop/calibration/{CLASS}.datasheet.json"
-DOCUMENT = "the maker's page, at its address, read on a day"
 DERATE = {"datasheet_derate_speed": [2, 3]}
-CEILING = round(400 * SCALE)        # two thirds of 60 deg in 0.10 s, counts per second on the fake's table
+CEILING = math.floor(400 * SCALE)   # two thirds of 60 deg in 0.10 s, counts per second on the fake's table, down
+CEILING_6V = math.floor(500 * SCALE)    # the same at the 6.0 V row: 10305.6 counts per second, rounded down
 NO_TIME = "the datasheet record states no one no-load time at its operating voltage, 5 V"
 VOLTS_RANGE = (4.8, 6.6)            # a range of operating voltage, with both of the sheet's two speeds in it
 BY_RAIL = {**DERATE, "datasheet_speed_voltage": "rated_v"}
@@ -1773,7 +1788,7 @@ IN_RANGE = "in its operating range, 4.8 V to 6.6 V"
 def datasheet(root, volts=4.8):
     """The datasheet record of the fake servo's class under `root`: an
     operating voltage, a range of it for a (min, max), and the no-load
-    time over 60 deg at two."""
+    time over 60 deg and the stall torque at two."""
     path = root / CLASS_SHEET
     path.parent.mkdir(parents=True, exist_ok=True)
     of = dict(zip(("min", "max"), volts)) if isinstance(volts, tuple) else {"value": volts}
@@ -1781,48 +1796,49 @@ def datasheet(root, volts=4.8):
         "what": "what the maker states of the class", "class": CLASS, "document": DOCUMENT,
         "stated": {"operating_voltage": {**of, "unit": "V"},
                    "no_load_time": [{"value": 0.10, "unit": "s per 60 deg", "per_deg": 60, "at_v": 4.8},
-                                    {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}]}}))
+                                    {"value": 0.08, "unit": "s per 60 deg", "per_deg": 60, "at_v": 6.0}],
+                   "stall_torque": [{"value": 1.8, "unit": "kg cm", "at_v": 4.8},
+                                    {"value": 2.2, "unit": "kg cm", "at_v": 6.0}]}}))
     return path
 
 
 def classed(previous, root, registry=CLASS_REG):
-    """A build for the fake servo as one of its class."""
-    return cn.build(PAIR, previous, root=root, registry=registry)
+    """A build for the fake servo as one of its class: the plant on
+    `previous`, then the speed ceiling, a protection field, by a build
+    that names it."""
+    plain, _ = cn.build(PAIR, previous, root=root, registry=registry)
+    return cn.build(PAIR, plain, protection=[cn.CEILING], root=root, registry=registry)
+
+
+# what the entry of the ceiling reads, in order, of a sheet with one operating voltage
+SHEET_READS = ["registry:datasheet_class", "datasheet:operating_voltage", "datasheet:no_load_time",
+               "policy:datasheet_derate_speed", "scale"]
 
 
 def test_the_speed_ceiling_is_the_makers_no_load_speed_derated_at_the_sets_scale(first, tmp_path):
     inputs(tmp_path, policy=DERATE)
     path = datasheet(tmp_path)
-    # a servo that names no class has no sheet: its set holds no limit, and the build says nothing of one
+    # a servo that names no class has no sheet: its set holds no ceiling, and the build says why
     bare, notes = built_on(first, tmp_path)
-    assert "limits" not in bare and "limits" not in bare["hash"] and not any(cn.CEILING in n for n in notes)
+    assert cn.CEILING not in bare["fields"] and "limits" not in bare and NO_CEILING in notes
+    # a protection field: a build of the plant leaves it to a build that names it
+    plain, notes = cn.build(PAIR, bare, root=tmp_path, registry=CLASS_REG)
+    assert cn.CEILING not in plain["fields"] and "speed_ceiling_cps: left out, name it with --protection" in notes
     doc, notes = classed(bare, tmp_path)
     # 60 deg in 0.10 s at the sheet's operating voltage is 600 deg/s, two thirds of it 400 deg/s, and that in
     # counts per second at the set's scale: the record, the policy and the scale, no number typed
-    assert doc["limits"] == {cn.CEILING: {
+    assert doc["fields"][cn.CEILING] == {
         "value": CEILING, "class": "datasheet", "rule": "speed_ceiling.datasheet", "rule_rev": 1, "unit": "count/s",
-        "q": 0, "pos_unit": 1, "scale_points_sha1": cn.points_sha1(POINTS),
-        "inputs": ["policy:datasheet_derate_speed", "registry:datasheet_class", "datasheet:operating_voltage",
-                   "datasheet:no_load_time", "scale"],
+        "q": 0, "pos_unit": 1, "scale_points_sha1": cn.points_sha1(POINTS), "inputs": SHEET_READS,
         "deg_s": 400.0, "stated_deg_s": 600.0, "at_v": 4.8, "derate": [2, 3],
-        "record": "what the maker states of the class", "document": DOCUMENT, "bounds": ["velocity_limit_cps"]}}
-    assert CEILING == 8244 and not any(cn.CEILING in n for n in notes)
+        "record": "what the maker states of the class", "document": DOCUMENT, "protection": {"looser": "up"}}
+    assert CEILING == 8244 and not any(n.startswith(cn.CEILING) for n in notes)
     # the record is an input of the set by its sha1, the class the registry's
     assert doc["inputs"]["datasheet"] == {"file": CLASS_SHEET, "sha1": sc.file_sha1(path)}
-    assert doc["inputs"]["registry"] == {"servo": CLASS_REG["servo"]}
-    # it is on no servo: the plant, the protection and the set hash stand, and a hash of its own says it
-    assert {k: doc["hash"][k] for k in bare["hash"]} == bare["hash"]
-    assert doc["hash"]["limits"] == sc.config_hash({cn.CEILING: CEILING})
-    h = bare["hash"]
-    assert cn.changes(bare, doc) == [
-        f"limit speed_ceiling_cps: not in the set -> {CEILING}",
-        f"hash: limits moved: plant {h['plant'][:12]} -> {h['plant'][:12]}, protection {h['protection'][:12]} -> "
-        f"{h['protection'][:12]}, set {h['set'][:12]} -> {h['set'][:12]}, limits none -> "
-        f"{doc['hash']['limits'][:12]}"]
-    assert cn.described(doc)[-1] == (
-        f"hash: plant {h['plant'][:12]}, protection {h['protection'][:12]} "
-        f"({sum(n in cn.PROTECTION for n in doc['fields'])} fields), set {h['set'][:12]}, limits "
-        f"{doc['hash']['limits'][:12]}")
+    assert doc["inputs"]["registry"]["servo"] == CLASS_REG["servo"]
+    # the servo holds it: the protection hash moves and the plant stands, and no hash of a limit is left
+    assert moved_hashes(plain, doc) == ["protection"] and "limits" not in doc["hash"]
+    assert cn.changes(plain, doc)[0] == f"speed_ceiling_cps: not in the set -> {CEILING}"
     # status says the ceiling with its source: the maker's value, the derate, the document, what it bounds
     lines, stale = cn.status(doc, tmp_path, CLASS_REG)
     assert not stale and lines[lines.index(cn.described(doc)[-1]) + 1] == (
@@ -1832,29 +1848,74 @@ def test_the_speed_ceiling_is_the_makers_no_load_speed_derated_at_the_sets_scale
     # the file renders, loads and builds again to the same bytes
     out = cn.write(doc, tmp_path / "x.constants.json")
     assert cn.load(out) == doc and cn.render(classed(bare, tmp_path)[0]) == out.read_text()
-    # a record that moves makes the set stale, and the build after moves that hash alone: at another
-    # operating voltage the ceiling is the speed the sheet states there, derated
+    # a record that moves makes the set stale, and the build after moves the protection hash alone: at
+    # another operating voltage the ceiling is the speed the sheet states there, derated
     datasheet(tmp_path, volts=6.0)
     lines, stale = cn.status(doc, tmp_path, CLASS_REG)
     assert stale and lines[0] == (f"stale: datasheet ({CLASS_SHEET}) is no longer the file the set read, sha1 "
                                   f"{sc.file_sha1(path)}: speed_ceiling_cps")
-    again, _ = classed(doc, tmp_path)
-    e = again["limits"][cn.CEILING]
-    assert (e["stated_deg_s"], e["deg_s"], e["at_v"], e["value"]) == (750.0, 500.0, 6.0, round(500 * SCALE))
-    assert [k for k in doc["hash"] if doc["hash"][k] != again["hash"][k]] == ["limits"]
-    assert cn.changes(doc, again)[0] == (f"limit speed_ceiling_cps: {CEILING} -> {round(500 * SCALE)} "
+    again, _ = cn.build(PAIR, doc, protection=[cn.CEILING], root=tmp_path, registry=CLASS_REG)
+    e = again["fields"][cn.CEILING]
+    assert (e["stated_deg_s"], e["deg_s"], e["at_v"], e["value"]) == (750.0, 500.0, 6.0, CEILING_6V)
+    assert CEILING_6V == 10305 and round(500 * SCALE) == 10306
+    assert moved_hashes(doc, again) == ["protection"]
+    assert cn.changes(doc, again)[0] == (f"speed_ceiling_cps: {CEILING} -> {CEILING_6V} "
                                          f"[datasheet, speed_ceiling.datasheet]")
-    # an edited limit is not the set the tool wrote
+    # an edited ceiling is not the set the tool wrote
     for change, match in (
             (lambda e: e.update(value=60000), "hashes are not those of its content"),
-            (lambda e: e.update(bounds=[]), "speed_ceiling_cps is no limit as the tool writes one"),
+            (lambda e: e.update(protection=None), "speed_ceiling_cps says None of protection"),
             (lambda e: e.pop("document"), "speed_ceiling_cps is of class datasheet and names no record or no document"),
             (lambda e: e.update(scale_points_sha1="0" * 40), "speed_ceiling_cps was computed for the table of")):
         edited = copy.deepcopy(doc)
-        change(edited["limits"][cn.CEILING])
+        change(edited["fields"][cn.CEILING])
         out.write_text(cn.render(edited))
         with pytest.raises(ValueError, match=match):
             cn.load(out)
+
+
+def test_a_set_written_while_the_ceiling_was_a_limit_loads_and_its_limit_stands_until_the_field_is_named(
+        first, tmp_path):
+    inputs(tmp_path, policy=DERATE)
+    datasheet(tmp_path)
+    doc, _ = classed(first, tmp_path)
+    # the set as a build wrote it while the table had no field for the ceiling: a bound under `limits`, the
+    # fields it bounds named, in no hash of what the servo is to hold and under a hash of its own
+    old = copy.deepcopy(doc)
+    e = old["fields"].pop(cn.CEILING)
+    old["limits"] = {cn.CEILING: {**{k: v for k, v in e.items() if k != "protection"},
+                                  "bounds": ["velocity_limit_cps"]}}
+    old["hash"] = cn.hashes(old)
+    assert old["hash"]["limits"] == sc.config_hash({cn.CEILING: CEILING})
+    path = cn.write(old, tmp_path / "old.constants.json")
+    assert cn.load(path) == old and cn.ceiling_said(old)[0].startswith(f"speed ceiling: {CEILING} count/s, 400 deg/s")
+    # it bounds what it bounded, and is no limit as the tool wrote one without the fields it bounds
+    over = copy.deepcopy(old)
+    over["fields"]["velocity_limit_cps"] = {"value": CEILING + 1, "class": "pinned", "why": "a test's", "rung": "x",
+                                            "protection": None}
+    assert cn.over_limit(over) == [f"velocity_limit_cps: {CEILING + 1} count/s is over the set's speed_ceiling_cps, "
+                                   f"{CEILING} count/s (400 deg/s): a field stays at or under the limit that bounds it"]
+    bare = copy.deepcopy(old)
+    bare["limits"][cn.CEILING]["bounds"] = []
+    bare["hash"] = cn.hashes(bare)
+    with pytest.raises(ValueError, match="speed_ceiling_cps is no limit as the tool writes one"):
+        cn.load(cn.write(bare, path))
+    # a build of the plant carries the limit as it stood, and says what names the field
+    plain, notes = cn.build(PAIR, old, root=tmp_path, registry=CLASS_REG)
+    assert plain["limits"] == old["limits"] and plain["hash"] == old["hash"] and cn.CEILING not in plain["fields"]
+    assert f"limit speed_ceiling_cps: carried at {CEILING}, the set holds no field of it: name it with --protection" \
+        in notes
+    # named, the field joins the set and the limit leaves it: the protection hash moves, the limits' goes
+    named, notes = cn.build(PAIR, old, protection=[cn.CEILING], root=tmp_path, registry=CLASS_REG)
+    assert named["fields"][cn.CEILING] == doc["fields"][cn.CEILING] and "limits" not in named
+    assert moved_hashes(old, named) == ["protection"] and "limits" not in named["hash"]
+    assert cn.changes(old, named)[:2] == [f"limit speed_ceiling_cps: {CEILING} -> not in the set",
+                                          f"speed_ceiling_cps: not in the set -> {CEILING}"]
+    # the copy a rung of record ran on while the ceiling was a limit loads as it was written
+    rung = results.ROOT / "telemetry" / postable.default_pair() / "scorecard" / "19a-lifecycle-heat-mean" / sc.SET_COPY
+    ran = cn.load(rung)
+    assert ran["limits"][cn.CEILING]["value"] == 8051 and cn.CEILING not in ran["fields"]
+    assert cn.render(ran) == rung.read_text()
 
 
 def test_a_ceiling_whose_input_is_missing_is_held_and_does_not_guess(first, tmp_path):
@@ -1864,9 +1925,9 @@ def test_a_ceiling_whose_input_is_missing_is_held_and_does_not_guess(first, tmp_
     # the sheet states no time at its operating voltage: the ceiling the set had stands, the input named
     datasheet(tmp_path, volts=5.0)
     held, notes = classed(doc, tmp_path)
-    assert held["limits"] == {cn.CEILING: {
+    assert held["fields"][cn.CEILING] == {
         "value": CEILING, "class": "none", "rule": "speed_ceiling.datasheet", "held": NO_TIME,
-        "carried_from": doc["hash"]["set"], "unit": "count/s", "bounds": ["velocity_limit_cps"]}}
+        "carried_from": doc["hash"]["set"], "protection": {"looser": "up"}}
     assert f"speed_ceiling_cps: held, {NO_TIME}" in notes and held["hash"] == doc["hash"]
     assert cn.load(cn.write(held, tmp_path / "x.constants.json")) == held
     assert (f"speed ceiling: {CEILING} count/s [none, held, speed_ceiling.datasheet]: {NO_TIME}; it bounds "
@@ -1874,12 +1935,13 @@ def test_a_ceiling_whose_input_is_missing_is_held_and_does_not_guess(first, tmp_
     # with nothing to carry it is left out and said: a record that is not there, a derate nobody decided
     path.unlink()
     none, notes = classed(first, tmp_path)
-    assert "limits" not in none
+    assert cn.CEILING not in none["fields"]
     assert f"speed_ceiling_cps: left out, the servo class {CLASS} has no datasheet record ({CLASS_SHEET})" in notes
     datasheet(tmp_path)
     inputs(tmp_path)
     none, notes = classed(first, tmp_path)
-    assert "limits" not in none and "speed_ceiling_cps: left out, policy.json has no datasheet_derate_speed" in notes
+    assert cn.CEILING not in none["fields"]
+    assert "speed_ceiling_cps: left out, policy.json has no datasheet_derate_speed" in notes
     # a derate is a ratio of at most one, written as it was decided
     for bad in (0.6667, [3, 2], [2, 3, 4], [2.0, 3.0]):
         inputs(tmp_path, policy={"datasheet_derate_speed": bad})
@@ -1894,21 +1956,22 @@ def test_a_range_of_operating_voltage_reads_the_speed_at_the_voltage_the_policy_
         return classed(previous, tmp_path, {**RAIL_REG, "servo": {**RAIL_REG["servo"], "rated_v": rail}})
 
     def read(doc):
-        e = doc["limits"][cn.CEILING]
+        e = doc["fields"][cn.CEILING]
         return e["at_v"], e["stated_deg_s"], e["deg_s"], e["value"]
 
     # a sheet with one operating voltage names one speed, the policy and the rail unread, and one with a range
     # that holds both of its speeds names none: the policy says the stated voltage nearest the rail the
     # registry holds, 4.8 V on 5 V, and the ceiling is the single sheet's
     single, _ = at(DERATE, volts=4.8)
-    assert "voltage" not in single["limits"][cn.CEILING] and "rated_v" not in single["inputs"]["registry"]["servo"]
+    assert "voltage" not in single["fields"][cn.CEILING] and "rated_v" not in single["inputs"]["registry"]["servo"]
     doc, notes = at(BY_RAIL)
-    assert doc["limits"] == {cn.CEILING: {
-        **single["limits"][cn.CEILING], "voltage": "rated_v",
-        "inputs": ["policy:datasheet_derate_speed", "registry:datasheet_class", "datasheet:operating_voltage",
-                   "datasheet:no_load_time", "policy:datasheet_speed_voltage", "registry:rated_v", "scale"]}}
-    assert read(doc) == (4.8, 600.0, 400.0, CEILING) and not any(cn.CEILING in n for n in notes)
-    assert doc["inputs"]["registry"] == {"servo": RAIL_REG["servo"]} and doc["hash"] == single["hash"]
+    assert doc["fields"][cn.CEILING] == {
+        **single["fields"][cn.CEILING], "voltage": "rated_v",
+        "inputs": ["registry:datasheet_class", "datasheet:operating_voltage", "datasheet:no_load_time",
+                   "policy:datasheet_speed_voltage", "registry:rated_v", "policy:datasheet_derate_speed", "scale"]}
+    assert read(doc) == (4.8, 600.0, 400.0, CEILING) and not any(n.startswith(cn.CEILING) for n in notes)
+    assert doc["inputs"]["registry"] == {"servo": RAIL_REG["servo"]}
+    assert doc["hash"] == single["hash"]
     lines, stale = cn.status(doc, tmp_path, RAIL_REG)
     assert not stale and (
         f"speed ceiling: {CEILING} count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
@@ -1923,13 +1986,13 @@ def test_a_range_of_operating_voltage_reads_the_speed_at_the_voltage_the_policy_
     assert stale and lines[0].startswith("stale: the registry's servo rated_v was 5.0, it is 6.0")
     for rail, row in ((4.0, 4.8), (5.3, 4.8), (5.4, 4.8), (5.5, 6.0), (6.0, 6.0), (7.4, 6.0)):
         assert read(at(BY_RAIL, rail)[0])[0] == row, rail
-    assert read(at(BY_RAIL, 6.0)[0]) == (6.0, 750.0, 500.0, round(500 * SCALE))
+    assert read(at(BY_RAIL, 6.0)[0]) == (6.0, 750.0, 500.0, CEILING_6V)
     assert read(at(BY_RAIL, 7.4, volts=(4.8, 5.5))[0]) == (4.8, 600.0, 400.0, CEILING)
     # a number of volts is the stated voltage itself, and status says the policy named it
     named, _ = at({**DERATE, "datasheet_speed_voltage": 6})
-    assert read(named) == (6.0, 750.0, 500.0, round(500 * SCALE))
-    assert named["limits"][cn.CEILING]["voltage"] == 6 and type(named["limits"][cn.CEILING]["at_v"]) is float
-    assert "registry:rated_v" not in named["limits"][cn.CEILING]["inputs"]
+    assert read(named) == (6.0, 750.0, 500.0, CEILING_6V)
+    assert named["fields"][cn.CEILING]["voltage"] == 6 and type(named["fields"][cn.CEILING]["at_v"]) is float
+    assert "registry:rated_v" not in named["fields"][cn.CEILING]["inputs"]
     assert any("the maker's no-load speed at 6 V, the voltage the policy names (datasheet_speed_voltage), 750 deg/s"
                in line for line in cn.status(named, tmp_path, RAIL_REG)[0])
     # a voltage the record has no speed at, an entry nobody decided, a rail the registry does not hold and a
@@ -1950,16 +2013,16 @@ def test_a_range_of_operating_voltage_reads_the_speed_at_the_voltage_the_policy_
             (BY_RAIL, (5.0, 5.5),
              "the datasheet record states no one no-load time at a voltage of its operating range, 5 V to 5.5 V")):
         held, notes = at(policy, volts=volts, previous=doc)
-        assert held["limits"] == {cn.CEILING: {
+        assert held["fields"][cn.CEILING] == {
             "value": CEILING, "class": "none", "rule": "speed_ceiling.datasheet", "held": why,
-            "carried_from": doc["hash"]["set"], "unit": "count/s", "bounds": ["velocity_limit_cps"]}}
+            "carried_from": doc["hash"]["set"], "protection": {"looser": "up"}}
         assert f"speed_ceiling_cps: held, {why}" in notes and held["hash"] == doc["hash"]
         none, notes = at(policy, volts=volts)
-        assert "limits" not in none and f"speed_ceiling_cps: left out, {why}" in notes
+        assert cn.CEILING not in none["fields"] and f"speed_ceiling_cps: left out, {why}" in notes
     # the entry is a number of volts or the registry's name of a voltage, and nothing else
     for bad in ([4.8], True, None, "gear_class"):
         with pytest.raises(ValueError, match="datasheet_speed_voltage is .*: it is a voltage the sheet states a "
-                                             "speed at, in volts, or the registry's name of a voltage"):
+                                             "no-load time at, in volts, or the registry's name of a voltage"):
             at({**DERATE, "datasheet_speed_voltage": bad})
 
 
@@ -1975,7 +2038,7 @@ def test_a_set_whose_speed_limit_is_over_the_ceiling_is_refused(first, tmp_path)
     doc = at(75.0)
     assert doc["fields"]["velocity_limit_cps"]["value"] == round(75 * SCALE) < CEILING and cn.over_limit(doc) == []
     doc = at(400.0)
-    assert doc["fields"]["velocity_limit_cps"]["value"] == doc["limits"][cn.CEILING]["value"] == CEILING
+    assert doc["fields"]["velocity_limit_cps"]["value"] == doc["fields"][cn.CEILING]["value"] == CEILING
     assert any(line.endswith(f"; it bounds velocity_limit_cps = {CEILING}")
                for line in cn.status(doc, tmp_path, CLASS_REG)[0])
     # over it the set is refused, by the build, by a deviation and by load
@@ -1994,6 +2057,11 @@ def test_a_set_whose_speed_limit_is_over_the_ceiling_is_refused(first, tmp_path)
     top = dev_file(tmp_path, "top", pins={"velocity_limit_cps": pin(CEILING)})
     assert cn.derive(base, top, tmp_path, CLASS_REG)[0]["deviation"]["fields"] == {
         "velocity_limit_cps": [round(75 * SCALE), CEILING]}
+    # a deviation that lowers the ceiling under the move's speed limit is refused the same way
+    low = dev_file(tmp_path, "low", pins={cn.CEILING: pin(round(75 * SCALE) - 1)})
+    with pytest.raises(ValueError, match=f"velocity_limit_cps: {round(75 * SCALE)} count/s is over the set's "
+                                         f"speed_ceiling_cps, {round(75 * SCALE) - 1} count/s: a field stays"):
+        cn.derive(base, low, tmp_path, CLASS_REG)
     path = tmp_path / "over.constants.json"
     path.write_text(cn.render(deviated(base, velocity_limit_cps=CEILING + 1)))
     with pytest.raises(ValueError, match=over.format(CEILING + 1)):
@@ -2030,49 +2098,91 @@ def test_the_set_of_record_holds_the_speed_ceiling_of_its_servo_class():
                                "The gears and plastic housing are identical to standard Tower Pro MG90S servos"]
     assert claim["standing"].startswith("the maker's claim, quoted") and "no value" in claim["standing"]
     assert "/Users/" not in path.read_text() and "/home/" not in path.read_text() and path.read_text().isascii()
-    # this servo's derates and the voltage its speed is read at are decisions for it, with their why, and
-    # no rule for another servo; the voltage's why says what the other row would give and that it is not taken
+    # this servo's derates and the voltages its speed and its stall are read at are decisions for it, with
+    # their why, and no rule for another servo; the speed voltage's why says what the other row would give and
+    # that it is not taken
     policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     assert (policy["datasheet_derate_speed"], policy["datasheet_derate_default"]) == ([2, 3], 0.8)
-    assert policy[cn.SPEED_VOLTAGE] == "rated_v" and servo.rated_v == 5.0
-    for key in ("datasheet_derate_speed", "datasheet_derate_default", cn.SPEED_VOLTAGE):
+    assert policy[cn.SPEED_VOLTAGE] == policy[cn.STALL_VOLTAGE] == "rated_v" and servo.rated_v == 5.0
+    for key in ("datasheet_derate_speed", "datasheet_derate_default", cn.SPEED_VOLTAGE, cn.STALL_VOLTAGE):
         assert "for this servo and no rule for another" in policy["why"][key] and key not in policy["undecided"]
     why = policy["why"][cn.SPEED_VOLTAGE]
     assert "nearest the rail this servo runs on" in why and why.endswith(": the owner's decision")
     assert "The 6.0 V row, 750 deg/s, would give 500 deg/s and is not taken" in why
     # the ceiling: of the two voltages the page states a speed at, 4.8 V is the nearest the servo's rail,
     # 600 deg/s no load there, two thirds of it, at the pair's own scale
-    e = doc["limits"][cn.CEILING]
+    e = doc["fields"][cn.CEILING]
     speeds = {q["at_v"]: q["per_deg"] / q["value"] for q in sheet["stated"]["no_load_time"]}
     assert min(speeds, key=lambda v: abs(v - servo.rated_v)) == e["at_v"] == 4.8
     assert (e["stated_deg_s"], e["voltage"], e["derate"], e["deg_s"]) == (speeds[4.8], "rated_v", [2, 3], 400.0)
     assert speeds == {4.8: 600.0, 6.0: 750.0}
-    assert e["value"] == round(400 * doc["scale"]["counts_per_deg"]) == 8051 and e["unit"] == "count/s"
+    # 400 deg/s is 8050.65 counts per second at the pair's scale, rounded down: a derated cap never passes its
+    # derate
+    assert 400 * doc["scale"]["counts_per_deg"] == pytest.approx(8050.65, abs=0.01)
+    assert e["value"] == math.floor(400 * doc["scale"]["counts_per_deg"]) == 8050 and e["unit"] == "count/s"
     assert (e["class"], e["document"], e["record"]) == ("datasheet", sheet["document"], sheet["what"])
-    assert e["scale_points_sha1"] == doc["scale"]["points_sha1"] and e["bounds"] == ["velocity_limit_cps"]
-    assert e["inputs"] == ["policy:datasheet_derate_speed", "registry:datasheet_class",
-                           "datasheet:operating_voltage", "datasheet:no_load_time",
-                           "policy:datasheet_speed_voltage", "registry:rated_v", "scale"]
+    assert e["scale_points_sha1"] == doc["scale"]["points_sha1"] and e["protection"] == {"looser": "up"}
+    assert e["inputs"] == ["registry:datasheet_class", "datasheet:operating_voltage", "datasheet:no_load_time",
+                           "policy:datasheet_speed_voltage", "registry:rated_v", "policy:datasheet_derate_speed",
+                           "scale"]
     assert doc["inputs"]["datasheet"] == {"file": path.relative_to(results.ROOT).as_posix(),
                                           "sha1": sc.file_sha1(path)}
     assert doc["inputs"]["registry"]["servo"]["datasheet_class"] == "vorpal-mg90"
     assert doc["inputs"]["registry"]["servo"]["rated_v"] == servo.rated_v
-    # it is in no hash of what the servo is to hold, and no field gained a source by it: the move's speed
-    # limit is the owner's default move speed, a policy entry of its own, under the ceiling
-    assert doc["hash"]["limits"] == sc.config_hash({cn.CEILING: e["value"]})
-    assert {k: v for k, v in doc["hash"].items() if k != "limits"} == cn.hashes(
-        {k: v for k, v in doc.items() if k != "limits"})
+    # it is a field the servo holds, under the protection hash, and the set holds no limit beside its fields:
+    # the move's speed limit is the owner's default move speed, a policy entry of its own, under the ceiling
+    assert "limits" not in doc and "limits" not in doc["hash"] and cn.CEILING in cn.PROTECTION
     limit = doc["fields"]["velocity_limit_cps"]
     assert (limit["value"], limit["class"]) == (4025, "policy") and limit["value"] <= e["value"]
-    assert limit["inputs"] == ["policy:velocity_limit_deg_s", "scale"] and cn.classes(doc)["datasheet"] == 0
+    assert limit["inputs"] == ["policy:velocity_limit_deg_s", "scale"] and cn.classes(doc)["datasheet"] == 1
     assert cn.over_limit(doc) == []
     lines, stale = cn.status(doc)
     assert not stale and (
-        "speed ceiling: 8051 count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
+        "speed ceiling: 8050 count/s, 400 deg/s at the set's scale [datasheet, speed_ceiling.datasheet]: the "
         "maker's no-load speed at 4.8 V, the stated voltage nearest the servo's rated_v of 5 V by the policy "
         "(datasheet_speed_voltage), 600 deg/s, x 2/3 by the policy (datasheet_derate_speed); "
         f"{sheet['document']}; it bounds velocity_limit_cps = 4025") in lines
     assert "Vorpal Robotics wiki" in sheet["document"]
+
+
+def test_the_set_of_record_holds_the_current_limit_the_makers_stall_gives_at_its_derate():
+    doc, c, _ = of_the_bench_pair()
+    pair = postable.default_pair()
+    sheet = json.loads(cn.sheet_path(pair, cn.servos.SERVOS[pair.partition("__")[0]].datasheet_class).read_text())
+    policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    e = doc["fields"]["current_limit_counts"]
+    # the voltage the page states the stall torque at nearest the servo's rail, 4.8 V on 5.0 V, over the
+    # winding's resistance of the stage 3 rails fit, at the 0.8 the policy takes a maker's value at, in the
+    # board's measured counts per A: the owner's 0.92 A, about 0.8 x 4.8 V / 4.177 ohm
+    ohm = c.q(*cn.RESISTANCES["rails_fit"])
+    counts_per_a = doc["scales"][cn.CURRENT]["value"]
+    assert [q["at_v"] for q in sheet["stated"]["stall_torque"]] == [4.8, 6.0]
+    assert (e["at_v"], e["voltage"], e["derate"]) == (4.8, "rated_v", policy["datasheet_derate_default"]) == (
+        4.8, "rated_v", 0.8)
+    assert round(ohm, 3) == 4.177 and round(counts_per_a, 2) == 1135.01
+    assert e["ma"] == pytest.approx(1000 * 0.8 * 4.8 / ohm) and round(e["ma"]) == 919
+    # 1043.51 counts, rounded down: a derated cap never passes its derate
+    assert 0.8 * 4.8 / ohm * counts_per_a == pytest.approx(1043.505, abs=1e-3)
+    assert (e["value"], e["class"], e["rule"], e["protection"]) == (1043, "policy", "current_limit.stall_derate",
+                                                                   {"looser": "up"})
+    assert (e["record"], e["document"]) == (sheet["what"], sheet["document"]) and e["band"] == [1039, 1045]
+    assert e["inputs"] == ["registry:datasheet_class", "datasheet:operating_voltage", "datasheet:stall_torque",
+                           "policy:datasheet_stall_voltage", "registry:rated_v",
+                           "3-servo/resistance:r_rails_at_measured_e_ohm", "policy:datasheet_derate_default",
+                           "1-board/current-scale:counts_per_a"]
+    assert cn.evaluate(cn.rule_of(c, "current_limit_counts"), c)["value"] == e["value"]
+    # the 500 mA it replaces is no entry of the policy, and no field reads it
+    assert "current_limit_ma" not in policy and "current_limit_ma" not in policy["why"]
+    assert "500 mA it replaces, which was conservative" in policy["why"][cn.STALL_VOLTAGE]
+    # a derate is a share of a maker's value, and a stall voltage is chosen as a speed's is
+    for bad in (0, 1.2, "0.8", [4, 5]):
+        c.policies = {**c.policies, cn.DERATE: bad}
+        with pytest.raises(ValueError, match="datasheet_derate_default is .*: a derate is a share of a maker's value"):
+            cn.current_limit_a(c)
+    c.policies = {**c.policies, cn.DERATE: 0.8, cn.STALL_VOLTAGE: [4.8]}
+    with pytest.raises(ValueError, match="datasheet_stall_voltage is .*: it is a voltage the sheet states a stall "
+                                         "torque at"):
+        cn.current_limit_a(c)
 
 
 def test_a_datasheet_record_stands_for_the_servos_that_name_its_class():
@@ -2258,6 +2368,7 @@ def block(first, root, **policy):
     the resistance."""
     inputs(root, policy={**BLOCK_POLICY, **policy})
     plant(root)
+    datasheet(root)
     return cn.build(PAIR, first, root=root, registry=BOARD_REG)
 
 
@@ -2481,16 +2592,23 @@ LIMITS = ("current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_t
 def test_the_protection_rules_bind_in_a_build_that_names_them(first, tmp_path):
     plain, _ = block(first, tmp_path)
     # a build of the plant leaves them: the one the servo holds carried with what it would be
-    assert plain["fields"]["current_limit_counts"] == {**first["fields"]["current_limit_counts"], "would_be": 500}
+    assert plain["fields"]["current_limit_counts"] == {**first["fields"]["current_limit_counts"], "would_be": 600}
     assert not any(n in plain["fields"] for n in (*CURVE, *LIMITS[1:]))
     doc, _ = cn.build(PAIR, plain, protection=[*CURVE, *LIMITS], root=tmp_path, registry=BOARD_REG)
     f = doc["fields"]
     assert moved_hashes(plain, doc) == ["protection"]
-    # a limit: the policy's mA through the board's measured counts per A, its band the scale's
+    # the cap: the current the voltage the maker states the stall at drives through the rails fit, at the
+    # policy's derate of a maker's value, through the board's measured counts per A, its band the
+    # resistance's and the scale's; the entry names the record, the voltage and the derate
     assert f["current_limit_counts"] == {
-        "value": 500, "class": "policy", "rule": "current_limit.policy", "rule_rev": 1, "unit": "ccounts", "q": 0,
-        "pos_unit": 0, "inputs": ["policy:current_limit_ma", "1-board/current-scale:counts_per_a"],
-        "band": [495, 505], "protection": {"looser": "up"}}
+        "value": 600, "class": "policy", "rule": "current_limit.stall_derate", "rule_rev": 1, "unit": "ccounts",
+        "q": 0, "pos_unit": 0, "inputs": [
+            "registry:datasheet_class", "datasheet:operating_voltage", "datasheet:stall_torque",
+            "3-servo/resistance:r_rails_at_measured_e_ohm", "policy:datasheet_derate_default",
+            "1-board/current-scale:counts_per_a"],
+        "band": [571, 615], "ma": 600.0, "at_v": 4.8, "derate": 0.5, "record": "what the maker states of the class",
+        "document": DOCUMENT, "protection": {"looser": "up"}}
+    # the limits under it: the policy's mA through the same counts per A
     assert {n: (f[n]["value"], f[n]["rule"]) for n in LIMITS[1:]} == {
         "i_cont_counts": (250, "i_cont.policy"), "stall_release_counts": (90, "stall_release.policy"),
         "oc_trip_counts": (2200, "oc_trip.policy")}
@@ -2535,17 +2653,19 @@ def test_the_protection_rules_bind_in_a_build_that_names_them(first, tmp_path):
         cn.build(PAIR, doc, protection=list(LIMITS), root=tmp_path, registry=BOARD_REG)
     moved, _ = cn.build(PAIR, cn.build(PAIR, doc, root=tmp_path, registry=BOARD_REG)[0], protection=list(LIMITS),
                         root=tmp_path, registry=BOARD_REG)
-    assert [moved["fields"][n]["value"] for n in LIMITS] == [550, 275, 99, 2420]
+    assert [moved["fields"][n]["value"] for n in LIMITS] == [660, 275, 99, 2420]
 
 
 def test_a_held_protection_field_is_held_by_a_build_of_the_plant_and_moves_no_hash(first, tmp_path):
     why = "it moves on a protection step of its own"
     doc, notes = block(first, tmp_path, hold={"current_limit_counts": why, "ntc_k1_q88": why})
     assert doc["fields"]["current_limit_counts"] == {
-        "value": 554, "class": "none", "rule": "current_limit.policy", "would_be": 500, "held": why,
+        "value": 554, "class": "none", "rule": "current_limit.stall_derate", "would_be": 600, "held": why,
         "carried_from": first["hash"]["set"], "protection": {"looser": "up"},
-        "inputs": ["policy:current_limit_ma", "1-board/current-scale:counts_per_a"]}
-    assert f"current_limit_counts: held, {why}; its rule gives 500" in notes
+        "inputs": ["registry:datasheet_class", "datasheet:operating_voltage", "datasheet:stall_torque",
+                   "3-servo/resistance:r_rails_at_measured_e_ohm", "policy:datasheet_derate_default",
+                   "1-board/current-scale:counts_per_a"]}
+    assert f"current_limit_counts: held, {why}; its rule gives 600" in notes
     # a held field the set never held stays out, said with what its rule gives
     assert "ntc_k1_q88" not in doc["fields"] and f"ntc_k1_q88: left out, {why}; its rule gives 200" in notes
     assert doc["hash"]["protection"] == first["hash"]["protection"]
@@ -2562,7 +2682,8 @@ def steps(first, tmp_path):
     plain, _ = block(first, tmp_path)
     bound, _ = cn.build(PAIR, plain, protection=[*CURVE, *LIMITS], root=tmp_path, registry=BOARD_REG)
     why = "it moves on a protection step of its own"
-    inputs(tmp_path, policy={**BLOCK_POLICY, "current_limit_ma": 512.0, "i_cont_ma": 256.0, "stall_release_ma": 92.0,
+    inputs(tmp_path, policy={**BLOCK_POLICY, "datasheet_derate_default": 0.51, "i_cont_ma": 256.0,
+                             "stall_release_ma": 92.0,
                              "oc_trip_ma": 2250.0, "hold": dict.fromkeys((*CURVE, *LIMITS), why)})
     plant(tmp_path, {"1-board/ntc-curve": {"design_t_ref_cc": (2430.0,), "design_k1_q88": (474.0,),
                                            "design_k2_q24": (19934.0,)}})
@@ -2581,7 +2702,7 @@ def test_a_deviation_moves_the_protection_fields_of_one_step_and_releases_its_ho
     assert curve["deviation"]["fields"] == {"ntc_t_ref_cc": [2600, 2430], "ntc_k1_q88": [200, 474],
                                             "ntc_k2_q24": [30000, 19934]}
     limits = derived("limits", release=list(LIMITS))
-    assert limits["deviation"]["fields"] == {"current_limit_counts": [500, 512], "i_cont_counts": [250, 256],
+    assert limits["deviation"]["fields"] == {"current_limit_counts": [600, 612], "i_cont_counts": [250, 256],
                                              "stall_release_counts": [90, 92], "oc_trip_counts": [2200, 2250]}
     assert moved_hashes(steps, curve) == moved_hashes(steps, limits) == ["protection"]
     assert all(limits["fields"][n] == steps["fields"][n] for n in CURVE)
@@ -2602,12 +2723,12 @@ def test_a_deviation_moves_the_protection_fields_of_one_step_and_releases_its_ho
         derived("mixed", pins={"current_limit_counts": pin(400), "stall_omega_max_cps": pin(400)})
     # a pin is a literal typed for a rung: one limit alone, the others standing held
     lone = derived("limit", pins={"current_limit_counts": pin(400)})
-    assert lone["deviation"]["fields"] == {"current_limit_counts": [500, 400]}
+    assert lone["deviation"]["fields"] == {"current_limit_counts": [600, 400]}
     assert lone["fields"]["i_cont_counts"] == steps["fields"]["i_cont_counts"]
     # what the install of each step has to be told, against a servo that holds the set of record
     state = {"fields": {n: e["value"] for n, e in steps["fields"].items()}}
     assert cn.gate(limits, state) == [
-        "current_limit_counts: servo 500, set 512, protects less (less is up): name it with --protection "
+        "current_limit_counts: servo 600, set 612, protects less (less is up): name it with --protection "
         "current_limit_counts and --loosen current_limit_counts",
         "i_cont_counts: servo 250, set 256, judged, taken as protecting less: name it with --protection "
         "i_cont_counts and --loosen i_cont_counts",
@@ -2658,10 +2779,14 @@ def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_me
     doc, c, board = of_the_bench_pair()
     f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     nominal, measured = board.counts_per_a, doc["scales"][cn.CURRENT]["value"]
+    # the cap was typed for 500 mA on the board's nominal parts too, and is read off the maker's sheet now
+    # (`test_the_set_of_record_holds_the_current_limit_the_makers_stall_gives_at_its_derate`)
+    assert [ma for ma in range(1, 4000) if raw(ma * nominal / 1000) == 554] == [500]
+    assert ran_on()["current_limit_counts"] == 554 and f["current_limit_counts"]["value"] == 1043
     # field: (what the servo held before the set, the policy's entry, what the rule gives)
-    limits = {"current_limit_counts": (554, "current_limit_ma", 568), "i_cont_counts": (277, "i_cont_ma", 284),
-              "stall_release_counts": (100, "stall_release_ma", 102), "oc_trip_counts": (2439, "oc_trip_ma", 2497)}
-    assert tuple(limits) == LIMITS == cn.GROUPS["current scale"]
+    limits = {"i_cont_counts": (277, "i_cont_ma", 284), "stall_release_counts": (100, "stall_release_ma", 102),
+              "oc_trip_counts": (2439, "oc_trip_ma", 2497)}
+    assert ("current_limit_counts", *limits) == LIMITS == cn.GROUPS["current scale"]
     for name, (stored, key, gives) in limits.items():
         # the mA the stored counts were typed for: the one whole mA the board's nominal parts take to them
         typed = [ma for ma in range(1, 4000) if raw(ma * nominal / 1000) == stored]
@@ -2676,11 +2801,9 @@ def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_me
         assert gives > stored and cn.LOOSER[name] in ("up", "judged"), name
     # what the servo's earlier counts were at the measured scale, and how far the rule's are over them, mA
     now = {n: round(1000 * stored / measured, 1) for n, (stored, _, _) in limits.items()}
-    assert now == {"current_limit_counts": 488.1, "i_cont_counts": 244.0, "stall_release_counts": 88.1,
-                   "oc_trip_counts": 2148.9}
+    assert now == {"i_cont_counts": 244.0, "stall_release_counts": 88.1, "oc_trip_counts": 2148.9}
     more = {n: round(1000 * (gives - stored) / measured, 1) for n, (stored, _, gives) in limits.items()}
-    assert more == {"current_limit_counts": 12.3, "i_cont_counts": 6.2, "stall_release_counts": 1.8,
-                    "oc_trip_counts": 51.1}
+    assert more == {"i_cont_counts": 6.2, "stall_release_counts": 1.8, "oc_trip_counts": 51.1}
     assert policy["why"]["oc_trip_ma"].startswith("a wiring or bridge fault detector")
     # the collision trip is off, no current: the policy says so, and off is the field's largest value
     e = cn.evaluate(cn.rule_of(c, "stall_tau_trip_counts"), c)
@@ -2741,7 +2864,7 @@ def test_the_bench_pairs_thermal_limit_is_the_policys_and_the_only_one():
     assert (e["value"], e["inputs"]) == (100 * policy["cutoff_c"], ["policy:cutoff_c"]) == (9000, ["policy:cutoff_c"])
     assert (f["cutoff_cc"]["value"], f["cutoff_cc"]["class"], f["cutoff_cc"].get("would_be")) == (9000, "policy", None)
     # no field of the set is one the firmware no longer names
-    assert not set(cn.RETIRED) & set(f) and sum(n in cn.PROTECTION for n in f) == 25
+    assert not set(cn.RETIRED) & set(f) and sum(n in cn.PROTECTION for n in f) == 26
     # against a servo at the 100 C it held before, the set's limit protects more: named, and not to loosen
     state = {"fields": {**{n: x["value"] for n, x in f.items()}, "cutoff_cc": 10000}}
     assert cn.gate(doc, state) == ["cutoff_cc: servo 10000, set 9000, protects more (less is up): name it with "
@@ -2971,7 +3094,7 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert {n: f[n]["class"] for n in MODEL} == {n: e["class"] for n, e in es.items()}
     assert set(MODEL) <= cn.PROTECTION
     cont, limit = f["i_cont_counts"]["value"], f["current_limit_counts"]["value"]
-    assert (cont, limit) == (284, 568)
+    assert (cont, limit) == (284, 1043)
     # the file of the step released the four together, and an install on a servo that holds the stored four
     # says the step as what the estimate reads
     folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
@@ -2983,29 +3106,34 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert lines[3:6] == ["  a hold from rest at 284 counts, 1 s in: 0.10 -> 2.17",
                           "  a hold from rest at 284 counts, 3 s in: 0.31 -> 4.52",
                           "  a hold from rest at 284 counts, 10 s in: 1.03 -> 6.59"]
-    assert lines[20:22] == ["  a hold from rest at 568 counts, 3600 s in: 72.17 -> 125.46",
-                            "  the rest after 600 s at 568 counts, 1 s in: 69.63 -> 109.05"]
-    assert lines[-3:-1] == ["  30 s on, 30 s off at 568 counts, the peak of a cycle: 35.24 -> 71.04",
-                            "  30 s on, 30 s off at 568 counts, the mean of a cycle: 31.61 -> 52.62"]
-    # the cases are the stage 4 result's own tables, to the centi-C the estimate counts in
+    # at the cap an hour's hold and the rest after 600 s read the estimate's largest centi-C under the high
+    # four: the cutoff latches long before
+    assert lines[20:22] == ["  a hold from rest at 1043 counts, 3600 s in: 301.47 -> 327.67",
+                            "  the rest after 600 s at 1043 counts, 1 s in: 295.48 -> 327.67"]
+    assert lines[-3:-1] == ["  30 s on, 30 s off at 1043 counts, the peak of a cycle: 166.18 -> 301.64",
+                            "  30 s on, 30 s off at 1043 counts, the mean of a cycle: 149.05 -> 225.25"]
+    # the cases are the stage 4 result's own tables, to the centi-C the estimate counts in, tabled at the cap
+    # of their day, 568 counts, the 500 mA the cap was before it was read off the maker's sheet
     tables = result["joined_fields_vs_one_slow_node_c"]
-    reads = {"f_one_slow": cn.winding_cases(stored, cont, limit), "e_high": cn.winding_cases(high, cont, limit)}
+    tabled = max(row["counts"] for row in tables["hold"])
+    assert tabled == 568 and {row["counts"] for row in tables["hold"]} == {cont, tabled}
+    reads = {"f_one_slow": cn.winding_cases(stored, cont, tabled), "e_high": cn.winding_cases(high, cont, tabled)}
     for row in tables["hold"]:
         case = f"a hold from rest at {row['counts']} counts, {row['s']} s in"
         assert all(reads[k][case] == row[k] for k in reads), case
     for row in tables["cooling"]:
-        case = f"the rest after 600 s at {limit} counts, {row['s_into_rest']} s in"
+        case = f"the rest after 600 s at {tabled} counts, {row['s_into_rest']} s in"
         assert all(reads[k][case] == row[k] for k in reads), case
     for row in (r for r in tables["duty"] if r["cand"] in reads):
-        got = [reads[row["cand"]][f"{row['cycle']} at {limit} counts, the {what} of a cycle"]
+        got = [reads[row["cand"]][f"{row['cycle']} at {tabled} counts, the {what} of a cycle"]
                for what in ("peak", "mean")]
         assert got == [row["peak_c"], row["mean_c"]], row["cycle"]
     # the low reading reads cooler than the servo's four through the whole rest, and a hair under them on the
     # plateau: its step would loosen, and the comparison names where
-    lines, cooler = cn.winding_compared(stored, low, cont, limit)
-    rest = [f"the rest after 600 s at {limit} counts, {s} s in" for s in cn.REST_S]
-    assert cooler == [f"a hold from rest at {cont} counts, 3600 s in", f"a hold from rest at {limit} counts, 3600 s in",
-                      *rest]
+    lines, cooler = cn.winding_compared(stored, low, cont, tabled)
+    rest = [f"the rest after 600 s at {tabled} counts, {s} s in" for s in cn.REST_S]
+    assert cooler == [f"a hold from rest at {cont} counts, 3600 s in",
+                      f"a hold from rest at {tabled} counts, 3600 s in", *rest]
     assert lines[-1].startswith("winding model: the wanted four read cooler in 9 of 33 cases: ")
     assert all(f"{case} (-" in lines[-1] for case in rest)
     assert "the rest after 600 s at 568 counts, 10 s in (-25.81 C)" in lines[-1]
@@ -3191,7 +3319,7 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     # recorded
     assert all(f[n]["class"] == "bench" and "scale" not in f[n] for n in ("v_kp_q88", "v_ki_q412"))
     assert [n for n, e in f.items() if e.get("scale") == "unknown"] == []
-    assert cn.described(doc)[0] == ("62 fields: 16 measured, 10 bench, 0 datasheet, 34 policy, 1 pinned, 1 none "
+    assert cn.described(doc)[0] == ("63 fields: 16 measured, 10 bench, 1 datasheet, 34 policy, 1 pinned, 1 none "
                                     "(no source); 0 per-count at an unknown scale")
 
 
@@ -3575,6 +3703,7 @@ BISECT = "the value the board held, for the bisect of the constants of record"
 STEPS = ("stall_response", "thermal_tau_s", "v_undervolt_counts", "thermal_tau2_s", "pos_error_time_ticks",
          "pos_error_counts", "sensor_delta_max", "rail_fold_q8", "th_rise_q016", "th_rise2_q016", "ntc_t_ref_cc",
          "ntc_k1_q88", "ntc_k2_q24")    # the fields the seven protection steps moved, in the set's order
+SHEET_STEP = ("current_limit_counts", "speed_ceiling_cps")     # and the step read off the maker's sheet
 LOOSEN = ("stall_response", "thermal_tau_s", "thermal_tau2_s", "rail_fold_q8", "th_rise_q016", "ntc_t_ref_cc",
           "ntc_k1_q88", "ntc_k2_q24")   # of those, the judged ones and the fast rise, which falls
 
@@ -3584,12 +3713,17 @@ def before_the_releases(doc):
     fields of the plant the release moved, the protection fields the
     steps moved): every field `plant-as-held.json` pins, every field
     the file of a protection step released and the limits of motion,
-    released since, at the value the reference rung ran on."""
+    released since, at the value the reference rung ran on; the cap at
+    the 500 mA it was before it was read off the maker's sheet, and no
+    speed ceiling, which the table had no field for."""
     plant = list(json.loads((DEVIATIONS / "plant-as-held.json").read_text())["pins"])
     steps = [n for path in sorted(DEVIATIONS.glob("protection-*.json"))
              for n in json.loads(path.read_text())["release"]]
     ran = ran_on()
-    return deviated(doc, **{n: ran[n] for n in (*plant, *steps, *MOTION)}), plant, steps
+    cap = raw(0.5 * doc["scales"][cn.CURRENT]["value"])
+    before = deviated(doc, **{n: ran[n] for n in (*plant, *steps, *MOTION)}, current_limit_counts=cap)
+    del before["fields"][cn.CEILING]
+    return {**before, "hash": cn.hashes(before)}, plant, steps
 
 
 def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_every_protection_step():
@@ -3602,9 +3736,17 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     assert before["hash"]["plant"] == rung["set"]["hash"]["plant"] != doc["hash"]["plant"]
     assert before["hash"]["set"][:12] == BEFORE != doc["hash"]["set"][:12]
     state = {"fields": {n: e["value"] for n, e in before["fields"].items()}}
-    differ = [n for n in f if state["fields"][n] != f[n]["value"]]
-    assert differ == [n for n in f if n in (*plant, *steps, *MOTION)] and (len(plant), len(steps)) == (11, 13)
+    differ = [n for n in f if state["fields"].get(n) != f[n]["value"]]
+    assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP)] and (len(plant), len(steps)) == (
+        11, 13)
     assert not set(plant) & cn.PROTECTION and [n for n in f if n in steps] == list(STEPS)
+    # the step read off the maker's sheet is one of its own: the cap rises, which protects less, and the
+    # ceiling joins the set, a field the table of that day had none of. Over a servo that holds it, the gate
+    # asks for the seven steps alone
+    assert cn.CEILING not in state["fields"] and asked(doc, {"fields": {**state["fields"], cn.CEILING: f[
+        cn.CEILING]["value"]}})["current_limit_counts"] == ("--protection current_limit_counts and --loosen "
+                                                            "current_limit_counts")
+    state["fields"].update({n: f[n]["value"] for n in SHEET_STEP})
     # the gate asks for every field the seven steps moved as a protection change, in the set's order, and
     # again to loosen for the eight that are judged or protect less
     assert asked(doc, state) == {n: f"--protection {n}" + (f" and --loosen {n}" if n in LOOSEN else "") for n in STEPS}
@@ -3663,7 +3805,8 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
     # one that stores the set from before the releases it names what the set of record itself does
     assert cn.gate(derived, {"fields": {n: e["value"] for n, e in f.items()}}) == []
     before = before_the_releases(doc)[0]
-    state = {"fields": {n: e["value"] for n, e in before["fields"].items()}}
+    state = {"fields": {**{n: e["value"] for n, e in before["fields"].items()}, **{n: f[n]["value"]
+                                                                                   for n in SHEET_STEP}}}
     assert cn.gate(derived, state) == cn.gate(doc, state) and list(asked(derived, state)) == list(STEPS)
     assert cn.gate(derived, state, protection=STEPS, loosen=LOOSEN) == []
     if name in SWEPT:
@@ -3715,7 +3858,7 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
 
 def test_a_speed_limit_at_the_ceiling_passes_and_one_over_it_is_refused(monkeypatch, tmp_path):
     doc, _, _ = of_the_bench_pair()
-    ceiling = doc["limits"][cn.CEILING]
+    ceiling = doc["fields"][cn.CEILING]
     files = {speed: json.loads((DEVIATIONS / f"motion-{speed}.json").read_text())["policy"] for speed in (200, 400)}
     # the acceleration limit of each side of the sweep is the speed limit reached in 50 ms
     assert all(entries == {"velocity_limit_deg_s": speed, "accel_limit_deg_s2": speed / 0.05}
@@ -3724,17 +3867,23 @@ def test_a_speed_limit_at_the_ceiling_passes_and_one_over_it_is_refused(monkeypa
     assert {n: doc["fields"][n]["value"] for n in MOTION} == {"velocity_limit_cps": 4025, "accel_limit_q88": 10305}
     assert doc["fields"]["velocity_limit_cps"]["value"] < ceiling["value"] and cn.over_limit(doc) == []
     # the 400 side's entries over the set of record, its release left out, since the set holds the two no
-    # longer: 400 deg/s is the ceiling itself, the same counts, and a field at its limit is not over it
+    # longer: 400 deg/s is the ceiling's speed, but the move speed rounds to the nearest count, 8051, and the
+    # ceiling, a derated cap, down to 8050, so the side is one count over it and refused
     read, entries = cn.deviation_of, {}
     monkeypatch.setattr(cn, "deviation_of", lambda path: {
         "note": read(path)["note"], "policy": {**read(path)["policy"], **entries}})
+    assert files[400]["velocity_limit_deg_s"] == ceiling["deg_s"] and ceiling["value"] == 8050
+    over = ("velocity_limit_cps: {} count/s is over the set's speed_ceiling_cps, 8050 count/s (400 deg/s): a "
+            "field stays at or under the limit that bounds it")
+    with pytest.raises(ValueError, match=re.escape(over.format(8051))):
+        cn.derive(doc, DEVIATIONS / "motion-400.json")
+    # a speed at the ceiling's count is not over it
+    entries["velocity_limit_deg_s"] = 8050 / doc["scale"]["counts_per_deg"]
     top, _ = cn.derive(doc, DEVIATIONS / "motion-400.json")
-    assert files[400]["velocity_limit_deg_s"] == ceiling["deg_s"]
-    assert top["fields"]["velocity_limit_cps"]["value"] == ceiling["value"] == 8051 and cn.over_limit(top) == []
+    assert top["fields"]["velocity_limit_cps"]["value"] == ceiling["value"] and cn.over_limit(top) == []
     # the same entries a deg/s over the ceiling are refused by their build, and a set that holds such a limit
     # by load
-    over = ("velocity_limit_cps: 8071 count/s is over the set's speed_ceiling_cps, 8051 count/s (400 deg/s): a "
-            "field stays at or under the limit that bounds it")
+    over = over.format(8071)
     entries["velocity_limit_deg_s"] = 401.0
     with pytest.raises(ValueError, match=re.escape(over)):
         cn.derive(doc, DEVIATIONS / "motion-400.json")
