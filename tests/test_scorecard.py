@@ -535,9 +535,6 @@ def bus(monkeypatch, tmp_path):
     # the rules of the registry's gear fields bind nothing: the fake servo has none of them. The board's tick
     # rate is there, which the acceleration limit's counts are per MEDIUM tick of
     monkeypatch.setattr(cn, "registry_of", lambda pair: {"board": {"tick_hz": BOARD.tick_hz}})
-    # nor does the rule of the record a host keeps that the results here would bind, the cold resistance off
-    # the pair's stage 3 resistance: it has no r0_q12
-    monkeypatch.delitem(cn.RULES, "r0_q12")
     state["servo"] = synth.Moving().stub(monkeypatch, lambda: {"torque_enable": state["torque"]})
     monkeypatch.setattr(sc.osc, "bus_baud", lambda: state["baud"])
     monkeypatch.setattr(sc.osc, "identity", lambda: {"sha1": f"sha1 of {sc.osc.tool()}", "version": None})
@@ -1165,7 +1162,7 @@ def test_a_rung_off_its_set_does_not_start(bus, monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as e:
         sc.run("01-soft", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
     assert str(e.value).endswith("01-soft: run-1 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [none, held])")
+                                 "clean; r_q12: servo 16000, set 17100 [none, held, r.rails_fit])")
     # nothing is recorded, nothing is driven, and the stored state comes back
     assert bus["log"] == [] and not sc.rung_dir(PAIR, "01-soft").exists()
     assert servo.wrote()[-1] == ("run", "reboot") and servo.decoded("r_q12") == 17100
@@ -1895,7 +1892,7 @@ def test_a_constant_changed_between_runs_is_refused_with_the_field_named(bus, mo
     with pytest.raises(SystemExit) as e:
         sc.run("00-baseline", "abc123", "f" * 40, runs=3, servo=SERVO, board=BOARD)
     assert str(e.value).endswith("00-baseline: run-2 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [none, held])")
+                                 "clean; r_q12: servo 16000, set 17100 [none, held, r.rails_fit])")
     # nothing of run-2 is recorded or driven, and run-1 stands
     rung = sc.rung_dir(PAIR, "00-baseline")
     assert [name for name, _, _ in bus["log"]] == list(TS.CAPTURES)
@@ -2231,6 +2228,9 @@ SWEEP_SIDES = {"motion-200": NOT_HELD, "motion-400": NOT_HELD}
 # The 400 deg/s point as policy entries: the move speed rounds to the nearest count, 8051, and the ceiling, a
 # derated cap, down to 8050, so the point is one count over the ceiling and its build is refused.
 OVER = {"motion-400-policy": "velocity_limit_cps: 8051 count/s is over the set's speed_ceiling_cps, 8050 count/s"}
+# The deviation files that pin a field the firmware has since taken out of the table: the A/B of the plant as
+# the board held it pins the cold resistance a host kept, which r_q12 holds at 25 C now. History the same way.
+GONE = {"plant-as-held": "the pins of {}: the firmware names no r0_q12"}
 
 
 def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what_it_names_alone():
@@ -2238,12 +2238,12 @@ def test_every_deviation_of_record_derives_from_the_set_of_record_and_moves_what
     base = cn.of_record(pair)
     files = sorted((results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations").glob("*.json"))
     assert {f.stem for f in files} >= {"motor-r", "motor-model"} and {f.stem for f in files} > {
-        *OVERTAKEN, *SWEEP_SIDES, *OVER}
+        *OVERTAKEN, *SWEEP_SIDES, *OVER, *GONE}
     for f in files:
         dev = json.loads(f.read_text())
         pins, release, policy = dev.get("pins", {}), dev.get("release", []), dev.get("policy", {})
         assert dev["note"] and "/Users/" not in f.read_text() and "/home/" not in f.read_text(), f.name
-        if f.stem in OVERTAKEN or f.stem in SWEEP_SIDES or f.stem in OVER:
+        if f.stem in OVERTAKEN or f.stem in SWEEP_SIDES or f.stem in OVER or f.stem in GONE:
             continue
         doc, _ = cn.derive(base, f)
         moved = doc["deviation"]["fields"]
@@ -2302,14 +2302,19 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
     for name, why in OVER.items():
         with pytest.raises(ValueError, match=re.escape(why)):
             cn.derive(base, folder / f"{name}.json")
+    # a file that pins a field the firmware no longer names is refused by the build of its pins
+    for name, why in GONE.items():
+        with pytest.raises(ValueError, match=re.escape(why.format(pair))):
+            cn.derive(base, folder / f"{name}.json")
     # every other file derives, so the lists are the folder
-    live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in {*OVERTAKEN, *SWEEP_SIDES, *OVER})
+    live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in {*OVERTAKEN, *SWEEP_SIDES, *OVER, *GONE})
     assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "emf-pair-as-held",
                     "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held",
-                    "observer-10hz", "observer-25hz", "plant-as-held", "r-as-held"]
+                    "observer-10hz", "observer-25hz", "r-as-held"]
     # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
     # one it ran: what its release gave there is what the set of record binds now, the 200 side's limits of
-    # motion among it. The rungs at 400 deg/s keep the point they ran
+    # motion among it. The rungs at 400 deg/s keep the point they ran, and the resistance's release the
+    # winding's as measured, which r_q12 is no longer: its rule takes it to 25 C now
     named = {}
     for result in sorted(sc.result_path(pair, "x").parent.glob("*.json")):
         doc = json.loads(result.read_text())
@@ -2319,7 +2324,7 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
             named.setdefault(stem, []).append(result.stem)
             assert sc.file_sha1(results.ROOT / dev["file"]) == dev["sha1"], result.name
             binds = {n: fields[n]["value"] for n in dev["fields"]} == {n: b for n, (_, b) in dev["fields"].items()}
-            assert binds == (stem != "motion-400"), result.name
+            assert binds == (stem not in ("motion-400", "motor-r")), result.name
     assert named == {"motor-model": ["zz-ab-motor-model-2", "zz-ab-motor-model"],
                      "protection-ntc-curve": ["zz-ab-ntc-pinned"], "motor-r": ["zz-ab-r-measured"],
                      "motion-200": ["zz-sweep-motion-200"],

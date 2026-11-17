@@ -273,16 +273,23 @@ LOOSER = {
     "thermal_tau_s": "judged", "thermal_tau2_s": "judged", "th_rise_q016": "down", "th_rise2_q016": "down",
 }
 
-# The protection fields a firmware change took out of the table, each
-# with the way it moved to protect less while it stood. A set written
-# before holds one under the protection hash, so the set a rung of
-# record ran on loads as it was written. A build carries one until it is
-# named with `--protection`, and then leaves it out.
+# The fields a firmware change took out of the table, each with the way
+# it moved to protect less while it stood, None for a field of the
+# plant. A set written before holds one, a protection field under the
+# protection hash and a plant field under the plant's, so the set a rung
+# of record ran on loads as it was written. A build carries one on the
+# side it does not move and leaves it out on the side it does: a plant
+# field in the next build of the plant, a protection field in the build
+# that names it with `--protection`.
 RETIRED = {
     # where the winding estimate began to fold the current limit, under the cutoff
     "derate_start_cc": "up",
+    # the winding's resistance at 25 C, a record a host kept: r_q12 is stated at 25 C now
+    "r0_q12": None,
+    # the off-time of open-loop drive, the brake or the coast of fast decay: the drive has slow decay alone
+    "openloop_decay": None,
 }
-PROTECTION = frozenset((*LOOSER, *RETIRED))
+PROTECTION = frozenset((*LOOSER, *(n for n, less in RETIRED.items() if less)))
 
 # The protection fields that are one step together: the four words of
 # the NTC curve, which are one curve, the current limits, which one
@@ -306,7 +313,7 @@ PER_COUNT = frozenset((
     "pos_min_soft_counts", "pos_max_soft_counts", "v_kp_q88", "v_ki_q412", "j_ff_q88", "speed_ceiling_cps",
     "velocity_limit_cps",
     "accel_limit_q88", "stall_omega_max_cps", "pos_error_counts", "l3_q88", "recip_ke_q", "b_i_q313",
-    "fric_fv_q016", "ke_vpc_q",
+    "fric_fv_q016", "ke_vpc_q", "brush_cps",
 ))
 
 ORIGIN = "servo-state"      # the origin a value adopted from a record of the servo's state names
@@ -350,7 +357,7 @@ def group_of(name):
 
 def way(name):
     """The way protection field `name` moves to protect less: LOOSER's,
-    or RETIRED's for a field the firmware no longer names."""
+    or RETIRED's for a protection field the firmware no longer names."""
     return LOOSER[name] if name in LOOSER else RETIRED[name]
 
 
@@ -984,17 +991,26 @@ def resistance(result, key):
     return r_vcounts
 
 
-# One quantity, two fields: r_q12 is the resistance the back-EMF boxcar
-# subtracts and the one the stall-safe open-loop duty is sized from;
-# r_bemf_q12 is the boxcar's alone, on an image that gives it a field.
-# Each way the resistance is on record is a rule of both, and the policy
-# names the one that binds each.
-for _field, _lead, _mirrors in (
-        ("r_q12", "r", "core estimator/bemf.rs close_half, kernel/phases/limits.rs limit"),
-        ("r_bemf_q12", "r_bemf", "core estimator/bemf.rs close_half, the resistance of its subtract")):
-    for _way, _source in RESISTANCES.items():
-        rule(_field, f"{_lead}.{_way}", kind="u16", unit="vcounts/ccount", q=12, mirrors=_mirrors)(
-            resistance(*_source))
+# r_q12 is the winding's resistance at 25.00 C, which the kernel reads
+# along copper's slope at its estimate's temperature for the back-EMF
+# close and sizes the stall-safe open-loop duty from: the rails fit, the
+# way on record that states the board temperature it was taken at, taken
+# to 25 C along copper's slope (oscnb.winding.r_of_t). r_bemf_q12 is the
+# boxcar's own resistance, on an image that gives it a field: each way
+# the resistance is on record is a rule of it, and the policy names the
+# one that binds.
+R_AT_C = 25.0       # C, where the firmware states the resistance (core estimator/thermal.rs r_hat_q12)
+
+
+@rule("r_q12", "r.rails_fit", kind="u16", unit="vcounts/ccount", q=12, rev=2,
+      mirrors="core regions/calib.rs CalibMotor, estimator/thermal.rs r_hat_q12, kernel/phases/limits.rs limit")
+def r_at_25(c):
+    return winding.r_of_t(R_AT_C, resistance(*RESISTANCES["rails_fit"])(c), c.q("3-servo/resistance", "board_ntc_c"))
+
+
+for _way, _source in RESISTANCES.items():
+    rule("r_bemf_q12", f"r_bemf.{_way}", kind="u16", unit="vcounts/ccount", q=12,
+         mirrors="core estimator/bemf.rs close_half, the resistance of its subtract")(resistance(*_source))
 
 
 @rule("recip_ke_q", "recip_ke.ladder", kind="u16", unit="(count/s)/vcount", q=10, pos_unit=+1,
@@ -1088,13 +1104,9 @@ rule("i_kaw_q412", "i_kaw.bandwidth", kind="u16", unit="vcounts/ccount per tick"
 
 # --- the records a host keeps on the servo ---
 #
-# Three fields the kernel never reads, each a quantity of record a host
-# reads back: the winding's cold resistance, at the 25 C the field is
-# stated at, the back-EMF constant in uV s/rad, and the static friction
-# as a current. The resistance of the rails fit is the winding's at the
-# board temperature its result states, the pair the identification
-# takes together (oscnb.speed.motor_of), and goes to 25 C along
-# copper's slope (oscnb.winding.r_of_t).
+# Two fields the kernel never reads, each a quantity of record a host
+# reads back: the back-EMF constant in uV s/rad, and the static friction
+# as a current.
 #
 # The supply word, vdd_mv, is no such record and has no rule. It is a
 # word of the sense block a capture carries in its meta.json and is
@@ -1103,14 +1115,6 @@ rule("i_kaw_q412", "i_kaw.bandwidth", kind="u16", unit="vcounts/ccount per tick"
 # as measured is the stage 1 terminal chain's `vdd_v` and stays in that
 # result: a set that binds it writes a servo whose captures match no
 # board entry.
-R0_AT_C = 25.0      # C, where the cold resistance is stated (core regions/calib.rs CalibWinding)
-
-
-@rule("r0_q12", "r0.rails_fit", kind="u16", unit="vcounts/ccount", q=12, mirrors="core regions/calib.rs CalibWinding")
-def r0(c):
-    return winding.r_of_t(R0_AT_C, resistance(*RESISTANCES["rails_fit"])(c), c.q("3-servo/resistance", "board_ntc_c"))
-
-
 @rule("ke_uvs_per_rad", "ke_uvs.ladder", kind="u16", unit="uV s/rad", mirrors="core regions/calib.rs CalibMotorExt")
 def ke_uvs(c):
     return ke_v_s_per_rad(c) * 1e6
@@ -1120,6 +1124,52 @@ def ke_uvs(c):
       mirrors="core regions/calib.rs CalibMotorExt")
 def fric_breakaway(c):
     return c.q(FRICTION, "load_static_friction_uNm_motor") * 1e-6 / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
+
+
+# --- the terms that are off ---
+#
+# Two terms of the motor block are off in the set: the brush term of the
+# back-EMF close, the resistance the spinning brushes add over the
+# winding's and the speed it was identified at, while the policy holds
+# it off (`brush_term`), and the window term of the current reading, the
+# motor's loss conductance across its inductance, until a bench fit of it
+# from an OpenLoop ramp is on record. Each field is at the value that
+# turns its term off (OFF). The window term's field has no source while
+# it is off: its rule binds while the pair's sources list it under `none`,
+# and the fit, once recorded, is a `bench` record of the sources, which
+# stands ahead of the rule.
+OFF = {"r_brush_q12": 0, "brush_cps": 0, "g_window_q016": 0}    # core regions/calib.rs CalibMotor: 0 turns it off
+BRUSH = "brush_term"        # the policy entry that holds the brush term off
+
+
+def brush_off(name, speed=False):
+    """The policy's brush term, which is off: the field's off value, a
+    speed of it at the set's scale."""
+    def value(c):
+        term = c.policy(BRUSH)
+        if term != "off":
+            raise ValueError(f"{POLICY}: {BRUSH} is {term!r}: the brush term is `off`, a size has no rule yet")
+        return OFF[name] * (c.counts_per_deg if speed else 1)
+    return value
+
+
+def unidentified(name):
+    """A field whose bench fit is not on record: its off value, while the
+    pair's sources say it has no source."""
+    def value(c):
+        if name not in c.sources.get("none", {}):
+            raise Missing(f"the sources of {c.pair} list no {name} under `none`, nor a record of it")
+        c.reads.append((f"sources:none.{name}", None))
+        return OFF[name]
+    return value
+
+
+rule("r_brush_q12", "r_brush.off", kind="u16", unit="vcounts/ccount", q=12, cls="policy",
+     mirrors="core estimator/bemf.rs brush_rc_q12")(brush_off("r_brush_q12"))
+rule("brush_cps", "brush_cps.off", kind="u16", unit="count/s", pos_unit=+1, cls="policy",
+     mirrors="core estimator/bemf.rs brush_rc_q12")(brush_off("brush_cps", speed=True))
+rule("g_window_q016", "g_window.unidentified", kind="u16", unit="ccounts/vcount", q=16, cls="none",
+     mirrors="core estimator/window.rs WindowTerm conductance")(unidentified("g_window_q016"))
 
 
 # --- the fields in counts of position ---
@@ -1854,7 +1904,9 @@ def bound(c, name, carried, previous):
     policy holds lists what its rule read beside what it would be. A
     hold a deviation releases does not hold, and is refused where the
     rule has no value to bind. A field whose rule reads a policy entry
-    nobody decided is bound at what the rule gives, with no source."""
+    nobody decided is bound at what the rule gives, with no source, as
+    is one whose rule is of no source, the value that turns a term off
+    until its record lands."""
     if name in c.pins:
         pin = c.pins[name]
         return {"value": pin["value"], "class": "pinned", "why": pin["why"], "rung": pin["rung"]}
@@ -1881,6 +1933,9 @@ def bound(c, name, carried, previous):
     open_ = undecided(c, e["inputs"])
     why = None if name in c.released else c.policies.get("hold", {}).get(name)
     if why is None:
+        if e["class"] == "none":
+            # a rule of no source: the value that turns a term off, until its record lands
+            return no_source(c, name, e)
         if open_ is None and name in c.sources.get("none", {}):
             c.notes.append(f"{name}: the pair's sources say it has no source, and {r.name} binds it")
         return e if open_ is None else no_source(c, name, e, open_)
@@ -1907,9 +1962,11 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     or pin gives another value. A held field stands as held on either
     side, its value the one that stood. With `protection` it moves the fields
     named there and carries everything else, the slots, the table and
-    the scale with it. A protection field the firmware no longer names
-    (RETIRED) is such a change: carried as it stood until it is named,
-    then left out. A set with nothing before it is built whole.
+    the scale with it. A field the firmware no longer names (RETIRED)
+    is left out by the build that moves its side: a field of the plant
+    by the next build of the plant, a protection field by the build
+    that names it, and carried as it stood by the other. A set with
+    nothing before it is built whole.
     `deviation` is a deviation file the build reads over the policy and
     the pins (`derive`)."""
     wrong = [n for n in protection if n not in PROTECTION]
@@ -1939,10 +1996,12 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     for name in dict.fromkeys([*before, *RULES, *c.pins, *c.sources.get("bench", {}),
                                *c.sources.get("datasheet", {})]):
         if name in RETIRED:
-            if name in before and name not in protection:
+            leaves = (name in protection) if name in PROTECTION else not protection
+            if name in before and not leaves:
                 fields[name] = copy.deepcopy(before[name])
                 c.notes.append(f"{name}: carried at {before[name]['value']}, the firmware names no such field: "
-                               f"name it with --protection to leave it out")
+                               + ("name it with --protection to leave it out" if name in PROTECTION
+                                  else "a build of the plant leaves it out"))
             elif name in before:
                 c.notes.append(f"{name}: left out, the firmware names no such field")
             continue

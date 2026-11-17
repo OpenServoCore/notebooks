@@ -341,16 +341,19 @@ and no rung runs on one again. Five are files a rung of record ran,
 the three sides of the speed blend's session at 400 deg/s
 (`zz-ab-400-`, [the ladder](#the-ladder)), and a result that names one
 keeps its sha1 and the fields it moved. What
-`motion-200.json` moved is the set of record's own default now, so
-that rung ran the set of record itself, every hash alike; the 400
-deg/s point of `motion-400.json` is no value of the set, and its rungs
-keep it as the sides they ran. Moving a speed with a deviation now takes
-a file of policy entries alone, with no hold to release:
-`motion-400-policy.json` was the 400 deg/s point on the set of record;
-the ceiling's count rounds down now, 8050, and the point's 8051 is one
-over it, so its build is refused, the field named.
-One test names
-the fourteen and holds every other file to a build.
+`motion-200.json` moved is the set of record's own default now; the
+400 deg/s point of `motion-400.json` is no value of the set, and its
+rungs keep it as the sides they ran. What `motor-r.json` released was
+the winding's resistance at the rails fit's own temperature, which
+`r_q12` no longer is: the set holds it at 25 C. Moving a speed with a
+deviation now takes a file of policy entries alone, with no hold to
+release: `motion-400-policy.json` was the 400 deg/s point on the set of
+record; the ceiling's count rounds down now, 8050, and the point's 8051
+is one over it, so its build is refused, the field named.
+`plant-as-held.json` is history too: it pins the cold
+resistance `r0_q12`, which the firmware's table no longer has, so its
+build is refused with the field named. One test names the fifteen and
+holds every other file to a build.
 A deviation that pins a field the servo's image does not have is
 refused by the install, the field named, before anything is written.
 
@@ -638,7 +641,7 @@ every rule to it.
 
 | field | what its rule gives | from | per count |
 |---|---|---|---|
-| `r_q12` | the winding resistance, R x tap counts per V / shunt counts per A | the resistance as the policy names it, below | no |
+| `r_q12` | the winding resistance at 25 C, R x tap counts per V / shunt counts per A, which the kernel reads along copper's slope at its estimate's temperature | the rails fit, taken to 25 C along copper's slope from the board temperature its result states | no |
 | `recip_ke_q` | 1 / Ke, count/s per tap count | Ke x tap counts per V / counts per motor rad, stage 3 ladder | times |
 | `ke_vpc_q` | Ke, tap counts per count/s | the same | over |
 | `b_i_q313` | B, the count/s a shunt count adds in a MEDIUM tick | Ke / shunt counts per A / J x counts per motor rad / MEDIUM rate, J the stage 3 run-up's | times |
@@ -649,11 +652,13 @@ every rule to it.
 | `l2_q88` | its speed gain, 1.5 (1 - p)^2 (1 + p) x MEDIUM rate | the same | no |
 | `l3_q88` | its disturbance gain, (1 - p)^3 x MEDIUM rate / (2 B) | p and B | over |
 | `i_kp_q88` | the current loop's proportional gain, w x L x tap counts per V / shunt counts per A | w = 2 pi f, f the policy's `current_loop_hz`; L the stage 3 inductance of the locked bursts | no |
-| `i_ki_q412` | its integral gain, w x R a FAST tick | w, and R the rails fit's, as `r_q12` takes it | no |
+| `i_ki_q412` | its integral gain, w x R a FAST tick | w, and R the rails fit's at its own temperature | no |
 | `i_kaw_q412` | its anti-windup gain, twice the integral gain | the same | no |
-| `r0_q12` | the cold resistance, the rails fit taken to 25 C along copper's slope | the stage 3 resistance and the board temperature that result states | no |
 | `ke_uvs_per_rad` | Ke, uV s/rad | the stage 3 ladder | no |
 | `fric_breakaway_counts` | the static friction as a current, Ts / Ke x shunt counts per A | the stage 3 static friction, back-driven with the load on the horn, which is not the field's quantity: held (below) | no |
+| `r_brush_q12` | the brush term's resistance over the winding's, 0: the term off | the policy's `brush_term`, off while the brush learner is pending | no |
+| `brush_cps` | the speed the brush term was identified at, 0: the term off | the same | times |
+| `g_window_q016` | the window term's loss conductance, 0: the term off, with no source | the pair's sources, until a bench fit from an OpenLoop ramp is on record | no |
 
 Each rule names in the module the firmware function that uses its
 field. The feedforward and the three observer gains are the firmware
@@ -697,13 +702,14 @@ a rule written before the session, which keeps 1 kHz, and
 pins the three at the old fit, for the A/B of the placement against
 it ([the ladder](#the-ladder), the constants session).
 
-Three fields are records a host keeps on the servo, which the kernel
-never reads: the cold resistance `r0_q12`, the back-EMF constant
-`ke_uvs_per_rad` and the static friction `fric_breakaway_counts`.
-Their rules give 3725, 1159 and 97, where the servo held three zeros
-never written. The cold resistance is the rails fit, 4.177 ohm at the
-26.26 C its result states, taken to the 25 C the field is stated at.
-Two of the three are bound at what their rules give. The breakaway is
+Two fields are records a host keeps on the servo, which the kernel
+never reads: the back-EMF constant `ke_uvs_per_rad` and the static
+friction `fric_breakaway_counts`. Their rules give 1159 and 97, where
+the servo held two zeros never written. A third, the cold resistance
+`r0_q12`, left the table when `r_q12` came to be stated at 25 C: the
+rails fit, 4.177 ohm at the 26.26 C its result states, taken to 25 C,
+is 3725, which `r_q12` holds now. The back-EMF constant is bound at
+what its rule gives. The breakaway is
 not: the
 field means the current at which a driven ramp first moves the horn,
 and the static friction on record is the back-driven one, measured
@@ -732,12 +738,13 @@ measured ones; `locked_laps`, the laps of the locked horn;
 `small_step`, the volts over the current across a small duty step of
 a spinning motor, the volts built the firmware's way; `take_back`,
 the current such a step takes back as the speed follows, with no
-volts in it. `policy.json` names under `rule` the one that binds
-`r_q12`, the rails fit, which is the winding's. A field with several rules and none named
-is held: the choice is not the tool's. The same four are the rules of
-`r_bemf_q12`, the resistance the back-EMF boxcar subtracts on an image
-that gives it a field of its own, for which the policy names the small
-step's.
+volts in it. `r_q12` is stated at 25 C, and of the four only the rails
+fit states the temperature it was taken at, so it has the one rule.
+The four are the rules of `r_bemf_q12`, the resistance the back-EMF
+boxcar subtracts on an image that gives it a field of its own, and
+`policy.json` names under `rule` the one that binds, the small step's.
+A field with several rules and none named is held: the choice is not
+the tool's.
 
 `policy.json` holds a field back under `hold`, with the reason. A held
 field stays at the value the set had, with no source, the hold's reason
@@ -761,14 +768,14 @@ records the set binds each at what its rule gives:
 
 | field | the servo held | the set binds | class |
 |---|---|---|---|
-| `r_q12` | 4541 | 3744 | measured |
+| `r_q12` | 4541 | 3744, at the rails fit's own temperature; 3725 at 25 C since | measured |
 | `recip_ke_q` | 11817 | 13315 | measured |
 | `b_i_q313` | 2657 | 2434 | measured |
 | `j_ff_q88` | 789 | 862 | measured |
 | `l3_q88` | 77 | 84 | policy: the observer's bandwidth, the pick of its sweep |
 | `fric_fc_counts` | 100 | 54 | measured |
 | `i_kp_q88`, `i_ki_q412`, `i_kaw_q412` | 275, 1580, 3160 | 289, 1176, 2352 | policy: the loop's bandwidth, the pick of its sweep |
-| `r0_q12`, `ke_uvs_per_rad` | 0, 0 | 3725, 1159 | measured |
+| `r0_q12`, `ke_uvs_per_rad` | 0, 0 | 3725, 1159; `r0_q12` has left the table since | measured |
 
 `l1_q016` and `l2_q88` bind at the values the servo held, which their
 rules give. `fric_fv_q016` and `ke_vpc_q` bind at what their rules
@@ -1066,8 +1073,8 @@ healthy step of the pot on 5 V, 32 counts, where the servo held the
 boot default's 256: the band bound as it stood, and the screen is
 bound at 64 by a protection step of its own.
 
-The other screens, the supply terms and the open loop's two choices
-each have a policy entry in the unit a person sets it in, its reason
+The other screens, the supply terms and the open loop's choice each
+have a policy entry in the unit a person sets it in, its reason
 under `why`, and a rule: a time in ms is that many kernel ticks, a
 count of samples is the field, and a choice between named behaviors is
 the policy's word, written as `osc dump` prints the field. Where the
@@ -1080,7 +1087,6 @@ decision is the value the servo holds, the field binds, of class
 | `stall_time_ticks` | `stall_time_ms` 500 | 10000 | on a free horn the stall conditions never last past 12 ms, and the Feetech class allows 2 s; interim until the load arm |
 | `oc_trip_ticks` | `oc_trip_samples` 8 | 8 | it rides over single-sample spikes, 0.4 ms |
 | `sensor_bad_count` | `sensor_bad_samples` 4 | 4 | the default stands: no capture shows a failing pot, and a capture of one would revisit it |
-| `openloop_decay` | `openloop_decay` slow | Slow | the off-time brake: smooth current, torque in proportion to duty |
 | `openloop_zero_brake` | `openloop_zero_brake` off | off | zero duty coasts in open loop, which calibration relies on |
 
 Where the decision is another value than the servo held, a protection

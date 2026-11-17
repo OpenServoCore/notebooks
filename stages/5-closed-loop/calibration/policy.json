@@ -18,8 +18,8 @@
  "duty_max_share": 1.0,
  "v_undervolt_v": 3.7,
  "rail_source_ohm": 0.8,
- "openloop_decay": "slow",
  "openloop_zero_brake": "off",
+ "brush_term": "off",
  "velocity_limit_deg_s": 200.0,
  "accel_limit_deg_s2": 4000.0,
  "stall_omega_max_deg_s": 24.84,
@@ -57,8 +57,8 @@
   "duty_max_share": "no voltage cap: the speed ceiling and the current limit protect the motor: the owner's decision",
   "oc_trip_ma": "a wiring or bridge fault detector: above the locked-rotor current on a full 2S pack, about 2.0 A, so only a short reaches it: the owner's decision",
   "oc_trip_samples": "it rides over single-sample spikes, 0.4 ms: the owner's decision",
-  "openloop_decay": "the off-time brake: smooth current, torque in proportion to duty: the owner's decision",
   "openloop_zero_brake": "zero duty coasts in open loop, which calibration relies on: the owner's decision",
+  "brush_term": "the brush term of the back-EMF close is off while the brush learner is pending: its resistance and its speed are at the value that turns it off, and no identification of it is on record: the owner's decision",
   "gear_ratio_centi": "the family's tooth count, to be confirmed by counting this unit's teeth: the owner's decision",
   "v_kp_q88": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision",
   "v_ki_q412": "its counts stay as benched, they have run on the table since rung 12a-pos-table-live: the owner's decision",
@@ -67,7 +67,6 @@
  },
  "undecided": {},
  "rule": {
-  "r_q12": "r.rails_fit",
   "r_bemf_q12": "r_bemf.small_step"
  },
  "hold": {
