@@ -7,7 +7,11 @@ drive windows are counted on. The entry holds the parts' nominal values and the
 conversions from counts to volts and amps that follow from them. The
 measured conversions are the stage 1 results, read from the results files,
 and the firmware takes its constants from those; nothing measured is typed
-in here.
+in here. Beside the nominal values an entry may carry a board's compiled
+firmware constants that a notebook replaying the image's integer arithmetic
+needs (the settle gain table and the bridge's shortest pulse). They are
+copied from the firmware's board file, named with the revisions they were
+checked at, and are no measurement of record.
 
 Authority: every capture's meta.json carries a `sense` block read from the
 servo at capture time, and `check_meta` fails loudly when a capture was
@@ -53,6 +57,15 @@ class Board:
     pwm_arr: int = 1200          # the counter's crest; a window is `drive_ticks` either side of it
     i_window_min_ticks: int = 64
     v_window_min_ticks: int = 93
+    # the firmware's compiled board constants, not measurements: the settle
+    # gain the image multiplies a shunt sample by, Q15 words in 8-tick bands
+    # of drive width from the start, 1 past the table, and the bridge's
+    # shortest pulse, under which a drive is no pulse. Copied from the board
+    # file for a notebook that replays the image's integers; None on a board
+    # whose board file is not copied here
+    i_settle_start_ticks: int | None = None
+    i_settle_q15: tuple | None = None
+    bridge_min_ticks: int | None = None
     notes: str = ""
 
     # --- volts ---
@@ -106,6 +119,21 @@ class Board:
     @property
     def v_floor_pct(self):
         return self.duty_pct_of_ticks(self.v_window_min_ticks)
+
+    def settle_q15(self, ticks):
+        """The image's settle gain at drive half-widths `ticks`, its Q15
+        words: the 8-tick band from the start, 1 << 15 past the table."""
+        if self.i_settle_q15 is None:
+            raise ValueError(f"{self.key}: no settle gain table recorded")
+        q15 = np.asarray(self.i_settle_q15, np.int64)
+        start = self.i_settle_start_ticks
+        band = np.maximum(np.asarray(ticks, np.int64) - start, 0) >> 3
+        inside = q15[np.minimum(band, len(q15) - 1)]
+        return np.where(band < len(q15), inside, 1 << 15).astype(np.int64)
+
+    def settle_gain(self, ticks):
+        """The settle gain as a ratio at half-widths `ticks`."""
+        return self.settle_q15(np.asarray(ticks, float).astype(np.int64)) / 32768.0
 
     # --- conversions ---
     def term_v(self, tap_counts, vb_counts):
@@ -172,6 +200,15 @@ BOARDS = {
         ntc_pullup_ohm=10_000, ntc_r25_ohm=10_000, ntc_beta=3950,
         opa_pullup_ohm=1_500,
         i_window_min_ticks=64, v_window_min_ticks=93,
+        # compiled firmware constants, not measurements: open-servo-core
+        # firmware/boards/osc-dev-v006/app/src/main.rs, `i_settle_gain` and
+        # `bridge_min_ticks`, the same words at b7b51ee0 and 1a35457f, the
+        # images the window-term captures ran
+        i_settle_start_ticks=40,
+        i_settle_q15=(37138, 35303, 34342, 33918, 33643, 33470, 33374, 33259,
+                      33213, 33156, 33103, 33052, 33020, 32982, 32938, 32900,
+                      32868, 32841, 32824, 32806, 32785),
+        bridge_min_ticks=27,
         notes="Rs1 60 mOhm, a JIERR JER1206F1R060 metal alloy 1206 part, 1 %, 50 ppm per C, 1 W to 70 C, on Kelvin pads, with the bare op-amp at Rf 6k4 / Rg 430. Terminal taps 6k4 over 1k6 "
               "returned to the VB node from 430 / 100. VSNS 6k4 / 1k6 to ground. 1k5 pull-ups from "
               "3V3 to both op-amp inputs, hand-soldered 1 % thick film. A twisted pair soldered to the Rs1 pads for the meter. Every value "
