@@ -1,0 +1,17 @@
+{
+  "what": "the fields the sitting read off the servo with torque off before its first cruise, as its log prints them; the image 1a35457f, plant stamp 0x4639",
+  "read": {
+    "g_window_q016": 1178,
+    "fric_fc_counts": 40,
+    "fric_fv_q016": 728,
+    "speed_ceiling_cps": 8050,
+    "velocity_limit_cps": 4025,
+    "r_hat_q12": 3676,
+    "vbus_counts": 1239,
+    "tick_over_count": 0,
+    "tick_lost_count": 0,
+    "tel_drop_count": 0,
+    "write_late_count": 0,
+    "fault_code": 0
+  }
+}

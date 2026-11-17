@@ -843,9 +843,9 @@ HELD_BLOCK = [*NO_RANGE, NO_LIMIT, NO_RESPONSE, NO_STALL, NO_R, f"recip_ke_q: he
 # the current loop's gains under a policy with no bandwidth, and the times, the counts of samples and the
 # choices in words under one with none of their entries
 NO_LOOP = [f"{n}: left out, policy.json has no current_loop_hz" for n in ("i_kp_q88", "i_ki_q412", "i_kaw_q412")]
-# the terms that are off, under a policy that holds no brush term and sources that say nothing of the window
-NO_OFF = [*(f"{n}: left out, policy.json has no brush_term" for n in ("r_brush_q12", "brush_cps")),
-          "g_window_q016: left out, the sources of synth__board list no g_window_q016 under `none`, nor a record of it"]
+# the window term with no window-term result, and the brush term off under a policy that holds no brush term
+NO_WINDOW = "g_window_q016: left out, 3-servo/window-term has no result for synth__board"
+NO_OFF = [*(f"{n}: left out, policy.json has no brush_term" for n in ("r_brush_q12", "brush_cps"))]
 NO_CHOICES = [f"{n}: left out, policy.json has no {key}" for n, key in (
     ("stall_time_ticks", "stall_time_ms"), ("pos_error_time_ticks", "pos_error_time_ms"),
     ("oc_trip_ticks", "oc_trip_samples"), ("sensor_bad_count", "sensor_bad_samples"),
@@ -853,12 +853,14 @@ NO_CHOICES = [f"{n}: left out, policy.json has no {key}" for n, key in (
 NO_BLOCK = [
     f"r_bemf_q12: left out, {NO_RULE.format('r_bemf_q12', *['r_bemf'] * 4)}",
     f"b_i_q313: left out, {NO_LADDER}",
-    *(f"{n}: left out, 3-servo/friction has no result for synth__board" for n in ("fric_fc_counts", "fric_fv_q016")),
+    *(f"{n}: left out, 5-closed-loop/cruise-friction has no result for synth__board" for n in ("fric_fc_counts",
+                                                                                         "fric_fv_q016")),
     *(f"{n}: left out, {NO_LADDER}" for n in ("ke_vpc_q", "j_ff_q88")),
     *(f"{n}: left out, policy.json has no observer_hz" for n in ("l1_q016", "l2_q88", "l3_q88")),
     *NO_LOOP,
     f"ke_uvs_per_rad: left out, {NO_LADDER}",
     "fric_breakaway_counts: left out, 3-servo/friction has no result for synth__board",
+    NO_WINDOW,
     *NO_OFF,
     *NO_COUNTS,
     *(f"{n}: left out, 1-board/ntc-curve has no result for board" for n in ("ntc_raw_ref", "ntc_t_ref_cc",
@@ -923,9 +925,11 @@ PLANT = {
     "3-servo/inductance": {"l_mh": (0.8, 0.75, 0.85)},
     "3-servo/ladder": {"ke_v_s_per_rad": (0.001,)},
     "3-servo/run-up": {"j_kg_m2": (6e-9, 5e-9, 7e-9)},
-    "3-servo/friction": {"firmware_pair": {"pooled": {"coulomb_uNm": (50.0, 40.0, 60.0),
-                                                      "viscous_uNm_s_per_rad": (0.05,)}},
-                         "load_static_friction_uNm_motor": (100.0, 80.0, 120.0)},
+    "3-servo/friction": {"load_static_friction_uNm_motor": (100.0, 80.0, 120.0)},
+    # the line of the current the velocity loop holds in a cruise, its slope per motor rad/s
+    "5-closed-loop/cruise-friction": {"coulomb_ma": (50.0, 40.0, 60.0), "viscous_ma_s_per_rad": (0.05,)},
+    # the window term over the period's mean
+    "3-servo/window-term": {"g_over_mean_ms": (4.0, 3.9, 4.1)},
     # the fast node's gain beside each reading's slow node, which the quantity carries with it
     "4-estimators/winding-temperature": {
         "one_node_tau_s": (2.4, 1.2, 3.2), "family_slow_tau_s": (128.9, 121.0, 135.0),
@@ -1093,8 +1097,7 @@ def context(root, k=1.0, policy=None, **kw):
                          **(policy or {})}, **kw)
     plant(root, {**PLANT, **POT_NOISE})
     datasheet(root)
-    cn.set_path(PAIR, root).with_name(f"{PAIR}.sources.json").write_text(json.dumps({"none": {
-        "g_window_q016": {"reason": "not yet identified", "needs": "a bench fit"}}}))
+    cn.set_path(PAIR, root).with_name(f"{PAIR}.sources.json").write_text(json.dumps({}))
     c = cn.Context(PAIR, root, BOARD_REG)
     cn.table_of(c, None, cn.slots_of(c, None))
     c.scale = {**c.scale, "counts_per_deg": c.scale["counts_per_deg"] * k}
@@ -1374,13 +1377,12 @@ def test_a_plant_field_the_firmware_no_longer_names_leaves_in_the_next_build_of_
     assert geared.wrote() == []
 
 
-def test_the_terms_that_are_off_bind_the_value_that_turns_them_off(tmp_path):
+def test_the_brush_term_that_is_off_binds_the_value_that_turns_it_off(tmp_path):
     c = context(tmp_path)
-    es = {n: cn.evaluate(cn.rule_of(c, n), c) for n in ("r_brush_q12", "brush_cps", "g_window_q016")}
-    # the brush term, off by the policy: a decision, so the two are the policy's, the speed at the set's scale
+    es = {n: cn.evaluate(cn.rule_of(c, n), c) for n in ("r_brush_q12", "brush_cps")}
+    # off by the policy: a decision, so the two are the policy's, the speed at the set's scale
     assert {n: (e["value"], e["class"], e["inputs"]) for n, e in es.items()} == {
-        "r_brush_q12": (0, "policy", ["policy:brush_term"]), "brush_cps": (0, "policy", ["policy:brush_term", "scale"]),
-        "g_window_q016": (0, "none", ["sources:none.g_window_q016"])}
+        "r_brush_q12": (0, "policy", ["policy:brush_term"]), "brush_cps": (0, "policy", ["policy:brush_term", "scale"])}
     assert es["brush_cps"]["scale_points_sha1"] == cn.points_sha1(POINTS) and cn.OFF == dict.fromkeys(es, 0)
     for term in ("on", 1093):
         c.policies = {**c.policies, "brush_term": term}
@@ -1388,23 +1390,24 @@ def test_the_terms_that_are_off_bind_the_value_that_turns_them_off(tmp_path):
             cn.evaluate(cn.rule_of(c, "r_brush_q12"), c)
 
 
-def test_a_term_not_yet_identified_is_off_with_no_source_until_its_bench_record_lands(first, tmp_path):
+def test_the_window_term_is_the_onsets_fit_over_the_period_mean_in_counts_of_the_two_scales(tmp_path):
+    c = context(tmp_path)
+    e = cn.evaluate(cn.rule_of(c, "g_window_q016"), c)
+    # 4.0 mS over the period's mean, 1000 shunt counts per A over 250 tap counts per V, in Q0.16
+    assert (e["value"], e["class"], e["rule"], e["pos_unit"], e["unit"]) == (
+        raw(4.0e-3 * 1000 / 250, 16), "measured", "g_window.onsets", 0, "ccounts/vcount")
+    assert e["inputs"] == ["3-servo/window-term:g_over_mean_ms", "1-board/current-scale:counts_per_a",
+                           "1-board/terminal-chain:terminal_counts_per_v"]
+    # the band: the rule at each end of every banded input, widest here at the term's bounds
+    assert e["band"] == [raw(3.9e-3 * 1000 / 250, 16), raw(4.1e-3 * 1000 / 250, 16)]
+
+
+def test_the_window_term_with_no_result_is_left_out_and_a_bench_record_stands_ahead_of_its_rule(first, tmp_path):
     inputs(tmp_path)
-    # the pair's sources say nothing of the window term: nothing binds it, and the build says what would
+    # no window-term result: nothing binds the field, and the build says why
     doc, notes = built_on(first, tmp_path)
-    assert "g_window_q016" not in doc["fields"] and NO_OFF[-1] in notes
-    # they list it as not yet identified: it binds at the value that turns the term off, with no source, the
-    # reason and the need the sources state, and it is debt
-    why = {"reason": "not yet identified: fitted on the bench from an OpenLoop ramp", "needs": "a bench fit"}
-    sources(tmp_path, none={"g_window_q016": why})
-    doc, notes = built_on(first, tmp_path)
-    assert doc["fields"]["g_window_q016"] == {
-        "value": 0, "class": "none", **why, "rule": "g_window.unidentified", "rule_rev": 1, "unit": "ccounts/vcount",
-        "q": 16, "pos_unit": 0, "inputs": ["sources:none.g_window_q016"], "protection": None}
-    assert ("g_window_q016", 0, why["reason"], why["needs"], None) in cn.unsourced(doc)
-    assert not any(n.startswith("g_window_q016") for n in notes)
-    assert cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
-    # the fit, once recorded and named under `bench`, stands ahead of the rule
+    assert "g_window_q016" not in doc["fields"] and NO_WINDOW in notes
+    # a fit recorded and named under `bench` stands ahead of the rule
     fit = "stages/5-closed-loop/calibration/synth__board.window-fit.json"
     sources(tmp_path, bench={"g_window_q016": {"record": fit, "key": "g_window_q016", "what": "a ramp's fit"}})
     (tmp_path / fit).write_text(json.dumps({"g_window_q016": 812}))
@@ -1618,13 +1621,13 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     doc = cn.of_record(postable.default_pair())
     f = doc["fields"]
     assert not any(e["class"] in cn.WAS for e in f.values())
-    assert cn.classes(doc) == {"measured": 15, "bench": 10, "datasheet": 1, "policy": 35, "pinned": 1, "none": 2}
+    assert cn.classes(doc) == {"measured": 16, "bench": 10, "datasheet": 1, "policy": 35, "pinned": 1, "none": 1}
     # no field the firmware no longer names
     assert not set(cn.RETIRED) & set(f)
     by = {c: [n for n, e in f.items() if e["class"] == c] for c in cn.CLASSES}
     assert by["measured"] == ["j_ff_q88", "thermal_tau_s", "r_q12", "recip_ke_q", "b_i_q313", "fric_fc_counts",
                               "fric_fv_q016", "ke_vpc_q", "th_rise_q016", "ntc_raw_ref", "ntc_t_ref_cc",
-                              "ntc_k1_q88", "ntc_k2_q24", "ke_uvs_per_rad", "angle_max_cdeg"]
+                              "ntc_k1_q88", "ntc_k2_q24", "ke_uvs_per_rad", "angle_max_cdeg", "g_window_q016"]
     # the one pin: the board's nominal supply word, which a capture is matched to its board by
     assert by["pinned"] == ["vdd_mv"]
     # the one value of the maker's: the speed ceiling, read off the class's page
@@ -1668,28 +1671,25 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     assert reading["date"] == "2026-11-05" and reading["how"] and "three recorded reads a stop" in reading["weak"]
     assert cn.weak(doc) == {reading["weak"]: ["pos_min_phys_counts", "pos_max_phys_counts", "raw_min", "raw_max"],
                             f["drive_polarity"]["weak"]: ["drive_polarity"]}
-    # the debt: 2 fields with no source, each with its reason and what would give it one from the set's own
-    # entry. A unit that gives a field a source brings the count down
+    # the debt: 1 field with no source, with its reason and what would give it one from the set's own entry.
+    # A unit that gives a field a source brings the count down
     debt = cn.unsourced(doc)
-    assert len(debt) == 2 and [name for name, *_ in debt] == by["none"] == ["fric_breakaway_counts", "g_window_q016"]
+    assert len(debt) == 1 and [name for name, *_ in debt] == by["none"] == ["fric_breakaway_counts"]
     assert all(f[n].get("reason") and f[n].get("needs") for n in by["none"])
-    # each waits for a capture no sitting has taken
+    # it waits for a capture no sitting has taken
     waits = {name: needs for name, _, _, needs, _ in debt}
     assert waits["fric_breakaway_counts"].startswith("a driven-ramp breakaway capture")
-    assert waits["g_window_q016"].startswith("a bench fit of the window conductance from an OpenLoop ramp")
-    reasons = {}
-    for name, _, reason, _, _ in debt:
-        reasons.setdefault(reason.split(":")[0], []).append(name)
-    assert reasons == {"never written": ["fric_breakaway_counts"], "not yet identified": ["g_window_q016"]}
-    # no maker's value the repo records could supply either
+    assert [reason for _, _, reason, _, _ in debt] == ["never written"]
+    # no maker's value the repo records could supply it
     assert [name for name, *_, maker in debt if maker] == []
     lines, stale = cn.status(doc)
-    assert not stale and "no source, 2 fields, 0 of which a maker's value on record could supply:" in lines
-    assert sum(line.startswith("  ") for line in lines) == 2
-    # the window conductance: the value that turns the term off, bound by its rule while the pair's sources
-    # list it under `none`, until a bench fit is a record the sources name under `bench`
+    assert not stale and "no source, 1 fields, 0 of which a maker's value on record could supply:" in lines
+    assert sum(line.startswith("  ") for line in lines) == 1
+    # the window term: the onsets' fit over the period's mean, through the board's two scales
     assert {k: f["g_window_q016"][k] for k in ("value", "class", "rule", "inputs")} == {
-        "value": 0, "class": "none", "rule": "g_window.unidentified", "inputs": ["sources:none.g_window_q016"]}
+        "value": 1178, "class": "measured", "rule": "g_window.onsets",
+        "inputs": ["3-servo/window-term:g_over_mean_ms", "1-board/current-scale:counts_per_a",
+                   "1-board/terminal-chain:terminal_counts_per_v"]}
     assert "held" not in f["g_window_q016"]
     # it is held beside what its rule gives: the breakaway's rule reads a result that is not the field's
     # quantity
@@ -2440,9 +2440,10 @@ def test_a_derived_set_is_checked_and_installed_by_its_path(geared, tmp_path, mo
 # --- the motor block, the feedforwards and the observer gains ---
 
 CPRAD = SCALE * 180 / math.pi / REG["servo"]["gear_ratio"]      # counts per motor rad on the fake's table
-# the fields of the block the fake servo does not hold, in the rules' order, the records a host keeps after them
+# the fields of the block the fake servo does not hold, in the rules' order, the records a host keeps and the
+# window term after them
 JOINED = ["r_bemf_q12", "b_i_q313", "fric_fc_counts", "fric_fv_q016", "ke_vpc_q", "j_ff_q88", "l1_q016", "l2_q88",
-          "l3_q88", "ke_uvs_per_rad", "fric_breakaway_counts"]
+          "l3_q88", "ke_uvs_per_rad", "fric_breakaway_counts", "g_window_q016"]
 HOLDS = {"r_q12": "it moves on a rung of its own", "recip_ke_q": "it moves with the estimator's change",
          "r_bemf_q12": "the servo's image has no such field yet"}
 
@@ -2481,8 +2482,8 @@ def test_the_motor_block_binds_from_the_record_through_the_stage_1_scales_the_ge
     # field: (the value in its unit, its fraction bits, the power of counts per deg in it, its class)
     want = {"recip_ke_q": (1 / ke, 10, 1, "measured"), "ke_vpc_q": (ke, 12, -1, "measured"),
             "b_i_q313": (b, 13, 1, "measured"), "j_ff_q88": (1 / b, 8, -1, "measured"),
-            "fric_fc_counts": (50e-6 / 0.001 * 1000, 0, 0, "measured"),
-            "fric_fv_q016": (0.05e-6 / 0.001 * 1000 / CPRAD, 16, -1, "measured"),
+            "fric_fc_counts": (50e-3 * 1000, 0, 0, "measured"),
+            "fric_fv_q016": (0.05e-3 * 1000 / CPRAD, 16, -1, "measured"),
             "l1_q016": (1 - pole ** 3, 16, 0, "policy"),
             "l2_q88": (1.5 * (1 - pole) ** 2 * (1 + pole) * 2000, 8, 0, "policy"),
             "l3_q88": ((1 - pole) ** 3 * 2000 / (2 * b), 8, -1, "policy"),
@@ -2494,8 +2495,11 @@ def test_the_motor_block_binds_from_the_record_through_the_stage_1_scales_the_ge
         assert e.get("scale_points_sha1") == (sha if pos_unit else None), name
     assert (f["fric_fc_counts"]["value"], f["r_bemf_q12"]["rule"]) == (50, "r_bemf.small_step")
     assert f["b_i_q313"]["band"] == [raw(b * 6 / 7, 13), raw(b * 6 / 5, 13)]
-    assert f["fric_fc_counts"]["inputs"] == ["3-servo/friction:firmware_pair.pooled.coulomb_uNm",
-                                             "3-servo/ladder:ke_v_s_per_rad", "1-board/current-scale:counts_per_a"]
+    # the friction line is the cruise's held current: no Ke enters it
+    assert f["fric_fc_counts"]["inputs"] == ["5-closed-loop/cruise-friction:coulomb_ma",
+                                             "1-board/current-scale:counts_per_a"]
+    assert f["fric_fv_q016"]["inputs"] == ["5-closed-loop/cruise-friction:viscous_ma_s_per_rad",
+                                           "1-board/current-scale:counts_per_a", "scale", "registry:gear_ratio"]
     # the fields the servo holds stand in their places, the ones it does not come after, in the rules' order
     assert list(f) == [*first["fields"], *JOINED]
     assert cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
@@ -2633,8 +2637,9 @@ def test_the_rules_reproduce_the_firmware_repos_synthesis_on_its_own_test_plant(
         "3-servo/inductance": {"l_mh": (l_cd * cpa / cpv * 1000,)},
         "3-servo/ladder": {"ke_v_s_per_rad": (ke,)},
         "3-servo/run-up": {"j_kg_m2": (ke / cpa * CPRAD / f_med / b,)},
-        "3-servo/friction": {"firmware_pair": {"pooled": {
-            "coulomb_uNm": (fc * ke / cpa * 1e6,), "viscous_uNm_s_per_rad": (fv * ke * CPRAD / cpa * 1e6,)}}}})
+        # the friction line as the cruise's held current, mA and mA per motor rad/s
+        "5-closed-loop/cruise-friction": {"coulomb_ma": (fc / cpa * 1e3,),
+                                          "viscous_ma_s_per_rad": (fv * CPRAD / cpa * 1e3,)}})
     c = cn.Context(PAIR, tmp_path, {**REG, "board": {"tick_hz": int(f_med * cn.DECIM_MED)}})
     cn.table_of(c, None, cn.slots_of(c, None))
     assert {n: cn.evaluate(cn.rule_of(c, n), c)["value"] for n in rust} == rust
@@ -2650,7 +2655,7 @@ def test_the_bench_pairs_block_is_what_its_record_gives_on_its_table():
     block_of_record = {
         "r_q12": (4541, 3725, [3717, 3740]), "recip_ke_q": (11817, 13315, [13233, 13399]),
         "ke_vpc_q": (355, 315, [313, 317]), "b_i_q313": (2657, 2434, [2213, 2672]),
-        "fric_fc_counts": (100, 54, [42, 64]), "fric_fv_q016": (289, 812, [634, 1084]),
+        "fric_fc_counts": (100, 43, [42, 43]), "fric_fv_q016": (289, 947, [924, 969]),
         "j_ff_q88": (789, 862, [785, 948]), "l1_q016": (8640, 8640, None), "l2_q88": (3180, 3180, None),
         "l3_q88": (77, 84, [77, 92])}
     ran = ran_on()
@@ -3412,7 +3417,7 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     # recorded
     assert all(f[n]["class"] == "bench" and "scale" not in f[n] for n in ("v_kp_q88", "v_ki_q412"))
     assert [n for n, e in f.items() if e.get("scale") == "unknown"] == []
-    assert cn.described(doc)[0] == ("64 fields: 15 measured, 10 bench, 1 datasheet, 35 policy, 1 pinned, 2 none "
+    assert cn.described(doc)[0] == ("64 fields: 16 measured, 10 bench, 1 datasheet, 35 policy, 1 pinned, 1 none "
                                     "(no source); 0 per-count at an unknown scale")
 
 
@@ -3802,6 +3807,8 @@ SHEET_STEP = ("current_limit_counts", "speed_ceiling_cps")     # and the step re
 # the fields of the stored table the firmware took out since, and the ones it added
 GONE = ("r0_q12", "openloop_decay")
 ADDED = ("r_brush_q12", "brush_cps", "g_window_q016")
+# the friction slope the cruise refit moved since the reference rung ran, its intercept among the plant's pins
+REFIT = ("fric_fv_q016",)
 LOOSEN = ("stall_response", "thermal_tau_s", "thermal_tau2_s", "rail_fold_q8", "th_rise_q016", "ntc_t_ref_cc",
           "ntc_k1_q88", "ntc_k2_q24")   # of those, the judged ones and the fast rise, which falls
 
@@ -3813,9 +3820,10 @@ def before_the_releases(doc):
     the file of a protection step released and the limits of motion,
     released since, at the value the reference rung ran on; the cap at
     the 500 mA it was before it was read off the maker's sheet, no speed
-    ceiling, which the table had no field for, and the table of that
-    day: the fields the firmware took out since (GONE) back at the
-    values the rung ran on, the ones it added (ADDED) out."""
+    ceiling, which the table had no field for, the friction slope the
+    cruise refit moved since (REFIT) at the value the rung ran on, and
+    the table of that day: the fields the firmware took out since (GONE)
+    back at the values the rung ran on, the ones it added (ADDED) out."""
     plant = list(json.loads((DEVIATIONS / "plant-as-held.json").read_text())["pins"])
     steps = [n for path in sorted(DEVIATIONS.glob("protection-*.json"))
              for n in json.loads(path.read_text())["release"]]
@@ -3825,7 +3833,8 @@ def before_the_releases(doc):
     for n in (cn.CEILING, *ADDED):
         del before["fields"][n]
     before["fields"].update({n: {"value": None, "protection": None} for n in GONE})
-    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE)}, current_limit_counts=cap)
+    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT)},
+                      current_limit_counts=cap)
     return before, plant, steps
 
 
@@ -3840,7 +3849,7 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     assert before["hash"]["set"][:12] == BEFORE != doc["hash"]["set"][:12]
     state = {"fields": {n: e["value"] for n, e in before["fields"].items()}}
     differ = [n for n in f if state["fields"].get(n) != f[n]["value"]]
-    assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *ADDED)]
+    assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *ADDED, *REFIT)]
     assert (len(plant), len(steps)) == (11, 13) and set(GONE) == set(before["fields"]) - set(f)
     assert {n for n, less in cn.RETIRED.items() if less is None} == set(GONE)
     assert not set(plant) & cn.PROTECTION and [n for n in f if n in steps] == list(STEPS)
@@ -3879,11 +3888,11 @@ SIDES = {
     "plant-as-held": {
         "i_kp_q88": [289, 275], "i_ki_q412": [1176, 1580], "i_kaw_q412": [2352, 3160], "j_ff_q88": [862, 789],
         "l3_q88": [84, 77], "r_q12": [3725, 4541], "recip_ke_q": [13315, 11817], "b_i_q313": [2434, 2657],
-        "fric_fc_counts": [54, 100], "r0_q12": [3725, 0], "ke_uvs_per_rad": [1159, 0]},
+        "fric_fc_counts": [43, 100], "r0_q12": [3725, 0], "ke_uvs_per_rad": [1159, 0]},
     "current-gains-as-held": {"i_kp_q88": [289, 275], "i_ki_q412": [1176, 1580], "i_kaw_q412": [2352, 3160]},
     "ke-as-held": {"recip_ke_q": [13315, 11817]},
     "model-block-as-held": {"b_i_q313": [2434, 2657], "j_ff_q88": [862, 789], "l3_q88": [84, 77]},
-    "friction-as-held": {"fric_fc_counts": [54, 100]},
+    "friction-as-held": {"fric_fc_counts": [43, 100]},
     "r-as-held": {"r_q12": [3725, 4541]},
     "emf-pair-as-held": {"r_q12": [3725, 4541], "recip_ke_q": [13315, 11817]},
     "current-loop-500hz": {"i_kp_q88": [289, 144], "i_ki_q412": [1176, 588], "i_kaw_q412": [2352, 1176]},
@@ -3957,7 +3966,7 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
         # reference rung ran on, the table of that day once more (`before_the_releases`)
         assert rung["set"]["hash"]["plant"] == before["hash"]["plant"] != derived["hash"]["plant"]
         assert [n for n in f if n not in cn.PROTECTION and ran.get(n) != f[n]["value"]] == [
-            n for n in f if n in (*whole, *MOTION, *ADDED)]
+            n for n in f if n in (*whole, *MOTION, *ADDED, *REFIT)]
         assert [n for n in whole if n not in GONE] == [n for n in f if n in whole] and len(whole) == 11
         # the arms of the bisect and the current gains' side cut it in groups: the resistance, the back-EMF
         # constant, the model block and the friction term each alone, the current loop's three, and the two

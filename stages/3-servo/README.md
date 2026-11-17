@@ -334,6 +334,29 @@ speed, and the load holds' band between holding and lifting.
 
 Run: no capture of its own, the notebook reads the datasets above.
 
+## window-term
+
+Targets: the window term of the current reading, the share of the crest
+sample that is not the winding's period-mean current, as a conductance on
+the volts across the inductance, (1 - D) x V_on, with the crest sample's
+lateness over the period's mean folded in, so the board's `g_window_q016`
+carries a measured value. Stage 5's cruise-friction refits the velocity
+loop's friction line under it.
+
+Needs: the `servo` state with the horn free, the window term off on the
+servo; the stage 1 current-scale, terminal-chain, sample-timing,
+bridge-states and wide-codes results; the resistance result's meter value
+and the inductance result for the comparison.
+
+How: OpenLoop onsets from rest at 25, 27 and 29 % both ways, three sweeps
+a session, in `window-term/onsets-A` after 500 ms of coast and in
+`window-term/onsets-A-brake` after a 300 ms brake. The first twelve read
+periods after rest are fitted as the winding's current from an empty
+winding, pulse by pulse, plus g (1 - D) V_on, with L and R free on a grid.
+
+Run: the captures are on record in `telemetry/.../window-term/`, then the
+notebook.
+
 ## identification
 
 Targets: the one-pass identification of the next section run on this
@@ -397,7 +420,7 @@ its own repeatability, and the identification notebook grades it.
 | position estimator, pot table | pot-table pass, crawl and reversal: pos against the tag and the ripple angle | the tag's 0.16 deg error, 3 counts, is the grade's floor |
 | current zero tracker | every dataset's baseline and trough rows, sag | none |
 | winding temperature | resistance at rest against the board NTC | earlier work holds the thermal constants |
-| current loop | steps, the inductance window model | PRBS and chirps wait on an osc-lab verb |
+| current loop | steps, the inductance window model, the window term | PRBS and chirps wait on an osc-lab verb |
 | velocity loop and the crawl | pot-table crawl, friction, load lift | none |
 | position loop and the hold | load holds, pot-table reversal | a closed-loop hold is stage 5's bench |
 | current ceiling, stall fault | resistance chains, load holds | none |

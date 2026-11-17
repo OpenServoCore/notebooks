@@ -324,11 +324,9 @@ moves the protection fields of one step only
 [scorecard/deviations/](scorecard/deviations), for example
 `--deviation stages/5-closed-loop/scorecard/deviations/hold-band-8.json`.
 A file there that the set of record has overtaken is history. Its
-holds are released in the set of record, or the literal it pins is
-what the set's rule binds now, so `build --deviation` refuses it, the
-field named as not held or the file as moving nothing: `motor-r.json`,
-`motor-model.json`, `friction-measured.json` and the seven
-`protection-*.json` files, each the release of one protection step
+holds are released in the set of record, so `build --deviation`
+refuses it, the field named as not held: `motor-r.json`, `motor-model.json` and the
+seven `protection-*.json` files, each the release of one protection step
 as it was written before the set of record took the step, and the
 three files of the limits of motion, `motion-limits.json`,
 `motion-200.json` and `motion-400.json`, each a release of the two
@@ -463,6 +461,27 @@ runs a lost run again the same way.
 last column of other people's figures for stock smart servos (STS3215,
 LX-16A) where a row has one, for scale only.
 
+## cruise-friction
+
+Folder [cruise-friction/](cruise-friction). Targets: the friction line the
+velocity loop feeds forward, as the current the loop holds in a cruise with
+the window term off its reading, so the set's `fric_fc_counts` and
+`fric_fv_q016` come from a notebook.
+
+Needs: stage 3's window-term result and the field it gives, installed on
+the servo for the captures; the set of record's table, loop gains and Ke;
+the board's settle gain and shortest pulse (`oscnb.boards`).
+
+How: Velocity cruises at 300, 800, 1500 and 4025 c/s, both ways,
+`window-term/g3` on the friction words installed before and
+`window-term/g3b` on the refit. The current loop's reference is replayed
+tick by tick from the rows with the board's integer reading, and the held
+mean of each leg's steady rows is fitted as a line in speed. The repeat
+grades the line by the integrator's share.
+
+Run: the captures are on record in `telemetry/<pair>/window-term/`, then
+the notebook, after stage 3's window-term.
+
 ## The constant set
 
 The constants a servo is to hold are one generated file per pair,
@@ -502,8 +521,8 @@ its fields, and the reason and the need of the ones with none.
 
 Every verb prints the count per class, and the count of fields with no
 source whose value is per position count, which were fitted at a scale
-nothing recorded. On mg90-d with board D the set holds 62 fields: 16
-measured, 10 bench, no datasheet, 34 policy, one pinned and one with no
+nothing recorded. On mg90-d with board D the set holds 64 fields: 16
+measured, 10 bench, one datasheet, 35 policy, one pinned and one with no
 source. The pin is the board's nominal supply word, `vdd_mv` (below).
 Six of the policy's are the current loop's three gains and the
 observer's three, each bound by its rule at a bandwidth a bench sweep
@@ -645,8 +664,8 @@ every rule to it.
 | `recip_ke_q` | 1 / Ke, count/s per tap count | Ke x tap counts per V / counts per motor rad, stage 3 ladder | times |
 | `ke_vpc_q` | Ke, tap counts per count/s | the same | over |
 | `b_i_q313` | B, the count/s a shunt count adds in a MEDIUM tick | Ke / shunt counts per A / J x counts per motor rad / MEDIUM rate, J the stage 3 run-up's | times |
-| `fric_fc_counts` | the Coulomb friction as a current, Tc / Ke x shunt counts per A | the friction result's pair for the firmware's model, pooled | no |
-| `fric_fv_q016` | the viscous friction, shunt counts per count/s, b / Ke x shunt counts per A / counts per motor rad | the same | over |
+| `fric_fc_counts` | the friction line's intercept, I0 x shunt counts per A | the [cruise-friction](#cruise-friction) line, the current the velocity loop holds in a cruise with the window term off its reading | no |
+| `fric_fv_q016` | its slope, shunt counts per count/s, Iv x shunt counts per A / counts per motor rad, Iv per motor rad/s | the same | over |
 | `j_ff_q88` | the inertia feedforward, 1 / B | B | over |
 | `l1_q016` | the observer's position gain, 1 - p^3 | p = exp(-2 pi f / MEDIUM rate), f the policy's `observer_hz` | no |
 | `l2_q88` | its speed gain, 1.5 (1 - p)^2 (1 + p) x MEDIUM rate | the same | no |
@@ -658,7 +677,7 @@ every rule to it.
 | `fric_breakaway_counts` | the static friction as a current, Ts / Ke x shunt counts per A | the stage 3 static friction, back-driven with the load on the horn, which is not the field's quantity: held (below) | no |
 | `r_brush_q12` | the brush term's resistance over the winding's, 0: the term off | the policy's `brush_term`, off while the brush learner is pending | no |
 | `brush_cps` | the speed the brush term was identified at, 0: the term off | the same | times |
-| `g_window_q016` | the window term's loss conductance, 0: the term off, with no source | the pair's sources, until a bench fit from an OpenLoop ramp is on record | no |
+| `g_window_q016` | the window term over the period's mean, g x shunt counts per A / tap counts per V | the stage 3 window-term fit of the OpenLoop onsets from rest, the loss term plus the crest sample's lateness | no |
 
 Each rule names in the module the firmware function that uses its
 field. The feedforward and the three observer gains are the firmware
@@ -773,7 +792,7 @@ records the set binds each at what its rule gives:
 | `b_i_q313` | 2657 | 2434 | measured |
 | `j_ff_q88` | 789 | 862 | measured |
 | `l3_q88` | 77 | 84 | policy: the observer's bandwidth, the pick of its sweep |
-| `fric_fc_counts` | 100 | 54 | measured |
+| `fric_fc_counts` | 100 | 54, the stage 3 friction; 43, the cruise line, since | measured |
 | `i_kp_q88`, `i_ki_q412`, `i_kaw_q412` | 275, 1580, 3160 | 289, 1176, 2352 | policy: the loop's bandwidth, the pick of its sweep |
 | `r0_q12`, `ke_uvs_per_rad` | 0, 0 | 3725, 1159; `r0_q12` has left the table since | measured |
 
@@ -781,7 +800,12 @@ records the set binds each at what its rule gives:
 rules give. `fric_fv_q016` and `ke_vpc_q` bind at what their rules
 give, 812 and 315 where the servo held 289 and 355, the two stored
 values of the block outside their rule's band: their release was
-benched on the saved set and kept (below).
+benched on the saved set and kept (below). The two friction words
+moved since to the cruise-friction line, 43 and 947, the
+current the velocity loop holds in a cruise once the window term,
+1178, is off its reading, so `friction-measured.json`, the stage 3
+friction's 54 benched alone as `08a-friction-measured`, derives again
+as a deviation over the set.
 [plant-as-held.json](scorecard/deviations/plant-as-held.json) pins
 the eleven fields of the table at what the servo held, the values the
 reference rung `14a-set-of-record` ran on, so one deviation is the

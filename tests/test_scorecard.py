@@ -2210,16 +2210,13 @@ def test_the_plans_of_a_rung_on_the_table_rebuild_byte_for_byte_from_the_set_of_
 
 
 # The deviation files the set of record has overtaken, each with why `derive` refuses it now: the holds it
-# released are released in the set of record, or the literal it pinned is what the set's rule binds. They
-# are history: the file a rung of record names stays as that rung ran it, and no rung runs on one again.
+# released are released in the set of record. They are history: the file a rung of record names stays as
+# that rung ran it, and no rung runs on one again.
 NOT_HELD = "{}.json: {} is not held: a deviation releases a hold of policy.json"
-OVERTAKEN = {
-    **{name: NOT_HELD for name in (
-        "motor-r", "motor-model", "protection-ntc-curve", "protection-winding-model", "protection-position-error",
-        "protection-sensor-delta", "protection-undervolt", "protection-rail-fold", "protection-stall-response",
-        "motion-limits")},
-    "friction-measured": "{}.json: the deviation moves no field of the set",
-}
+OVERTAKEN = {name: NOT_HELD for name in (
+    "motor-r", "motor-model", "protection-ntc-curve", "protection-winding-model", "protection-position-error",
+    "protection-sensor-delta", "protection-undervolt", "protection-rail-fold", "protection-stall-response",
+    "motion-limits")}
 # The two faster sides of the sweep under the speed ceiling, overtaken once the owner took the 200 deg/s side
 # as the default: each states the limits of motion as policy entries and releases their holds, which the set
 # of record no longer has. The 200 side is the set of record's own default; the 400 side, the ceiling itself,
@@ -2306,11 +2303,14 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
     for name, why in GONE.items():
         with pytest.raises(ValueError, match=re.escape(why.format(pair))):
             cn.derive(base, folder / f"{name}.json")
-    # every other file derives, so the lists are the folder
+    # every other file derives, so the lists are the folder. The stage 3 running friction's pin is one again:
+    # the set binds the cruise's held current, not that value
     live = sorted(f.stem for f in folder.glob("*.json") if f.stem not in {*OVERTAKEN, *SWEEP_SIDES, *OVER, *GONE})
     assert live == ["current-gains-as-held", "current-loop-1500hz", "current-loop-500hz", "emf-pair-as-held",
-                    "friction-as-held", "hold-band-8", "ke-as-held", "model-block-as-held",
+                    "friction-as-held", "friction-measured", "hold-band-8", "ke-as-held", "model-block-as-held",
                     "observer-10hz", "observer-25hz", "r-as-held"]
+    derived, _ = cn.derive(base, folder / "friction-measured.json")
+    assert derived["deviation"]["fields"] == {"fric_fc_counts": [fields["fric_fc_counts"]["value"], 54]}
     # a rung of record names an overtaken file by its sha1 and by what it moved, and the file is still the
     # one it ran: what its release gave there is what the set of record binds now, the 200 side's limits of
     # motion among it. The rungs at 400 deg/s keep the point they ran, and the resistance's release the

@@ -1,0 +1,42 @@
+bus at 3000000 baud
+[baseline] 500 ms torque-off
+  seg 0: 625 frames, 10000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 1 (duty +25%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 2 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 3 (then -25%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 4 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 5 (then +27%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 6 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 7 (then -27%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 8 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 9 (then +29%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 10 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 11 (then -29%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 12 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 13 (then +25%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 14 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 15 (then -25%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 16 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 17 (then +27%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 18 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 19 (then -27%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 20 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 21 (then +29%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 22 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 23 (then -29%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 24 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 25 (then +25%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 26 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 27 (then -25%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 28 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 29 (then +27%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 30 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 31 (then -27%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 32 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 33 (then +29%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 34 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 35 (then -29%): 125 frames, 2000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+  seg 36 (brake 300 ms): 375 frames, 6000 samples, 0 seq holes, 0 garble bytes, 0 ring laps
+park: pos 426 -> centre 1937
+sweep: onsets-A-brake/ol-3/sweep.csv
+meta:  onsets-A-brake/ol-3/meta.json

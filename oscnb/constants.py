@@ -921,14 +921,19 @@ def gear_class(c):
 #   R  vcounts/ccount            = R [ohm] x tap counts per V / shunt counts per A
 #   Ke vcounts/(count/s)         = Ke [V s/rad] x tap counts per V / counts per motor rad
 #   B  (count/s)/tick per ccount = Ke [N m/A] / shunt counts per A / J x counts per motor rad / MEDIUM rate
-#   Fc ccounts                   = Tc / Ke x shunt counts per A
-#   Fv ccounts/(count/s)         = b / Ke x shunt counts per A / counts per motor rad
+#   Fc ccounts                   = I0 x shunt counts per A
+#   Fv ccounts/(count/s)         = Iv x shunt counts per A / counts per motor rad
+# with I0 and Iv the line of the current the velocity loop holds in a
+# cruise under the window term, its intercept in A and its slope in A
+# per motor rad/s.
 # The inertia feedforward and the observer's gains follow from B and the
 # observer's bandwidth the way the firmware repo's own synthesis has
 # them (ident/src/gains.rs synthesize), which the parity test holds.
 
 DECIM_MED = 10      # FAST ticks a MEDIUM period (core kernel/scheduler/table.rs DECIM_MED)
 LADDER, FRICTION = "3-servo/ladder", "3-servo/friction"
+CRUISE = "5-closed-loop/cruise-friction"    # the loop's held current in a cruise
+WINDOW = "3-servo/window-term"          # the window term of the reading
 CHAIN = "1-board/terminal-chain"    # the board's tap, rail and supply scales
 # the winding's resistance as it is on record, by the way it was taken: (result, key)
 RESISTANCES = {
@@ -971,12 +976,6 @@ def b_gain(c):
     (count/s) per tick per ccount."""
     return (ke_v_s_per_rad(c) / shunt_counts_per_a(c) / c.q("3-servo/run-up", "j_kg_m2")
             * counts_per_motor_rad(c) / medium_hz(c))
-
-
-def friction(c, key):
-    """The friction line the firmware's model takes, SI: the pooled fit
-    with the bounds the friction result gives that pair."""
-    return c.q(FRICTION, "firmware_pair", "pooled", key) * 1e-6
 
 
 def observer_pole(c):
@@ -1025,17 +1024,20 @@ def b_i(c):
     return b_gain(c)
 
 
-@rule("fric_fc_counts", "fric_fc.friction", kind="u16", unit="ccounts",
+# The friction line is the current the velocity loop holds in a cruise,
+# with the window term off its reading: the line the feedforward has to
+# match for the integrator to sit at zero. It is in current, so no Ke
+# enters, and its slope is per motor rad/s, so it holds on any table.
+@rule("fric_fc_counts", "fric_fc.cruise", kind="u16", unit="ccounts",
       mirrors="core estimator/fusion.rs fric_c, kernel/phases/loops/velocity.rs fric_ff")
 def fric_fc(c):
-    return friction(c, "coulomb_uNm") / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
+    return c.q(CRUISE, "coulomb_ma") * 1e-3 * shunt_counts_per_a(c)
 
 
-@rule("fric_fv_q016", "fric_fv.friction", kind="u16", unit="ccounts/(count/s)", q=16, pos_unit=-1,
+@rule("fric_fv_q016", "fric_fv.cruise", kind="u16", unit="ccounts/(count/s)", q=16, pos_unit=-1,
       mirrors="core kernel/phases/loops/velocity.rs fric_ff")
 def fric_fv(c):
-    return (friction(c, "viscous_uNm_s_per_rad") / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
-            / counts_per_motor_rad(c))
+    return c.q(CRUISE, "viscous_ma_s_per_rad") * 1e-3 * shunt_counts_per_a(c) / counts_per_motor_rad(c)
 
 
 @rule("ke_vpc_q", "ke_vpc.ladder", kind="u16", unit="vcounts/(count/s)", q=12, pos_unit=-1,
@@ -1126,19 +1128,23 @@ def fric_breakaway(c):
     return c.q(FRICTION, "load_static_friction_uNm_motor") * 1e-6 / ke_v_s_per_rad(c) * shunt_counts_per_a(c)
 
 
-# --- the terms that are off ---
+# --- the window term and the term that is off ---
 #
-# Two terms of the motor block are off in the set: the brush term of the
-# back-EMF close, the resistance the spinning brushes add over the
-# winding's and the speed it was identified at, while the policy holds
-# it off (`brush_term`), and the window term of the current reading, the
-# motor's loss conductance across its inductance, until a bench fit of it
-# from an OpenLoop ramp is on record. Each field is at the value that
-# turns its term off (OFF). The window term's field has no source while
-# it is off: its rule binds while the pair's sources list it under `none`,
-# and the fit, once recorded, is a `bench` record of the sources, which
-# stands ahead of the rule.
-OFF = {"r_brush_q12": 0, "brush_cps": 0, "g_window_q016": 0}    # core regions/calib.rs CalibMotor: 0 turns it off
+# The window term of the current reading, the motor's loss conductance
+# across its inductance with the crest sample's lateness over the
+# period's mean, is the window-term result's g_over_mean_ms, in shunt
+# counts per tap count through the board's two stage 1 scales.
+@rule("g_window_q016", "g_window.onsets", kind="u16", unit="ccounts/vcount", q=16,
+      mirrors="core estimator/window.rs WindowTerm conductance")
+def g_window(c):
+    return c.q(WINDOW, "g_over_mean_ms") * 1e-3 * shunt_counts_per_a(c) / tap_counts_per_v(c)
+
+
+# The brush term of the back-EMF close, the resistance the spinning
+# brushes add over the winding's and the speed it was identified at, is
+# off in the set while the policy holds it off (`brush_term`), each field
+# at the value that turns the term off (OFF).
+OFF = {"r_brush_q12": 0, "brush_cps": 0}    # core regions/calib.rs CalibMotor: 0 turns it off
 BRUSH = "brush_term"        # the policy entry that holds the brush term off
 
 
@@ -1153,23 +1159,10 @@ def brush_off(name, speed=False):
     return value
 
 
-def unidentified(name):
-    """A field whose bench fit is not on record: its off value, while the
-    pair's sources say it has no source."""
-    def value(c):
-        if name not in c.sources.get("none", {}):
-            raise Missing(f"the sources of {c.pair} list no {name} under `none`, nor a record of it")
-        c.reads.append((f"sources:none.{name}", None))
-        return OFF[name]
-    return value
-
-
 rule("r_brush_q12", "r_brush.off", kind="u16", unit="vcounts/ccount", q=12, cls="policy",
      mirrors="core estimator/bemf.rs brush_rc_q12")(brush_off("r_brush_q12"))
 rule("brush_cps", "brush_cps.off", kind="u16", unit="count/s", pos_unit=+1, cls="policy",
      mirrors="core estimator/bemf.rs brush_rc_q12")(brush_off("brush_cps", speed=True))
-rule("g_window_q016", "g_window.unidentified", kind="u16", unit="ccounts/vcount", q=16, cls="none",
-     mirrors="core estimator/window.rs WindowTerm conductance")(unidentified("g_window_q016"))
 
 
 # --- the fields in counts of position ---

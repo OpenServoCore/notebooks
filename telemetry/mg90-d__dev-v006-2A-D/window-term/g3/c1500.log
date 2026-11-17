@@ -1,0 +1,11 @@
+bus at 3000000 baud
+  seg 0 (goal:1500@900): 18000 of 18000 rows, 0 dropped, 0 seq holes, 0 garble bytes
+  seg 1 (goal:-1500@900): 18000 of 18000 rows, 0 dropped, 0 seq holes, 0 garble bytes
+  seg 2 (goal:1500@900): 18000 of 18000 rows, 0 dropped, 0 seq holes, 0 garble bytes
+  seg 3 (goal:-1500@900): 18000 of 18000 rows, 0 dropped, 0 seq holes, 0 garble bytes
+  seg 4 (goal:1500@900): 18000 of 18000 rows, 0 dropped, 0 seq holes, 0 garble bytes
+  seg 5 (goal:-1500@900): 18000 of 18000 rows, 0 dropped, 0 seq holes, 0 garble bytes
+  seg 6 (goal:0@400): 8000 of 8000 rows, 0 dropped, 0 seq holes, 0 garble bytes
+center: 1936 counts (middle 1937)
+track: g3/c1500/track.csv
+meta:  g3/c1500/meta.json
