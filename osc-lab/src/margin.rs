@@ -35,8 +35,9 @@ use crate::rig::servo::{Servo, Wire, guard};
 use crate::rig::snapshot::read_u16;
 use crate::sweep::{chunks_json, servo_meta, unix_s};
 use crate::track::{
-    self, Abort, Cfg, Guarded, Mode, Poll, Ran, center, check_deadman, go_to, halt, preflight,
-    put_back, read_set, refuse, standing, stopped, trip, watch, zero_inject,
+    self, Abort, Cfg, Extra, Guarded, Mode, Poll, Ran, center, check_deadman, go_to, halt,
+    meta_extra, parse_extra, poll_extra, preflight, put_back, read_set, refuse, standing, stopped,
+    trip, watch, zero_inject,
 };
 
 /// Fast ticks a medium period: the stimulus steps and the row's three
@@ -122,6 +123,14 @@ pub struct Args {
     source_ms: u32,
     #[command(flatten)]
     guarded: Guarded,
+    /// One more read right behind the poll before and the poll after each
+    /// step's burst: ADDR:LEN, the address hex (0x optional), 1 to 64
+    /// bytes. polls.csv carries a row a poll with its bytes as lowercase
+    /// hex, `extra_hex`, empty where the read failed or came back short and
+    /// counted in meta.json (`extra_poll_failures`); the run goes on either
+    /// way. A poll the watchdog trips on takes no extra read.
+    #[arg(long, value_name = "ADDR:LEN", value_parser = parse_extra)]
+    poll_extra: Option<Extra>,
 }
 
 /// A comma-separated list as a flag takes it; `none` is the empty one.
@@ -283,7 +292,7 @@ impl Ask {
 pub(crate) struct Bounds {
     /// Linearized counts the bursts stay inside.
     pub(crate) guard: (i32, i32),
-    pub(crate) velocity_limit_cps: u16,
+    pub(crate) speed_ceiling_cps: u16,
     /// Q8.8 c/s per medium period: the cruise's run-up and its stop.
     pub(crate) accel_limit_q88: u16,
     pub(crate) tick_hz: f64,
@@ -443,11 +452,11 @@ pub(crate) fn plan(ask: &Ask, b: &Bounds) -> Result<Plan, String> {
                 ));
             }
             let top = cruise as f64 + peak_cps(slope, n);
-            if top > b.velocity_limit_cps as f64 {
+            if top > b.speed_ceiling_cps as f64 {
                 return Err(format!(
                     "N={n} at {cruise} c/s: the cruise and the triangle's peak reach {top:.0} \
-                     c/s, over the servo's velocity_limit_cps {}, where the clamp would cut it",
-                    b.velocity_limit_cps
+                     c/s, over the servo's speed_ceiling_cps {}, where the clamp would cut it",
+                    b.speed_ceiling_cps
                 ));
             }
             kinds.push((
@@ -485,12 +494,12 @@ pub(crate) fn plan(ask: &Ask, b: &Bounds) -> Result<Plan, String> {
 pub(crate) fn print_plan(plan: &Plan, b: &Bounds) {
     let fm = b.tick_hz / DECIM as f64;
     println!(
-        "margin plan: guard {}..{}, starts {} counts inside, velocity limit {} c/s, accel {} c/s \
+        "margin plan: guard {}..{}, starts {} counts inside, speed ceiling {} c/s, accel {} c/s \
          a period, {} Hz medium rate, {} head periods",
         b.guard.0,
         b.guard.1,
         plan.edge,
-        b.velocity_limit_cps,
+        b.speed_ceiling_cps,
         b.accel_limit_q88 as f64 / 256.0,
         fm,
         plan.head_periods
@@ -662,6 +671,21 @@ pub(crate) fn source_share(frames: &[TelFrame], head: u32) -> (u32, BTreeMap<u8,
     (n, share)
 }
 
+/// polls.csv's columns: the step, the K of the burst it captures (empty
+/// for a source check), `before` or `after` its burst, the host's time of
+/// the poll on `t_start`'s clock, and `--poll-extra`'s bytes.
+pub(crate) const POLLS_COLUMNS: &str = "step,burst,poll,t,extra_hex";
+
+/// One polls.csv row.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct PollRow {
+    pub(crate) step: usize,
+    pub(crate) burst: Option<usize>,
+    pub(crate) at: &'static str,
+    pub(crate) t: f64,
+    pub(crate) extra_hex: String,
+}
+
 /// What the run reports beside its bursts.
 #[derive(Default)]
 pub(crate) struct Swept {
@@ -671,6 +695,46 @@ pub(crate) struct Swept {
     pub(crate) bursts: usize,
     /// The stimulus fields as read back once the run ended.
     pub(crate) inject_after: Option<[u16; 2]>,
+    /// `--poll-extra`'s reads, in capture order; empty without it.
+    pub(crate) polls: Vec<PollRow>,
+}
+
+impl Swept {
+    /// `--poll-extra`'s read behind step `k`'s poll `at` its burst.
+    fn poll_extra<S: Servo>(
+        &mut self,
+        s: &mut S,
+        x: Extra,
+        k: usize,
+        step: &Step,
+        at: &'static str,
+        anchor: f64,
+    ) {
+        let t = anchor + s.now_ms() / 1000.0;
+        let extra_hex = poll_extra(s, x, &mut self.ran);
+        self.polls.push(PollRow {
+            step: k,
+            burst: matches!(step.kind, Kind::Burst { .. }).then_some(self.bursts),
+            at,
+            t,
+            extra_hex,
+        });
+    }
+}
+
+/// polls.csv in `dir`.
+pub(crate) fn write_polls(dir: &Path, polls: &[PollRow]) -> Result<()> {
+    let p = dir.join("polls.csv");
+    let mut w = std::io::BufWriter::new(
+        std::fs::File::create(&p).with_context(|| format!("create {}", p.display()))?,
+    );
+    writeln!(w, "{POLLS_COLUMNS}")?;
+    for r in polls {
+        let burst = r.burst.map_or(String::new(), |k| k.to_string());
+        writeln!(w, "{},{burst},{},{:.3},{}", r.step, r.at, r.t, r.extra_hex)?;
+    }
+    w.flush()?;
+    Ok(())
 }
 
 /// The servo's numbers and the plan, every refusal made.
@@ -705,7 +769,8 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<(Cfg, Sweep)> {
     if a.guarded.deadman_ms == 0 {
         return refuse("the stimulus runs only under a loaded bus dead-man, and --deadman-ms is 0");
     }
-    let cfg = preflight(s, &a.guarded, Mode::Velocity, ROW)?;
+    let mut cfg = preflight(s, &a.guarded, Mode::Velocity, ROW)?;
+    cfg.extra = a.poll_extra;
     let id = s.id();
     let d = crate::state::descriptor(s.client(), id)?;
     let listed = |r: crate::instrument::regs::Reg| {
@@ -722,7 +787,7 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<(Cfg, Sweep)> {
     let cap = s.burst_cap()?;
     let bounds = Bounds {
         guard: cfg.wd.guard,
-        velocity_limit_cps: read_named(s, &d, "velocity_limit_cps")? as u16,
+        speed_ceiling_cps: read_named(s, &d, "speed_ceiling_cps")? as u16,
         accel_limit_q88: read_named(s, &d, "accel_limit_q88")? as u16,
         tick_hz: cfg.tick_hz,
         cap_rows: cap.rows,
@@ -807,6 +872,9 @@ fn run_step<S: Servo>(
     s.write(control::MODE, Mode::Velocity.value())?;
     lease.keep(s)?;
     let poll: Poll = watch(s, &mut cfg.wd)?;
+    if let Some(x) = cfg.extra {
+        sw.poll_extra(s, x, k, &step, "before", anchor);
+    }
     let t_start = anchor + s.now_ms() / 1000.0;
     let goal = Some((control::GOAL_VELOCITY, step.direction * step.cruise as i32));
     let burst = s.stream_at(step.rows(), goal, chunks, None, None);
@@ -831,6 +899,9 @@ fn run_step<S: Servo>(
         return trip(reason);
     }
     watch(s, &mut cfg.wd)?;
+    if let Some(x) = cfg.extra {
+        sw.poll_extra(s, x, k, &step, "after", anchor);
+    }
     let head = sweep.plan.head_periods;
     match step.kind {
         Kind::Source => {
@@ -954,7 +1025,7 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg, sweep: &Sweep, a: &Args) -> Result<serde
         "limits": {
             "soft": [cfg.soft.0, cfg.soft.1],
             "guard": [cfg.wd.guard.0, cfg.wd.guard.1],
-            "velocity_limit_cps": b.velocity_limit_cps,
+            "speed_ceiling_cps": b.speed_ceiling_cps,
             "accel_limit_q88": b.accel_limit_q88,
             "current_limit_counts": cfg.i_lim,
             "p_kp_q88": sweep.p_kp_q88,
@@ -988,6 +1059,7 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg, sweep: &Sweep, a: &Args) -> Result<serde
         "data_flags_after": serde_json::Value::Null,
         "ended": serde_json::Value::Null,
     });
+    meta_extra(&mut m, cfg.extra, 0);
     if let Some(o) = m.as_object_mut() {
         o.extend(servo);
     }
@@ -995,9 +1067,10 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg, sweep: &Sweep, a: &Args) -> Result<serde
 }
 
 /// The meta once the sweep ended.
-fn land(meta: &mut serde_json::Value, sweep: &Sweep, sw: &Swept, r: &Result<()>) {
+fn land(meta: &mut serde_json::Value, cfg: &Cfg, sweep: &Sweep, sw: &Swept, r: &Result<()>) {
     meta["bursts"] = sw.bursts.into();
     meta["rows_dropped"] = sw.ran.rows_dropped.into();
+    meta_extra(meta, cfg.extra, sw.ran.extra_failures);
     meta["deadman"]["check"] = sw.ran.deadman.map_or(serde_json::Value::Null, Into::into);
     if sweep.bounds.source {
         meta["source_checks"] = sw.sources.clone().into();
@@ -1063,8 +1136,13 @@ pub(crate) fn capture<S: Servo>(s: &mut S, a: &Args, out: &Path) -> Result<()> {
         );
         write_burst(out, b)
     });
-    land(&mut meta, &sweep, &sw, &r);
+    let polls = match cfg.extra {
+        Some(_) => write_polls(out, &sw.polls),
+        None => Ok(()),
+    };
+    land(&mut meta, &cfg, &sweep, &sw, &r);
     write_meta(&meta)?;
+    polls?;
     if let Some(v) = sw.inject_after {
         println!(
             "stimulus fields after the run: inject_accel_q88 {}, inject_half_periods {}",
@@ -1112,12 +1190,12 @@ mod tests {
         <Cli as clap::Parser>::try_parse_from(v).unwrap().args
     }
 
-    /// A servo of soft limits 314..3560, velocity limit 4025 c/s and the
+    /// A servo of soft limits 314..3560, speed ceiling 4025 c/s and the
     /// default accel limit, on a 20 kHz tick with the whole TEL burst.
     fn servo() -> Bounds {
         Bounds {
             guard: (314, 3560),
-            velocity_limit_cps: 4025,
+            speed_ceiling_cps: 4025,
             accel_limit_q88: 3840,
             tick_hz: 20_000.0,
             cap_rows: u16::MAX,
@@ -1256,10 +1334,7 @@ mod tests {
         let b = servo();
         let refused = |argv: &[&str], b: &Bounds| plan(&Ask::of(&parse(argv)), b).unwrap_err();
         let e = refused(&["--position-cruise-cps", "3950"], &b);
-        assert!(
-            e.contains("over the servo's velocity_limit_cps 4025"),
-            "{e}"
-        );
+        assert!(e.contains("over the servo's speed_ceiling_cps 4025"), "{e}");
         let e = refused(&["--position-cruise-cps", "3800", "--no-second-cruise"], &b);
         assert!(
             e.contains("N=512 at 3800 c/s: 1 whole cycles") && e.contains("under the 4 asked"),
@@ -1535,7 +1610,7 @@ mod tests {
         let e = prepare(&mut r, &parse(&["--speed-cruise-cps", "1400"]))
             .err()
             .unwrap();
-        assert!(e.to_string().contains("velocity_limit_cps 1500"), "{e}");
+        assert!(e.to_string().contains("speed_ceiling_cps 1500"), "{e}");
         assert!(r.writes.is_empty());
     }
 
@@ -1612,7 +1687,7 @@ mod tests {
             meta["inject_after"],
             serde_json::json!({ "inject_accel_q88": 0, "inject_half_periods": 0 })
         );
-        assert_eq!(meta["row"], serde_json::json!([[0x258, 8], [0x3d0, 4]]));
+        assert_eq!(meta["row"], serde_json::json!([[0x258, 8], [0x3d4, 4]]));
         assert_eq!(meta["plan"]["steps"].as_array().unwrap().len(), 3);
         assert_eq!(meta["limits"]["guard"], serde_json::json!([432, 3626]));
         for k in [
@@ -1723,5 +1798,199 @@ mod tests {
             );
         }
         std::fs::remove_dir_all(&out).unwrap();
+    }
+
+    /// `--poll-extra` parses as `track`'s: hex address, 0x optional, 1 to
+    /// 64 bytes.
+    #[test]
+    fn the_extra_range_parses_on_margin_too() {
+        let want = Extra {
+            addr: 0x3d4,
+            len: 44,
+        };
+        assert_eq!(parse(&["--poll-extra", "0x3D4:44"]).poll_extra, Some(want));
+        assert_eq!(parse(&["--poll-extra", "3d4:44"]).poll_extra, Some(want));
+        assert_eq!(parse(&[]).poll_extra, None);
+        for bad in ["3d4:0", "3d4:65"] {
+            let v = ["margin", "--out", "unused", "--poll-extra", bad];
+            assert!(<Cli as clap::Parser>::try_parse_from(v).is_err(), "{bad}");
+        }
+    }
+
+    /// The folder and the wire of one sweep with `--poll-extra` as given.
+    struct Captured {
+        files: BTreeMap<String, String>,
+        sent: Vec<Sent>,
+        r: Result<()>,
+    }
+
+    /// A source check and one speed point, a burst up and a burst down.
+    const EXTRA_ARGV: [&str; 7] = [
+        "--speed-n",
+        "4",
+        "--position-n",
+        "none",
+        "--source-ms",
+        "100",
+        "--no-center",
+    ];
+
+    fn captured(extra: Option<&str>, fault_after: Option<u32>) -> Captured {
+        static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let out =
+            std::env::temp_dir().join(format!("osc-lab-margin-extra-{n}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&out);
+        let mut r = rig(true);
+        if let Some(at) = fault_after {
+            r.after_burst = Some(Box::new(move |c, k| {
+                if k == at {
+                    c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                        t.telemetry.common.fault_flags = 1 << 2;
+                        t.telemetry.mode.fault_code = 3;
+                    });
+                }
+            }));
+        }
+        let mut argv = EXTRA_ARGV.to_vec();
+        if let Some(x) = extra {
+            argv.extend(["--poll-extra", x]);
+        }
+        r.sent();
+        let res = capture(&mut r, &parse(&argv), &out);
+        let files = std::fs::read_dir(&out)
+            .unwrap()
+            .map(|e| {
+                let p = e.unwrap().path();
+                let name = p.file_name().unwrap().to_string_lossy().into_owned();
+                (name, std::fs::read_to_string(&p).unwrap())
+            })
+            .collect();
+        std::fs::remove_dir_all(&out).unwrap();
+        Captured {
+            files,
+            sent: r.sent(),
+            r: res,
+        }
+    }
+
+    /// The folder less polls.csv, the host's clock and `--poll-extra`'s
+    /// meta keys: what must not move with the option.
+    fn kept(files: &BTreeMap<String, String>) -> BTreeMap<String, String> {
+        files
+            .iter()
+            .filter(|(name, _)| name.as_str() != "polls.csv")
+            .map(|(name, text)| {
+                if !name.ends_with(".json") {
+                    return (name.clone(), text.clone());
+                }
+                let mut v: serde_json::Value = serde_json::from_str(text).unwrap();
+                let o = v.as_object_mut().unwrap();
+                for k in ["t_start", "t_end", "poll_extra", "extra_poll_failures"] {
+                    o.remove(k);
+                }
+                (name.clone(), v.to_string())
+            })
+            .collect()
+    }
+
+    /// With `--poll-extra` the range is read right behind the poll before
+    /// and the poll after each step's burst, source check included, into
+    /// polls.csv: the step, its burst's K, which poll, when, and the bytes
+    /// as lowercase hex (before a burst the pot reads the step's start,
+    /// 512 `0002` or 3546 `da0d`). Without it there is no polls.csv and no
+    /// meta key, the folder is what a run with it writes less those, and
+    /// the wire carries the extra reads and nothing else more.
+    #[test]
+    fn the_extra_range_rides_each_bursts_polls() {
+        let plain = captured(None, None);
+        let with = captured(Some("0x238:2"), None);
+        plain.r.unwrap();
+        with.r.unwrap();
+        assert!(!plain.files.contains_key("polls.csv"));
+        let meta: serde_json::Value = serde_json::from_str(&plain.files["meta.json"]).unwrap();
+        assert!(meta.get("poll_extra").is_none());
+        assert!(meta.get("extra_poll_failures").is_none());
+
+        let polls: Vec<Vec<&str>> = with.files["polls.csv"]
+            .lines()
+            .map(|l| l.split(',').collect())
+            .collect();
+        assert_eq!(polls[0].join(","), POLLS_COLUMNS);
+        let head: Vec<[&str; 3]> = polls[1..].iter().map(|c| [c[0], c[1], c[2]]).collect();
+        assert_eq!(
+            head,
+            [
+                ["0", "", "before"],
+                ["0", "", "after"],
+                ["1", "0", "before"],
+                ["1", "0", "after"],
+                ["2", "1", "before"],
+                ["2", "1", "after"],
+            ]
+        );
+        let starts: Vec<&str> = polls[1..].iter().step_by(2).map(|c| c[4]).collect();
+        assert_eq!(starts, ["0002", "da0d", "0002"]);
+        assert!(polls[1..].iter().all(|c| {
+            c.len() == 5
+                && c[4].len() == 4
+                && c[4]
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        }));
+        let meta: serde_json::Value = serde_json::from_str(&with.files["meta.json"]).unwrap();
+        assert_eq!(
+            meta["poll_extra"],
+            serde_json::json!({ "addr": 0x238, "len": 2 })
+        );
+        assert_eq!(meta["extra_poll_failures"], 0);
+
+        assert_eq!(kept(&with.files), kept(&plain.files));
+        let extra = Sent::Read(0x238, 2);
+        let at: Vec<usize> = (0..with.sent.len())
+            .filter(|&i| with.sent[i] == extra)
+            .collect();
+        assert_eq!(at.len(), 6, "two a step");
+        assert!(
+            at.iter().all(|&i| matches!(
+                with.sent[i - 1],
+                Sent::Read(a, _) if a == telemetry::FAULT_FLAGS.addr
+            )),
+            "right behind a poll"
+        );
+        let less: Vec<Sent> = with.sent.into_iter().filter(|s| *s != extra).collect();
+        assert_eq!(less, plain.sent);
+    }
+
+    /// An extra read that fails leaves the sweep as it was: the same
+    /// bursts and the same ending, clean or aborted, each failure an empty
+    /// `extra_hex` counted in meta.json.
+    #[test]
+    fn a_failing_extra_read_leaves_the_sweep_as_it_was() {
+        let plain = captured(None, None);
+        let with = captured(Some("0xfff0:16"), None);
+        plain.r.unwrap();
+        with.r.unwrap();
+        let rows: Vec<&str> = with.files["polls.csv"].lines().skip(1).collect();
+        assert_eq!(rows.len(), 6);
+        assert!(rows.iter().all(|l| l.ends_with(",")), "{rows:?}");
+        let meta: serde_json::Value = serde_json::from_str(&with.files["meta.json"]).unwrap();
+        assert_eq!(
+            (meta["extra_poll_failures"].clone(), meta["bursts"].clone()),
+            (6.into(), 2.into())
+        );
+        assert_eq!(kept(&with.files), kept(&plain.files));
+
+        // a fault under the first burst trips the poll after it: no extra read there
+        let plain = captured(None, Some(1));
+        let with = captured(Some("0xfff0:16"), Some(1));
+        let (pe, we) = (plain.r.unwrap_err(), with.r.unwrap_err());
+        assert_eq!(exit_code(&we), Some(3));
+        assert_eq!(we.to_string(), pe.to_string());
+        let rows: Vec<&str> = with.files["polls.csv"].lines().skip(1).collect();
+        assert_eq!(rows.len(), 3, "{rows:?}");
+        let meta: serde_json::Value = serde_json::from_str(&with.files["meta.json"]).unwrap();
+        assert_eq!(meta["extra_poll_failures"], 3);
+        assert_eq!(kept(&with.files), kept(&plain.files));
     }
 }

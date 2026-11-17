@@ -11,10 +11,6 @@
 //! apply on the rail read before the run, and captures sit at least the
 //! firmware's arm spacing apart.
 //!
-//! The firmware takes the burst's decay from `openloop_decay` when it arms,
-//! so `--decay` writes it before the first capture, and the run puts it back
-//! to slow on every exit, as `osc-lab sweep` does.
-//!
 //! `--spin-ms` drives each step's own duty that long before its arm, so a
 //! free rotor is already turning at that duty and the burst records it in
 //! steady state on both sides of the step: the firmware keeps the live duty
@@ -36,7 +32,7 @@ use crate::rig::Bus;
 use crate::rig::pump::{self, Lease, STOP, capture_burst};
 use crate::rig::servo::{Servo, Wire, guard};
 use crate::rig::snapshot::{read_bool, read_u16};
-use crate::sweep::{Decay, Dirs, pct_q15, resolve_regs, servo_meta};
+use crate::sweep::{Dirs, pct_q15, servo_meta};
 
 /// The firmware refuses an arm sooner than this after the one before.
 const ARM_SPACING_MS: u32 = 100;
@@ -57,9 +53,6 @@ pub struct Args {
     duty_pct: Vec<u8>,
     #[arg(long, value_enum, default_value_t = Dirs::Both)]
     dirs: Dirs,
-    /// openloop_decay for every capture; slow again after the run.
-    #[arg(long, value_enum, default_value_t = Decay::Slow)]
-    decay: Decay,
     /// Captures per step duty and sign.
     #[arg(long, default_value_t = 3)]
     repeats: u32,
@@ -165,24 +158,20 @@ fn hold<S: Servo>(s: &mut S, lease: &mut Lease, ms: u32) -> Result<()> {
     Ok(())
 }
 
-/// Every arm of `steps` in order under `decay`, each capture handed to
-/// `on_cap` as it is read back. Leaves the servo guarded, torqued off and in
-/// slow decay.
+/// Every arm of `steps` in order, each capture handed to `on_cap` as it is
+/// read back. Leaves the servo guarded and torqued off.
 fn record<S: Servo>(
     s: &mut S,
     steps: &[i16],
     chans: Chans,
-    decay: Decay,
     rest_ms: u32,
     spin_ms: u32,
     mut on_cap: impl FnMut(usize, &Capture) -> Result<()>,
 ) -> Result<()> {
     let id = s.id();
     let polarity = read_bool(s.client(), id, config::DRIVE_POLARITY)?;
-    let decay_reg = resolve_regs(s.client(), id)?.decay;
     let mut lease = Lease::new(true, s.experiment()?);
-    let r = guard(s, |s| {
-        s.write(decay_reg, decay as i32)?;
+    guard(s, |s| {
         for (k, &step) in steps.iter().enumerate() {
             check_stop()?;
             let o = s.snapshot()?;
@@ -210,10 +199,7 @@ fn record<S: Servo>(
             rest(s, rest_ms)?;
         }
         Ok(())
-    });
-    // seeks and brakes after this run need slow decay to move and to stop
-    let _ = s.write(decay_reg, Decay::Slow as i32);
-    r
+    })
 }
 
 fn write_capture(dir: &Path, k: usize, cap: &Capture) -> Result<()> {
@@ -238,7 +224,6 @@ pub fn run(args: &Args, bus: Bus, id: u8) -> Result<()> {
     let mut meta = servo_meta(&mut c, id)?;
     meta.insert("duty_pct".into(), args.duty_pct.clone().into());
     meta.insert("dirs".into(), args.dirs.signs().into());
-    meta.insert("decay".into(), args.decay.as_str().into());
     meta.insert("repeats".into(), args.repeats.into());
     meta.insert("chans".into(), format!("{:?}", args.chans).into());
     meta.insert("rest_ms".into(), args.rest_ms.into());
@@ -250,7 +235,7 @@ pub fn run(args: &Args, bus: Bus, id: u8) -> Result<()> {
         .with_context(|| format!("write {}", meta_path.display()))?;
 
     println!(
-        "[burst] {} captures {} at {} on a {:.2} V rail, {} decay",
+        "[burst] {} captures {} at {} on a {:.2} V rail",
         steps.len(),
         if args.spin_ms > 0 {
             "spinning"
@@ -262,15 +247,13 @@ pub fn run(args: &Args, bus: Bus, id: u8) -> Result<()> {
             .map(|p| format!("{p}%"))
             .collect::<Vec<_>>()
             .join(", "),
-        rail_mv / 1000.0,
-        args.decay.as_str()
+        rail_mv / 1000.0
     );
     let mut s = Wire::new(c, id);
     record(
         &mut s,
         &steps,
         args.chans,
-        args.decay,
         args.rest_ms,
         args.spin_ms,
         |k, cap| write_capture(&args.out, k, cap),
@@ -313,54 +296,20 @@ mod tests {
         assert!(parse_chans("16").is_err());
     }
 
-    #[derive(clap::Parser)]
-    struct Cli {
-        #[command(flatten)]
-        args: Args,
-    }
-
-    fn parse(argv: &[&str]) -> Args {
-        <Cli as clap::Parser>::try_parse_from(argv).unwrap().args
-    }
-
-    #[test]
-    fn decay_defaults_to_slow_and_takes_fast() {
-        assert_eq!(parse(&["burst", "--duty-pct", "25"]).decay, Decay::Slow);
-        let a = parse(&["burst", "--duty-pct", "25", "--decay", "fast"]);
-        assert_eq!(a.decay, Decay::Fast);
-    }
-
-    /// The decay register on the in-process servo stack.
-    fn decay_reg(rig: &mut crate::rig::testkit::Rig) -> crate::instrument::regs::Reg {
-        let id = rig.id();
-        resolve_regs(&mut rig.c, id).unwrap().decay
-    }
-
     /// The in-process servo stack runs no shunt burst, so its arm never
     /// leaves idle: the capture fails, and the run still leaves the servo
-    /// safe, the decay written before anything drives and put back to slow
-    /// after the guard, the permit fed behind the torque enable and dropped.
+    /// safe, the permit fed behind the torque enable and dropped.
     #[test]
-    fn a_failed_capture_leaves_the_servo_safe_and_slow() {
+    fn a_failed_capture_leaves_the_servo_safe() {
         use crate::rig::testkit::Rig;
         let mut rig = Rig::bench();
-        let decay = decay_reg(&mut rig);
-        let e = record(
-            &mut rig,
-            &[8191],
-            Chans::Diff,
-            Decay::Fast,
-            150,
-            0,
-            |_, _| Ok(()),
-        )
-        .unwrap_err()
-        .to_string();
+        let e = record(&mut rig, &[8191], Chans::Diff, 150, 0, |_, _| Ok(()))
+            .unwrap_err()
+            .to_string();
         assert_eq!(e, "burst capture: burst stuck in state 0 after 200 polls");
         assert_eq!(
-            rig.writes[..5],
+            rig.writes[..4],
             [
-                (decay, Decay::Fast as i32),
                 (control::MODE, 0),
                 (control::GOAL_DUTY, 0),
                 (control::TORQUE_ENABLE, 1),
@@ -368,10 +317,7 @@ mod tests {
             ]
         );
         let n = rig.writes.len();
-        assert_eq!(rig.writes[n - 7..n - 1], crate::rig::servo::SAFE);
-        assert_eq!(rig.writes[n - 1], (decay, Decay::Slow as i32));
-        let id = rig.id();
-        assert_eq!(rig.c.read(id, decay.addr, 1).unwrap(), [Decay::Slow as u8]);
+        assert_eq!(rig.writes[n - 6..], crate::rig::servo::SAFE);
         assert_eq!(rig.t_ms, SETTLE_MS as f64, "settled, then armed");
     }
 
@@ -382,15 +328,7 @@ mod tests {
     fn a_spinning_capture_drives_the_step_before_the_arm() {
         use crate::rig::testkit::Rig;
         let mut rig = Rig::bench();
-        let _ = record(
-            &mut rig,
-            &[-8191],
-            Chans::Diff,
-            Decay::Slow,
-            150,
-            1500,
-            |_, _| Ok(()),
-        );
+        let _ = record(&mut rig, &[-8191], Chans::Diff, 150, 1500, |_, _| Ok(()));
         let goal = rig
             .writes
             .iter()
@@ -414,21 +352,13 @@ mod tests {
         assert_eq!(rig.t_ms, (SETTLE_MS + 1500) as f64, "spun, then armed");
     }
 
-    /// A run that ends cleanly takes the same exit: fast for the run, the
-    /// guard's safe writes, then slow.
+    /// A run that ends cleanly takes the same exit: the guard's safe writes.
     #[test]
-    fn a_clean_run_puts_the_decay_back_to_slow() {
+    fn a_clean_run_takes_the_guards_safe_exit() {
         use crate::rig::testkit::Rig;
         let mut rig = Rig::bench();
-        let decay = decay_reg(&mut rig);
-        record(&mut rig, &[], Chans::Diff, Decay::Fast, 150, 0, |_, _| {
-            Ok(())
-        })
-        .unwrap();
-        let mut want = vec![(decay, Decay::Fast as i32)];
-        want.extend(crate::rig::servo::SAFE);
-        want.push((decay, Decay::Slow as i32));
-        assert_eq!(rig.writes, want);
+        record(&mut rig, &[], Chans::Diff, 150, 0, |_, _| Ok(())).unwrap();
+        assert_eq!(rig.writes, crate::rig::servo::SAFE);
     }
 
     /// A committed capture's burst-K.csv, parsed back into a capture and

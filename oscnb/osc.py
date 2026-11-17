@@ -204,7 +204,7 @@ CHUNKS_SERVO = "0x238+2,0x240+10"
 
 
 def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
-          dirs="both", decay="slow", tel_chunks=CHUNKS_RAW, static_load=True,
+          dirs="both", tel_chunks=CHUNKS_RAW, static_load=True,
           stall=False, guard_lo=None, guard_hi=None, settle_ms=None,
           park=True, background=False):
     """`osc-lab sweep` into `out` (sweep.csv + meta.json). `duty` is the step
@@ -219,7 +219,7 @@ def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,
     out.mkdir(parents=True, exist_ok=True)
     args = ["sweep", "--out", out, "--duty-pct", ",".join(map(str, duty)),
             "--window-ms", window_ms, "--baseline-ms", baseline_ms,
-            "--rest-ms", rest_ms, "--dirs", dirs, "--decay", decay]
+            "--rest-ms", rest_ms, "--dirs", dirs]
     if tel_chunks:
         args += ["--tel-chunks", tel_chunks]
     if static_load:
@@ -283,19 +283,16 @@ def clapper(path, flashes):
     return path
 
 
-def bursts(out, pct, repeats=3, chans="diff", dirs="both", rest_ms=150, decay="slow", spin_ms=0):
+def bursts(out, pct, repeats=3, chans="diff", dirs="both", rest_ms=150, spin_ms=0):
     """`osc-lab burst` into `out` (burst-K.csv + meta.json): the ADC free running
     on the shunt and the taps through PWM periods around a duty step from
-    rest, each duty by sign by repeat, in `decay`. The raw instrument, no fit.
+    rest, each duty by sign by repeat. The raw instrument, no fit.
     `spin_ms` drives each step's own duty that long before its arm, so a free
     rotor is captured spinning in steady state on both sides of the step."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     args = ["burst", "--out", out, "--duty-pct", ",".join(map(str, pct)), "--repeats", repeats,
             "--chans", chans, "--dirs", dirs, "--rest-ms", rest_ms]
-    # slow is the tool's default, so an osc-lab from before --decay still runs a slow set
-    if decay != "slow":
-        args += ["--decay", decay]
     if spin_ms:
         args += ["--spin-ms", spin_ms]
     run(*args, lab=True)
