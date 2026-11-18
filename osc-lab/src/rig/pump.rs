@@ -538,7 +538,7 @@ fn arm_seen<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<ArmSeen> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instrument::frame::{TEL_RAW, window_valid};
+    use crate::instrument::frame::{RowBytes, TEL_RAW, table_row, window_valid};
     use crate::instrument::limits::PERMIT_REFRESH_MS;
     use crate::rig::testkit::Rig;
     use osc_client::fake::tick_flag;
@@ -661,6 +661,10 @@ mod tests {
                     vbus_raw: sel(t::VBUS_RAW).then_some(s.vbus_raw),
                     ntc_raw: sel(t::NTC_RAW).then_some(s.ntc_raw),
                     vref_raw: sel(t::VREF_RAW).then_some(s.vref_raw),
+                    row: RowBytes::new(&table_row(chunks, |tb| {
+                        tb.telemetry.tick = s;
+                        tb.telemetry.estimates.vbus_counts = vbus;
+                    })),
                     ..TelFrame::default()
                 };
                 assert_eq!(*f, want, "{chunks:?}");

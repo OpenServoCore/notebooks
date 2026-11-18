@@ -61,6 +61,28 @@ pub const TEL_RAW: Chunks = Chunks::two(
     span(telemetry::CURRENT_RAW, telemetry::CURRENT_TROUGH),
 );
 
+/// The row the servo copies for `chunks` out of a core table `set` writes:
+/// core's own layout, not this crate's mirror of it.
+#[cfg(test)]
+pub fn table_row(
+    chunks: Chunks,
+    set: impl FnOnce(&mut osc_servo_core::regions::ControlTable),
+) -> Vec<u8> {
+    use osc_servo_core::{ControlTableCell, RegionStorage, RegionStorageRaw};
+    let table = ControlTableCell::new();
+    table.with_mut(set);
+    let base = table.region_ptr().cast::<u8>();
+    let mut out = Vec::new();
+    for c in chunks.0 {
+        for a in c.addr..c.addr + c.len {
+            // SAFETY: a read of the local table; every chunk a test copies
+            // is valid, so inside it.
+            out.push(unsafe { base.add(a as usize).read() });
+        }
+    }
+    out
+}
+
 /// A row's chunks as `addr+len` joined by `,`: `0x238+2,0x246+8`.
 pub fn chunks_text(chunks: &Chunks) -> String {
     let parts: Vec<String> = chunks
@@ -113,6 +135,30 @@ pub struct TelFrame {
     pub omega_hat_cps: Option<i32>,
     pub omega_ref_cps: Option<i32>,
     pub omega_hat_src: Option<u8>,
+    /// The row's table bytes as streamed, what a column decoded off the
+    /// servo's descriptor reads.
+    pub row: RowBytes,
+}
+
+/// One row's bytes, at most a row's worth ([`tel::ROW_BYTES_MAX`]).
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct RowBytes {
+    len: u8,
+    bytes: [u8; tel::ROW_BYTES_MAX],
+}
+
+impl RowBytes {
+    pub fn new(row: &[u8]) -> Self {
+        let mut r = Self::default();
+        let n = row.len().min(tel::ROW_BYTES_MAX);
+        r.bytes[..n].copy_from_slice(&row[..n]);
+        r.len = n as u8;
+        r
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        &self.bytes[..self.len as usize]
+    }
 }
 
 /// One row of `chunks` at fast tick `tick`; `i_window_min_ticks` is the
@@ -156,6 +202,7 @@ pub fn decode_row(chunks: &Chunks, i_window_min_ticks: u16, row: &[u8], tick: u6
         omega_hat_cps: word(t::OMEGA_HAT_CPS),
         omega_ref_cps: word(t::OMEGA_REF_CPS),
         omega_hat_src: byte(t::OMEGA_HAT_SRC),
+        row: RowBytes::new(row),
     }
 }
 
@@ -285,24 +332,13 @@ mod tests {
     }
 
     /// The row the servo copies for `chunks` out of a table holding
-    /// `sample(i)`: core's own layout, not this crate's mirror of it.
+    /// `sample(i)`.
     fn row(chunks: Chunks, i: u16) -> Vec<u8> {
         let (tick, vbus) = sample(i);
-        let table = ControlTableCell::new();
-        table.with_mut(|tb| {
+        table_row(chunks, |tb| {
             tb.telemetry.tick = tick;
             tb.telemetry.estimates.vbus_counts = vbus;
-        });
-        let base = table.region_ptr().cast::<u8>();
-        let mut out = Vec::new();
-        for c in chunks.0 {
-            for a in c.addr..c.addr + c.len {
-                // SAFETY: a read of the local table; every chunk a test
-                // copies is valid, so inside it.
-                out.push(unsafe { base.add(a as usize).read() });
-            }
-        }
-        out
+        })
     }
 
     /// One frame of `count` rows of `sample`, the first stamped `tick`.
@@ -341,6 +377,7 @@ mod tests {
             vbus_raw: sel(t::VBUS_RAW).then_some(s.vbus_raw),
             ntc_raw: sel(t::NTC_RAW).then_some(s.ntc_raw),
             vref_raw: sel(t::VREF_RAW).then_some(s.vref_raw),
+            row: RowBytes::new(&row(chunks, i)),
             ..TelFrame::default()
         }
     }

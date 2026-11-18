@@ -39,7 +39,7 @@ use clap::ValueEnum;
 use osc_client::Id;
 use osc_client::blocking::Client;
 use osc_client::data_state::{allows, fault};
-use osc_client::descriptor::{self as desc, Access, Descriptor, Kind, Value};
+use osc_client::descriptor::{self as desc, Access, Descriptor, Field, Kind, Value};
 use osc_client::pipe::Pipe;
 use osc_protocol::tel::Chunks;
 use osc_servo_core::estimator::thermal::{NtcCfg, ntc_cc};
@@ -231,7 +231,12 @@ pub struct Args {
     schedule: Vec<Item>,
     /// TEL row: table chunks as addr+len, at most two, comma-joined (hex
     /// ok). Default = the raw six: pos, raw current, vmotor_a, vmotor_b,
-    /// applied duty, trough.
+    /// applied duty, trough. track.csv keeps its fixed columns, empty where
+    /// the row lacks the field (vbus is vbus_counts, current i_tick_counts,
+    /// duty_counts duty_ticks, vdiff vdiff_counts), then appends one column
+    /// for every other field the chunks carry whole, named and decoded by
+    /// the servo's descriptor, in table order: 0x238+2,0x260+10 appends
+    /// tau_d_counts, i_lim_counts, t_winding_cc, omega_bemf_cps.
     #[arg(long, default_value = "0x238+2,0x240+10")]
     tel_chunks: String,
     #[command(flatten)]
@@ -684,6 +689,7 @@ pub(crate) struct Cfg {
     pub(crate) soft: (i32, i32),
     pub(crate) i_lim: u16,
     pub(crate) extra: Option<Extra>,
+    pub(crate) columns: Columns,
 }
 
 /// The goal period's grid. The first goal of a train (a `goal:` item with
@@ -1093,6 +1099,7 @@ pub(crate) fn preflight<S: Servo>(
         soft: lim.soft,
         i_lim: lim.i_lim,
         extra: None,
+        columns: Columns::new(&d, &chunks),
     })
 }
 
@@ -1789,12 +1796,82 @@ pub(crate) fn record<S: Servo>(
 }
 
 /// track.csv: one row a captured tick, the row's fields under sweep.csv's
-/// names.
+/// names, then [`Columns`].
 pub(crate) const CSV_HEADER: &str = "seg,goal,tick,window_valid,pos,current,current_trough,duty_counts,vdiff,vbus,current_raw,vmotor_a,vmotor_b,vbus_raw,ntc_raw,vref_raw";
 
-pub(crate) fn write_rows(w: &mut impl Write, g: &Seg) -> Result<()> {
+/// The descriptor fields [`CSV_HEADER`] already carries.
+const FIXED_FIELDS: [&str; 12] = [
+    "pos",
+    "i_tick_counts",
+    "current_trough",
+    "duty_ticks",
+    "vdiff_counts",
+    "vbus_counts",
+    "current_raw",
+    "vmotor_a",
+    "vmotor_b",
+    "vbus_raw",
+    "ntc_raw",
+    "vref_raw",
+];
+
+/// track.csv's columns past [`CSV_HEADER`]: every other descriptor field a
+/// row of the chunks carries whole, table order, each with its offset in
+/// the row.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Columns(Vec<(Field, usize)>);
+
+impl Columns {
+    pub(crate) fn new(d: &Descriptor, chunks: &Chunks) -> Self {
+        let mut cols: Vec<(Field, usize)> = d
+            .fields
+            .iter()
+            .filter(|f| !FIXED_FIELDS.contains(&f.name.as_str()))
+            .filter_map(|f| Some((f.clone(), chunks.offset(f.addr, f.width)?)))
+            .collect();
+        cols.sort_by_key(|(f, _)| f.addr);
+        Self(cols)
+    }
+
+    pub(crate) fn header(&self) -> String {
+        let mut h = CSV_HEADER.to_string();
+        for (f, _) in &self.0 {
+            h.push(',');
+            h.push_str(&f.name);
+        }
+        h
+    }
+
+    /// One row's values by the fields' kinds, each behind a comma; an enum
+    /// is its discriminant, bytes are hex, a row short of a field empty.
+    fn write(&self, w: &mut impl Write, row: &[u8]) -> Result<()> {
+        for (f, at) in &self.0 {
+            w.write_all(b",")?;
+            let Some(b) = row.get(*at..*at + f.width as usize) else {
+                continue;
+            };
+            match desc::decode(f, b) {
+                Ok(Value::Uint(n)) => write!(w, "{n}")?,
+                Ok(Value::Int(n)) => write!(w, "{n}")?,
+                Ok(Value::Bool(on)) => write!(w, "{}", on as u8)?,
+                Ok(Value::Enum(n)) => write!(w, "{n}")?,
+                Ok(Value::Bytes(b)) => {
+                    for x in b {
+                        write!(w, "{x:02x}")?;
+                    }
+                }
+                Err(e) => bail!("decode {}: {e}", f.name),
+            }
+        }
+        Ok(())
+    }
+}
+
+pub(crate) fn write_rows(w: &mut impl Write, g: &Seg, cols: &Columns) -> Result<()> {
     for f in &g.frames {
-        writeln!(w, "{},{},{}", g.idx, g.goal, RowFields(f))?;
+        write!(w, "{},{},{}", g.idx, g.goal, RowFields(f))?;
+        cols.write(w, f.row.as_slice())?;
+        writeln!(w)?;
     }
     Ok(())
 }
@@ -1964,7 +2041,8 @@ pub(crate) fn capture<S: Servo>(s: &mut S, a: &Args, out: &Path) -> Result<()> {
         writeln!(w, "{header}")?;
         Ok(w)
     };
-    let mut rows = create("track.csv", CSV_HEADER)?;
+    let mut rows = create("track.csv", &cfg.columns.header())?;
+    let cols = cfg.columns.clone();
     let segs_header = match cfg.extra {
         Some(_) => format!("{SEGMENTS_HEADER},extra_hex"),
         None => SEGMENTS_HEADER.to_string(),
@@ -1986,7 +2064,7 @@ pub(crate) fn capture<S: Servo>(s: &mut S, a: &Args, out: &Path) -> Result<()> {
                 st.garble
             );
         }
-        write_rows(&mut rows, g)?;
+        write_rows(&mut rows, g, &cols)?;
         write_segment(&mut segs, g)
     });
     let flushed = rows.flush().and(segs.flush());
@@ -4121,5 +4199,124 @@ mod tests {
             sent[last - 4..=last],
             [goal, arm, poll, Write(control::TORQUE_ENABLE.addr), Commit]
         );
+    }
+
+    fn chunks(text: &str) -> Chunks {
+        pump::parse_tel_chunks(text).unwrap()
+    }
+
+    /// The columns past the fixed ones are every other field a chunk
+    /// carries whole, table order: none for the default row, the rotor's
+    /// for the medium-rate span, the trough taps and the observer for theirs,
+    /// and neither field a chunk only half covers.
+    #[test]
+    fn the_columns_are_the_descriptor_fields_the_chunks_carry_whole() {
+        let d = crate::descriptor::builtin();
+        let header = |text: &str| Columns::new(&d, &chunks(text)).header();
+        assert_eq!(header("0x238+2,0x240+10"), CSV_HEADER);
+        assert_eq!(
+            header("0x238+2,0x260+10"),
+            format!("{CSV_HEADER},tau_d_counts,i_lim_counts,t_winding_cc,omega_bemf_cps")
+        );
+        assert_eq!(
+            header("0x258+8,0x24e+4"),
+            format!("{CSV_HEADER},vmotor_a_trough,vmotor_b_trough,theta_hat_q16,omega_hat_cps")
+        );
+        assert_eq!(
+            header("0x262+10"),
+            format!("{CSV_HEADER},i_lim_counts,t_winding_cc,omega_bemf_cps,r_hat_q12")
+        );
+        assert_eq!(
+            header("0x252+6"),
+            format!("{CSV_HEADER},tick_flags,sample_tick")
+        );
+        assert_eq!(header("0x25a+4"), CSV_HEADER, "half of each estimate");
+    }
+
+    /// Each fixed column names a field at the address its decode reads.
+    #[test]
+    fn the_fixed_columns_are_descriptor_fields() {
+        use telemetry as t;
+        let d = crate::descriptor::builtin();
+        let regs = [
+            t::POS,
+            t::I_TICK_COUNTS,
+            t::CURRENT_TROUGH,
+            t::DUTY_TICKS,
+            t::VDIFF_COUNTS,
+            t::VBUS_COUNTS,
+            t::CURRENT_RAW,
+            t::VMOTOR_A,
+            t::VMOTOR_B,
+            t::VBUS_RAW,
+            t::NTC_RAW,
+            t::VREF_RAW,
+        ];
+        for (name, r) in FIXED_FIELDS.iter().zip(regs) {
+            let f = d.field(name).unwrap();
+            assert_eq!((f.addr, f.width), (r.addr, r.width as u16), "{name}");
+        }
+    }
+
+    /// A row the core table holds for 0x238+2,0x260+10 decodes the rotor's
+    /// fields by their kinds, signed ones negative; a row short of a field
+    /// leaves it empty.
+    #[test]
+    fn a_synthetic_row_decodes_the_rotor_columns() {
+        use crate::instrument::frame::{decode_row, table_row};
+        let c = chunks("0x238+2,0x260+10");
+        let row = table_row(c, |tb| {
+            tb.telemetry.tick.pos = 1979;
+            let e = &mut tb.telemetry.estimates;
+            (e.tau_d_counts, e.i_lim_counts, e.t_winding_cc) = (-321, 1043, -1250);
+            (e.vbus_counts, e.omega_bemf_cps) = (1240, -4025);
+        });
+        let f = decode_row(&c, 0, &row, 0);
+        assert_eq!((f.pos, f.vbus), (Some(1979), Some(1240)));
+        let cols = Columns::new(&crate::descriptor::builtin(), &c);
+        let line = |row: &[u8]| {
+            let mut w = Vec::new();
+            cols.write(&mut w, row).unwrap();
+            String::from_utf8(w).unwrap()
+        };
+        assert_eq!(line(f.row.as_slice()), ",-321,1043,-1250,-4025");
+        assert_eq!(line(&row[..6]), ",-321,1043,,");
+    }
+
+    /// A run on the rotor's row lands its fields on every row of
+    /// track.csv, past the fixed columns.
+    #[test]
+    fn a_run_writes_the_columns_its_row_carries() {
+        let out = std::env::temp_dir().join(format!("osc-lab-track-cols-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&out);
+        let mut r = rig_at(2029, 0);
+        r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.estimates.tau_d_counts = -77;
+            t.telemetry.estimates.omega_bemf_cps = -1234;
+        });
+        let a = parse(&[
+            "--mode",
+            "position",
+            "--tel-chunks",
+            "0x238+2,0x260+10",
+            "--schedule",
+            "goal:2100@20",
+        ]);
+        capture(&mut r, &a, &out).unwrap();
+        let csv = std::fs::read_to_string(out.join("track.csv")).unwrap();
+        std::fs::remove_dir_all(&out).unwrap();
+        let mut lines = csv.lines();
+        assert_eq!(
+            lines.next().unwrap(),
+            format!("{CSV_HEADER},tau_d_counts,i_lim_counts,t_winding_cc,omega_bemf_cps")
+        );
+        let rows: Vec<Vec<&str>> = lines.map(|l| l.split(',').collect()).collect();
+        assert_eq!(rows.len(), 400);
+        for c in &rows {
+            assert_eq!(c.len(), 20);
+            assert_eq!((c[4], c[9]), ("2029", "3204"), "pos and vbus");
+            assert_eq!((c[16], c[19]), ("-77", "-1234"));
+            assert!(c[17].parse::<u16>().is_ok() && c[18].parse::<i16>().is_ok());
+        }
     }
 }
