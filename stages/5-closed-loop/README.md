@@ -529,7 +529,8 @@ observer's three, each bound by its rule at a bandwidth a bench sweep
 picked ([the ladder](#the-ladder), the constants session): they had no
 source while the bandwidths were an old tool's default targets nobody
 had decided. Four are the gains of the speed and position loops, bound
-by their rule at three ratios the owner decided (below). Two are the
+by their rule over the motor's constants, the owner's ratios and the
+gain session's margin record (below). Two are the
 limits of motion, the owner's default move speed and its acceleration
 (below): they had no source while they restated the boot default's
 counts. The one with no source is the
@@ -1176,31 +1177,51 @@ plant over the set asks for the same names on such a servo, since it
 moves no protection field. One test holds both lists to the gate.
 
 The four gains of the speed and position loops are of class `policy`,
-bound by one rule over the motor's own constants and three ratios of
-`policy.json`. The speed loop's PI drives the plant gain B of the motor
-block, and on that rigid plant its proportional gain puts the crossover
-at w_c with the PI's zero r times under it, a phase margin of atan(r):
-`v_kp` = w_c / (B f_med) x r / sqrt(1 + r^2), `v_ki` = `v_kp` x w_c /
-(r f_med), f_med the MEDIUM rate. The crossover sits under the
-electromechanical frequency f_em = Ke / (2 pi sqrt(J L)), where the
-back-EMF stops reading the speed: w_c = 2 pi f_em / q. So `v_kp` goes
-as the root of J over L, and a heavier or loaded servo keeps its
-margins over the back-EMF floor, where a crossover fixed in Hz loses
-them. The anti-windup gain is `v_ki` / `v_kp`, a tracking time equal to
-the integral time, per tick whatever the scale of the count, and the
-position gain is the crossover over a split n, `p_kp` = w_c / n. The
-three ratios, `velocity_em_ratio` q 1.3455, `velocity_zero_ratio` r
-1.1965 and `position_split` n 19.107, are the ones that read the gains
-rung `01b-gains-3hz-50hz` chose back through the rule: 124, 311 and
-5026 exactly, a crossover of 59.7 Hz under the motor's 80.3 Hz, a rigid
-phase margin of 50.1 deg and a position gain of 19.6 /s. They stand,
-the owner's decision, pending the margin sweep. The anti-windup gain
-moved from that rung's 623, twice the integral gain and one more, to
-the rule's 642. Ke is the stage 3 ladder's, J the run-up's and L the
-locked bursts', so each gain carries the band of the three. `v_kp_q88`
-and `v_ki_q412` are shunt counts per count/s and carry a position
-unit, computed on the set's count; `v_kaw_q412`, `p_kp_q88` and the
-three gains of the current loop carry none.
+bound by one rule over the motor's own constants, four entries of
+`policy.json` and the pair's margin record. The speed loop's PI drives
+the plant gain B of the motor block, and on that rigid plant its
+proportional gain puts the crossover at w_c with the PI's zero r times
+under it, a phase margin of atan(r): `v_kp` = w_c / (B f_med) x r /
+sqrt(1 + r^2), `v_ki` = `v_kp` x w_c / (r f_med), f_med the MEDIUM
+rate. Two bounds place `v_kp`, and the lower one binds:
+
+- The lag bound puts the crossover under the electromechanical
+  frequency f_em = Ke / (2 pi sqrt(J L)), where the back-EMF stops
+  reading the speed: w_c = 2 pi f_em / q. Where it binds, `v_kp` goes
+  as the root of J over L, and a heavier or loaded servo keeps its
+  margins over the back-EMF floor, where a crossover fixed in Hz loses
+  them. At `velocity_em_ratio` q 1.34 and `velocity_zero_ratio` r 3 it
+  is 59.9 Hz under the motor's 80.3 Hz, 154 counts.
+- The shelf cap. Over the back-EMF floor the reading carries the
+  winding's resistance over the one the set stores, and that puts a
+  flat shelf in the speed loop from about 60 to 250 Hz, linear in
+  `v_kp`, which rises as the brushes are worked. The cap is the `v_kp`
+  whose shelf, the mean dB over the 66.7 to 250 Hz points, reads
+  `velocity_shelf_margin_db`, 1 dB, under 0 dB on every worked sweep
+  of the record: each sweep's loop as `oscnb.margin` reads it, with the
+  PI it ran swapped for the rule's, bisected. Where it binds, `v_kp` is
+  Ke over the worked excess, and J and L move it only through the PI's
+  zero. On the record (below) it reads 60.39 counts at 2500 c/s, 60.27
+  at 3500 and 67.58 at 5000; the closed form on the plateau alone,
+  59.29, 59.17 and 66.29, is a check and the bisection stands.
+
+So the shelf binds, at 3500 c/s, and `v_kp` is 60 counts. The record
+names the set the session measured as the pick, 57, 21 and 96, which
+its sweep checked; a measured set within 4 counts of the rule's `v_kp`
+stands for it, its registers in place of a set nothing measured, so the
+set holds 57, 21 and 96, a rigid crossover of 22.2 Hz. The anti-windup
+gain is `v_ki` / `v_kp` where the rule's own `v_kp` stands, a tracking
+time equal to the integral time, per tick whatever the scale of the
+count, and the position gain is the crossover over a split n,
+`p_kp` = w_c / n: `position_split` 7.104 holds it at the 5026 it ran at
+through the session, until the position loop has a sitting of its own.
+Ke is the stage 3 ladder's, J the run-up's and L the locked bursts', so
+each gain carries the band of the three. The record's registers are in
+the counts of the table it ran on, which it names, and a set on another
+table holds the four until a record on that one. `v_kp_q88` and
+`v_ki_q412` are shunt counts per count/s and carry a position unit,
+computed on the set's count; `v_kaw_q412`, `p_kp_q88` and the three
+gains of the current loop carry none.
 
 `status` is offline: the sha1 of every file the set read against
 the file now, a moved one named with the fields that list it. It then
@@ -2722,3 +2743,38 @@ What the sessions leave open:
   sweep shows.
 - The speed loop's gain margin at Nyquist at 742 c/s: the 1 kHz point
   is unreadable at its burst's peak of 15 c/s.
+
+The gain session's margin record:
+
+The first and the third sitting of the gain session, on the dead-man
+image of firmware 64aaba85, its captures `fw` 65. Servo mg90-d on a free horn, on the set
+the servo had saved, `95f7c2d5696f`, plant stamp 0xd773. Each set of
+speed gains was a volatile write of `v_kp_q88`, `v_ki_q412` and
+`v_kaw_q412`, `p_kp_q88` at 5026 throughout, and its captures carry its
+plant stamp with the verdict `match`: 0xd773 on the stored gains, 124,
+311 and 623, and 0xe568 on 57, 21 and 96. A sweep is the speed band
+alone at a cruise, N = 64, 40, 25, 15, 10, 8, 7, 6, 5, 4, 3 and 2, 15.6
+to 500 Hz, `omega_hat_src` 1 on 100 % of the source check's periods.
+Every sweep ended `ok`, with no row dropped and the stimulus fields at 0
+after it. The repo keeps the four the set's rule reads,
+`telemetry/<pair>/margin/capture-21` to `capture-24`, named under
+`margin` in the pair's sources, and not the sittings' other sweeps. The
+plateau is the mean dB over the 66.7 to 250 Hz points, the rest the
+reading of `oscnb.margin`:
+
+| capture | sitting | gains | c/s | plateau, dB | crossover, Hz | phase margin, deg | gain margin |
+|---|---|---|---|---|---|---|---|
+| 21 | first | 124, 311, 623 | 2500 | +5.41 | 267.1 | 34.9 | not read |
+| 22 | first | 124, 311, 623 | 3500 | +5.43 | 257.7 | 39.1 | 2.82 dB at 370.8 Hz |
+| 23 | first | 57, 21, 96 | 3500 | -1.37 | 118.0 | 91.8 | 9.46 dB at 497.9 Hz |
+| 24 | third | 124, 311, 623 | 5000 | +4.44 | 252.2 | 39.2 | 4.13 dB at 428.8 Hz |
+
+- `capture-21`, `-22` and `-24` are, at each cruise, the worked sweep
+  of the stored gains whose shelf read highest over the session's three
+  sittings, the worst state on record. The third sitting ran less
+  worked than the first at 3500 c/s and swept no worked 2500, so it
+  gives the record its 5000 alone. `capture-24` ran its source check over 250 ms,
+  where the others ran 500.
+- `capture-23` is the sweep of 57, 21 and 96 that followed `capture-22`
+  30 s later in the same state, the set's own check: its shelf reads
+  under the 1 dB line.

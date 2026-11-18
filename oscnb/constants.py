@@ -218,8 +218,10 @@ back, volatile: the install of the set adopted from the record, the
 table from the record's own points, behind the same protection gate.
 """
 import argparse
+import cmath
 import copy
 import dataclasses
+import functools
 import hashlib
 import json
 import math
@@ -227,7 +229,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from . import boards, osc, postable, results, servos, settings, widecodes, winding
+from . import boards, margin, osc, postable, results, servos, settings, widecodes, winding
 from . import scorecard as sc
 
 FORMAT = 1
@@ -326,9 +328,11 @@ LEAD = ("value", "slots", "state", "kind", "counts_per_deg", "points_sha1", "cla
 TABLE_STATE, TABLE_POINTS, SLOTS = "position table state", "position table points sha1", "wide-code slots"
 STOPS = ("raw_min", "raw_max")      # the stops a table is taken against, written ahead of it
 # what the pair's sources file says of a field, by the block it is under: a record of the repo for the two
-# classes a record gives, the maker's document with it for a datasheet value, and why a field has no source
+# classes a record gives, the maker's document with it for a datasheet value, and why a field has no source;
+# and of a record of sweeps a rule reads, under `margin`, the table whose counts it ran on, what it is and why it
+# is the one
 SOURCES = {"bench": ("record", "key", "what"), "datasheet": ("record", "key", "what", "document"),
-           "none": ("reason", "needs")}
+           "none": ("reason", "needs"), "margin": ("table", "what", "why")}
 
 
 def set_path(pair, root=results.ROOT):
@@ -1111,56 +1115,167 @@ rule("i_kaw_q412", "i_kaw.bandwidth", kind="u16", unit="vcounts/ccount per tick"
 # current adding B count/s a MEDIUM tick. On that rigid plant, with
 # r = w_c / w_z, the loop crosses one at w_c when
 # kp = w_c / (B f_med) x r / sqrt(1 + r^2), and its phase margin is then
-# atan(r). The crossover is placed under the electromechanical frequency
+# atan(r). Two bounds place the crossover, and the lower one binds.
+#
+# The lag bound puts it under the electromechanical frequency
 # f_em = Ke / (2 pi sqrt(J L)), SI, where the current's L di/dt cancels
 # the speed the back-EMF boxcar reads: f_c = f_em / q. Dividing by B
 # gives every servo the same margins at the same q and r while the loop
 # reads the observer; over the back-EMF floor the cancellation moves
 # with f_em, which falls as 1 / sqrt(J), and a crossover fixed in Hz
 # loses the blend's margin on a heavier or loaded servo where one under
-# f_em keeps it. So kp scales as sqrt(J / L). The anti-windup gain is
-# ki / kp, a tracking time equal to the integral time: at a held clip the
-# integrator rests at the clip less the feedforward whatever the error,
-# and the gain is per tick whatever the scale of the count. The position
-# loop is p_kp / s over the closed speed loop, its crossover the speed
-# loop's over the split n: p_kp = w_c / n. q, r and n are the policy's
-# ratios; Ke is the stage 3 ladder's, J the run-up's and L the locked
-# bursts', which the motor block and the current loop read.
+# f_em keeps it. Where it binds, kp scales as sqrt(J / L).
+#
+# The shelf cap: over the floor the boxcar reads omega + (e i + L di/dt)
+# / Ke, e the winding's small-signal resistance over the one the set
+# stores, and the e i path puts a flat shelf in the speed loop from
+# about 60 to 250 Hz at kp e / Ke, which B does not set and which rises
+# as the brushes are worked. The shelf is linear in kp, the PI's zero
+# being under it, so the cap is the kp whose shelf reads the policy's
+# margin under 0 dB on every sweep of the pair's record (`shelf_cap`).
+# Where it binds, kp is Ke over the worked excess.
+#
+# A set the record measured stands for the rule's kp within SNAP_COUNTS
+# of it: its registers, which the sweep of it checked, where a new kp
+# would run unmeasured. The anti-windup gain is ki / kp, a tracking time
+# equal to the integral time: at a held clip the integrator rests at the
+# clip less the feedforward whatever the error, and the gain is per tick
+# whatever the scale of the count. The position loop is p_kp / s over
+# the closed speed loop, its crossover the speed loop's over the split
+# n: p_kp = w_c / n. q, r, n and the margin are the policy's; Ke is the
+# stage 3 ladder's, J the run-up's and L the locked bursts', which the
+# motor block and the current loop read.
 SPEED_EM_RATIO, SPEED_ZERO_RATIO, POSITION_SPLIT = "velocity_em_ratio", "velocity_zero_ratio", "position_split"
+SHELF, SHELF_MARGIN = "velocity_shelf", "velocity_shelf_margin_db"
+SHELF_N = (4, 15)       # the half periods of the shelf's rungs, 250 to 66.7 Hz
+SNAP_COUNTS = 4
 
 
-def speed_rad_s(c):
-    """The speed loop's crossover w_c, rad/s: 2 pi f_em over the
-    policy's q."""
+def speed_lag_rad_s(c):
+    """The lag bound's crossover, rad/s: 2 pi f_em over the policy's q."""
     q = c.policy(SPEED_EM_RATIO)
     ke, j, henry = ke_v_s_per_rad(c), c.q("3-servo/run-up", "j_kg_m2"), c.q(*INDUCTANCE) / 1000
     return ke / math.sqrt(j * henry) / q
 
 
-def speed_kaw(c):
-    """w_c / (r f_med), the PI zero a MEDIUM tick: ki / kp, the
-    anti-windup gain, per tick."""
-    return speed_rad_s(c) / (c.policy(SPEED_ZERO_RATIO) * medium_hz(c))
+def rigid_kp(c, w):
+    """The kp that puts the rigid loop's crossover at `w` with the zero
+    r under it."""
+    r = c.policy(SPEED_ZERO_RATIO)
+    return w / (b_gain(c) * medium_hz(c)) * r / math.sqrt(1 + r * r)
+
+
+def rigid_rad_s(c, kp):
+    """The crossover of the rigid loop at `kp`, the inverse of rigid_kp."""
+    return kp / rigid_kp(c, 1.0)
+
+
+@functools.lru_cache(maxsize=None)
+def shelf_points(folder):
+    """(cruise c/s, [(rung Hz, L)]) of a margin sweep's speed loop over
+    the shelf's rungs, as oscnb.margin reads it."""
+    read = margin.readings(margin.load(folder))
+    if len(read) != 1:
+        raise ValueError(f"{sc.shown(folder)}: a shelf sweep is one reading, it holds {len(read)}")
+    (cruise, loops), = read.items()
+    return cruise, tuple((p["hz"], p["L"]) for p in loops["speed"]["points"]
+                         if SHELF_N[0] <= p["half_periods"] <= SHELF_N[1])
+
+
+def shelf_record(c):
+    """(the record's sweeps, each (cruise, kp, ki, [(rung Hz, L)]) with
+    the PI it ran in its unit, and the registers of the set it measured):
+    the pair's `margin` record of the shelf, named in its sources, each
+    sweep's meta.json among the set's inputs. Its registers are in the
+    counts of the table it ran on, so a set on another table has no
+    record."""
+    said = c.sources.get("margin", {}).get(SHELF)
+    if said is None:
+        raise Missing(f"the sources of {c.pair} name no {SHELF} record")
+    table = (c.scale or {}).get("points_sha1")
+    if said["table"] != table:
+        raise Missing(f"the {SHELF} record ran on the table of points sha1 {said['table'][:12]}, the set's is "
+                      f"{table and table[:12]}")
+    c.reads.append((f"sources:margin.{SHELF}", None))
+
+    def config(rel):
+        rel = in_repo(c.root / rel, c.root, "a margin record").as_posix()
+        meta = c.file(rel, f"{rel}/meta.json")
+        if not isinstance(meta, dict) or not isinstance(meta.get("config"), dict):
+            raise ValueError(f"the sources of {c.pair}: the {SHELF} record's sweep {rel} is not there")
+        c.reads.append((rel, None))
+        return rel, meta["config"]
+
+    sweeps = []
+    for rel in said.get("captures") or ():
+        rel, run = config(rel)
+        cruise, points = shelf_points(str(c.root / rel))
+        sweeps.append((cruise, run["v_kp_q88"] / 256, run["v_ki_q412"] / 4096, points))
+    if not sweeps or "check" not in said:
+        raise ValueError(f"the sources of {c.pair}: the {SHELF} record names its captures and its check")
+    _, check = config(said["check"])
+    return sweeps, {n: check[n] for n in ("v_kp_q88", "v_ki_q412", "v_kaw_q412")}
+
+
+def plateau_db(points, kp, ki, run_kp, run_ki, medium):
+    """The mean dB over the rungs of a sweep's loop with the PI it ran
+    swapped for (kp, ki), at the MEDIUM rate `medium`."""
+    def pi(hz, p, i):
+        return p + i / (cmath.exp(2j * math.pi * hz / medium) - 1)
+    return sum(20 * math.log10(abs(pi(hz, kp, ki) / pi(hz, run_kp, run_ki) * L)) for hz, L in points) / len(points)
+
+
+def shelf_cap(c, sweeps):
+    """The kp whose shelf reads the policy's margin under 0 dB on the
+    worst of the record's sweeps, its ki the rule's at r, bisected."""
+    m, r, medium, per = c.policy(SHELF_MARGIN), c.policy(SPEED_ZERO_RATIO), medium_hz(c), rigid_kp(c, 1.0)
+
+    def over(kp, sweep):
+        _, run_kp, run_ki, points = sweep
+        return plateau_db(points, kp, kp * kp / per / (r * medium), run_kp, run_ki, medium) + m
+
+    caps = []
+    for sweep in sweeps:
+        lo, hi = sweep[1] / 4096, sweep[1] * 4096
+        for _ in range(60):
+            mid = math.sqrt(lo * hi)
+            lo, hi = (mid, hi) if over(mid, sweep) < 0 else (lo, mid)
+        caps.append(lo)
+    return min(caps)
+
+
+def speed_pi(c):
+    """(kp, ki, kaw, w_c) of the speed loop: kp the lower of the lag
+    bound's and the shelf cap's, ki and kaw by r at its rigid crossover,
+    or the registers of the record's measured set where its kp is within
+    SNAP_COUNTS of that kp."""
+    kp = rigid_kp(c, speed_lag_rad_s(c))
+    sweeps, measured = shelf_record(c)
+    kp = min(kp, shelf_cap(c, sweeps))
+    if abs(round(kp * 256) - measured["v_kp_q88"]) <= SNAP_COUNTS:
+        kp = measured["v_kp_q88"] / 256
+        return kp, measured["v_ki_q412"] / 4096, measured["v_kaw_q412"] / 4096, rigid_rad_s(c, kp)
+    w = rigid_rad_s(c, kp)
+    kaw = w / (c.policy(SPEED_ZERO_RATIO) * medium_hz(c))
+    return kp, kp * kaw, kaw, w
 
 
 @rule("v_kp_q88", "v_kp.bandwidth", kind="u16", unit="ccounts/(count/s)", q=8, pos_unit=-1, cls="policy",
       mirrors="core kernel/phases/loops/velocity.rs step")
 def v_kp(c):
-    """The proportional gain that puts the rigid loop's crossover at
-    w_c with the zero r under it."""
-    w, r = speed_rad_s(c), c.policy(SPEED_ZERO_RATIO)
-    return w / (b_gain(c) * medium_hz(c)) * r / math.sqrt(1 + r * r)
+    return speed_pi(c)[0]
 
 
 @rule("v_ki_q412", "v_ki.bandwidth", kind="u16", unit="ccounts/(count/s) per tick", q=12, pos_unit=-1,
       cls="policy", mirrors="core kernel/phases/loops/velocity.rs step")
 def v_ki(c):
-    """The integral gain that puts the PI's zero at w_c / r."""
-    return v_kp(c) * speed_kaw(c)
+    return speed_pi(c)[1]
 
 
-rule("v_kaw_q412", "v_kaw.bandwidth", kind="u16", unit="per tick", q=12, cls="policy",
-     mirrors="core kernel/phases/loops/velocity.rs step")(speed_kaw)
+@rule("v_kaw_q412", "v_kaw.bandwidth", kind="u16", unit="per tick", q=12, cls="policy",
+      mirrors="core kernel/phases/loops/velocity.rs step")
+def v_kaw(c):
+    return speed_pi(c)[2]
 
 
 @rule("p_kp_q88", "p_kp.split", kind="u16", unit="(count/s)/count", q=8, cls="policy",
@@ -1168,7 +1283,7 @@ rule("v_kaw_q412", "v_kaw.bandwidth", kind="u16", unit="per tick", q=12, cls="po
 def p_kp(c):
     """The position gain, the speed loop's crossover over the policy's
     split."""
-    return speed_rad_s(c) / c.policy(POSITION_SPLIT)
+    return speed_pi(c)[3] / c.policy(POSITION_SPLIT)
 
 
 # --- the records a host keeps on the servo ---

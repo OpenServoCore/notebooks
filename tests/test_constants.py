@@ -27,9 +27,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from oscnb import constants as cn
+from oscnb import margin as mg
 from oscnb import boards, ntc, postable, results, scorecard as sc, settings, winding
 from oscnb import widecodes as wc
 
@@ -903,8 +905,16 @@ POT_NOISE = {"3-servo/pot-table": {"pot_rest_sd_counts": (1.0, 0.0, 1.5)}}
 CHOICE_POLICY = {"current_loop_hz": 1000.0, "stall_time_ms": 500.0, "pos_error_time_ms": 100.0, "oc_trip_samples": 8,
                  "sensor_bad_samples": 4, "openloop_zero_brake": "off",
                  "duty_max_share": 1.0, "v_undervolt_v": 3.0, "rail_source_ohm": 0.5}
-# the speed and position loops' three ratios
-GAIN_POLICY = {"velocity_em_ratio": 1.35, "velocity_zero_ratio": 1.2, "position_split": 19.0}
+# the speed and position loops' ratios and the shelf's margin
+GAIN_POLICY = {"velocity_em_ratio": 1.34, "velocity_zero_ratio": 3.0, "velocity_shelf_margin_db": 1.0,
+               "position_split": 7.1}
+# a margin record of the shelf for the fake servo: each sweep run on the PI RAN, its shelf's rungs flat at the
+# plateau its meta.json states (`flat`), and the set the record measured, MEASURED
+RAN = {"v_kp_q88": 124, "v_ki_q412": 311}
+MEASURED = {"v_kp_q88": 57, "v_ki_q412": 21, "v_kaw_q412": 96}
+RUNGS = (66.7, 100.0, 125.0, 142.9, 166.7, 200.0, 250.0)
+WORKED = {2500: 5.4, 3500: 5.4, 5000: 4.4}     # dB, a shelf the cap binds under
+QUIET = {2500: -20.0, 3500: -20.0}              # a shelf the lag bound binds under
 # what a build of the plant over those inputs says, in the set's order: the fields in counts of position,
 # the current loop's gains and the choices, whose entries that policy lacks, and the protection fields the
 # inputs give a value, the one the fake servo holds carried with what it would be, the rest, which nothing
@@ -1100,14 +1110,50 @@ def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
     assert cn.check(doc) == []
 
 
-def context(root, k=1.0, policy=None, **kw):
+def shelf(root, plateaus, measured=MEASURED, k=1.0):
+    """Write the fake servo's margin record of the shelf under `root`,
+    a sweep a cruise of `plateaus` ({c/s: dB}) on RAN and the sweep of
+    `measured`, in the counts of its table at k times its counts per
+    deg, and name it in the pair's sources."""
+    c = cn.Context(PAIR, root, BOARD_REG)
+    cn.table_of(c, None, cn.slots_of(c, None))
+
+    def sweep(name, regs, said=None):
+        folder = root / "telemetry" / PAIR / "margin" / name
+        folder.mkdir(parents=True, exist_ok=True)
+        config = {n: v if n == "v_kaw_q412" else v / k for n, v in regs.items()}
+        (folder / "meta.json").write_text(json.dumps({"config": config, **({} if said is None else {"shelf": said})}))
+        return folder.relative_to(root).as_posix()
+    path = cn.set_path(PAIR, root).with_name(f"{PAIR}.sources.json")
+    sources = json.loads(path.read_text()) if path.exists() else {}
+    sources["margin"] = {cn.SHELF: {
+        "captures": [sweep(f"capture-{v}", RAN, [v, db]) for v, db in plateaus.items()],
+        "check": sweep("capture-check", measured), "table": c.scale["points_sha1"], "what": "a record",
+        "why": "the worst"}}
+    path.write_text(json.dumps(sources))
+
+
+@pytest.fixture
+def flat(monkeypatch):
+    """A sweep's shelf as the plateau its meta.json states, flat over
+    RUNGS, for oscnb.margin's reading of a capture."""
+    def points(folder):
+        cruise, db = json.loads((Path(folder) / "meta.json").read_text())["shelf"]
+        return cruise, tuple((hz, 10 ** (db / 20)) for hz in RUNGS)
+    monkeypatch.setattr(cn, "shelf_points", points)
+
+
+def context(root, k=1.0, policy=None, record=None, **kw):
     """The Context a build gives its rules over `inputs(**kw)` and the
-    plant's results, the scale of the count times `k`."""
+    plant's results, the scale of the count times `k`, and a margin
+    record of the shelf at `record`'s plateaus where it names them."""
     inputs(root, policy={**BLOCK_POLICY, **COUNT_POLICY, **CHOICE_POLICY, **GAIN_POLICY, **DERATE, "brush_term": "off",
                          **(policy or {})}, **kw)
     plant(root, {**PLANT, **POT_NOISE})
     datasheet(root)
     cn.set_path(PAIR, root).with_name(f"{PAIR}.sources.json").write_text(json.dumps({}))
+    if record is not None:
+        shelf(root, record, k=k)
     c = cn.Context(PAIR, root, BOARD_REG)
     cn.table_of(c, None, cn.slots_of(c, None))
     c.scale = {**c.scale, "counts_per_deg": c.scale["counts_per_deg"] * k}
@@ -1117,29 +1163,32 @@ def context(root, k=1.0, policy=None, **kw):
 def scales_by_its_unit(r, root, k, theta):
     """Whether rule `r`'s value at k times the counts per deg is its
     value times k to the power of its position unit, and it read the
-    scale exactly when it declares one."""
-    values, read = [], []
+    scale exactly when it declares one or weighs the margin record, in
+    the counts it ran on, against the plant."""
+    values, read, weighs = [], [], []
     for scale in (1.0, k):
-        c = context(root, scale, theta=theta)
+        c = context(root, scale, theta=theta, record=WORKED)
         c.reads = []
         values.append(r.fn(c))
         read.append(any(name == "scale" for name, _ in c.reads))
+        weighs.append(any(name == f"sources:margin.{cn.SHELF}" for name, _ in c.reads))
     x, xk = values
     if isinstance(x, str):
         return x == xk and r.pos_unit == 0 and not any(read)
     same = xk == pytest.approx(x * k ** r.pos_unit, rel=1e-9, abs=1e-9)
-    # a value that is zero at every scale says nothing of the scale, and need not read it
-    return same and (x == xk == 0 or read == [bool(r.pos_unit)] * 2)
+    # a value that is zero at every scale says nothing of the scale, and need not read it; one that weighs the
+    # margin record's counts against the plant's reads it to do so, whatever its own unit
+    return same and (x == xk == 0 or read == [bool(r.pos_unit) or w for w in weighs])
 
 
 @pytest.mark.parametrize("theta", [THETA, THETA[::-1]], ids=["ascending", "descending"])
-def test_every_rule_scales_by_its_position_unit(tmp_path, theta):
+def test_every_rule_scales_by_its_position_unit(tmp_path, theta, flat):
     for r in cn.rules():
         assert scales_by_its_unit(r, tmp_path, 1.25, theta), r.name
         # the check has teeth: the same rule declared at another power fails it
-        if not isinstance(r.fn(context(tmp_path, theta=theta)), str):
+        if not isinstance(r.fn(context(tmp_path, theta=theta, record=WORKED)), str):
             wrong = dataclasses.replace(r, pos_unit=r.pos_unit + 1)
-            other = context(tmp_path, theta=theta)
+            other = context(tmp_path, theta=theta, record=WORKED)
             other.reads = []
             assert r.fn(other) == 0 or not scales_by_its_unit(wrong, tmp_path, 1.25, theta), r.name
 
@@ -3735,10 +3784,35 @@ def test_the_bench_pairs_observer_gains_move_with_the_policys_bandwidth():
 
 
 GAINS = ("v_kp_q88", "v_ki_q412", "v_kaw_q412", "p_kp_q88")
-RATIOS = ("velocity_em_ratio", "velocity_zero_ratio", "position_split")
+RATIOS = ("velocity_em_ratio", "velocity_zero_ratio", "velocity_shelf_margin_db", "position_split")
+SHELF_HZ = [66.7, 100.0, 125.0, 142.9, 166.7, 200.0, 250.0]
 
 
-def test_the_bench_pairs_speed_and_position_gains_are_the_rule_at_the_ratios_that_read_back_its_bench_gains():
+def the_shelf_record(pair):
+    """The pair's margin record of the shelf as its sources name it, and
+    {capture: (cruise, the PI it ran in its unit, its rungs' Hz, L)},
+    each read by oscnb.margin."""
+    said = json.loads(cn.set_path(pair).with_name(f"{pair}.sources.json").read_text())["margin"][cn.SHELF]
+    out = {}
+    for rel in (*said["captures"], said["check"]):
+        folder = results.ROOT / rel
+        run = json.loads((folder / "meta.json").read_text())["config"]
+        (cruise, read), = mg.readings(mg.load(folder)).items()
+        points = [p for p in read["speed"]["points"] if 4 <= p["half_periods"] <= 15]
+        out[rel] = (cruise, run["v_kp_q88"] / 256, run["v_ki_q412"] / 4096, np.array([p["hz"] for p in points]),
+                    np.array([p["L"] for p in points]))
+    return said, out
+
+
+def swapped_db(sweep, kp, ki, medium):
+    """The plateau of a sweep's loop with the PI it ran swapped for (kp,
+    ki): the mean dB over its rungs."""
+    _, run_kp, run_ki, hz, L = sweep
+    z = np.exp(2j * np.pi * hz / medium)
+    return float(np.mean(20 * np.log10(np.abs((kp + ki / (z - 1)) / (run_kp + run_ki / (z - 1)) * L))))
+
+
+def test_the_bench_pairs_speed_and_position_gains_are_the_rule_over_its_motor_and_its_margin_record():
     doc, c, board = of_the_bench_pair()
     f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     ke = results.read("3-servo", "ladder", pair=doc["pair"])["ke_v_s_per_rad"]["value"]
@@ -3747,31 +3821,48 @@ def test_the_bench_pairs_speed_and_position_gains_are_the_rule_at_the_ratios_tha
     per_a, medium = doc["scales"][cn.CURRENT]["value"], board.tick_hz / cn.DECIM_MED
     per_rad = doc["scale"]["counts_per_deg"] * 180 / math.pi / doc["inputs"]["registry"]["servo"]["gear_ratio"]
     b = ke / per_a / j * per_rad / medium
-    # the rule by hand on the record's inputs: the crossover f_em / q, the zero r under it, the split n
-    q, r, n = (policy[k] for k in RATIOS)
+    q, r, m, n = (policy[k] for k in RATIOS)
+    assert (q, r, m, n) == (1.34, 3.0, 1.0, 7.104)
+    rigid = r / math.sqrt(1 + r * r) / (b * medium)
+
+    # the lag bound by hand: the crossover f_em / q, the zero r under it
     f_em = ke / (2 * math.pi * math.sqrt(j * henry))
-    w = 2 * math.pi * f_em / q
-    kp = w / (b * medium) * r / math.sqrt(1 + r * r)
-    by_hand = [raw(kp, 8), raw(kp * w / (r * medium), 12), raw(w / (r * medium), 12), raw(w / n, 8)]
+    kp_lag = 2 * math.pi * f_em / q * rigid
+    assert (round(f_em, 1), raw(kp_lag, 8)) == (80.3, 154)
+    # the shelf cap by hand on each worked sweep of the record: the plateau over the 66.7 to 250 Hz rungs, the
+    # closed form on it and the bisection with the rule's ki at r, which wins
+    said, sweeps = the_shelf_record(doc["pair"])
+    caps = {}
+    for rel in said["captures"]:
+        cruise, run_kp, _, hz, L = sweep = sweeps[rel]
+        assert [round(x, 1) for x in hz] == SHELF_HZ and run_kp * 256 == 124
+        plateau = float(np.mean(20 * np.log10(np.abs(L))))
+        lo, hi = 0.01, 1.0
+        for _ in range(60):
+            mid = (lo + hi) / 2
+            over = swapped_db(sweep, mid, mid * mid / rigid / (r * medium), medium) + m
+            lo, hi = (mid, hi) if over < 0 else (lo, mid)
+        caps[cruise] = (round(plateau, 2), round(256 * run_kp * 10 ** (-(plateau + m) / 20), 2), round(256 * lo, 2))
+    assert caps == {2500: (5.41, 59.29, 60.39), 3500: (5.43, 59.17, 60.27), 5000: (4.44, 66.29, 67.58)}
+    # so the shelf binds, at 3500 c/s: kp 60, 3 counts over the set the session measured, whose registers stand
+    # for it; the position gain is its rigid crossover over the split
+    kp = min(kp_lag, min(cap for *_, cap in caps.values()) / 256)
+    measured = json.loads((results.ROOT / said["check"] / "meta.json").read_text())["config"]
+    assert (raw(kp, 8), measured["v_kp_q88"]) == (60, 57) and abs(raw(kp, 8) - 57) <= cn.SNAP_COUNTS
     es = {name: cn.evaluate(cn.rule_of(c, name), c) for name in GAINS}
-    assert [e["value"] for e in es.values()] == by_hand == [124, 311, 642, 5026]
-    assert (q, r, n) == (1.3455, 1.1965, 19.107)
-    assert (round(f_em, 1), round(w / 2 / math.pi, 1), round(math.degrees(math.atan(r)), 1)) == (80.3, 59.7, 50.1)
-    # the three gains rung 01b-gains-3hz-50hz chose are what the rule gives at those ratios; its anti-windup
-    # gain was twice the integral one and one more, and the rule's ki / kp is 3 % over it
-    rung = json.loads(sc.result_path(doc["pair"], "01b-gains-3hz-50hz").read_text())["settings"]
-    assert {name: rung[name] for name in GAINS} == {"v_kp_q88": 124, "v_ki_q412": 311, "v_kaw_q412": 623,
-                                                    "p_kp_q88": 5026}
-    assert all(es[name]["value"] == rung[name] for name in GAINS if name != "v_kaw_q412")
-    # the bands are the rule again at each end of Ke, J, L and the shunt's scale
-    assert [e["band"] for e in es.values()] == [[118, 130], [292, 326], [612, 673], [4793, 5266]]
+    assert [e["value"] for e in es.values()] == [*(measured[g] for g in GAINS[:3]), raw(57 / 256 / rigid / n, 8)] == [
+        57, 21, 96, 5026]
+    assert [e["band"] for e in es.values()] == [[57, 57], [21, 21], [96, 96], [4570, 5517]]
     reads = ["policy:velocity_em_ratio", "3-servo/ladder:ke_v_s_per_rad", "3-servo/run-up:j_kg_m2",
-             "3-servo/inductance:l_mh"]
-    assert es["v_kp_q88"]["inputs"] == es["v_ki_q412"]["inputs"] == [
-        *reads, "policy:velocity_zero_ratio", "1-board/current-scale:counts_per_a", "scale", "registry:gear_ratio",
-        "registry:tick_hz"]
-    assert es["v_kaw_q412"]["inputs"] == [*reads, "policy:velocity_zero_ratio", "registry:tick_hz"]
-    assert es["p_kp_q88"]["inputs"] == [*reads, "policy:position_split"]
+             "3-servo/inductance:l_mh", "policy:velocity_zero_ratio", "1-board/current-scale:counts_per_a", "scale",
+             "registry:gear_ratio", "registry:tick_hz", f"sources:margin.{cn.SHELF}", *said["captures"],
+             said["check"], "policy:velocity_shelf_margin_db"]
+    assert all(es[g]["inputs"] == reads for g in GAINS[:3]) and es["p_kp_q88"]["inputs"] == [*reads,
+                                                                                              "policy:position_split"]
+    for rel in (*said["captures"], said["check"]):
+        assert doc["inputs"][rel] == {"file": f"{rel}/meta.json",
+                                      "sha1": sc.file_sha1(results.ROOT / rel / "meta.json")}
+    assert said["table"] == doc["scale"]["points_sha1"]
     # the set binds the four at the rule, of class `policy`: the two per-count gains on the set's count, the
     # anti-windup and the position gain, rates, at none
     for name, e in es.items():
@@ -3779,21 +3870,36 @@ def test_the_bench_pairs_speed_and_position_gains_are_the_rule_at_the_ratios_tha
     assert [es[name]["pos_unit"] for name in GAINS] == [-1, -1, 0, 0]
     assert [name in cn.PER_COUNT for name in GAINS] == [True, True, False, False]
     assert not set(GAINS) & (cn.PROTECTION | set(policy["hold"]))
-    # the ratios are decisions, interim: the bench gains read through the rule until the margin sweep
     for key in RATIOS:
-        why = policy["why"][key]
-        assert "01b-gains-3hz-50hz" in why and "pending the margin sweep" in why, key
-        assert why.endswith(": the owner's decision") and key not in policy["undecided"], key
+        assert policy["why"][key].endswith(": the owner's decision") and key not in policy["undecided"], key
     assert not set(GAINS) & set(policy["why"])
 
 
-def test_the_speed_gain_scales_as_the_root_of_inertia_over_inductance_and_the_position_gain_with_the_crossover(
-        tmp_path):
+def test_v_kp_holds_the_worked_shelf_a_decibel_under_the_line():
+    doc, c, _ = of_the_bench_pair()
+    f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    said, sweeps = the_shelf_record(doc["pair"])
+    kp, ki, medium = f["v_kp_q88"]["value"] / 256, f["v_ki_q412"]["value"] / 4096, cn.medium_hz(c)
+    line = -policy["velocity_shelf_margin_db"]
+    # the set's speed PI in place of the stored one on every worked sweep of the record reads the shelf a
+    # decibel or more under 0 dB, so the set's kp is under every sweep's cap
+    shelves = {sweeps[rel][0]: swapped_db(sweeps[rel], kp, ki, medium) for rel in said["captures"]}
+    assert all(db <= line for db in shelves.values()), shelves
+    # and the sweep of the measured set reads its own shelf under the line, on the set's registers exactly
+    check = sweeps[said["check"]]
+    assert check[0] == 3500 and float(np.mean(20 * np.log10(np.abs(check[4])))) <= line
+    assert (round(check[1] * 256), round(check[2] * 4096)) == (f["v_kp_q88"]["value"], f["v_ki_q412"]["value"])
+    measured = json.loads((results.ROOT / said["check"] / "meta.json").read_text())["config"]
+    assert {g: f[g]["value"] for g in GAINS} == {**{g: measured[g] for g in GAINS[:3]}, "p_kp_q88": 5026} == {
+        "v_kp_q88": 57, "v_ki_q412": 21, "v_kaw_q412": 96, "p_kp_q88": 5026}
+
+
+def test_the_speed_gain_scales_as_the_root_of_inertia_over_inductance_where_the_lag_bound_binds(tmp_path, flat):
     def gains(name, **plant_):
         root = tmp_path / name
-        c = context(root)
+        c = context(root, record=QUIET)
         plant(root, {**PLANT, **POT_NOISE, **plant_})
-        return {g: cn.rule_of(c, g).fn(c) for g in GAINS}, cn.speed_rad_s(c)
+        return {g: cn.rule_of(c, g).fn(c) for g in GAINS}, cn.speed_pi(c)[3]
 
     one, w = gains("one")
     j, henry = PLANT["3-servo/run-up"]["j_kg_m2"], PLANT["3-servo/inductance"]["l_mh"]
@@ -3809,18 +3915,78 @@ def test_the_speed_gain_scales_as_the_root_of_inertia_over_inductance_and_the_po
     other, _ = gains("twice-l", **{"3-servo/inductance": {"l_mh": tuple(2 * x for x in henry)}})
     assert other["v_kp_q88"] / one["v_kp_q88"] == pytest.approx(1 / math.sqrt(2))
     # the proportional gain puts the rigid loop's crossover at w_c: |kp (1 + w_z / (j w)) x B f_med / (j w)| is 1
-    c = context(tmp_path / "one")
+    c = context(tmp_path / "one", record=QUIET)
     r, medium = GAIN_POLICY["velocity_zero_ratio"], cn.medium_hz(c)
+    assert w == pytest.approx(cn.speed_lag_rad_s(c))
     loop = one["v_kp_q88"] * (1 + one["v_kaw_q412"] * medium / (1j * w)) * cn.b_gain(c) * medium / (1j * w)
     assert abs(loop) == pytest.approx(1) and one["v_kaw_q412"] * medium == pytest.approx(w / r)
     assert one["v_ki_q412"] == pytest.approx(one["v_kp_q88"] * one["v_kaw_q412"])
 
 
+def test_where_the_shelf_binds_the_speed_gain_holds_its_margin_under_the_line_and_falls_with_the_shelf(tmp_path,
+                                                                                                         flat):
+    far = {"v_kp_q88": 400, "v_ki_q412": 1, "v_kaw_q412": 1}
+
+    def at(name, record, **plant_):
+        root = tmp_path / name
+        context(root)
+        shelf(root, record, measured=far)
+        plant(root, {**PLANT, **POT_NOISE, **plant_})
+        c = cn.Context(PAIR, root, BOARD_REG)
+        cn.table_of(c, None, cn.slots_of(c, None))
+        return c, cn.speed_pi(c)
+
+    c, (kp, ki, kaw, w) = at("worked", WORKED)
+    medium, r = cn.medium_hz(c), GAIN_POLICY["velocity_zero_ratio"]
+    assert kp < cn.rigid_kp(c, cn.speed_lag_rad_s(c))
+    # on the sweep whose shelf reads highest the rule's PI reads the margin under 0 dB, ki at r on its rigid
+    # crossover, and on the others more
+    ran = (None, RAN["v_kp_q88"] / 256, RAN["v_ki_q412"] / 4096, np.array(RUNGS))
+    shelves = {v: swapped_db((*ran, np.full(len(RUNGS), 10 ** (db / 20))), kp, ki, medium) for v, db in WORKED.items()}
+    assert shelves[2500] == pytest.approx(-GAIN_POLICY["velocity_shelf_margin_db"], abs=1e-9)
+    assert shelves[3500] == shelves[2500] and shelves[5000] < shelves[2500]
+    assert (kaw, ki, w) == pytest.approx((w / (r * medium), kp * kaw, cn.rigid_rad_s(c, kp)))
+    # a shelf a decibel higher takes kp a decibel down
+    _, (higher, *_) = at("higher", {v: db + 1 for v, db in WORKED.items()})
+    assert 20 * math.log10(kp / higher) == pytest.approx(1, abs=0.02)
+    # and the plant's inertia moves it only through the PI's zero: kp is Ke over the worked excess, which the
+    # sweep holds, and not the root of J over L
+    _, (heavy, *_) = at("twice-j", WORKED, **{"3-servo/run-up": {"j_kg_m2": tuple(
+        2 * x for x in PLANT["3-servo/run-up"]["j_kg_m2"])}})
+    assert heavy / kp == pytest.approx(1, abs=0.02)
+
+
+def test_a_set_the_record_measured_stands_for_the_rules_kp_within_four_counts_of_it(tmp_path, flat):
+    def pi(measured):
+        root = tmp_path / str(measured["v_kp_q88"])
+        context(root)
+        shelf(root, WORKED, measured=measured)
+        c = cn.Context(PAIR, root, BOARD_REG)
+        cn.table_of(c, None, cn.slots_of(c, None))
+        return c, cn.speed_pi(c)
+
+    c, (kp, ki, kaw, w) = pi({"v_kp_q88": 400, "v_ki_q412": 1, "v_kaw_q412": 1})
+    rule = round(kp * 256)
+    assert rule == 60
+    for counts in (rule - 4, rule + 4):
+        measured = {"v_kp_q88": counts, "v_ki_q412": 21, "v_kaw_q412": 96}
+        c, got = pi(measured)
+        assert got == (counts / 256, 21 / 4096, 96 / 4096, cn.rigid_rad_s(c, counts / 256))
+    for counts in (rule - 5, rule + 5):
+        _, got = pi({"v_kp_q88": counts, "v_ki_q412": 21, "v_kaw_q412": 96})
+        assert got[0] == kp
+
+
 @pytest.fixture
-def gained(first, tmp_path):
+def gained(first, tmp_path, flat):
     """The pair's set of record built over the plant with the gains'
-    ratios in the policy, written as the set of record."""
-    doc, _ = block(first, tmp_path, **GAIN_POLICY)
+    ratios in the policy and a shelf the lag bound binds under, written
+    as the set of record."""
+    inputs(tmp_path, policy={**BLOCK_POLICY, **GAIN_POLICY})
+    plant(tmp_path)
+    datasheet(tmp_path)
+    shelf(tmp_path, QUIET)
+    doc, _ = cn.build(PAIR, first, root=tmp_path, registry=BOARD_REG)
     cn.write(doc, cn.set_path(PAIR, tmp_path))
     return doc
 
@@ -3836,7 +4002,7 @@ def test_a_deviation_of_the_gains_ratios_moves_the_gains_by_the_rule_and_a_pin_m
         return {g: cn.evaluate(cn.rule_of(c, g), c)["value"] for g in GAINS}
 
     # the crossover and the zero: the four move together, each to what the rule gives there, of class policy
-    point = {"velocity_em_ratio": 2.7, "velocity_zero_ratio": 3.0}
+    point = {"velocity_em_ratio": 2.7, "velocity_zero_ratio": 2.0}
     doc, _ = cn.derive(base, dev_file(tmp_path, "c4", policy=point), tmp_path, BOARD_REG)
     gives = by_rule(**point)
     assert doc["deviation"]["fields"] == {g: [base["fields"][g]["value"], gives[g]] for g in GAINS}
@@ -3859,7 +4025,7 @@ def test_a_deviation_of_the_gains_ratios_moves_the_gains_by_the_rule_and_a_pin_m
 
 
 def test_a_gain_whose_input_is_missing_is_held_where_the_servo_held_it_and_left_out_where_nothing_was(first,
-                                                                                                       tmp_path):
+                                                                                                       tmp_path, flat):
     inputs(tmp_path, policy={**BLOCK_POLICY, **GAIN_POLICY})
     plant(tmp_path, {k: v for k, v in PLANT.items() if k != "3-servo/inductance"})
     doc, notes = cn.build(PAIR, first, root=tmp_path, registry=BOARD_REG)
@@ -3871,8 +4037,14 @@ def test_a_gain_whose_input_is_missing_is_held_where_the_servo_held_it_and_left_
     assert not {"v_kp_q88", "v_ki_q412", "v_kaw_q412"} & set(doc["fields"])
     assert [n for n in notes if n.startswith(GAINS)] == [
         f"p_kp_q88: held, {gone}", *(f"{g}: left out, {gone}" for g in GAINS[:3])]
-    # with the result on record the next build binds the four
+    # with the result on record the next build binds the four, and without the margin record holds them
     plant(tmp_path)
+    datasheet(tmp_path)
+    held_, notes = cn.build(PAIR, doc, root=tmp_path, registry=BOARD_REG)
+    none = f"the sources of {PAIR} name no {cn.SHELF} record"
+    assert [n for n in notes if n.startswith(GAINS)] == [f"p_kp_q88: held, {none}",
+                                                        *(f"{g}: left out, {none}" for g in GAINS[:3])]
+    shelf(tmp_path, QUIET)
     again, _ = cn.build(PAIR, doc, root=tmp_path, registry=BOARD_REG)
     assert all(again["fields"][g]["class"] == "policy" and "held" not in again["fields"][g] for g in GAINS)
 
@@ -3968,9 +4140,9 @@ ADDED = ("r_brush_q12", "brush_cps", "g_window_q016")
 REFIT = ("fric_fv_q016",)
 LOOSEN = ("stall_response", "thermal_tau_s", "thermal_tau2_s", "rail_fold_q8", "th_rise_q016", "ntc_t_ref_cc",
           "ntc_k1_q88", "ntc_k2_q24")   # of those, the judged ones and the fast rise, which falls
-# the field the speed and position gains' rule moved off the value the reference rung ran on: the anti-windup
-# gain at ki / kp, where the others are the counts the rung ran
-RULED = ("v_kaw_q412",)
+# the fields the speed and position gains' rule moved off the values the reference rung ran on: the speed loop's
+# three, at the set the margin record measured, where the position gain is the count the rung ran
+RULED = ("v_kp_q88", "v_ki_q412", "v_kaw_q412")
 
 
 def before_the_releases(doc):
@@ -3981,7 +4153,7 @@ def before_the_releases(doc):
     released since, at the value the reference rung ran on; the cap at
     the 500 mA it was before it was read off the maker's sheet, no speed
     ceiling, which the table had no field for, the friction slope the
-    cruise refit moved since (REFIT) and the field the gains' rule moved
+    cruise refit moved since (REFIT) and the fields the gains' rule moved
     since (RULED) at the value the rung ran on, and
     the table of that day: the fields the firmware took out since (GONE)
     back at the values the rung ran on, the ones it added (ADDED) out."""
