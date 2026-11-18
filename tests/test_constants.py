@@ -1797,7 +1797,9 @@ def test_the_policy_of_record_holds_what_the_rules_read():
                 / f"{rung}.json").exists() for rungs in swept.values() for rung in rungs)
     assert not any("the owner's decision" in policy["why"][k] for k in swept)
     assert {k: policy[k] for k in ("i_cont_ma", "stall_release_ma", "collision_trip", "hold_band_floor_counts")} == {
-        "i_cont_ma": 250.0, "stall_release_ma": 90.0, "collision_trip": "off", "hold_band_floor_counts": 4}
+        "i_cont_ma": 350.0, "stall_release_ma": 126.0, "collision_trip": "off", "hold_band_floor_counts": 4}
+    # the release moves with the continuous current at the ratio of the interim pair, 90 over 250
+    assert policy["stall_release_ma"] * 250 == policy["i_cont_ma"] * 90
     # an entry that restates a default nobody decided says that, under `undecided`, with what it needs: it
     # is no decision, so it has no why, and a field whose rule reads it has no source. None is left: the two
     # bandwidths left the list with their sweeps, and the two limits of motion with the owner's decision
@@ -2943,14 +2945,18 @@ def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_me
     # (`test_the_set_of_record_holds_the_current_limit_the_makers_stall_gives_at_its_derate`)
     assert [ma for ma in range(1, 4000) if raw(ma * nominal / 1000) == 554] == [500]
     assert ran_on()["current_limit_counts"] == 554 and f["current_limit_counts"]["value"] == 1043
-    # field: (what the servo held before the set, the policy's entry, what the rule gives)
-    limits = {"i_cont_counts": (277, "i_cont_ma", 284), "stall_release_counts": (100, "stall_release_ma", 102),
-              "oc_trip_counts": (2439, "oc_trip_ma", 2497)}
+    # field: (what the servo held before the set, the mA it was typed for, the policy's entry, what the rule gives)
+    limits = {"i_cont_counts": (277, 250, "i_cont_ma", 397), "stall_release_counts": (100, 90, "stall_release_ma", 143),
+              "oc_trip_counts": (2439, 2200, "oc_trip_ma", 2497)}
     assert ("current_limit_counts", *limits) == LIMITS == cn.GROUPS["current scale"]
-    for name, (stored, key, gives) in limits.items():
+    # the overcurrent trip stays at the mA it was typed for; the lock hold's plateau raised the continuous
+    # current, and the release with it
+    assert {n: policy[key] - ma for n, (_, ma, key, _) in limits.items()} == {
+        "i_cont_counts": 100.0, "stall_release_counts": 36.0, "oc_trip_counts": 0.0}
+    for name, (stored, ma, key, gives) in limits.items():
         # the mA the stored counts were typed for: the one whole mA the board's nominal parts take to them
-        typed = [ma for ma in range(1, 4000) if raw(ma * nominal / 1000) == stored]
-        assert typed == [policy[key]], name
+        typed = [m for m in range(1, 4000) if raw(m * nominal / 1000) == stored]
+        assert typed == [ma], name
         e = cn.evaluate(cn.rule_of(c, name), c)
         assert e["value"] == gives == raw(policy[key] * measured / 1000), name
         # bound: the set holds each at the policy's mA through the measured scale, of class `policy`: none
@@ -2960,10 +2966,10 @@ def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_me
         # more counts on the same mA: every one of them moved the way that protects less, or is judged
         assert gives > stored and cn.LOOSER[name] in ("up", "judged"), name
     # what the servo's earlier counts were at the measured scale, and how far the rule's are over them, mA
-    now = {n: round(1000 * stored / measured, 1) for n, (stored, _, _) in limits.items()}
+    now = {n: round(1000 * stored / measured, 1) for n, (stored, _, _, _) in limits.items()}
     assert now == {"i_cont_counts": 244.0, "stall_release_counts": 88.1, "oc_trip_counts": 2148.9}
-    more = {n: round(1000 * (gives - stored) / measured, 1) for n, (stored, _, gives) in limits.items()}
-    assert more == {"i_cont_counts": 6.2, "stall_release_counts": 1.8, "oc_trip_counts": 51.1}
+    more = {n: round(1000 * (gives - stored) / measured, 1) for n, (stored, _, _, gives) in limits.items()}
+    assert more == {"i_cont_counts": 105.7, "stall_release_counts": 37.9, "oc_trip_counts": 51.1}
     assert policy["why"]["oc_trip_ma"].startswith("a wiring or bridge fault detector")
     # the collision trip is off, no current: the policy says so, and off is the field's largest value
     e = cn.evaluate(cn.rule_of(c, "stall_tau_trip_counts"), c)
@@ -3261,7 +3267,7 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert {n: f[n]["class"] for n in MODEL} == {n: e["class"] for n, e in es.items()}
     assert set(MODEL) <= cn.PROTECTION
     cont, limit = f["i_cont_counts"]["value"], f["current_limit_counts"]["value"]
-    assert (cont, limit) == (284, 1043)
+    assert (cont, limit) == (397, 1043)
     # the file of the step released the four together, and an install on a servo that holds the stored four
     # says the step as what the estimate reads
     folder = results.ROOT / "stages" / sc.STAGE / "scorecard" / "deviations"
@@ -3270,9 +3276,9 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert cn.winding_step(doc, ran) == lines and cooler == []
     assert cn.winding_step(doc, {n: e["value"] for n, e in f.items()}) == []
     assert lines[-1] == "winding model: the wanted four read at least as hot in every case"
-    assert lines[3:6] == ["  a hold from rest at 284 counts, 1 s in: 0.10 -> 2.21",
-                          "  a hold from rest at 284 counts, 3 s in: 0.31 -> 4.62",
-                          "  a hold from rest at 284 counts, 10 s in: 1.03 -> 6.93"]
+    assert lines[3:6] == ["  a hold from rest at 397 counts, 1 s in: 0.20 -> 4.34",
+                          "  a hold from rest at 397 counts, 3 s in: 0.62 -> 9.15",
+                          "  a hold from rest at 397 counts, 10 s in: 2.02 -> 13.87"]
     # at the cap an hour's hold and the rest after 600 s read the estimate's largest centi-C under the high
     # four: the cutoff latches long before
     assert lines[20:22] == ["  a hold from rest at 1043 counts, 3600 s in: 301.47 -> 327.67",
@@ -3280,12 +3286,12 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert lines[-3:-1] == ["  30 s on, 30 s off at 1043 counts, the peak of a cycle: 166.18 -> 327.67",
                             "  30 s on, 30 s off at 1043 counts, the mean of a cycle: 149.05 -> 268.40"]
     # the cases are the stage 4 result's own tables under the four it published, to the centi-C the estimate
-    # counts in, tabled at the cap of their day, 568 counts, the 500 mA the cap was before it was read off the
-    # maker's sheet
+    # counts in, tabled at the limits of their day: 284 counts, the 250 mA the continuous current was before
+    # the lock hold, and 568, the 500 mA the cap was before it was read off the maker's sheet
     tables = result["joined_fields_vs_one_slow_node_c"]
-    tabled = max(row["counts"] for row in tables["hold"])
-    assert tabled == 568 and {row["counts"] for row in tables["hold"]} == {cont, tabled}
-    reads = {k: cn.winding_cases(published[k], cont, tabled) for k in ("f_one_slow", "e_high")}
+    day, tabled = (pick(row["counts"] for row in tables["hold"]) for pick in (min, max))
+    assert (day, tabled) == (284, 568) and {row["counts"] for row in tables["hold"]} == {day, tabled}
+    reads = {k: cn.winding_cases(published[k], day, tabled) for k in ("f_one_slow", "e_high")}
     for row in tables["hold"]:
         case = f"a hold from rest at {row['counts']} counts, {row['s']} s in"
         assert all(reads[k][case] == row[k] for k in reads), case
@@ -4141,6 +4147,7 @@ STEPS = ("stall_response", "thermal_tau_s", "v_undervolt_counts", "thermal_tau2_
          "pos_error_counts", "sensor_delta_max", "rail_fold_q8", "th_rise_q016", "th_rise2_q016", "ntc_t_ref_cc",
          "ntc_k1_q88", "ntc_k2_q24")    # the fields the seven protection steps moved, in the set's order
 SHEET_STEP = ("current_limit_counts", "speed_ceiling_cps")     # and the step read off the maker's sheet
+HOLD_STEP = ("i_cont_counts", "stall_release_counts")     # and the step the lock hold's plateau set
 # the fields of the stored table the firmware took out since, and the ones it added
 GONE = ("r0_q12", "openloop_decay")
 ADDED = ("r_brush_q12", "brush_cps", "g_window_q016")
@@ -4159,7 +4166,9 @@ def before_the_releases(doc):
     steps moved): every field `plant-as-held.json` pins, every field
     the file of a protection step released and the limits of motion,
     released since, at the value the reference rung ran on; the cap at
-    the 500 mA it was before it was read off the maker's sheet, no speed
+    the 500 mA it was before it was read off the maker's sheet, the
+    continuous current and the release at the 250 and 90 mA they were
+    before the lock hold, no speed
     ceiling, which the table had no field for, the friction slope the
     cruise refit moved since (REFIT) and the fields the gains' rule moved
     since (RULED) at the value the rung ran on, and
@@ -4169,13 +4178,14 @@ def before_the_releases(doc):
     steps = [n for path in sorted(DEVIATIONS.glob("protection-*.json"))
              for n in json.loads(path.read_text())["release"]]
     ran = ran_on()
-    cap = raw(0.5 * doc["scales"][cn.CURRENT]["value"])
+    scale = doc["scales"][cn.CURRENT]["value"]
     before = copy.deepcopy(doc)
     for n in (cn.CEILING, *ADDED):
         del before["fields"][n]
     before["fields"].update({n: {"value": None, "protection": None} for n in GONE})
     before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT, *RULED)},
-                      current_limit_counts=cap)
+                      current_limit_counts=raw(0.5 * scale), i_cont_counts=raw(0.25 * scale),
+                      stall_release_counts=raw(0.09 * scale))
     return before, plant, steps
 
 
@@ -4190,7 +4200,8 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     assert before["hash"]["set"][:12] == BEFORE != doc["hash"]["set"][:12]
     state = {"fields": {n: e["value"] for n, e in before["fields"].items()}}
     differ = [n for n in f if state["fields"].get(n) != f[n]["value"]]
-    assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *ADDED, *REFIT, *RULED)]
+    assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *HOLD_STEP, *ADDED, *REFIT,
+                                            *RULED)]
     assert (len(plant), len(steps)) == (11, 13) and set(GONE) == set(before["fields"]) - set(f)
     assert {n for n, less in cn.RETIRED.items() if less is None} == set(GONE)
     assert not set(plant) & cn.PROTECTION and [n for n in f if n in steps] == list(STEPS)
@@ -4202,6 +4213,12 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
         cn.CEILING]["value"]}})["current_limit_counts"] == ("--protection current_limit_counts and --loosen "
                                                             "current_limit_counts")
     state["fields"].update({n: f[n]["value"] for n in SHEET_STEP})
+    # the step the lock hold's plateau set is one of its own too: the continuous current, which is judged, and
+    # the release rise together
+    assert [state["fields"][n] for n in HOLD_STEP] == [284, 102] and asked(doc, state) == {
+        **{n: f"--protection {n}" + (f" and --loosen {n}" if n in LOOSEN else "") for n in STEPS},
+        **{n: f"--protection {n} and --loosen {n}" for n in HOLD_STEP}}
+    state["fields"].update({n: f[n]["value"] for n in HOLD_STEP})
     # the gate asks for every field the seven steps moved as a protection change, in the set's order, and
     # again to loosen for the eight that are judged or protect less
     assert asked(doc, state) == {n: f"--protection {n}" + (f" and --loosen {n}" if n in LOOSEN else "") for n in STEPS}
@@ -4274,8 +4291,8 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
     # one that stores the set from before the releases it names what the set of record itself does
     assert cn.gate(derived, {"fields": {n: e["value"] for n, e in f.items()}}) == []
     before = before_the_releases(doc)[0]
-    state = {"fields": {**{n: e["value"] for n, e in before["fields"].items()}, **{n: f[n]["value"]
-                                                                                   for n in (*SHEET_STEP, *ADDED)}}}
+    now = (*SHEET_STEP, *HOLD_STEP, *ADDED)
+    state = {"fields": {**{n: e["value"] for n, e in before["fields"].items()}, **{n: f[n]["value"] for n in now}}}
     assert cn.gate(derived, state) == cn.gate(doc, state) and list(asked(derived, state)) == list(STEPS)
     assert cn.gate(derived, state, protection=STEPS, loosen=LOOSEN) == []
     if name in SWEPT:
