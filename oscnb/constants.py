@@ -1551,6 +1551,7 @@ def cutoff(c):
 WINDING = "4-estimators/winding-temperature"
 READING = "winding_plateau_reading"     # the policy entry that names the reading of the plateau
 READINGS = ("low", "high")
+SLOW_BASIS = "winding_slow_basis_ratio"  # the family slow gain's current over the winding current the kernel heats on
 
 
 def joined(c):
@@ -1588,7 +1589,8 @@ def thermal_tau2(c):
 rule("th_rise_q016", "th_rise.fast_node", kind="u16", unit="cC/count^2", q=16,
      mirrors="core estimator/thermal.rs rise_cc")(rise(lambda c: c.q(WINDING, joined(c))))
 rule("th_rise2_q016", "th_rise2.family", kind="u16", unit="cC/count^2", q=16, cls="policy",
-     mirrors="core estimator/thermal.rs rise_cc")(rise(lambda c: c.raw(WINDING, joined(c), "slow_gain_c_per_w")))
+     mirrors="core estimator/thermal.rs rise_cc")(
+    rise(lambda c: c.raw(WINDING, joined(c), "slow_gain_c_per_w") * c.policy(SLOW_BASIS)))
 
 
 # --- the screens' times and counts, the supply terms and the choices in words ---

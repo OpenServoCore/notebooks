@@ -938,7 +938,12 @@ node the family's, of class `policy` until a lock hold measures this
 motor's. The policy's `winding_plateau_reading` names the reading of
 the plateau the two rises take, and it is `high`, the owner's decision:
 of the two readings it alone reads at least as hot as what the servo
-held in every case computed. The rules give 2 / 434 / 129 / 1274, and
+held in every case computed. The family's slow gain was fitted on a
+crest current that still carried the window-only part, and the kernel
+heats on the winding current with that part taken off, so the policy's
+`winding_slow_basis_ratio` raises it by the ratio of the two, 1.28, the
+end of 1.09 to 1.28 that reads hotter, until a lock hold measures this
+motor's plateau. The rules give 2 / 434 / 129 / 1631, and
 the kernel runs the two leaks at 2.048 and 131.072 s (the rounding as
 firmware 08c7beaf has it, mirrored in `oscnb.winding`). The four are
 bound as one protection step, in place of the one node on the slow
