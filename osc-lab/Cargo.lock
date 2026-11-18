@@ -188,7 +188,7 @@ checksum = "4bd422bfb4f24a97243f60b6a4443e63d810c925d8da4bb2d8fde26a7c1d57ec"
 [[package]]
 name = "control-table"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "control-table-derive",
  "heapless",
@@ -197,7 +197,7 @@ dependencies = [
 [[package]]
 name = "control-table-derive"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -602,7 +602,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 [[package]]
 name = "osc-client"
 version = "0.1.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "futures-lite",
  "futures-timer",
@@ -619,7 +619,7 @@ dependencies = [
 [[package]]
 name = "osc-host"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "osc-protocol",
 ]
@@ -627,7 +627,7 @@ dependencies = [
 [[package]]
 name = "osc-integration"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "control-table",
  "log",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "osc-log"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "log",
 ]
@@ -663,12 +663,12 @@ dependencies = [
 [[package]]
 name = "osc-protocol"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 
 [[package]]
 name = "osc-servo-core"
 version = "0.1.1"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "bbqueue",
  "bitflags",
@@ -683,7 +683,7 @@ dependencies = [
 [[package]]
 name = "osc-servo-drivers"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=2f10ba82e8a8bd1903790185558a274aca57a8ff#2f10ba82e8a8bd1903790185558a274aca57a8ff"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=64aaba85ae3abd047e26f233703606013c83b3b9#64aaba85ae3abd047e26f233703606013c83b3b9"
 dependencies = [
  "heapless",
  "osc-log",

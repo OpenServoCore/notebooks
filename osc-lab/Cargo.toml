@@ -13,12 +13,12 @@ license     = "MIT OR Apache-2.0"
 [dependencies]
 anyhow         = "1"
 clap           = { version = "4", features = ["derive"] }
-control-table  = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "2f10ba82e8a8bd1903790185558a274aca57a8ff" }
+control-table  = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "64aaba85ae3abd047e26f233703606013c83b3b9" }
 ctrlc          = "3"
-osc-client     = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "2f10ba82e8a8bd1903790185558a274aca57a8ff" }
-osc-protocol   = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "2f10ba82e8a8bd1903790185558a274aca57a8ff" }
-osc-servo-core = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "2f10ba82e8a8bd1903790185558a274aca57a8ff" }
+osc-client     = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "64aaba85ae3abd047e26f233703606013c83b3b9" }
+osc-protocol   = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "64aaba85ae3abd047e26f233703606013c83b3b9" }
+osc-servo-core = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "64aaba85ae3abd047e26f233703606013c83b3b9" }
 serde_json     = "1"
 
 [dev-dependencies]
-osc-client = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "2f10ba82e8a8bd1903790185558a274aca57a8ff", features = ["fake-adapter"] }
+osc-client = { git = "https://github.com/OpenServoCore/open-servo-core", rev = "64aaba85ae3abd047e26f233703606013c83b3b9", features = ["fake-adapter"] }
