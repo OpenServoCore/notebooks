@@ -964,8 +964,10 @@ counts per amp, the scale the set carries. The kernel compares its own
 current reading against them, and that reading is over the awake zero,
 which already holds the driver's own current, so the in-drive offset
 of stage 1 is not added. The three under the cap are each a policy
-entry in mA, the mA the stored counts were typed for: the whole mA the
-board's nominal parts take to each stored count. The cap was such an
+entry in mA. The stored counts were typed for 250, 90 and 2200 mA, the
+whole mA the board's nominal parts take to each stored count; the
+overcurrent trip's entry is still that, and the continuous current and
+the release have moved since, on the lock hold. The cap was a typed
 entry too, 500 mA, which the owner judged conservative. It is now read
 off the maker's sheet: the voltage the page states the stall torque at
 nearest the rail this servo runs on, 4.8 V on 5.0 V, over the
@@ -978,14 +980,16 @@ every other field rounds half away from zero.
 | field | policy | the servo held | which was | the rule gives |
 |---|---|---|---|---|
 | `current_limit_counts` | 0.8 x 4.8 V / 4.177 ohm, 919.4 mA | 554 | 488.1 mA | 1043 |
-| `i_cont_counts` | 250 mA | 277 | 244.0 mA | 284 |
-| `stall_release_counts` | 90 mA | 100 | 88.1 mA | 102 |
+| `i_cont_counts` | 350 mA | 277 | 244.0 mA | 397 |
+| `stall_release_counts` | 126 mA | 100 | 88.1 mA | 143 |
 | `oc_trip_counts` | 2200 mA | 2439 | 2148.9 mA | 2497 |
 
 Each limit the servo held was 2.3 % under the current it was typed
 for, and the rule's value puts more counts on the same mA, which
 protects less than what the servo held. The four were bound at what
-their rules gave then, the cap at 568 for its 500 mA: one rung of three runs on the set with the four moved
+their rules gave then, the continuous current and the release at 284
+and 102 for their 250 and 90 mA, the cap at 568 for its 500 mA: one
+rung of three runs on the set with the four moved
 (`zz-current-limits-true-ma`) raised no fault and left every hold at
 rest. Set beside `14a-set-of-record`, recorded three hours before it
 and not alternated with it, its 60 degree move settles in 883 [874,
@@ -994,9 +998,14 @@ and not alternated with it, its 60 degree move settles in 883 [874,
 ramps' goals went out late on a busy host, so its follow rows are not
 a comparison.
 
-The four mA are decisions. The continuous current stays
-250 mA, interim, until a lock hold gives this motor's plateau, and the
-release moves with it; `policy.json` says so under `why`. The overcurrent
+The four mA are decisions. The continuous current is 350 mA, the
+owner's choice from the lock hold: a clamped horn held at 0.25 A rose
+26 C over the board in 300 s by the winding estimate, still rising
+slowly, and at 0.40 A the 90 C cutoff latched 154 s in. On the set's
+own winding model a hold at 0.35 A levels about 62 C over the board,
+under the cutoff from a 25 C board. The release
+moves with it at the same ratio, 90 over 250, to 126 mA; `policy.json`
+says so under `why`. The overcurrent
 trip stays 2200 mA: it is a detector of a wiring or bridge fault, above
 the locked-rotor current on a full 2S pack, about 2.0 A, so only a
 short reaches it. The collision trip stays off, a decision:
@@ -2242,9 +2251,9 @@ servo's following.
   the session's own reading of it is not carried here. 400 deg/s is
   out on the rows: its 2 and 60 degree overshoot are worse than the
   slow side's in both rounds, and its 60 degree move's current, 290
-  mA rms, is over the 250 mA continuous current on a free horn. 200
-  deg/s has no overshoot or settle row worse in both rounds, the 2
-  degree overshoot's ranges overlapping by a hair, settles the 60
+  mA rms, is over the session's 250 mA continuous current on a free
+  horn. 200 deg/s has no overshoot or settle row worse in both rounds,
+  the 2 degree overshoot's ranges overlapping by a hair, settles the 60
   degree move in under half the time, and runs it at 211 mA. So the
   session recommends 200 deg/s and 4000 deg/s^2, interim until the
   load arm. Against it: the reversals are 1.8 to 1.9 times the slow
