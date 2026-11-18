@@ -893,7 +893,7 @@ DOCUMENT = "the maker's page, at its address, read on a day"
 BOARD_REG = {"servo": {**REG["servo"], "datasheet_class": CLASS}, "board": {"tick_hz": 20_000}}
 LIMITS_MA = {"datasheet_derate_default": 0.5, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
 BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_bemf_q12": "r_bemf.small_step"},
-                **LIMITS_MA, "collision_trip": "off", "cutoff_c": 90.0, "winding_plateau_reading": "high",
+                **LIMITS_MA, "collision_trip": "off", "cutoff_c": 90.0, "winding_plateau_reading": "high", "winding_slow_basis_ratio": 1.0,
                 "stall_response": "fault"}
 # the policy entries the rules of the fields in counts of position read, and the pot's noise at rest
 COUNT_POLICY = {"velocity_limit_deg_s": 75.0, "accel_limit_deg_s2": 1500.0, "stall_omega_max_deg_s": 25.0,
@@ -3123,7 +3123,8 @@ def test_the_winding_models_four_are_formed_from_the_stage_4_result_by_the_readi
     assert es["th_rise2_q016"] == {
         "value": 1573, "class": "policy", "rule": "th_rise2.family", "rule_rev": 1, "unit": "cC/count^2", "q": 16,
         "pos_unit": 0, "inputs": ["policy:winding_plateau_reading",
-                                  f"{result}:joined_high_fast_gain_c_per_w.slow_gain_c_per_w", *scales],
+                                  f"{result}:joined_high_fast_gain_c_per_w.slow_gain_c_per_w",
+                                  "policy:winding_slow_basis_ratio", *scales],
         "band": [raw(60.0 * 100 * 3.9 / 1000.0 ** 2, 16), raw(60.0 * 100 * 4.2 / 1000.0 ** 2, 16)]}
     # each names the kernel function its field is read by, and the four are one step
     assert {n: cn.rule_of(c, n).mirrors for n in MODEL} == {
@@ -3233,14 +3234,20 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
         c.policies = {**c.policies, cn.READING: reading}
         return [cn.evaluate(cn.rule_of(c, n), c) for n in MODEL]
 
-    # the rules give the four the stage 4 result publishes for each reading, the policy's the high one
+    # the rules give the four the stage 4 result publishes for each reading, the policy's the high one, the
+    # family's slow gain raised from the current it was fitted on to the winding current the kernel heats on
+    assert policy[cn.SLOW_BASIS] == 1.28
+    c.policies = {**c.policies, cn.SLOW_BASIS: 1.0}
     low, high = ([e["value"] for e in formed(reading)] for reading in cn.READINGS)
     assert policy[cn.READING] == "high" and policy["why"][cn.READING].startswith("the high reading")
     assert high == published["e_high"] == [2, 434, 129, 1274] and low == published["d_low"] == [2, 461, 129, 680]
+    c.policies = {**c.policies, cn.SLOW_BASIS: policy[cn.SLOW_BASIS]}
+    high = [e["value"] for e in formed(policy[cn.READING])]
+    assert high == [2, 434, 129, 1631]
     es = dict(zip(MODEL, formed(policy[cn.READING])))
     assert {n: (e["class"], e["band"]) for n, e in es.items()} == {
         "thermal_tau_s": ("measured", [1, 3]), "th_rise_q016": ("measured", [331, 436]),
-        "thermal_tau2_s": ("policy", [121, 135]), "th_rise2_q016": ("policy", [1271, 1279])}
+        "thermal_tau2_s": ("policy", [121, 135]), "th_rise2_q016": ("policy", [1627, 1637])}
     # the seconds written run at the leaks the fast gain was fitted beside
     fast = result[f"joined_{policy[cn.READING]}_fast_gain_c_per_w"]
     assert [winding.leak_s(high[0]), winding.leak_s(high[2])] == [fast["tau_s"], fast["slow_tau_s"]] == [2.048, 131.072]
@@ -3263,21 +3270,22 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert cn.winding_step(doc, ran) == lines and cooler == []
     assert cn.winding_step(doc, {n: e["value"] for n, e in f.items()}) == []
     assert lines[-1] == "winding model: the wanted four read at least as hot in every case"
-    assert lines[3:6] == ["  a hold from rest at 284 counts, 1 s in: 0.10 -> 2.17",
-                          "  a hold from rest at 284 counts, 3 s in: 0.31 -> 4.52",
-                          "  a hold from rest at 284 counts, 10 s in: 1.03 -> 6.59"]
+    assert lines[3:6] == ["  a hold from rest at 284 counts, 1 s in: 0.10 -> 2.21",
+                          "  a hold from rest at 284 counts, 3 s in: 0.31 -> 4.62",
+                          "  a hold from rest at 284 counts, 10 s in: 1.03 -> 6.93"]
     # at the cap an hour's hold and the rest after 600 s read the estimate's largest centi-C under the high
     # four: the cutoff latches long before
     assert lines[20:22] == ["  a hold from rest at 1043 counts, 3600 s in: 301.47 -> 327.67",
                             "  the rest after 600 s at 1043 counts, 1 s in: 295.48 -> 327.67"]
-    assert lines[-3:-1] == ["  30 s on, 30 s off at 1043 counts, the peak of a cycle: 166.18 -> 301.64",
-                            "  30 s on, 30 s off at 1043 counts, the mean of a cycle: 149.05 -> 225.25"]
-    # the cases are the stage 4 result's own tables, to the centi-C the estimate counts in, tabled at the cap
-    # of their day, 568 counts, the 500 mA the cap was before it was read off the maker's sheet
+    assert lines[-3:-1] == ["  30 s on, 30 s off at 1043 counts, the peak of a cycle: 166.18 -> 327.67",
+                            "  30 s on, 30 s off at 1043 counts, the mean of a cycle: 149.05 -> 268.40"]
+    # the cases are the stage 4 result's own tables under the four it published, to the centi-C the estimate
+    # counts in, tabled at the cap of their day, 568 counts, the 500 mA the cap was before it was read off the
+    # maker's sheet
     tables = result["joined_fields_vs_one_slow_node_c"]
     tabled = max(row["counts"] for row in tables["hold"])
     assert tabled == 568 and {row["counts"] for row in tables["hold"]} == {cont, tabled}
-    reads = {"f_one_slow": cn.winding_cases(stored, cont, tabled), "e_high": cn.winding_cases(high, cont, tabled)}
+    reads = {k: cn.winding_cases(published[k], cont, tabled) for k in ("f_one_slow", "e_high")}
     for row in tables["hold"]:
         case = f"a hold from rest at {row['counts']} counts, {row['s']} s in"
         assert all(reads[k][case] == row[k] for k in reads), case
