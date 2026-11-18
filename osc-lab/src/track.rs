@@ -17,6 +17,15 @@
 //! every poll's registers; any condition it names turns torque off before
 //! anything else and nothing drives again.
 //!
+//! The watchdog judges a burst's rows once the whole burst has come back,
+//! so on a row it names it is a verdict on the burst, not a live cut: the
+//! firmware's own protections are what stop a drive mid-burst. The poll
+//! behind a burst reads the servo's fault whatever the rows' verdict,
+//! ahead of the torque off, and an abort names both when both fired. Held
+//! to a period, a train's rows are judged the same way; behind rows that
+//! passed, the poll between two bursts is taken behind the next goal's
+//! staged writes, so a trip there turns torque off ahead of its COMMIT.
+//!
 //! Positions are linearized counts, the unit of the goals and the soft
 //! limits: the raw pot the rows and polls carry goes through the servo's own
 //! position table on the host.
@@ -266,10 +275,14 @@ pub(crate) struct Guarded {
     #[arg(long)]
     ntc_max_c: Option<f64>,
     /// Watchdog: abort on the shaft under this, linearized counts
-    /// [default: the servo's low soft limit].
+    /// [default: the servo's low soft limit]. A burst's rows are judged
+    /// once the whole burst has come back, so a row outside the guard is a
+    /// verdict on the burst, not a live cut: the firmware's own protections
+    /// are what stop a drive mid-burst.
     #[arg(long, allow_negative_numbers = true)]
     guard_lo: Option<i32>,
-    /// High end, counts [default: the servo's high soft limit].
+    /// High end, counts [default: the servo's high soft limit]; judged
+    /// the same way.
     #[arg(long, allow_negative_numbers = true)]
     guard_hi: Option<i32>,
     /// Bus dead-man, ms: written before torque on and fed between bursts,
@@ -314,6 +327,9 @@ pub(crate) struct Abort {
     pub(crate) seg: Option<usize>,
     pub(crate) at: String,
     pub(crate) reason: String,
+    /// The fault the servo had latched when the run stopped, read ahead of
+    /// the torque off.
+    pub(crate) fault: Option<Fault>,
 }
 
 impl fmt::Display for Abort {
@@ -343,6 +359,7 @@ pub(crate) fn exit_code(e: &anyhow::Error) -> Option<i32> {
 pub(crate) struct Tripped {
     pub(crate) reason: String,
     pub(crate) seg: Option<Box<Seg>>,
+    pub(crate) fault: Option<Fault>,
 }
 
 impl fmt::Debug for Tripped {
@@ -363,8 +380,45 @@ pub(crate) fn trip<T>(reason: impl Into<String>) -> Result<T> {
     Err(Tripped {
         reason: reason.into(),
         seg: None,
+        fault: None,
     }
     .into())
+}
+
+/// A fault the servo latched, as a poll read it.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Fault {
+    pub(crate) flags: u8,
+    pub(crate) code: u8,
+}
+
+impl Fault {
+    pub(crate) fn of(p: &Poll) -> Option<Self> {
+        (p.fault_flags != 0).then_some(Self {
+            flags: p.fault_flags,
+            code: p.fault_code,
+        })
+    }
+
+    pub(crate) fn json(self) -> serde_json::Value {
+        serde_json::json!({
+            "flags": self.flags,
+            "code": self.code,
+            "name": fault_name(self.code),
+        })
+    }
+}
+
+impl fmt::Display for Fault {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "the servo latched a fault: flags {:#04x} code {} ({})",
+            self.flags,
+            self.code,
+            fault_name(self.code)
+        )
+    }
 }
 
 /// The registers a poll reads, one read of the telemetry region.
@@ -539,13 +593,8 @@ impl Watchdog {
 
     /// One poll's registers.
     pub(crate) fn poll(&mut self, p: &Poll) -> Result<(), String> {
-        if p.fault_flags != 0 {
-            return Err(format!(
-                "the servo latched a fault: flags {:#04x} code {} ({})",
-                p.fault_flags,
-                p.fault_code,
-                fault_name(p.fault_code)
-            ));
+        if let Some(f) = Fault::of(p) {
+            return Err(f.to_string());
         }
         self.check_pos(p.pos)?;
         if (p.i_tick_counts.unsigned_abs() as f64) > self.cap {
@@ -1281,9 +1330,40 @@ pub(crate) fn start_goal<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<i32> {
 pub(crate) fn watch<S: Servo>(s: &mut S, wd: &mut Watchdog) -> Result<Poll> {
     let p = Poll::read(s)?;
     if let Err(reason) = wd.poll(&p) {
-        return trip(reason);
+        return Err(Tripped {
+            reason,
+            seg: None,
+            fault: Fault::of(&p),
+        }
+        .into());
     }
     Ok(p)
+}
+
+/// A burst the watchdog tripped on, with the servo's fault read behind it
+/// ahead of the torque off: the rows' verdict comes only once the burst is
+/// back, and the firmware's code says which of its own protections cut the
+/// drive inside it. The servo's fault leads the reason when both fired.
+pub(crate) fn rows_tripped<S: Servo>(s: &mut S, reason: String) -> anyhow::Error {
+    let (reason, fault) = match Poll::read(s) {
+        Ok(p) => match Fault::of(&p) {
+            Some(f) => (
+                format!("{f}; the watchdog's verdict on the burst's rows: {reason}"),
+                Some(f),
+            ),
+            None => (reason, None),
+        },
+        Err(e) => (
+            format!("{reason}; the fault poll behind the burst failed: {e:#}"),
+            None,
+        ),
+    };
+    Tripped {
+        reason,
+        seg: None,
+        fault,
+    }
+    .into()
 }
 
 pub(crate) fn stopped() -> Result<()> {
@@ -1481,6 +1561,7 @@ fn run_item<S: Servo>(
                     }
                     return Err(Tripped {
                         reason,
+                        fault: Fault::of(&poll),
                         seg: Some(Box::new(seg)),
                     }
                     .into());
@@ -1511,16 +1592,17 @@ fn run_item<S: Servo>(
             let verdict = match verdict {
                 Ok(()) if g.is_some() && follows => Ok(()),
                 Ok(()) => watch(s, &mut cfg.wd).map(|_| ()),
-                Err(reason) => trip(reason),
+                Err(reason) => Err(rows_tripped(s, reason)),
             };
             if let Err(e) = verdict {
-                let reason = match e.downcast::<Tripped>() {
-                    Ok(t) => t.reason,
-                    Err(e) => format!("{e:#}"),
+                let (reason, fault) = match e.downcast::<Tripped>() {
+                    Ok(t) => (t.reason, t.fault),
+                    Err(e) => (format!("{e:#}"), None),
                 };
                 return Err(Tripped {
                     reason,
                     seg: Some(Box::new(seg)),
+                    fault,
                 }
                 .into());
             }
@@ -1637,16 +1719,22 @@ pub(crate) fn halt<S: Servo>(
     if e.downcast_ref::<Refused>().is_some() {
         return e;
     }
-    let reason = match e.downcast::<Tripped>() {
+    let (reason, fault) = match e.downcast::<Tripped>() {
         Ok(t) => {
             if let Some(g) = t.seg {
                 let _ = on_seg(&g);
             }
-            t.reason
+            (t.reason, t.fault)
         }
-        Err(e) => format!("{e:#}"),
+        Err(e) => (format!("{e:#}"), None),
     };
-    Abort { seg, at, reason }.into()
+    Abort {
+        seg,
+        at,
+        reason,
+        fault,
+    }
+    .into()
 }
 
 /// Torque on, the dead-man check, every item, the centering, torque off,
@@ -1843,8 +1931,15 @@ fn land(meta: &mut serde_json::Value, cfg: &Cfg, ran: &Ran, r: &Result<()>) {
     meta["ended"] = match r {
         Ok(()) => "ok".into(),
         Err(e) => match e.downcast_ref::<Abort>() {
-            Some(a) => serde_json::json!({ "reason": a.reason, "segment": a.seg, "at": a.at }),
-            None => serde_json::json!({ "reason": format!("{e:#}"), "segment": null }),
+            Some(a) => serde_json::json!({
+                "reason": a.reason,
+                "segment": a.seg,
+                "at": a.at,
+                "fault": a.fault.map_or(serde_json::Value::Null, Fault::json),
+            }),
+            None => {
+                serde_json::json!({ "reason": format!("{e:#}"), "segment": null, "fault": null })
+            }
         },
     };
 }
@@ -1930,8 +2025,9 @@ pub fn run(args: &Args, bus: crate::rig::Bus, id: u8) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rig::testkit::{Rig, Timed};
+    use crate::rig::testkit::{Rig, Sent, Timed};
     use osc_client::fake::TelSample;
+    use osc_servo_core::kernel::phases::loops::faults::{BIT_POSITION_ERROR, BIT_STALL};
 
     #[derive(clap::Parser)]
     struct Cli {
@@ -2718,6 +2814,124 @@ mod tests {
         let e = res.unwrap_err();
         assert!(e.to_string().contains("came back short"), "{e}");
         assert_eq!(seen.len(), 1);
+    }
+
+    /// A one-goal capture that aborts at its burst: with `over` its rows
+    /// read the raw shunt over the cap from the first, its polls a clean
+    /// held current; with `latch` the servo latches those fault flags and
+    /// code inside the burst. The abort, meta.json's `ended`, and the
+    /// instructions sent behind the burst's COMMIT.
+    fn ended_at_burst(
+        over: bool,
+        latch: Option<(u8, u8)>,
+    ) -> (Abort, serde_json::Value, Vec<Sent>) {
+        let out = std::env::temp_dir().join(format!(
+            "osc-lab-track-ended-{}-{over}-{}",
+            std::process::id(),
+            latch.map_or(0, |l| l.1)
+        ));
+        let mut r = rig_at(2029, 0);
+        if over {
+            let mut s = TelSample {
+                vbus_counts: 3204,
+                ..TelSample::default()
+            };
+            let t = &mut s.tick;
+            (t.pos, t.vbus_raw, t.ntc_raw, t.current_raw, t.duty_ticks) =
+                (2029, 1961, 1913, 2400, 1000);
+            r.c.pipe_mut().set_track(0, vec![s]);
+            r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                t.telemetry.refs.current_bias_counts = 2000;
+            });
+        }
+        if let Some((flags, code)) = latch {
+            r.after_burst = Some(Box::new(move |c, k| {
+                if k == 0 {
+                    c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                        t.telemetry.common.fault_flags = flags;
+                        t.telemetry.mode.fault_code = code;
+                    });
+                }
+            }));
+        }
+        let a = parse(&[
+            "--current-cap-ms",
+            "5",
+            "--mode",
+            "position",
+            "--schedule",
+            "goal:2100@20,hold@10",
+        ]);
+        r.sent();
+        let e = capture(&mut r, &a, &out).unwrap_err();
+        assert_eq!(exit_code(&e), Some(3), "{e}");
+        let abort = e.downcast_ref::<Abort>().unwrap().clone();
+        assert_eq!(abort.seg, Some(0));
+        let meta: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(out.join("meta.json")).unwrap()).unwrap();
+        std::fs::remove_dir_all(&out).unwrap();
+        let sent = r.sent();
+        let commit = sent.iter().rposition(|s| *s == Sent::Commit).unwrap();
+        (abort, meta["ended"].clone(), sent[commit + 1..].to_vec())
+    }
+
+    /// The poll behind a burst, the servo's fault read ahead of the torque
+    /// off, then the torque off.
+    fn polled_then_off(after: &[Sent]) -> bool {
+        let off = after
+            .iter()
+            .position(|s| *s == Sent::Write(control::TORQUE_ENABLE.addr))
+            .unwrap();
+        off > 0 && after[off - 1] == Sent::Read(POLL_BASE, POLL_LEN)
+    }
+
+    const ROWS_OVER: &str = "|current| over the 350 count cap for 100 rows, to row tick 99";
+
+    /// Rows over the cap in a burst the servo latched a fault in: the
+    /// fault is read behind the burst ahead of the torque off, and the
+    /// abort and the meta's `ended` carry both, the firmware's flags and
+    /// code first.
+    #[test]
+    fn a_burst_the_rows_and_the_servo_both_trip_names_both() {
+        let (a, ended, after) =
+            ended_at_burst(true, Some((BIT_POSITION_ERROR, fault::POSITION_ERROR)));
+        let want = format!(
+            "the servo latched a fault: flags 0x08 code 4 (position_error); the watchdog's \
+             verdict on the burst's rows: {ROWS_OVER}"
+        );
+        assert_eq!(a.reason, want);
+        assert_eq!(a.fault, Some(Fault { flags: 8, code: 4 }));
+        assert!(polled_then_off(&after), "{after:?}");
+        assert_eq!(ended["reason"], want);
+        assert_eq!(ended["segment"], 0);
+        assert_eq!(ended["at"], "segment 0 (goal:2100@20)");
+        assert_eq!(
+            ended["fault"],
+            serde_json::json!({ "flags": 8, "code": 4, "name": "position_error" })
+        );
+    }
+
+    /// Rows over the cap with no fault latched read as the rows' verdict
+    /// alone, and a fault behind clean rows as the fault alone.
+    #[test]
+    fn a_burst_one_side_trips_reads_as_that_side() {
+        let (a, ended, after) = ended_at_burst(true, None);
+        assert_eq!(a.reason, ROWS_OVER);
+        assert_eq!(a.fault, None);
+        assert!(polled_then_off(&after), "{after:?}");
+        assert_eq!(ended["reason"], ROWS_OVER);
+        assert_eq!(ended["fault"], serde_json::Value::Null);
+
+        let stall = "the servo latched a fault: flags 0x04 code 3 (stall)";
+        let (a, ended, after) = ended_at_burst(false, Some((BIT_STALL, fault::STALL)));
+        assert_eq!(a.reason, stall);
+        assert_eq!(a.fault, Some(Fault { flags: 4, code: 3 }));
+        assert!(polled_then_off(&after), "{after:?}");
+        assert_eq!(ended["reason"], stall);
+        assert_eq!(
+            ended["fault"],
+            serde_json::json!({ "flags": 4, "code": 3, "name": "stall" })
+        );
     }
 
     /// A train of `n` 20 ms goals, a count apart.

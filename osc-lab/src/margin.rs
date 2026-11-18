@@ -35,9 +35,9 @@ use crate::rig::servo::{Servo, Wire, guard};
 use crate::rig::snapshot::read_u16;
 use crate::sweep::{chunks_json, servo_meta, unix_s};
 use crate::track::{
-    self, Abort, Cfg, Extra, Guarded, Mode, Poll, Ran, center, check_deadman, go_to, halt,
-    meta_extra, parse_extra, poll_extra, preflight, put_back, read_set, refuse, standing, stopped,
-    trip, watch, zero_inject,
+    self, Abort, Cfg, Extra, Fault, Guarded, Mode, Poll, Ran, center, check_deadman, go_to, halt,
+    meta_extra, parse_extra, poll_extra, preflight, put_back, read_set, refuse, rows_tripped,
+    standing, stopped, trip, watch, zero_inject,
 };
 
 /// Fast ticks a medium period: the stimulus steps and the row's three
@@ -887,16 +887,19 @@ fn run_step<S: Servo>(
     sw.ran.rows_dropped = sw.ran.rows_dropped.saturating_add(stats.rows_dropped);
     let got = frames.len() as u32 + stats.rows_dropped as u32;
     if got < step.rows() {
-        return trip(format!(
-            "the burst came back short: {} of {} rows ({} seq holes, {} garble bytes)",
-            frames.len(),
-            step.rows(),
-            stats.holes,
-            stats.garble
+        return Err(rows_tripped(
+            s,
+            format!(
+                "the burst came back short: {} of {} rows ({} seq holes, {} garble bytes)",
+                frames.len(),
+                step.rows(),
+                stats.holes,
+                stats.garble
+            ),
         ));
     }
     if let Err(reason) = cfg.wd.rows(&frames, poll.current_bias_counts) {
-        return trip(reason);
+        return Err(rows_tripped(s, reason));
     }
     watch(s, &mut cfg.wd)?;
     if let Some(x) = cfg.extra {
@@ -1103,8 +1106,13 @@ fn land(meta: &mut serde_json::Value, cfg: &Cfg, sweep: &Sweep, sw: &Swept, r: &
     meta["ended"] = match r {
         Ok(()) => "ok".into(),
         Err(e) => match e.downcast_ref::<Abort>() {
-            Some(a) => serde_json::json!({ "reason": a.reason, "step": a.seg, "at": a.at }),
-            None => serde_json::json!({ "reason": format!("{e:#}"), "step": null }),
+            Some(a) => serde_json::json!({
+                "reason": a.reason,
+                "step": a.seg,
+                "at": a.at,
+                "fault": a.fault.map_or(serde_json::Value::Null, Fault::json),
+            }),
+            None => serde_json::json!({ "reason": format!("{e:#}"), "step": null, "fault": null }),
         },
     };
 }
@@ -1555,6 +1563,62 @@ mod tests {
         );
         assert_eq!(sw.bursts, 0);
         assert_eq!(r.writes.last(), Some(&(control::INJECT, 0)));
+    }
+
+    /// A burst past the guard the servo latched a fault in: the fault is
+    /// read behind the burst ahead of the torque off, and the abort and the
+    /// meta's `ended` carry both, the firmware's flags and code first.
+    #[test]
+    fn a_burst_the_rows_and_the_servo_both_trip_names_both() {
+        use osc_client::data_state::fault;
+        use osc_servo_core::kernel::phases::loops::faults::BIT_POSITION_ERROR;
+        let mut r = rig(true);
+        let argv = [&SMALL[..], &["--guard-hi", "2600"]].concat();
+        let (mut cfg, mut sweep) = prepare(&mut r, &parse(&argv)).unwrap();
+        sweep.plan.steps[0].start = 2400;
+        r.after_burst = Some(Box::new(|c, k| {
+            if k == 0 {
+                c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+                    t.telemetry.common.fault_flags = BIT_POSITION_ERROR;
+                    t.telemetry.mode.fault_code = fault::POSITION_ERROR;
+                });
+            }
+        }));
+        let mut sw = Swept::default();
+        r.sent();
+        let res = record(&mut r, &mut cfg, &sweep, &mut sw, |_| Ok(()));
+        let sent = r.sent();
+        let e = res.as_ref().unwrap_err();
+        assert_eq!(exit_code(e), Some(3), "{e}");
+        let a = e.downcast_ref::<Abort>().unwrap();
+        let head = "the servo latched a fault: flags 0x08 code 4 (position_error); the watchdog's \
+                    verdict on the burst's rows: the shaft at ";
+        assert!(
+            a.reason.starts_with(head)
+                && a.reason.contains("outside the guard 432..2600 at row tick"),
+            "{}",
+            a.reason
+        );
+        assert_eq!(a.fault, Some(Fault { flags: 8, code: 4 }));
+        let commit = sent.iter().rposition(|s| *s == Sent::Commit).unwrap();
+        let off = commit
+            + sent[commit..]
+                .iter()
+                .position(|s| *s == Sent::Write(control::TORQUE_ENABLE.addr))
+                .unwrap();
+        let poll = Sent::Read(
+            telemetry::FAULT_FLAGS.addr,
+            telemetry::WINDOW_FLOOR_Q15.addr + 2 - telemetry::FAULT_FLAGS.addr,
+        );
+        assert_eq!(sent[off - 1], poll, "{sent:?}");
+        let mut meta = serde_json::json!({});
+        land(&mut meta, &cfg, &sweep, &sw, &res);
+        assert_eq!(meta["ended"]["reason"], a.reason);
+        assert_eq!(meta["ended"]["step"], 0);
+        assert_eq!(
+            meta["ended"]["fault"],
+            serde_json::json!({ "flags": 8, "code": 4, "name": "position_error" })
+        );
     }
 
     /// An image that accepts the fields and ignores them streams a flat
