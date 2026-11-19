@@ -44,6 +44,20 @@
 //! before one is stored - and so does every rung `--stall` presses into a
 //! stop: a duty over it is refused before anything moves. Free-running
 //! rungs are not capped: the firmware limiter governs them.
+//!
+//! `--backdrive` records a shaft turned from outside, by a hand or a load,
+//! with the motor coasting, so the rows carry the voltage it generates on
+//! both terminals. It is one chain of `--captures` zero-duty coast windows
+//! under a single torque enable: torque stays on and OpenLoop at duty 0
+//! from the first capture to the last, since torque off leaves the bridge
+//! in a different state and the shaft drags differently. Nothing between
+//! two captures but the next arm (and the experiment image's dead-man when
+//! due) reaches the bus; no seek, brake, rest or park runs, no position is
+//! polled since the shaft may go anywhere, and the faults are read before
+//! the first capture and after the last.
+//!
+//! Every burst a run streams is checked against the servo's TEL burst cap
+//! before anything moves.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -58,7 +72,7 @@ use osc_protocol::tel::Chunks;
 use crate::descriptor;
 use crate::instrument::frame::TelFrame;
 use crate::instrument::limits::{DutyPlan, POT_MAX, ServoLimits, pct_floor};
-use crate::instrument::regs::{Reg, calib, control};
+use crate::instrument::regs::{Reg, calib, control, telemetry};
 use crate::instrument::runway::{BRAKE_DUTY_Q15, BRAKE_POLL_MS, BRAKE_POLLS, BRAKE_REST_EPS};
 use crate::instrument::seek::{
     self, SEEK_STEP_Q15, SEEK_TRAVEL_MIN, STALL_EPS, STALL_POLLS, Watch,
@@ -197,15 +211,35 @@ pub struct Args {
     duty_pct: Vec<Step>,
     #[arg(long, value_enum, default_value_t = Dirs::Both)]
     dirs: Dirs,
-    /// Capture per rung; samples = window_ms x 20 ticks.
+    /// Capture per rung; samples = window_ms x 20 ticks, at most one TEL
+    /// burst (65535 rows, about 3276 ms at 20 kHz).
     #[arg(long, default_value_t = 150)]
     window_ms: u32,
     /// Torque-off cool-down between rungs.
     #[arg(long, default_value_t = 500)]
     rest_ms: u32,
-    /// Torque-off noise-floor capture before the grid; 0 skips it.
-    #[arg(long, default_value_t = 1000)]
+    /// Torque-off noise-floor capture before the grid; 0 skips it [default:
+    /// 0 under `--backdrive`].
+    #[arg(
+        long,
+        default_value_t = 1000,
+        default_value_if("backdrive", "true", "0")
+    )]
     baseline_ms: u32,
+    /// Record the shaft turned from outside, by a hand or a load on an arm,
+    /// with the motor coasting at zero duty: the pot, the raw shunt current
+    /// and the voltage the motor generates on both terminals. Runs
+    /// `--captures` windows of `--window-ms` back to back with torque on
+    /// throughout, and never drives the motor.
+    #[arg(long, conflicts_with_all = [
+        "duty_pct", "dirs", "stall", "static_load", "seek_duty_pct", "seek_cap_pct",
+        "settle_ms", "guard_lo", "guard_hi", "no_park", "rest_ms",
+    ])]
+    backdrive: bool,
+    /// Back-to-back captures of a `--backdrive` run.
+    #[arg(long, default_value_t = 1, requires = "backdrive",
+          value_parser = clap::value_parser!(u32).range(1..))]
+    captures: u32,
     /// Seek drive, percent of full scale [default: the duty whose stall
     /// draws the servo's current limit, by its winding R and the rail]; a
     /// seek whose stall draws more is refused.
@@ -276,6 +310,7 @@ pub(crate) struct Cfg {
     pub(crate) settle_ms: u32,
     pub(crate) stall: bool,
     pub(crate) static_load: bool,
+    pub(crate) backdrive: bool,
     pub(crate) park: bool,
     pub(crate) guard: (u16, u16),
     /// The pot stops, where a stop seek must come to rest.
@@ -290,8 +325,10 @@ impl Cfg {
     /// takes any limits and its guard spans the pot. Every duty that can
     /// stall the shaft - the seek, its breakout ceiling, a rung pressed
     /// into a stop - is refused when its stall draws more than the limit.
+    /// A backdrive drives nothing, so it takes any limits too: its schedule
+    /// is its captures as coast windows, and its guard spans the pot.
     fn new(a: &Args, lim: &ServoLimits, plan: &DutyPlan) -> Result<Self> {
-        let guard = if a.static_load {
+        let guard = if a.static_load || a.backdrive {
             (
                 a.guard_lo.unwrap_or(0),
                 a.guard_hi.unwrap_or(POT_MAX as u16),
@@ -301,7 +338,7 @@ impl Cfg {
         };
         let seek_duty_pct = a.seek_duty_pct.unwrap_or(pct_floor(plan.seek));
         let seek_cap_pct = a.seek_cap_pct.unwrap_or(pct_floor(plan.stop_cap));
-        if !a.static_load {
+        if !a.static_load && !a.backdrive {
             let stall = |what: &str, pct: u8| lim.check_stall_at(what, pct_q15(pct), plan.r_vpc);
             stall("the seek", seek_duty_pct)?;
             stall("a seek raised to its ceiling", seek_cap_pct)?;
@@ -314,8 +351,13 @@ impl Cfg {
                 stall("a rung pressed into the stop", pct)?;
             }
         }
+        let steps = if a.backdrive {
+            vec![Step::Coast(a.window_ms); a.captures as usize]
+        } else {
+            a.duty_pct.clone()
+        };
         Ok(Self {
-            steps: a.duty_pct.clone(),
+            steps,
             dirs: a.dirs,
             window_ms: a.window_ms,
             rest_ms: a.rest_ms,
@@ -325,12 +367,37 @@ impl Cfg {
             settle_ms: a.settle_ms,
             stall: a.stall,
             static_load: a.static_load,
-            park: !a.no_park,
+            backdrive: a.backdrive,
+            park: !a.no_park && !a.backdrive,
             guard,
             stops: (!a.static_load).then_some(lim.raw),
             tel_chunks: pump::parse_tel_chunks(&a.tel_chunks).context("--tel-chunks")?,
             rung_tries: a.rung_tries,
         })
+    }
+
+    /// The directions the run drives: a backdrive drives none, so its
+    /// captures carry direction 0.
+    pub(crate) fn signs(&self) -> &'static [i8] {
+        if self.backdrive {
+            &[0]
+        } else {
+            self.dirs.signs()
+        }
+    }
+
+    /// Every burst the run streams, ms: the baseline, then each step but a
+    /// hold.
+    fn windows(&self) -> impl Iterator<Item = u32> + '_ {
+        let steps = self.steps.iter().filter_map(|s| match *s {
+            Step::Drive(_, ms) | Step::Then(_, ms) => Some(ms.unwrap_or(self.window_ms)),
+            Step::Coast(ms) | Step::Brake(ms) => Some(ms),
+            Step::Hold(..) => None,
+        });
+        (self.baseline_ms > 0)
+            .then_some(self.baseline_ms)
+            .into_iter()
+            .chain(steps)
     }
 }
 
@@ -418,6 +485,12 @@ pub(crate) fn check_stop() -> Result<()> {
         bail!("interrupted");
     }
     Ok(())
+}
+
+/// The servo's `tel_drop_count`: the rows it has dropped from its streams.
+fn drop_count<S: Servo>(s: &mut S) -> Result<u16> {
+    let id = s.id();
+    read_u16(s.client(), id, telemetry::TEL_DROP_COUNT)
 }
 
 fn check_fault<S: Servo>(s: &mut S) -> Result<u16> {
@@ -701,7 +774,8 @@ pub(crate) fn chunks_json(chunks: &Chunks) -> serde_json::Value {
 /// its stamp verdict and its data state at that moment; `drive` is the
 /// rule the drive ran under and the servo settings that held it.
 /// `tel_chunks` is the row as `[addr, len]` pairs; recordings from before
-/// chunked rows carry `tel_mask` instead.
+/// chunked rows carry `tel_mask` instead. A backdrive run adds
+/// `backdrive` and its `captures`.
 pub(crate) fn meta<P: Pipe>(
     c: &mut Client<P>,
     id: Id,
@@ -711,7 +785,7 @@ pub(crate) fn meta<P: Pipe>(
     let servo = servo_meta(c, id)?;
     let mut m = serde_json::json!({
         "schedule": cfg.steps.iter().map(Step::to_string).collect::<Vec<_>>(),
-        "dirs": cfg.dirs.signs(),
+        "dirs": cfg.signs(),
         "window_ms": cfg.window_ms,
         "rung_tries": cfg.rung_tries,
         "rest_ms": cfg.rest_ms,
@@ -723,10 +797,14 @@ pub(crate) fn meta<P: Pipe>(
         "static_load": cfg.static_load,
         "guard": [cfg.guard.0, cfg.guard.1],
         "tel_chunks": chunks_json(&cfg.tel_chunks),
-        "post_rung_brake": true,
+        "post_rung_brake": !cfg.backdrive,
         "drive": drive,
     });
     if let Some(o) = m.as_object_mut() {
+        if cfg.backdrive {
+            o.insert("backdrive".into(), true.into());
+            o.insert("captures".into(), cfg.steps.len().into());
+        }
         o.extend(servo);
     }
     Ok(m)
@@ -845,6 +923,10 @@ fn chains<S: Servo>(
     // refuses firmware that predates TEL duty counts
     s.pwm_period_ticks()?;
     let tick_hz = s.tick_hz()?;
+    let cap = s.burst_cap()?;
+    for ms in cfg.windows() {
+        cap.check(samples_of_ms(ms, tick_hz))?;
+    }
     let seek_duty = pct_q15(cfg.seek_duty_pct);
     let seek_cap = pct_q15(cfg.seek_cap_pct) as i32;
     let mut rows_dropped = 0u16;
@@ -862,7 +944,7 @@ fn chains<S: Servo>(
     // baseline: mid-travel, torque off, noise floor at full tick rate
     if cfg.baseline_ms > 0 {
         println!("[baseline] {} ms torque-off", cfg.baseline_ms);
-        if !cfg.static_load {
+        if !cfg.static_load && !cfg.backdrive {
             seek_band(s, &mut lease, (1750, 2350), seek_duty, seek_cap, cfg.stops)?;
         }
         lease.write(s, control::TORQUE_ENABLE, 0)?;
@@ -894,7 +976,7 @@ fn chains<S: Servo>(
         .collect();
 
     let mut seg = 1u32;
-    for &dir in cfg.dirs.signs() {
+    for &dir in cfg.signs() {
         for (ci, &chain0) in starts.iter().enumerate() {
             let chain_end = starts.get(ci + 1).copied().unwrap_or(steps.len());
             let seg0 = seg;
@@ -904,7 +986,13 @@ fn chains<S: Servo>(
                 attempt += 1;
                 pending.clear();
                 let mut dirty = None;
-                let mut live = false;
+                // A backdrive's torque stays on through a replay: the bridge
+                // changes state at a torque off, and the hand feels it.
+                let mut live = cfg.backdrive && attempt > 1;
+                let drops0 = match cfg.backdrive {
+                    true => Some(drop_count(s)?),
+                    false => None,
+                };
                 seg = seg0;
                 for k in chain0..chain_end {
                     let step = steps[k];
@@ -941,6 +1029,10 @@ fn chains<S: Servo>(
                     }
                     if !live {
                         s.write(control::MODE, 0)?;
+                        if cfg.backdrive {
+                            // its bursts arm with no goal
+                            s.write(control::GOAL_DUTY, 0)?;
+                        }
                         lease.torque_on(s)?;
                     }
                     let (ms, duty) = match step {
@@ -970,7 +1062,13 @@ fn chains<S: Servo>(
                         let samples = samples_of_ms(ms, tick_hz);
                         lease.keep(s)?;
                         lease.check_stream(samples)?;
-                        s.stream(samples, Some((control::GOAL_DUTY, duty)), chunks)?
+                        if cfg.backdrive {
+                            // only the arm between two captures; the drops
+                            // are read once the chain ends
+                            s.burst(cap.check(samples)?, None, chunks, None, None)?
+                        } else {
+                            s.stream(samples, Some((control::GOAL_DUTY, duty)), chunks)?
+                        }
                     };
                     let t_end = anchor + s.now_ms() / 1000.0;
                     if matches!(step, Step::Brake(_)) {
@@ -1000,6 +1098,13 @@ fn chains<S: Servo>(
                     pending.push((g, what));
                     if feeds(steps, k) {
                         live = true;
+                    } else if let Some(d0) = drops0 {
+                        // torque stays on to the guard's SAFE writes
+                        let d1 = drop_count(s)?;
+                        if let Some((g, _)) = pending.last_mut() {
+                            g.stats.rows_dropped = d1.wrapping_sub(d0);
+                        }
+                        check_fault(s)?;
                     } else {
                         brake_to_rest(s, &mut lease, dir)?;
                         lease.write(s, control::TORQUE_ENABLE, 0)?;
@@ -1395,6 +1500,7 @@ mod tests {
             settle_ms: 300,
             stall: false,
             static_load: true,
+            backdrive: false,
             park: true,
             guard: (0, 4095),
             stops: None,
@@ -1512,6 +1618,197 @@ mod tests {
             .count();
         assert_eq!(on, 1, "one torque enable for the chain");
         assert!(rig.writes.contains(&(control::GOAL_DUTY, 13106)));
+    }
+
+    fn backdrive(argv: &[&str]) -> Cfg {
+        let a = parse(&[&["sweep", "--backdrive"][..], argv].concat());
+        Cfg::new(&a, &mg90(), &plan(&mg90())).unwrap()
+    }
+
+    /// A backdrive is its captures as coast windows on a guard spanning the
+    /// pot, direction 0, no baseline unless asked and nowhere to park, and
+    /// it takes a servo whose limits are not calibrated.
+    #[test]
+    fn a_backdrive_takes_its_captures_as_coast_windows() {
+        let cfg = backdrive(&["--captures", "3", "--window-ms", "3000"]);
+        assert_eq!(cfg.steps, [Step::Coast(3000); 3]);
+        assert_eq!(cfg.signs(), [0]);
+        assert_eq!(cfg.baseline_ms, 0);
+        assert_eq!(cfg.guard, (0, 4095));
+        assert_eq!(park_at(&cfg, (432, 3626)), None);
+        assert!(cfg.backdrive && !cfg.stall && !cfg.static_load);
+        assert_eq!(backdrive(&[]).steps, [Step::Coast(150)]);
+        assert_eq!(backdrive(&["--baseline-ms", "500"]).baseline_ms, 500);
+        assert!(
+            !Cfg::new(&parse(&["sweep"]), &mg90(), &plan(&mg90()))
+                .unwrap()
+                .backdrive
+        );
+        let virgin = ServoLimits {
+            soft: (0, 4095),
+            r_q12: 0,
+            ..mg90()
+        };
+        assert!(Cfg::new(&parse(&["sweep", "--backdrive"]), &virgin, &plan(&virgin)).is_ok());
+    }
+
+    /// Every option that drives, seeks, settles, rests or parks refuses a
+    /// backdrive at the parse, before anything is sent; so do a capture
+    /// count without one and a count of 0.
+    #[test]
+    fn a_backdrive_refuses_the_drive_options() {
+        use clap::error::ErrorKind;
+        let kind = |argv: &[&str]| {
+            <Cli as clap::Parser>::try_parse_from(argv)
+                .err()
+                .map(|e| e.kind())
+        };
+        for opt in [
+            &["--duty-pct", "10"][..],
+            &["--dirs", "fwd"],
+            &["--stall"],
+            &["--static-load"],
+            &["--seek-duty-pct", "10"],
+            &["--seek-cap-pct", "10"],
+            &["--settle-ms", "0"],
+            &["--guard-lo", "600"],
+            &["--guard-hi", "3000"],
+            &["--no-park"],
+            &["--rest-ms", "0"],
+        ] {
+            let argv = [&["sweep", "--backdrive"][..], opt].concat();
+            assert_eq!(kind(&argv), Some(ErrorKind::ArgumentConflict), "{opt:?}");
+        }
+        assert_eq!(
+            kind(&["sweep", "--captures", "2"]),
+            Some(ErrorKind::MissingRequiredArgument)
+        );
+        assert_eq!(
+            kind(&["sweep", "--backdrive", "--captures", "0"]),
+            Some(ErrorKind::ValueValidation)
+        );
+        assert_eq!(kind(&["sweep", "--backdrive", "--captures", "4"]), None);
+    }
+
+    /// A backdrive through the in-process servo stack: its captures back to
+    /// back at duty 0 under one torque enable, OpenLoop with the zero brake
+    /// clear, nothing but the next arm on the wire between two captures, no
+    /// permit, no goal but 0, and torque off only in the guard's SAFE
+    /// writes, which leave the servo safe.
+    #[test]
+    fn a_backdrive_coasts_every_capture_under_one_torque_enable() {
+        let mut rig = Rig::bench();
+        let id = rig.id();
+        let zero_brake = resolve_regs(&mut rig.c, id).unwrap().zero_brake;
+        rig.sent();
+        let cfg = backdrive(&["--captures", "3", "--window-ms", "20"]);
+        let (seen, dropped) = run(&mut rig, &cfg).unwrap();
+        assert_eq!(seen, [(1, 0, 0, 400), (2, 0, 0, 400), (3, 0, 0, 400)]);
+        assert_eq!(dropped, 0);
+
+        let w = &rig.writes;
+        let n = w.len();
+        assert_eq!(w[n - 8..n - 2], crate::rig::servo::SAFE);
+        let k = w
+            .iter()
+            .position(|w| *w == (control::TORQUE_ENABLE, 1))
+            .unwrap();
+        assert_eq!(
+            w[..=k],
+            [
+                (zero_brake, 0),
+                (control::MODE, 0),
+                (control::GOAL_DUTY, 0),
+                (control::TORQUE_ENABLE, 1)
+            ]
+        );
+        assert_eq!(
+            k + 1,
+            n - 8,
+            "nothing written from the enable to the SAFE writes"
+        );
+        let torque: Vec<_> = w.iter().filter(|w| w.0 == control::TORQUE_ENABLE).collect();
+        assert_eq!(
+            torque,
+            [&(control::TORQUE_ENABLE, 1), &(control::TORQUE_ENABLE, 0)]
+        );
+        assert!(!w.contains(&(control::STALL_PERMIT, 1)));
+        assert!(!w.contains(&(zero_brake, 1)));
+        for goal in [
+            control::GOAL_DUTY,
+            control::GOAL_POSITION,
+            control::GOAL_VELOCITY,
+            control::GOAL_CURRENT,
+        ] {
+            assert!(w.iter().all(|w| w.0 != goal || w.1 == 0), "{goal:?}");
+        }
+
+        let arm = crate::rig::testkit::Sent::Write(control::CHUNK0_ADDR.addr);
+        let sent = rig.sent();
+        let arms: Vec<usize> = (0..sent.len()).filter(|&k| sent[k] == arm).collect();
+        assert_eq!(arms.len(), 3, "one arm a capture");
+        assert!(
+            sent[arms[0]..=arms[2]].iter().all(|s| *s == arm),
+            "only the next arm between two captures: {:?}",
+            &sent[arms[0]..=arms[2]]
+        );
+
+        for reg in [control::TORQUE_ENABLE, control::STALL_PERMIT] {
+            assert_eq!(rig.c.read(id, reg.addr, 1).unwrap(), [0]);
+        }
+        assert_eq!(read_u16(&mut rig.c, id, control::TEL_COUNT).unwrap(), 0);
+    }
+
+    /// The rows a backdrive's servo dropped are counted across its whole
+    /// chain, read once after the last capture.
+    #[test]
+    fn a_backdrive_counts_the_rows_its_servo_dropped() {
+        let mut rig = Rig::bench();
+        rig.drop = 3;
+        let cfg = backdrive(&["--captures", "2", "--window-ms", "20"]);
+        let (_, dropped) = run(&mut rig, &cfg).unwrap();
+        assert_eq!(dropped, 6);
+    }
+
+    /// A backdrive window over the servo's burst cap is refused before
+    /// torque, in the cap's own words; a window at the cap passes.
+    #[test]
+    fn a_backdrive_window_over_the_burst_cap_is_refused_before_torque() {
+        let mut rig = Rig::bench();
+        let cfg = backdrive(&["--captures", "2", "--window-ms", "3300"]);
+        let e = record(&mut rig, &cfg, |_| Ok(())).err().unwrap();
+        assert_eq!(
+            e.to_string(),
+            "a TEL burst of 66000 rows (3300 ms) is over the 65535 rows (3277 ms) the servo \
+             arms at most (its tel_count max at 20000 Hz): refused before the arm"
+        );
+        assert!(!rig.writes.contains(&(control::TORQUE_ENABLE, 1)));
+        let cfg = backdrive(&["--window-ms", "3276"]);
+        assert_eq!(cfg.windows().collect::<Vec<_>>(), [3276]);
+        let cap = rig.burst_cap().unwrap();
+        assert!(cap.check(samples_of_ms(3276, 20_000.0)).is_ok());
+    }
+
+    /// A backdrive's meta says so and names its capture count; the post-rung
+    /// brake it never runs reads false.
+    #[test]
+    fn a_backdrive_meta_names_its_captures() {
+        let mut rig = Rig::bench();
+        let id = rig.id();
+        let lim = crate::rig::limits::read(&mut rig.c, id).unwrap();
+        let p = crate::rig::limits::plan(&mut rig.c, id, &lim).unwrap();
+        let a = parse(&["sweep", "--backdrive", "--captures", "4"]);
+        let cfg = Cfg::new(&a, &lim, &p).unwrap();
+        let stall = Stall::read(&mut rig.c, id).unwrap();
+        let drive = drive(&lim, &stall, pct_q15(cfg.seek_duty_pct));
+        let m = meta(&mut rig.c, id, &cfg, serde_json::Value::Object(drive)).unwrap();
+        assert_eq!(m["backdrive"], true);
+        assert_eq!(m["captures"], 4);
+        assert_eq!(m["dirs"], serde_json::json!([0]));
+        assert_eq!(m["post_rung_brake"], false);
+        assert_eq!(m["baseline_ms"], 0);
+        assert_eq!(m["guard"], serde_json::json!([0, 4095]));
+        assert_eq!(m["schedule"].as_array().unwrap().len(), 4);
     }
 
     /// A sweep whose servo dropped rows saves its rows and a meta that
