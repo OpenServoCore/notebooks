@@ -1,0 +1,39 @@
+{
+  "clips": {
+    "arm.mp4": {
+      "bytes": 1295338397,
+      "frames": 27873,
+      "fps": 239.88037393901797,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 116.19541666666666,
+      "sha256": "5582f802968baf4c3b4ec0d49762f580ffefa891fcd9037e0a9ee0e05b1fa064",
+      "original": "IMG_0201.MOV",
+      "stat_roi": [
+        760,
+        880,
+        24,
+        24
+      ],
+      "frames_tracked": [
+        0,
+        27872
+      ]
+    }
+  },
+  "setup": "upright: the servo standing with its shaft horizontal, the printed arm hanging from the horn as a pendulum, 20 US quarters in its two top pockets (10 each); the plumb is the arm hanging straight down and gravity pulls it back toward the plumb; the horn tag on the arm's hub, the reference tag on the servo body. Position mode on fw 65, velocity limit 400 (chain 0) and 800 counts/s (chain 1): a hold at the plumb 1937, crawls to 2772 and 1162 and holds there, back to 1937. Clapper of 12 flashes before chain 0 and 12 after chain 1; the STAT trace is whole.",
+  "image": {
+    "firmware_version": 65,
+    "commit": "438e4a5a",
+    "where": "open-servo-core main (#544); the meta carries only firmware_version 65, the commit is the one the scratch log names as main for that evening"
+  },
+  "loop": "closed loop (Position mode) found data: the loop only excites the shake and sets the holds; the measurement is the pot against the camera, which does not depend on it",
+  "track_columns": "track.csv keeps the 9 columns the analysis reads, every row; the dropped columns are goal (segments.csv carries it), current, vdiff, vbus, vbus_raw, ntc_raw, vref_raw",
+  "lens": "stage 3 pot-table's portrait lens (pot-table/crawl-9/camera.json), the same phone; these clips carry no board views of their own",
+  "pipeline": {
+    "commit": "902cb30",
+    "oscnb_dirty": false,
+    "fiducial_sha256": "3374bb716276",
+    "opencv": "5.0.0"
+  }
+}

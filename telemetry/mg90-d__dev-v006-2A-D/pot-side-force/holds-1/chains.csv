@@ -1,0 +1,2 @@
+k,schedule,t_start,t_end,folder
+0,"set:i_cont_counts=568,set:goal_duty=0,goal:1967@1500,goal:2541@1500,goal:1937@1500,goal:1367@1500,goal:1937@1500,goal:1967@1500,goal:2772@1500,goal:1937@1500,goal:1162@1500,goal:1967@1500",1795070781.957,1795070797.058,chains/0

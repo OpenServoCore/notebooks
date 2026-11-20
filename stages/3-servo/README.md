@@ -320,6 +320,31 @@ read half a degree past the horn in the push direction.
 Run: `uv run python -m oscnb.sitting servo-load`, `--include load/push`
 with hands at the hub, then the notebook.
 
+## pot-side-force
+
+Targets: whether the pot reads only the output shaft's rotation or also the
+torque the last mesh puts on that shaft, the sign of that term, its size per
+unit of torque, and where it is and is not seen.
+
+Needs: stage 0's camera-tag result; the pot-table result, its table of
+record and its sitting's crawl clips for the free horn; the load result's
+stall Kt and its printed arm; the window-term and ladder results; stage 1's
+current-scale and pos-coupling results.
+
+How: three phone clips of the load arm hanging from the horn with 20
+quarters in its two top pockets, filmed along the shaft with the hub tag and
+the reference tag in view, kept as found data. They were closed-loop
+Position mode captures, and the loop only excites the arm and places its
+holds, since the measurement is the pot against the tag at the same
+instant. `plumb-1` holds the arm at the plumb while it shakes at 12.7 Hz,
+`holds-1` holds it at the plumb and about 30 and 40 degrees either side, and
+`arm-1` crawls it over +/- 40 degrees at two speeds. The pot-table sitting's
+stalled crawl holds give the free horn. A weight swap at one held angle, on
+the experiment image, is the capture that settles the static size.
+
+Run: the dataset is on record in `telemetry/.../pot-side-force/`, then the
+notebook.
+
 ## friction
 
 Targets: the Coulomb and viscous terms at the motor through the gears, both
