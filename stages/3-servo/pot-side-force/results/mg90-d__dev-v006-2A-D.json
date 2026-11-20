@@ -1,0 +1,1546 @@
+{
+  "capture": "telemetry/mg90-d__dev-v006-2A-D/pot-side-force",
+  "notes": "stage 3 pot side force of mg90-d on dev-v006-2A-D. Three closed-loop Position mode clips kept as found data (plumb-1, holds-1, arm-1, the arm of 20 quarters hanging from the horn), the pot against the horn tag (image reading against the reference tag), plus stage 3 pot-table's free-horn crawl stalls. r = pos less stage 3's table at the tag angle mapped into its frame (sign x image_deg + offset). plumb_*: one alignment shift by the 8-20 Hz band, harmonics of each hold's last part (first 0.5 s out) as a line plus 5 harmonics of the camera's f0, each series on its own clock; *_crest without the window term. holds_*: last 0.5 s of each hold, beyond = the horn past the pot away from the plumb. arm_*: 3 Hz low pass, plumb holds and each segment's first 0.2 s out, gravity sin(theta - theta_g) from the crawls' current, bounds the 0.5 s block bootstrap sd; the gravity term and the camera scale are degenerate (arm_b_at_scale). free_*: stalled hold end less coast end, through the origin, se bounds. per_torque: deg/A over the stall Kt through the gears and Ke x N. Ranges are min and max over the holds unless the unit says otherwise.",
+  "inputs": {
+    "stages/0-instruments/camera-tag/results.json": "b79010c81ba1701058c45377e85bd7c3789868ef",
+    "stages/1-board/bridge-states/results/dev-v006-2A-D.json": "d5e050edaf991630ba778cb78f44f3073b8f40cb",
+    "stages/1-board/current-scale/results/dev-v006-2A-D.json": "5fbdb93bd77174824fffb47a5b58e6d50e8d66e1",
+    "stages/1-board/pos-coupling/results/dev-v006-2A-D.json": "931280f2323c74184bee8820eda213ace9c10ce1",
+    "stages/1-board/sample-timing/results/dev-v006-2A-D.json": "6de39d5aa7818cba119048a5ef59028760a03420",
+    "stages/1-board/terminal-chain/results/dev-v006-2A-D.json": "e1249f71a80bcad5c4c1d64301560f66c0bd8582",
+    "stages/1-board/wide-codes/results/dev-v006-2A-D.json": "68f01864e8cba762cf8c680f3078df4ecd4b77fc",
+    "stages/3-servo/ladder/results/mg90-d__dev-v006-2A-D.json": "02128bc470f487be558053bc7cc8b1af63dab685",
+    "stages/3-servo/load/results/mg90-d__dev-v006-2A-D.json": "7f90adee099ce200694dfd7f957481fe60acdf79",
+    "stages/3-servo/pot-table/results/mg90-d__dev-v006-2A-D.json": "4ba5ac0c3a66672a2182d25c4f0001fcfd6c2292",
+    "stages/3-servo/window-term/results/mg90-d__dev-v006-2A-D.json": "2e2f0bdb28a715eae542c80e3910a4c282922c22"
+  },
+  "plumb_align_clip_s": {
+    "value": 10.538753271102905,
+    "lo": null,
+    "hi": null,
+    "unit": "s, clip time segment 1 starts, shake-band match"
+  },
+  "plumb_align_corr": {
+    "value": 0.9839418590788394,
+    "lo": 0.968335274205214,
+    "hi": 0.9776613569706577,
+    "unit": "corr, bounds one cycle either side"
+  },
+  "plumb_align_per_segment_s": {
+    "seg 1": {
+      "value": 10.538153171539307,
+      "lo": null,
+      "hi": null,
+      "unit": "s"
+    },
+    "seg 2": {
+      "value": 10.538953304290771,
+      "lo": null,
+      "hi": null,
+      "unit": "s"
+    },
+    "seg 3": {
+      "value": 10.538353204727173,
+      "lo": null,
+      "hi": null,
+      "unit": "s"
+    },
+    "seg 4": {
+      "value": 10.46094036102295,
+      "lo": null,
+      "hi": null,
+      "unit": "s"
+    }
+  },
+  "plumb_first_swing_ms": {
+    "value": 10.558278740592897,
+    "lo": null,
+    "hi": null,
+    "unit": "ms, first swing less the band match"
+  },
+  "plumb_slow_step_clip_s": {
+    "value": 10.543945789337158,
+    "lo": 10.530343532562256,
+    "hi": 10.57715129852295,
+    "unit": "s"
+  },
+  "plumb_slow_step_corr": {
+    "value": 0.6185895478318532,
+    "lo": 0.4103839849184395,
+    "hi": 0.6527007285091695,
+    "unit": "corr"
+  },
+  "plumb_camera_offset_deg": {
+    "value": 90.41486024435963,
+    "lo": null,
+    "hi": null,
+    "unit": "deg, theta = image_deg + c"
+  },
+  "plumb_hold_deg": {
+    "value": -88.39438381872523,
+    "lo": null,
+    "hi": null,
+    "unit": "deg, stage 3's tag frame"
+  },
+  "plumb_table_slope_counts_per_deg": {
+    "value": 14.806177243344683,
+    "lo": 18.104097449085966,
+    "hi": 15.522253631750893,
+    "unit": "counts/deg, at the hold, bounds at -2 and +2 deg"
+  },
+  "plumb_f0_hz": {
+    "seg 1": {
+      "value": 12.66999999999852,
+      "lo": null,
+      "hi": null,
+      "unit": "Hz"
+    },
+    "seg 2": {
+      "value": 12.776999999998461,
+      "lo": null,
+      "hi": null,
+      "unit": "Hz"
+    },
+    "seg 3": {
+      "value": 12.736999999998483,
+      "lo": null,
+      "hi": null,
+      "unit": "Hz"
+    },
+    "seg 4": {
+      "value": 12.606999999998555,
+      "lo": null,
+      "hi": null,
+      "unit": "Hz"
+    }
+  },
+  "plumb_ratio_counts": {
+    "seg 1": {
+      "value": 2.6516661092513796,
+      "lo": 2.62295570283019,
+      "hi": 2.680376515672569,
+      "unit": "ratio"
+    },
+    "seg 2": {
+      "value": 2.5208442464754524,
+      "lo": 2.5049524796345697,
+      "hi": 2.536736013316335,
+      "unit": "ratio"
+    },
+    "seg 3": {
+      "value": 2.5619255004868196,
+      "lo": 2.538004208478169,
+      "hi": 2.5858467924954702,
+      "unit": "ratio"
+    },
+    "seg 4": {
+      "value": 2.707160731549777,
+      "lo": 2.666642664850874,
+      "hi": 2.7476787982486806,
+      "unit": "ratio"
+    }
+  },
+  "plumb_ratio_deg": {
+    "seg 1": {
+      "value": 2.5114961697245612,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "seg 2": {
+      "value": 2.4053464278235923,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "seg 3": {
+      "value": 2.448363193585357,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "seg 4": {
+      "value": 2.564892319380221,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "plumb_ratio3_counts": {
+    "seg 1": {
+      "value": 3.324036678189705,
+      "lo": 2.4701641364450375,
+      "hi": 4.177909219934373,
+      "unit": "ratio"
+    },
+    "seg 2": {
+      "value": 3.0491825242422927,
+      "lo": 2.671847745630711,
+      "hi": 3.4265173028538745,
+      "unit": "ratio"
+    },
+    "seg 3": {
+      "value": 3.1298581047596823,
+      "lo": 2.4974863923581543,
+      "hi": 3.7622298171612103,
+      "unit": "ratio"
+    },
+    "seg 4": {
+      "value": 3.099120062555824,
+      "lo": 2.199680548233444,
+      "hi": 3.9985595768782045,
+      "unit": "ratio"
+    }
+  },
+  "plumb_ratio3_deg": {
+    "seg 1": {
+      "value": 2.216266795599791,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "seg 2": {
+      "value": 2.4669789374353948,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "seg 3": {
+      "value": 2.570248917472406,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    },
+    "seg 4": {
+      "value": 2.0185907157202068,
+      "lo": null,
+      "hi": null,
+      "unit": "ratio"
+    }
+  },
+  "plumb_ratio_line": {
+    "value": 2.0398631363176554,
+    "lo": 1.9507061831319554,
+    "hi": 2.1354991884776084,
+    "unit": "ratio"
+  },
+  "plumb_ratio_guard_average": {
+    "value": 1.9520161207233637,
+    "lo": 1.86669872525965,
+    "hi": 2.043533591780548,
+    "unit": "ratio"
+  },
+  "plumb_current_ma": {
+    "seg 1": {
+      "1": {
+        "value": 268.1245617936003,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3": {
+        "value": 110.32748911420143,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "5": {
+        "value": 29.97412656933936,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "1_crest": {
+        "value": 284.55219933903635,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3_crest": {
+        "value": 113.20663587170567,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "seg 2": {
+      "1": {
+        "value": 265.3761552733001,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3": {
+        "value": 109.40652218502771,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "5": {
+        "value": 36.40463887217121,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "1_crest": {
+        "value": 281.8985053820498,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3_crest": {
+        "value": 112.69322039600969,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "seg 3": {
+      "1": {
+        "value": 262.3995824355597,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3": {
+        "value": 99.5520397982846,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "5": {
+        "value": 27.741432355753343,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "1_crest": {
+        "value": 278.7401175549413,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3_crest": {
+        "value": 102.65456926676046,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "seg 4": {
+      "1": {
+        "value": 270.077137147823,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3": {
+        "value": 118.51486896094627,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "5": {
+        "value": 40.4673565678859,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "1_crest": {
+        "value": 286.57837688480976,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "3_crest": {
+        "value": 121.72809512858825,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    }
+  },
+  "plumb_current_3_over_1": {
+    "value": 0.4118740451952838,
+    "lo": 0.3793909993082122,
+    "hi": 0.43881859165323867,
+    "unit": "ratio"
+  },
+  "plumb_current_phase_deg": {
+    "value": -171.35087347827215,
+    "lo": -171.625235619293,
+    "hi": -170.79270635519413,
+    "unit": "deg to the pot"
+  },
+  "plumb_horn_3_over_1": {
+    "value": 0.04871444516922478,
+    "lo": 0.04452055070123413,
+    "hi": 0.05476193242065339,
+    "unit": "ratio"
+  },
+  "plumb_pot_3_over_1": {
+    "value": 0.05767053838580273,
+    "lo": 0.05274407105678495,
+    "hi": 0.061457124051561875,
+    "unit": "ratio"
+  },
+  "plumb_excess_counts": {
+    "value": 24.232266942272684,
+    "lo": 23.134696280452395,
+    "hi": 25.835796727675056,
+    "unit": "counts"
+  },
+  "plumb_excess_counts_per_a": {
+    "value": 91.20953931956669,
+    "lo": 87.39648291382362,
+    "hi": 95.66080639226485,
+    "unit": "counts/A"
+  },
+  "plumb_current_term_3rd_counts": {
+    "value": 9.980230696899579,
+    "lo": 8.777095540532812,
+    "hi": 11.33722793427772,
+    "unit": "counts"
+  },
+  "plumb_excess_3rd_counts": {
+    "value": 1.5419665094715986,
+    "lo": 1.455104160274914,
+    "hi": 1.6369775341750357,
+    "unit": "counts"
+  },
+  "plumb_excess_deg": {
+    "value": 1.5059314199339484,
+    "lo": 1.464357098267369,
+    "hi": 1.5873945036261343,
+    "unit": "deg"
+  },
+  "plumb_excess_deg_per_a": {
+    "value": 5.676167390700565,
+    "lo": 5.518043234740842,
+    "hi": 5.8775597238254775,
+    "unit": "deg/A"
+  },
+  "plumb_excess_deg_per_a_crest": {
+    "value": 5.345984335096523,
+    "lo": 5.1946252651562075,
+    "hi": 5.539128670074741,
+    "unit": "deg/A"
+  },
+  "plumb_dc_steps": {
+    "1 to 2": {
+      "pot_deg": {
+        "value": 0.7801817864223892,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "horn_deg": {
+        "value": 0.8006824515462796,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "horn_over_pot": {
+        "value": 1.0262767799513732,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      }
+    },
+    "3 to 4": {
+      "pot_deg": {
+        "value": -0.7583304692982438,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "horn_deg": {
+        "value": -0.7844129468056167,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "horn_over_pot": {
+        "value": 1.0343946057337108,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      }
+    }
+  },
+  "plumb_px_per_mm": {
+    "value": 6.812512000000001,
+    "lo": null,
+    "hi": null,
+    "unit": "px/mm"
+  },
+  "plumb_horn_shift_um": {
+    "seg 1": {
+      "x": {
+        "value": 68.19256340133627,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "y": {
+        "value": 13.118507713469478,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "phase_deg": {
+        "value": -12.908570692119383,
+        "lo": null,
+        "hi": null,
+        "unit": "deg to the rotation"
+      }
+    },
+    "seg 2": {
+      "x": {
+        "value": 75.79181853081982,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "y": {
+        "value": 14.05679392050401,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "phase_deg": {
+        "value": -13.71447297731902,
+        "lo": null,
+        "hi": null,
+        "unit": "deg to the rotation"
+      }
+    },
+    "seg 3": {
+      "x": {
+        "value": 71.74483192325273,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "y": {
+        "value": 14.308111984062787,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "phase_deg": {
+        "value": -13.521453968132391,
+        "lo": null,
+        "hi": null,
+        "unit": "deg to the rotation"
+      }
+    },
+    "seg 4": {
+      "x": {
+        "value": 64.75903221953581,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "y": {
+        "value": 13.864655650416882,
+        "lo": null,
+        "hi": null,
+        "unit": "um"
+      },
+      "phase_deg": {
+        "value": -12.674342077321853,
+        "lo": null,
+        "hi": null,
+        "unit": "deg to the rotation"
+      }
+    }
+  },
+  "plumb_reversal_counts": {
+    "to +": {
+      "value": -2.5261363636363865,
+      "lo": -2.8362652695074373,
+      "hi": -2.2160074577653357,
+      "unit": "counts"
+    },
+    "to -": {
+      "value": 0.3157407407407357,
+      "lo": 0.22403525940179475,
+      "hi": 0.4074462220796767,
+      "unit": "counts"
+    }
+  },
+  "holds_clock_rms_ms": {
+    "value": 1.0874194157216295,
+    "lo": null,
+    "hi": null,
+    "unit": "ms"
+  },
+  "holds_clock_ppm": {
+    "value": 12.671321447221828,
+    "lo": null,
+    "hi": null,
+    "unit": "ppm"
+  },
+  "holds_camera_offset_deg": {
+    "value": -268.93524491331556,
+    "lo": null,
+    "hi": null,
+    "unit": "deg"
+  },
+  "holds_far": {
+    "+29.5 deg": {
+      "beyond_counts": {
+        "value": 8.498930025863501,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "beyond_deg": {
+        "value": 0.5568686951817376,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "current_ma": {
+        "value": 92.15390451985157,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "as_scale_pct": {
+        "value": 1.8896600850688707,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "deg_per_a": {
+        "value": 6.04281172982506,
+        "lo": null,
+        "hi": null,
+        "unit": "deg/A"
+      }
+    },
+    "-30.3 deg": {
+      "beyond_counts": {
+        "value": 13.958470517629166,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "beyond_deg": {
+        "value": 0.6930919749955535,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "current_ma": {
+        "value": -157.04678636553203,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "as_scale_pct": {
+        "value": 2.290257633637058,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "deg_per_a": {
+        "value": 4.413283398122883,
+        "lo": null,
+        "hi": null,
+        "unit": "deg/A"
+      }
+    },
+    "+41.4 deg": {
+      "beyond_counts": {
+        "value": 16.824499453220596,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "beyond_deg": {
+        "value": 0.9233060428794175,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "current_ma": {
+        "value": 149.31347862772512,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "as_scale_pct": {
+        "value": 2.2314620439047084,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "deg_per_a": {
+        "value": 6.18367512005694,
+        "lo": null,
+        "hi": null,
+        "unit": "deg/A"
+      }
+    },
+    "-39.8 deg": {
+      "beyond_counts": {
+        "value": 6.729035581719131,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "beyond_deg": {
+        "value": 0.2997209737525708,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "current_ma": {
+        "value": -260.97176333778134,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      },
+      "as_scale_pct": {
+        "value": 0.7536678242433448,
+        "lo": null,
+        "hi": null,
+        "unit": "%"
+      },
+      "deg_per_a": {
+        "value": 1.148480471293883,
+        "lo": null,
+        "hi": null,
+        "unit": "deg/A"
+      }
+    }
+  },
+  "holds_plumb_pot_p2p_counts": {
+    "value": 98.5,
+    "lo": 87.0,
+    "hi": 110.0,
+    "unit": "counts"
+  },
+  "holds_plumb_horn_p2p_counts": {
+    "value": 30.135733080350064,
+    "lo": 20.954385072828927,
+    "hi": 34.288572633796775,
+    "unit": "counts"
+  },
+  "holds_plumb_horn_p2p_deg": {
+    "value": 1.3480826258768843,
+    "lo": 1.0621398881150128,
+    "hi": 1.5240335964077758,
+    "unit": "deg"
+  },
+  "holds_plumb_p2p_after_landing_counts": {
+    "value": 96.5,
+    "lo": 84.0,
+    "hi": 131.0,
+    "unit": "counts"
+  },
+  "arm_clock_rms_ms": {
+    "value": 0.8379196436826227,
+    "lo": null,
+    "hi": null,
+    "unit": "ms, midpoint fit"
+  },
+  "arm_clock_onset_rms_ms": {
+    "value": 1.1203480709839126,
+    "lo": null,
+    "hi": null,
+    "unit": "ms"
+  },
+  "arm_clock_ppm": {
+    "value": 28.44425522163796,
+    "lo": null,
+    "hi": null,
+    "unit": "ppm"
+  },
+  "arm_camera_offset_deg": {
+    "value": -270.74360300752335,
+    "lo": null,
+    "hi": null,
+    "unit": "deg, every frame"
+  },
+  "arm_plumb_deg": {
+    "value": -92.5960202348268,
+    "lo": null,
+    "hi": null,
+    "unit": "deg, stage 3's tag frame"
+  },
+  "arm_frames": {
+    "hold": 3922,
+    "up": 2206,
+    "down": 1997
+  },
+  "arm_gravity_zero_deg": {
+    "value": 2.599999999999511,
+    "lo": null,
+    "hi": null,
+    "unit": "deg from the plumb"
+  },
+  "arm_gravity_current_ma": {
+    "value": 241.74312193018062,
+    "lo": 234.3947631090662,
+    "hi": 249.09148075129505,
+    "unit": "mA"
+  },
+  "arm_friction_current_ma": {
+    "value": 23.722836454855226,
+    "lo": 18.148742954795413,
+    "hi": 29.29692995491504,
+    "unit": "mA"
+  },
+  "arm_speed_current_ma_per_deg_s": {
+    "value": 1.1810432945489902,
+    "lo": null,
+    "hi": null,
+    "unit": "mA per deg/s"
+  },
+  "arm_gravity_torque_mn_m": {
+    "stall_kt": {
+      "value": 53.8740850738468,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    },
+    "ideal": {
+      "value": 86.31785061476506,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m"
+    }
+  },
+  "arm_sin_theta_corr": {
+    "value": 0.9998125065329273,
+    "lo": null,
+    "hi": null,
+    "unit": "corr"
+  },
+  "arm_flat_residual_sd_counts": {
+    "value": 8.344241393749485,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "arm_flat_band_counts": {
+    "value": 7.781017525429895,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "arm_gravity_b_counts": {
+    "value": -15.008774336555678,
+    "lo": -16.100208175750918,
+    "hi": -13.91734049736044,
+    "unit": "counts at full gravity"
+  },
+  "arm_gravity_b_deg": {
+    "value": -0.7155833276615327,
+    "lo": -0.7743170337983236,
+    "hi": -0.6568496215247417,
+    "unit": "deg at full gravity"
+  },
+  "arm_gravity_counts_per_a": {
+    "value": -62.08563129622549,
+    "lo": -66.97904983837964,
+    "hi": -57.19221275407135,
+    "unit": "counts/A"
+  },
+  "arm_gravity_deg_per_a": {
+    "value": -2.960097983131883,
+    "lo": -3.203057144359867,
+    "hi": -2.7171388219038994,
+    "unit": "deg/A"
+  },
+  "arm_gravity_residual_sd_counts": {
+    "value": 5.22418713418238,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "arm_gravity_band_counts": {
+    "value": 4.773210798556253,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "arm_scale_pct": {
+    "value": -1.1999999999999975,
+    "lo": -1.2818153408597655,
+    "hi": -1.1181846591402296,
+    "unit": "%"
+  },
+  "arm_scale_residual_sd_counts": {
+    "value": 5.252635495069581,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "arm_scale_band_counts": {
+    "value": 4.895616463866658,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "arm_b_at_scale_counts": {
+    "-2 %": {
+      "value": 10.550741019802508,
+      "lo": null,
+      "hi": null,
+      "unit": "counts, residual sd 5.34"
+    },
+    "-1 %": {
+      "value": -2.9931666342723506,
+      "lo": null,
+      "hi": null,
+      "unit": "counts, residual sd 5.25"
+    },
+    "+0 %": {
+      "value": -15.038727307308152,
+      "lo": null,
+      "hi": null,
+      "unit": "counts, residual sd 5.22"
+    },
+    "+1 %": {
+      "value": -27.9825050991071,
+      "lo": null,
+      "hi": null,
+      "unit": "counts, residual sd 5.20"
+    },
+    "+2 %": {
+      "value": -41.0217142996138,
+      "lo": null,
+      "hi": null,
+      "unit": "counts, residual sd 5.24"
+    }
+  },
+  "arm_kind_residual_counts": {
+    "gravity down": {
+      "value": 3.257474625199371,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 22 blocks"
+    },
+    "gravity hold": {
+      "value": -1.7729456152266811,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 36 blocks"
+    },
+    "gravity up": {
+      "value": 1.0342006248176543,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 20 blocks"
+    },
+    "gravity chain 0": {
+      "value": -1.7307778558508105,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 40 blocks"
+    },
+    "gravity chain 1": {
+      "value": 2.5724612193845044,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 38 blocks"
+    },
+    "scale down": {
+      "value": 3.677155749343363,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 22 blocks"
+    },
+    "scale hold": {
+      "value": -1.9412931470345502,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 36 blocks"
+    },
+    "scale up": {
+      "value": 1.3000862690187618,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 20 blocks"
+    },
+    "scale chain 0": {
+      "value": -1.5653408718684445,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 40 blocks"
+    },
+    "scale chain 1": {
+      "value": 2.621742985458505,
+      "lo": null,
+      "hi": null,
+      "unit": "counts over 38 blocks"
+    }
+  },
+  "arm_kind_z": {
+    "gravity down": {
+      "value": 3.2009712045153007,
+      "lo": null,
+      "hi": null,
+      "unit": "z"
+    },
+    "gravity hold": {
+      "value": -2.228620134392064,
+      "lo": null,
+      "hi": null,
+      "unit": "z"
+    },
+    "gravity up": {
+      "value": 0.9689674297076941,
+      "lo": null,
+      "hi": null,
+      "unit": "z"
+    },
+    "scale down": {
+      "value": 3.5230270600943077,
+      "lo": null,
+      "hi": null,
+      "unit": "z"
+    },
+    "scale hold": {
+      "value": -2.3792220996429245,
+      "lo": null,
+      "hi": null,
+      "unit": "z"
+    },
+    "scale up": {
+      "value": 1.187626234855807,
+      "lo": null,
+      "hi": null,
+      "unit": "z"
+    }
+  },
+  "arm_far_holds": {
+    "chain 0 seg 4": {
+      "deg": {
+        "value": 42.29450602350598,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": -19.23183287982772,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": 163.40090431644185,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 0 seg 6": {
+      "deg": {
+        "value": -38.94291377231792,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": 2.539317095627821,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": -220.0901870564378,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 0 seg 8": {
+      "deg": {
+        "value": 41.804275434733064,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": -11.043651086177723,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": 180.24368888722265,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 1 seg 3": {
+      "deg": {
+        "value": 41.682167365281074,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": -8.972581115505244,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": 192.25859600106259,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 1 seg 4": {
+      "deg": {
+        "value": 41.6852898420918,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": -9.105407536578593,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": 192.6812064418452,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 1 seg 5": {
+      "deg": {
+        "value": -39.36671071727298,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": 11.348982604158307,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": -176.6567467979002,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 1 seg 6": {
+      "deg": {
+        "value": -39.37957996872302,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": 11.327409886294827,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": -173.07673689389745,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 1 seg 7": {
+      "deg": {
+        "value": 41.643564140116396,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": -8.520609881424058,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": 193.7299303335624,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    },
+    "chain 1 seg 8": {
+      "deg": {
+        "value": 41.70256519011448,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      },
+      "r_counts": {
+        "value": -9.050355362004172,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "current_ma": {
+        "value": 191.2664934793267,
+        "lo": null,
+        "hi": null,
+        "unit": "mA"
+      }
+    }
+  },
+  "arm_up_less_down_counts": {
+    "chain 0": {
+      "value": 10.68830285271657,
+      "lo": 6.489260862163712,
+      "hi": 14.887344843269428,
+      "unit": "counts, bin sd bounds, 36 of 36 bins positive, +102 mA, 20.3 deg/s"
+    },
+    "chain 1": {
+      "value": 15.167215316385674,
+      "lo": 9.558432001378963,
+      "hi": 20.775998631392383,
+      "unit": "counts, bin sd bounds, 34 of 34 bins positive, +142 mA, 40.6 deg/s"
+    }
+  },
+  "arm_up_less_down_counts_per_a": {
+    "chain 0 side +1": {
+      "value": 100.9943053383321,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/A"
+    },
+    "chain 0 side -1": {
+      "value": 140.74465997025072,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/A"
+    },
+    "chain 1 side +1": {
+      "value": 82.80902315190603,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/A"
+    },
+    "chain 1 side -1": {
+      "value": 122.0347887118535,
+      "lo": null,
+      "hi": null,
+      "unit": "counts/A"
+    }
+  },
+  "arm_up_less_down_k_counts_per_a": {
+    "value": 111.80637519316313,
+    "lo": null,
+    "hi": null,
+    "unit": "counts/A through 0, rms 2.71 counts"
+  },
+  "arm_up_less_down_timing": {
+    "d0_counts": {
+      "value": 9.097198507057552,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    },
+    "tau_ms": {
+      "value": 4.409968780386118,
+      "lo": null,
+      "hi": null,
+      "unit": "ms"
+    },
+    "rms_counts": {
+      "value": 3.9729419828130492,
+      "lo": null,
+      "hi": null,
+      "unit": "counts"
+    }
+  },
+  "arm_plumb_shake": {
+    "chain 0 seg 2": {
+      "hz": {
+        "value": 14.419999999999863,
+        "lo": null,
+        "hi": null,
+        "unit": "Hz"
+      },
+      "pot_rms": {
+        "value": 23.567988752449605,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "horn_rms": {
+        "value": 6.229265177324594,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "ratio": {
+        "value": 3.7834300004180936,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "horn_deg": {
+        "value": 0.2745718170416162,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      }
+    },
+    "chain 0 seg 9": {
+      "hz": {
+        "value": 14.049999999999871,
+        "lo": null,
+        "hi": null,
+        "unit": "Hz"
+      },
+      "pot_rms": {
+        "value": 31.722241530565967,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "horn_rms": {
+        "value": 12.426355738081282,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "ratio": {
+        "value": 2.5528193622649424,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "horn_deg": {
+        "value": 0.5311448488752449,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      }
+    },
+    "chain 1 seg 2": {
+      "hz": {
+        "value": 13.879999999999875,
+        "lo": null,
+        "hi": null,
+        "unit": "Hz"
+      },
+      "pot_rms": {
+        "value": 31.926098810255795,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "horn_rms": {
+        "value": 10.291998189670188,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "ratio": {
+        "value": 3.102031133497399,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "horn_deg": {
+        "value": 0.4429910325194313,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      }
+    },
+    "chain 1 seg 9": {
+      "hz": {
+        "value": 13.919999999999874,
+        "lo": null,
+        "hi": null,
+        "unit": "Hz"
+      },
+      "pot_rms": {
+        "value": 30.63040844834498,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "horn_rms": {
+        "value": 8.760071950875275,
+        "lo": null,
+        "hi": null,
+        "unit": "counts"
+      },
+      "ratio": {
+        "value": 3.4965932494749086,
+        "lo": null,
+        "hi": null,
+        "unit": "ratio"
+      },
+      "horn_deg": {
+        "value": 0.37965598692270197,
+        "lo": null,
+        "hi": null,
+        "unit": "deg"
+      }
+    }
+  },
+  "free_d_rc_counts": {
+    "crawl-0-0/0/-1": {
+      "value": -0.5513408760202871,
+      "lo": null,
+      "hi": null,
+      "unit": "counts at -55 mA"
+    },
+    "crawl-0-0/0/+1": {
+      "value": -0.04397181857563659,
+      "lo": null,
+      "hi": null,
+      "unit": "counts at +55 mA"
+    },
+    "crawl-0-0/1/+1": {
+      "value": -0.3066226462210115,
+      "lo": null,
+      "hi": null,
+      "unit": "counts at +64 mA"
+    },
+    "crawl-0-0/2/+1": {
+      "value": -0.4280046135668163,
+      "lo": null,
+      "hi": null,
+      "unit": "counts at +75 mA"
+    },
+    "crawl-1-0/5/-1": {
+      "value": 0.76550179010873,
+      "lo": null,
+      "hi": null,
+      "unit": "counts at -55 mA"
+    },
+    "crawl-1-0/5/+1": {
+      "value": -0.10245121753114725,
+      "lo": null,
+      "hi": null,
+      "unit": "counts at +55 mA"
+    }
+  },
+  "free_k_counts_per_a": {
+    "value": 3.3020724379874213,
+    "lo": 0.3623986624973412,
+    "hi": 6.2417462134775015,
+    "unit": "counts/A, six stalls"
+  },
+  "free_k_deg_per_a": {
+    "value": 0.17459223796810386,
+    "lo": 0.019161297854695752,
+    "hi": 0.33002317808151194,
+    "unit": "deg/A"
+  },
+  "free_residual_sd_counts": {
+    "value": 0.432365497118445,
+    "lo": null,
+    "hi": null,
+    "unit": "counts"
+  },
+  "free_all_k_counts_per_a": {
+    "value": -3.954822147969163,
+    "lo": -18.673459788399338,
+    "hi": 10.76381549246101,
+    "unit": "counts/A, 30 holds"
+  },
+  "free_all_tau_ms": {
+    "crawl-0-0": {
+      "value": 12.85329992998953,
+      "lo": 8.658835615170895,
+      "hi": 17.047764244808164,
+      "unit": "ms"
+    },
+    "crawl-0-1": {
+      "value": 12.743619727509115,
+      "lo": 10.797394878124363,
+      "hi": 14.689844576893867,
+      "unit": "ms"
+    },
+    "crawl-1-0": {
+      "value": 18.990271478957382,
+      "lo": 16.034568152051413,
+      "hi": 21.94597480586335,
+      "unit": "ms"
+    },
+    "crawl-1-1": {
+      "value": 13.54779512137021,
+      "lo": 11.997954135827515,
+      "hi": 15.097636106912907,
+      "unit": "ms"
+    },
+    "crawl-2-0": {
+      "value": -1.5792460197283726,
+      "lo": -4.639523435511813,
+      "hi": 1.4810313960550676,
+      "unit": "ms"
+    },
+    "crawl-2-1": {
+      "value": -1.6980463769024983,
+      "lo": -3.421060027577353,
+      "hi": 0.024967273772356524,
+      "unit": "ms"
+    }
+  },
+  "free_release_tag_deg": {
+    "value": -0.006331397917449522,
+    "lo": -0.021252090914813948,
+    "hi": 0.040806493649981235,
+    "unit": "deg"
+  },
+  "free_release_pot_counts": {
+    "value": 0.09865196078430927,
+    "lo": -0.027777777777828305,
+    "hi": 0.13144841269831886,
+    "unit": "counts"
+  },
+  "load_steps_deg_per_a": {
+    "value": -1.0720268576362075,
+    "lo": -1.8947471805257452,
+    "hi": -0.24930653474666975,
+    "unit": "deg/A"
+  },
+  "per_torque_deg_per_n_m": {
+    "plumb-1, the shake": {
+      "value": 20.91381538228588,
+      "lo": 15.453918152635113,
+      "hi": 26.373712611936647,
+      "unit": "deg per N m, the two Kt as bounds"
+    },
+    "arm-1, static at scale 1": {
+      "value": 10.786305701628558,
+      "lo": 8.290096689909106,
+      "hi": 13.28251471334801,
+      "unit": "deg per N m, the two Kt as bounds"
+    }
+  },
+  "kt_used_mn_m_per_a": {
+    "stall": {
+      "value": 222.85674414929792,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m/A"
+    },
+    "ideal": {
+      "value": 357.0643496516731,
+      "lo": null,
+      "hi": null,
+      "unit": "mN m/A"
+    }
+  }
+}

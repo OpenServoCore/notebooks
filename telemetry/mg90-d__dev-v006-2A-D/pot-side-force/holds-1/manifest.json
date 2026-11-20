@@ -1,0 +1,39 @@
+{
+  "clips": {
+    "holds.mp4": {
+      "bytes": 1847441843,
+      "frames": 43152,
+      "fps": 239.88048224026312,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 179.88958333333335,
+      "sha256": "12b3eda69d74f198871cf788075dcad991ae1fec4c1ec923935c36da8904212f",
+      "original": "IMG_0198.MOV",
+      "stat_roi": [
+        1008,
+        696,
+        24,
+        24
+      ],
+      "frames_tracked": [
+        30500,
+        34800
+      ]
+    }
+  },
+  "setup": "upright: the servo standing with its shaft horizontal, the printed arm hanging from the horn as a pendulum, 20 US quarters in its two top pockets (10 each); the plumb is the arm hanging straight down and gravity pulls it back toward the plumb; the horn tag on the arm's hub, the reference tag on the servo body. Position mode, holds of 1.5 s at the plumb (1937, 1967) and away from it (2541, 1367, 2772, 1162). This block is the clip's last cell, run with goal_duty 0, the setting that leaves the pot reading uncorrected; the clip's four earlier cells ran a reading correction and are left out, and so are their frames. Clapper of 12 flashes at the clip's start and 12 at its end; the STAT trace is whole.",
+  "image": {
+    "firmware_version": 104,
+    "commit": "ce81bcc1",
+    "where": "a scratch image (438e4a5a plus a pot reading correction set from goal_duty, version 0.1.40) on no pushed branch: it exists only on local scratch branches of the firmware checkout. This cell ran with goal_duty 0."
+  },
+  "loop": "closed loop (Position mode) found data: the loop only excites the shake and sets the holds; the measurement is the pot against the camera, which does not depend on it",
+  "track_columns": "track.csv keeps the 9 columns the analysis reads, every row; the dropped columns are goal (segments.csv carries it), current, vdiff, vbus, vbus_raw, ntc_raw, vref_raw",
+  "lens": "stage 3 pot-table's portrait lens (pot-table/crawl-9/camera.json), the same phone; these clips carry no board views of their own",
+  "pipeline": {
+    "commit": "902cb30",
+    "oscnb_dirty": false,
+    "fiducial_sha256": "3374bb716276",
+    "opencv": "5.0.0"
+  }
+}

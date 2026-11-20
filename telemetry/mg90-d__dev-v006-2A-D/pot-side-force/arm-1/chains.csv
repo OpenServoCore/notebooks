@@ -1,0 +1,3 @@
+k,schedule,t_start,t_end,folder
+0,"set:i_cont_counts=568,set:velocity_limit_cps=400,goal:1937@1500,goal:2772@3000,goal:2772@1500,goal:1162@3000,goal:1162@3000,goal:2772@3000,goal:2772@3000,goal:1937@3000",1795074379.702,1795074400.869,chains/0
+1,"set:i_cont_counts=568,set:velocity_limit_cps=800,goal:1937@1500,goal:2772@3000,goal:2772@1500,goal:1162@3000,goal:1162@3000,goal:2772@3000,goal:2772@3000,goal:1937@3000",1795074402.854,1795074424.033,chains/1

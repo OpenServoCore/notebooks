@@ -1,0 +1,33 @@
+{
+  "clips": {
+    "plumb.mp4": {
+      "bytes": 436866830,
+      "frames": 9602,
+      "fps": 239.8800849398343,
+      "width": 1080,
+      "height": 1920,
+      "duration_s": 40.02833333333333,
+      "sha256": "be998567fe58c6194dd69d43b90d730c894fad75a1b768463b485176ac3eb2a4",
+      "original": "IMG_0197.MOV",
+      "frames_tracked": [
+        0,
+        9601
+      ]
+    }
+  },
+  "setup": "upright: the servo standing with its shaft horizontal, the printed arm hanging from the horn as a pendulum, 20 US quarters in its two top pockets (10 each); the plumb is the arm hanging straight down and gravity pulls it back toward the plumb; the horn tag on the arm's hub, the reference tag on the servo body. Position mode on the bench image of the time (fw 65), held near the plumb, at goal 2021 for 3 s, 2041 for 3 + 3 s and 2021 for 1.5 s, then osc-lab's centering park (not recorded, about 10 s) and torque off. No clapper: the clip carries no STAT flashes, so frames meet rows by alignment only.",
+  "image": {
+    "firmware_version": 65,
+    "commit": "438e4a5a",
+    "where": "open-servo-core main (#544), the bench image of the time"
+  },
+  "loop": "closed loop (Position mode) found data: the loop only excites the shake and sets the holds; the measurement is the pot against the camera, which does not depend on it",
+  "track_columns": "track.csv keeps the 9 columns the analysis reads, every row; the dropped columns are goal (segments.csv carries it), current, vdiff, vbus, vbus_raw, ntc_raw, vref_raw",
+  "lens": "stage 3 pot-table's portrait lens (pot-table/crawl-9/camera.json), the same phone; these clips carry no board views of their own",
+  "pipeline": {
+    "commit": "902cb30",
+    "oscnb_dirty": false,
+    "fiducial_sha256": "3374bb716276",
+    "opencv": "5.0.0"
+  }
+}

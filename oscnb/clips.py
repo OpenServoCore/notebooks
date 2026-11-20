@@ -22,6 +22,15 @@ was filmed:
   manifest.json        each original's size, sha256, frame count and rate,
                        and the pipeline version that made the tables
 
+A dataset of found data, filmed outside a sitting's plans, carries more
+keys beside these, written by hand and kept by every rerun: per clip
+`original` (the file's name on the phone) and `frames_tracked` (the first
+and last frame tracked, for a partial track), and at the top `setup` (the
+rig in words), `lens` (where camera.json came from when no board clip was
+filmed), `image` (the firmware version, its commit and where the commit
+lives), `loop` (the mode the servo ran in) and `track_columns` (what a trim
+of the rows kept). `potforce.manifest` refuses a block without them.
+
 A rerun skips every table and preview that already exists, so adding a
 clip or regenerating one file is cheap; `force=True` redoes them all.
 `upload` is optional: it attaches the originals to a GitHub release of this
