@@ -1848,6 +1848,26 @@ Kept:
   each overlapping `18a`'s range. They stay open on this rung, and so
   do the 2 degree move's settle and reversals, rows whose range over
   three runs understates their scatter between sessions.
+- `20a-holds-yield-pot-terms`: firmware 7532c7ba on the set of record,
+  set `afc7744b7038`, alternated three rounds with a control image,
+  7532c7ba with the park gate (9a1f433f) and the loaded hold (438e4a5a)
+  reverted and nothing else (dedff474, a local scratch commit), free
+  horn, the moves at the test set's own limits of motion: the reference
+  for rungs on firmware with both hold changes. Between `19a` and it the
+  set of record changed (the speed gains from the rule, the continuous
+  current at 350 mA, the slow thermal node) and so did the image; the
+  position reading's current terms are at their default 0 and the
+  yield's hold acts only once the press fold latches, so the control
+  isolates the two hold changes. No fault, no row dropped.
+  Two rows read better, both on the 2 degree move: it settles in 59.9
+  [53.8, 93.8] ms against 109.7 [99.9, 111.6] and reverses 16.9 [4.9,
+  17.2] times a second against 23.3 [22.9, 40.5]. One reads worse: the
+  60 degree move takes 84.2 [83.8, 99.1] mA against 83.2 [83.2, 83.5].
+  The 1 % ramp speed and the 60 degree duty are apart by less than
+  their last printed digit. One of the three runs did not settle the
+  60 degree move inside its 2 s window (the range's 2000 ms), with
+  0.83 deg of overshoot and 11.9 reversals a second on it; the control
+  shows none. That run's landing is open on this rung.
 
 Tried, not kept:
 
