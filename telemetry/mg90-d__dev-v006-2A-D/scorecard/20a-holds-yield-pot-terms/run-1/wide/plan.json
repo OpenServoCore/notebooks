@@ -1,0 +1,180 @@
+{
+  "capture": "wide",
+  "center_counts": 1916,
+  "guard_counts": [
+    314,
+    3560
+  ],
+  "counts_per_deg": 20.126631678008682,
+  "no_load_deg_s": 623.7219681271883,
+  "goal_period_s": 0.0256,
+  "sources": {
+    "counts_per_deg": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json target counts_per_deg, the table's linearized counts per deg",
+    "no_load_deg_s": "stages/3-servo/run-up/results/mg90-d__dev-v006-2A-D.json no_load_speed_rev_s / servos mg90-d gear_ratio x 360",
+    "current_cap_ma": "servos mg90-d lock_hold_a",
+    "wide_codes": "stages/1-board/wide-codes/results/dev-v006-2A-D.json wide_codes, the codes that take a slot",
+    "center_counts": "the raw middle of the soft range read through stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.pos_lut.json"
+  },
+  "segments": [
+    {
+      "seg": 0,
+      "item": "goal:501@2000",
+      "test": "wide-approach",
+      "stuck_code": 511,
+      "side": "above",
+      "raw_counts": 547,
+      "goal_counts": 501,
+      "goal_deg": -70.30485888734658
+    },
+    {
+      "seg": 1,
+      "item": "goal:473@2000",
+      "test": "wide-hold",
+      "stuck_code": 511,
+      "side": "above",
+      "raw_counts": 515,
+      "goal_counts": 473,
+      "goal_deg": -71.69605044130115
+    },
+    {
+      "seg": 2,
+      "item": "goal:442@1200",
+      "test": "wide-approach",
+      "stuck_code": 511,
+      "side": "below",
+      "raw_counts": 481,
+      "goal_counts": 442,
+      "goal_deg": -73.23629823317941
+    },
+    {
+      "seg": 3,
+      "item": "goal:473@2000",
+      "test": "wide-hold",
+      "stuck_code": 511,
+      "side": "below",
+      "raw_counts": 515,
+      "goal_counts": 473,
+      "goal_deg": -71.69605044130115
+    },
+    {
+      "seg": 4,
+      "item": "goal:992@2000",
+      "test": "wide-approach",
+      "stuck_code": 1023,
+      "side": "above",
+      "raw_counts": 1063,
+      "goal_counts": 992,
+      "goal_deg": -45.90932128050053
+    },
+    {
+      "seg": 5,
+      "item": "goal:961@2000",
+      "test": "wide-hold",
+      "stuck_code": 1023,
+      "side": "above",
+      "raw_counts": 1029,
+      "goal_counts": 961,
+      "goal_deg": -47.44956907237879
+    },
+    {
+      "seg": 6,
+      "item": "goal:925@1200",
+      "test": "wide-approach",
+      "stuck_code": 1023,
+      "side": "below",
+      "raw_counts": 993,
+      "goal_counts": 925,
+      "goal_deg": -49.23824392746323
+    },
+    {
+      "seg": 7,
+      "item": "goal:961@2000",
+      "test": "wide-hold",
+      "stuck_code": 1023,
+      "side": "below",
+      "raw_counts": 1029,
+      "goal_counts": 961,
+      "goal_deg": -47.44956907237879
+    },
+    {
+      "seg": 8,
+      "item": "goal:2084@2000",
+      "test": "wide-approach",
+      "stuck_code": 2047,
+      "side": "above",
+      "raw_counts": 2088,
+      "goal_counts": 2084,
+      "goal_deg": 8.347149323727368
+    },
+    {
+      "seg": 9,
+      "item": "goal:2035@2000",
+      "test": "wide-hold",
+      "stuck_code": 2047,
+      "side": "above",
+      "raw_counts": 2053,
+      "goal_counts": 2035,
+      "goal_deg": 5.912564104306886
+    },
+    {
+      "seg": 10,
+      "item": "goal:1989@1500",
+      "test": "wide-approach",
+      "stuck_code": 2047,
+      "side": "below",
+      "raw_counts": 2017,
+      "goal_counts": 1989,
+      "goal_deg": 3.6270351228101068
+    },
+    {
+      "seg": 11,
+      "item": "goal:2035@2000",
+      "test": "wide-hold",
+      "stuck_code": 2047,
+      "side": "below",
+      "raw_counts": 2053,
+      "goal_counts": 2035,
+      "goal_deg": 5.912564104306886
+    },
+    {
+      "seg": 12,
+      "item": "goal:2637@2000",
+      "test": "wide-approach",
+      "stuck_code": 2559,
+      "side": "above",
+      "raw_counts": 2595,
+      "goal_counts": 2637,
+      "goal_deg": 35.82318251432996
+    },
+    {
+      "seg": 13,
+      "item": "goal:2607@2000",
+      "test": "wide-hold",
+      "stuck_code": 2559,
+      "side": "above",
+      "raw_counts": 2563,
+      "goal_counts": 2607,
+      "goal_deg": 34.332620135092924
+    },
+    {
+      "seg": 14,
+      "item": "goal:2573@1200",
+      "test": "wide-approach",
+      "stuck_code": 2559,
+      "side": "below",
+      "raw_counts": 2529,
+      "goal_counts": 2573,
+      "goal_deg": 32.64331610529096
+    },
+    {
+      "seg": 15,
+      "item": "goal:2607@2000",
+      "test": "wide-hold",
+      "stuck_code": 2559,
+      "side": "below",
+      "raw_counts": 2563,
+      "goal_counts": 2607,
+      "goal_deg": 34.332620135092924
+    }
+  ]
+}

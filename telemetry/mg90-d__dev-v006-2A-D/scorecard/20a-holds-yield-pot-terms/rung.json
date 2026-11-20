@@ -1,0 +1,93 @@
+{
+  "label": "20a-holds-yield-pot-terms",
+  "fw": "7532c7ba",
+  "image_sha": "e3c5406b9df46a3330c7cbe7f200d4c1971d13e0",
+  "tool": {
+    "sha1": "d2f5a20f0b0131a2d7c61665cc64a2a09bc2cf50",
+    "version": null
+  },
+  "note": "main 7532c7ba (park gate, loaded hold, pot terms at 0, yield hold) on the set of record, free horn",
+  "utc": "2026-11-20T04:01:38+00:00",
+  "config_hash": "2b354df402b85837be5819d622aba7eeb74283e36d468f3e6c7cd16066bdb92c",
+  "constants_hash": "82d0641bf730277eb512793282e0d46f3e3f359f6d0d886fb9fd4cfeb27c5f5a",
+  "runs_asked": 3,
+  "set": {
+    "file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.constants.json",
+    "hash": {
+      "plant": "85a9215518087a07949cf0961324be9e1b84ef37e188182cf632d1dc53d8667a",
+      "protection": "6dc2d1003d18ba15489ba22a62e0c4aee89f9a023a2e05db1deac68c104a75fa",
+      "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead",
+      "set": "afc7744b70383bd4c121028eabc19aeff42f8398348d2c3ae382962c160801a9"
+    },
+    "classes": {
+      "measured": 16,
+      "bench": 6,
+      "datasheet": 1,
+      "policy": 39,
+      "pinned": 1,
+      "none": 1
+    }
+  },
+  "deviation": null,
+  "protection": {
+    "hash": "6dc2d1003d18ba15489ba22a62e0c4aee89f9a023a2e05db1deac68c104a75fa",
+    "moved": {}
+  },
+  "motion": {
+    "from": "test set",
+    "velocity_limit_cps": 1500,
+    "accel_limit_q88": 3840,
+    "speed_deg_s": 74.528,
+    "accel_deg_s2": 1490.6
+  },
+  "wide_goals": [
+    {
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    },
+    {
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    }
+  ]
+}
