@@ -149,19 +149,27 @@ class Board:
         return (np.asarray(current_raw, float) - zero_counts) * self.a_per_count
 
     def vdd_v(self, vref_raw):
-        """VDD from the chip's 1.2 V reference as the ADC reads it (`vref_raw`
-        in a TEL row). The ADC's reference is VDD, so a count is VDD / 4096 and
-        the 1.2 V reference reads lower as VDD rises."""
-        return self.vref_v * self.adc_counts / np.asarray(vref_raw, float)
+        """VDD from the chip's 1.2 V reference as the ADC reads it (`vref_raw`,
+        the servo's boot reading, or a TEL row's on older firmware). The ADC's
+        reference is VDD, so a count is VDD / 4096 and the 1.2 V reference
+        reads lower as VDD rises. A 0 (the servo holds no reading) or a missing
+        value (None, NaN) is no figure: NaN, as an empty CSV cell reads."""
+        r = np.asarray(np.nan if vref_raw is None else vref_raw, float)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            v = self.vref_v * self.adc_counts / r
+        return np.where(r > 0, v, np.nan)[()]
 
     def rail_v(self, vbus_raw, vref_raw=None):
         """Rail volts from the raw rail tap (`vbus_raw` in a TEL row). The
         tap is a share of VDD, so with `vref_raw` the measured VDD replaces the
-        nominal one, and the reading stays right when the regulator drops out."""
+        nominal one, and the reading stays right when the regulator drops out.
+        Where `vref_raw` gives no figure (None, 0, NaN) the nominal VDD stands."""
         v = np.asarray(vbus_raw, float) * self.v_rail_per_count
         if vref_raw is None:
             return v
-        return v * self.vdd_v(vref_raw) / (self.vdd_mv / 1e3)
+        nominal = self.vdd_mv / 1e3
+        vdd = self.vdd_v(vref_raw)
+        return v * np.where(np.isnan(vdd), nominal, vdd) / nominal
 
     def ntc_ohm(self, ntc_raw):
         """The NTC's resistance from its raw count, pull-up to VDD."""

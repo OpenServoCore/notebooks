@@ -83,7 +83,7 @@ pub fn table_row(
     out
 }
 
-/// A row's chunks as `addr+len` joined by `,`: `0x238+2,0x246+8`.
+/// A row's chunks as `addr+len` joined by `,`: `0x236+2,0x242+8`.
 pub fn chunks_text(chunks: &Chunks) -> String {
     let parts: Vec<String> = chunks
         .0
@@ -126,7 +126,8 @@ pub struct TelFrame {
     pub vmotor_b: Option<u16>,
     pub vbus_raw: Option<u16>,
     pub ntc_raw: Option<u16>,
-    /// The chip's 1.2 V reference against VDD (`vref_raw`).
+    /// The chip's 1.2 V reference against VDD (`vref_raw`), the boot
+    /// reading: a row carries it only from a chunk over REFS.
     pub vref_raw: Option<u16>,
     /// The medium-rate fields a row carries as last published: the
     /// observer's position (cQ16) and speed (csQ16), the velocity loop's
@@ -317,7 +318,6 @@ mod tests {
             vmotor_b: 0x0B00 + i,
             vbus_raw: 0x0C00 + i,
             ntc_raw: 0x0D00 + i,
-            vref_raw: 0x0500 + i,
             vmotor_a_trough: 0x0700 + i,
             vmotor_b_trough: 0x0800 + i,
             tick_flags: if i.is_multiple_of(2) {
@@ -326,10 +326,13 @@ mod tests {
                 0
             },
             sample_tick: i as u32,
-            _scan: [0x0900 + i; 10],
+            _scan: [0x0900 + i; 9],
         };
         (tick, 1800 + i)
     }
+
+    /// The boot reference reading the sample table holds.
+    const VREF: u16 = 0x0500;
 
     /// The row the servo copies for `chunks` out of a table holding
     /// `sample(i)`.
@@ -338,6 +341,7 @@ mod tests {
         table_row(chunks, |tb| {
             tb.telemetry.tick = tick;
             tb.telemetry.estimates.vbus_counts = vbus;
+            tb.telemetry.refs.vref_raw = VREF;
         })
     }
 
@@ -376,7 +380,7 @@ mod tests {
             vmotor_b: sel(t::VMOTOR_B).then_some(s.vmotor_b),
             vbus_raw: sel(t::VBUS_RAW).then_some(s.vbus_raw),
             ntc_raw: sel(t::NTC_RAW).then_some(s.ntc_raw),
-            vref_raw: sel(t::VREF_RAW).then_some(s.vref_raw),
+            vref_raw: sel(t::VREF_RAW).then_some(VREF),
             row: RowBytes::new(&row(chunks, i)),
             ..TelFrame::default()
         }
@@ -392,25 +396,27 @@ mod tests {
 
     /// The rows the notebooks stream: the raw six, the static-load row and
     /// the rest row.
-    const ROWS: [Chunks; 3] = [TEL_RAW, Chunks::one(0x23c, 12), Chunks::one(0x23a, 12)];
+    const ROWS: [Chunks; 3] = [TEL_RAW, Chunks::one(0x238, 12), Chunks::one(0x236, 12)];
 
     #[test]
     fn the_raw_row_is_the_six_raw_fields() {
         assert!(TEL_RAW.valid());
         assert_eq!(
             (TEL_RAW, TEL_RAW.row_bytes()),
-            (Chunks::two(Chunk::new(0x238, 2), Chunk::new(0x240, 10)), 12)
+            (Chunks::two(Chunk::new(0x236, 2), Chunk::new(0x23c, 10)), 12)
         );
-        assert_eq!(chunks_text(&TEL_RAW), "0x238+2,0x240+10");
+        assert_eq!(chunks_text(&TEL_RAW), "0x236+2,0x23c+10");
     }
 
-    /// The rows and the rail estimate in a second chunk decode, field for
-    /// field, the bytes core's table holds at the chunks' addresses.
+    /// The rows, the rail estimate and the boot reference in a second chunk
+    /// decode, field for field, the bytes core's table holds at the chunks'
+    /// addresses.
     #[test]
     fn every_row_round_trips_the_core_table() {
-        let with_vbus = Chunks::two(Chunk::new(0x246, 8), span(t::VBUS_COUNTS, t::VBUS_COUNTS));
-        let flags = Chunks::two(Chunk::new(0x238, 4), span(t::TICK_FLAGS, t::TICK_FLAGS));
-        for chunks in ROWS.into_iter().chain([with_vbus, flags]) {
+        let with_vbus = Chunks::two(Chunk::new(0x242, 8), span(t::VBUS_COUNTS, t::VBUS_COUNTS));
+        let flags = Chunks::two(Chunk::new(0x236, 4), span(t::TICK_FLAGS, t::TICK_FLAGS));
+        let with_vref = Chunks::two(Chunk::new(0x236, 4), span(t::VREF_RAW, t::VREF_RAW));
+        for chunks in ROWS.into_iter().chain([with_vbus, flags, with_vref]) {
             for floor in [0, 300] {
                 let frames = decode(chunks, floor, &payload(chunks, 0, false, 48, 16));
                 assert_eq!(frames.len(), 16);
@@ -435,13 +441,13 @@ mod tests {
         assert!(!window_valid(-159, 160));
         assert!(!window_valid(0, 0));
         assert!(window_valid(1, 0));
-        let flags = Chunks::two(Chunk::new(0x246, 2), span(t::TICK_FLAGS, t::TICK_FLAGS));
+        let flags = Chunks::two(Chunk::new(0x242, 2), span(t::TICK_FLAGS, t::TICK_FLAGS));
         let p = payload(flags, 0, true, 0, 1);
         assert!(decode(flags, 300, &p)[0].window_valid);
         let p = payload(TEL_RAW, 0, true, 0, 1);
         assert!(decode(TEL_RAW, 160, &p)[0].window_valid);
         assert!(!decode(TEL_RAW, 300, &p)[0].window_valid);
-        let pos = Chunks::one(0x238, 2);
+        let pos = Chunks::one(0x236, 2);
         let p = payload(pos, 0, true, 0, 1);
         assert!(!decode(pos, 0, &p)[0].window_valid, "no duty, no flags");
     }
@@ -546,7 +552,7 @@ mod tests {
             }
             p
         };
-        let mut a = StreamAssembler::new(Chunks::one(0x238, 2), 0).unwrap();
+        let mut a = StreamAssembler::new(Chunks::one(0x236, 2), 0).unwrap();
         let mut out = Vec::new();
         a.push(true, &frame(0, false, 100, 24), &mut out);
         a.push(true, &frame(1, true, 124, 5), &mut out);
@@ -561,7 +567,7 @@ mod tests {
     fn assembler_ticks_run_through_the_seq_and_stamp_wraps() {
         // 258 one-row frames 16 ticks apart: seq wraps 255 -> 0 with no
         // hole, the stamp wraps past 0xFFFF on the way
-        let pos = Chunks::one(0x238, 2);
+        let pos = Chunks::one(0x236, 2);
         let mut a = StreamAssembler::new(pos, 0).unwrap();
         let mut out = Vec::new();
         for k in 0..258u64 {
@@ -577,7 +583,7 @@ mod tests {
 
     #[test]
     fn assembler_missing_frame_leaves_a_seq_hole_and_a_tick_jump() {
-        let pos = Chunks::one(0x238, 2);
+        let pos = Chunks::one(0x236, 2);
         let mut a = StreamAssembler::new(pos, 0).unwrap();
         let mut out = Vec::new();
         for seq in [0u8, 1, 3] {
@@ -597,7 +603,7 @@ mod tests {
     /// the stamp tells.
     #[test]
     fn assembler_dropped_rows_jump_the_ticks_not_the_seq() {
-        let pos = Chunks::one(0x238, 2);
+        let pos = Chunks::one(0x236, 2);
         let mut a = StreamAssembler::new(pos, 0).unwrap();
         let mut out = Vec::new();
         a.push(true, &payload(pos, 0, false, 7, 16), &mut out);
@@ -609,7 +615,7 @@ mod tests {
 
     #[test]
     fn assembler_skips_non_stream_statuses() {
-        let pos = Chunks::one(0x238, 2);
+        let pos = Chunks::one(0x236, 2);
         let mut a = StreamAssembler::new(pos, 0).unwrap();
         let mut out = Vec::new();
         a.push(false, &[0x55, 0xAA], &mut out); // an OK ack, not a frame

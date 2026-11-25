@@ -15,9 +15,10 @@ rail-fine: VSYS to GND, the same probes, no laps. The rail walked up in 20 mV st
   the meter this is the tap's scale on a fine grid; its residual is the ADC's
   own linearity over the codes the tap crosses, 900 to 1850, which take in
   1024 and 1536 where the current channel reads a step under drive.
-vdd: no meter. The chip's own 1.2 V reference streamed at rest at every level, no
-  laps: VDD = 1.2 V x 4096 / vref_raw, the ADC reference every count is a share
-  of, and whether it holds on a 1S rail.
+vdd: no meter. A rest stream at every level, no laps, and the chip's own 1.2 V
+  reference: VDD = 1.2 V x 4096 / vref_raw, the ADC reference every count is a
+  share of, and whether it holds on a 1S rail. The servo reads the reference
+  once at boot, so `vref_raw.txt` holds that one reading, not one a level.
 """
 import sys
 
@@ -39,6 +40,7 @@ if node == "vdd":
     import csv, time
     capture.prompt("Bare load on the motor terminals, no meter.")
     bench.power_up(LEVELS[0] + bench.DIODE_V)
+    bench.record_vref(out)
     with open(out / "levels.csv", "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["k", "load", "volts_set", "dps_read", "vsys_read", "t_start", "t_end", "folder"])
@@ -55,6 +57,7 @@ elif node == "rail-fine":
     lo, hi = FINE_RANGE_V
     points = [round(lo + k * FINE_STEP_V, 3) for k in range(int(round((hi - lo) / FINE_STEP_V)) + 1)]
     bench.power_up(points[0] + bench.DIODE_V)
+    bench.record_vref(out)
     with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect="DC V"), open(out / "levels.csv", "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["k", "load", "volts_set", "dps_read", "t_set", "t_start", "t_end", "folder"])

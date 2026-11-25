@@ -1968,7 +1968,7 @@ mod tests {
     #[test]
     fn the_extra_range_rides_each_bursts_polls() {
         let plain = captured(None, None);
-        let with = captured(Some("0x238:2"), None);
+        let with = captured(Some("0x236:2"), None);
         plain.r.unwrap();
         with.r.unwrap();
         assert!(!plain.files.contains_key("polls.csv"));
@@ -2005,12 +2005,12 @@ mod tests {
         let meta: serde_json::Value = serde_json::from_str(&with.files["meta.json"]).unwrap();
         assert_eq!(
             meta["poll_extra"],
-            serde_json::json!({ "addr": 0x238, "len": 2 })
+            serde_json::json!({ "addr": 0x236, "len": 2 })
         );
         assert_eq!(meta["extra_poll_failures"], 0);
 
         assert_eq!(kept(&with.files), kept(&plain.files));
-        let extra = Sent::Read(0x238, 2);
+        let extra = Sent::Read(0x236, 2);
         let at: Vec<usize> = (0..with.sent.len())
             .filter(|&i| with.sent[i] == extra)
             .collect();

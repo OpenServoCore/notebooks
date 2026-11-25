@@ -269,7 +269,7 @@ def sweep(folder, model, rail, steps, dirs="both", seat=None, guards=None,
             "pwm_period_ticks": board.pwm_arr, "sense": board.sense,
             "schedule": [str(s) for s in steps], "dirs": dirs,
             "stall": seat == "stop", "static_load": seat == "lock",
-            "guard": [lo, hi], "tel_chunks": [[0x238, 2], [0x240, 10]],
+            "guard": [lo, hi], "tel_chunks": [[0x236, 2], [0x23c, 10]],
             "window_ms": window_ms, "baseline_ms": baseline_ms,
             "rest_ms": rest_ms, "settle_ms": 300, "decay": "slow",
             "rows_dropped": 0, "host_git_sha": "synthetic"}

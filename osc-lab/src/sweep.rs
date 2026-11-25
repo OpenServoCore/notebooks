@@ -320,7 +320,7 @@ pub struct Args {
     /// ok). Default = the raw six: pos, raw current, vmotor_a, vmotor_b,
     /// applied duty, trough - measurements only, kernel conclusions (vdiff,
     /// vbus, the held current) stay out of raw captures.
-    #[arg(long, default_value = "0x238+2,0x240+10")]
+    #[arg(long, default_value = "0x236+2,0x23c+10")]
     tel_chunks: String,
     /// Attempts per rung before the sweep gives up. A rung is captured as one
     /// burst, so a dropped frame anywhere in it corrupts that rung alone -
@@ -1542,7 +1542,7 @@ mod tests {
             park: true,
             guard: (0, 4095),
             stops: None,
-            tel_chunks: Chunks::one(0x23c, 12),
+            tel_chunks: Chunks::one(0x238, 12),
             rung_tries: 3,
         }
     }
@@ -2098,7 +2098,7 @@ mod tests {
         assert_eq!(m["plant"]["lut_state"], "IDENTITY");
         assert_eq!(
             m["tel_chunks"],
-            serde_json::json!([[0x238, 2], [0x240, 10]])
+            serde_json::json!([[0x236, 2], [0x23c, 10]])
         );
     }
 }

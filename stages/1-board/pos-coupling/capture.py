@@ -22,10 +22,12 @@ ground copper. One that follows the duty or the switching leg and is gone
 at 100 % is coupling from the bridge. The NTC and the taps answer the same
 question for their own nodes.
 
-With `vref` the row trades the second tap for vref_raw, the ADC's own
+With `vref` the row traded the second tap for vref_raw, the ADC's own
 1.2 V reference, which reads VDD itself: pos and the NTC are shares of VDD,
 so a shift they carry together and the rail tap carries too is VDD moving
-at the sample, and vref_raw moves the other way by the same share.
+at the sample, and vref_raw moves the other way by the same share. The
+servo now reads the reference once at boot and no row carries it, so
+`vref` is refused.
 
 The dummy takes 1.4 A and 10 W on the 100 % rung at 7.4 V, 300 ms at a
 time, under the resistor's 12 W and the inductors' saturation.
@@ -44,12 +46,10 @@ POS_BAND = (1500, 1800)     # the divider's 1640 at rest, with room for 1 % part
 # pos, then vbus_raw, ntc_raw, current_raw, vmotor_a, vmotor_b, 12 B. The duty
 # and the trough stay out: the segment names the duty, and the trough reads
 # nothing at the crest's node.
-ROW = "0x238+2,0x23c+10"
-# pos, vref_raw, vbus_raw, ntc_raw, current_raw, vmotor_a, 12 B
-ROW_VREF = "0x238+12"
+ROW = "0x236+12"
 
-vref = "vref" in sys.argv[1:]
-row = ROW_VREF if vref else ROW
+if "vref" in sys.argv[1:]:
+    sys.exit("vref: the servo reads vref_raw once at boot and no TEL row carries it")
 
 out = capture.dataset(boards.DEFAULT, "pos-coupling", ["", *[a for a in sys.argv[1:] if a.isdigit()]])
 capture.prompt("The divider on the POS connector, 3.3 k from 3V3 to POS1 and 2.2 k from "
@@ -72,8 +72,8 @@ with open(out / "sweeps.csv", "w", newline="") as f, osc.Limit(laps.LIMIT_COUNTS
                 folder = f"sweeps/{k}"
                 t0 = time.time()
                 osc.sweep(out / folder, DUTIES, window_ms=WINDOW_MS, baseline_ms=1000, rest_ms=500,
-                          dirs="both", decay=decay, tel_chunks=row)
-                w.writerow([k, v, f"{dps_read:.3f}", f"{vsys:.3f}", decay, r, row, f"{t0:.3f}", f"{time.time():.3f}", folder])
+                          dirs="both", decay=decay, tel_chunks=ROW)
+                w.writerow([k, v, f"{dps_read:.3f}", f"{vsys:.3f}", decay, r, ROW, f"{t0:.3f}", f"{time.time():.3f}", folder])
                 f.flush()
                 k += 1
 bench.power_down()
