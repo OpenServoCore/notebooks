@@ -349,10 +349,11 @@ class Sitting:
 
     def guards(self):
         """The seek envelope, GUARD_INSET inside the servo's soft limits,
-        read once a sitting."""
+        or its physical stops while those are off, read once a sitting."""
         if self._guards is None:
-            lo = osc.get("pos_min_soft_counts") + GUARD_INSET
-            hi = osc.get("pos_max_soft_counts") - GUARD_INSET
+            travel = osc.travel()
+            lo = travel[0] + GUARD_INSET
+            hi = travel[1] - GUARD_INSET
             if hi - lo <= 2 * (BAND_HALF + RUNWAY_MARGIN):
                 raise SystemExit(f"the guards {lo} to {hi} leave no runway: "
                                  "are the soft limits set?")

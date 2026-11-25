@@ -1491,7 +1491,11 @@ mod tests {
         let Err(err) = Cfg::new(&parse(&["sweep"]), &virgin, &plan(&virgin)) else {
             panic!("a virgin servo was not refused");
         };
-        assert!(err.to_string().ends_with("run `osc cal` first"), "{err}");
+        assert!(
+            err.to_string()
+                .ends_with("run `osc-ident run` and `osc-ident save` first"),
+            "{err}"
+        );
         // a resistor has no travel to calibrate
         let a = parse(&["sweep", "--static-load"]);
         assert_eq!(

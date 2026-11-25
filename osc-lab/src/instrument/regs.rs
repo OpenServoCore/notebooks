@@ -17,6 +17,7 @@ pub mod config {
 
     /// The first field past the identity and comms block.
     pub const POS_MIN_PHYS_COUNTS: Reg = reg(0x0020, 4);
+    pub const POS_MAX_PHYS_COUNTS: Reg = reg(0x0024, 4);
     pub const POS_MIN_SOFT_COUNTS: Reg = reg(0x0028, 4);
     pub const POS_MAX_SOFT_COUNTS: Reg = reg(0x002c, 4);
     pub const POS_DEADBAND_COUNTS: Reg = reg(0x0042, 2);
@@ -187,6 +188,7 @@ mod tests {
     /// Every const above with its control table field name.
     const ALL: &[(&str, Reg)] = &[
         ("pos_min_phys_counts", config::POS_MIN_PHYS_COUNTS),
+        ("pos_max_phys_counts", config::POS_MAX_PHYS_COUNTS),
         ("pos_min_soft_counts", config::POS_MIN_SOFT_COUNTS),
         ("pos_deadband_counts", config::POS_DEADBAND_COUNTS),
         ("cutoff_cc", config::CUTOFF_CC),

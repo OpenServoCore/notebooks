@@ -499,6 +499,11 @@ def target(bench, tmp_path):
     return doc
 
 
+def soft_write(lo, hi):
+    """The one write of both soft limits, as the fake servo logs it."""
+    return ("write", 0x28, lo.to_bytes(4, "little", signed=True) + hi.to_bytes(4, "little", signed=True))
+
+
 def deviated(doc, **values):
     """`doc` with other values in the named fields, as a set of its own."""
     other = copy.deepcopy(doc)
@@ -514,10 +519,9 @@ def test_install_from_blank_equals_the_set(target, bench, tmp_path, capsys):
     assert len(cn.differences(target, sc.servo_state())) == 11
     bench.log.clear()
     wrote = cn.install(target, **NAMED, root=tmp_path)
-    # the order a count is defined in, then the rest in table order; the low soft limit, refused while
-    # the high one stood under it, once more after the rest
-    assert wrote == ["wide-code slots", "raw_min", "raw_max", "position table", "pos_max_soft_counts", "p_kp_q88",
-                     "current_limit_counts", "stall_response", "r_q12", "pos_min_soft_counts", "stamp"]
+    # the order a count is defined in, then the rest in table order, the soft limits both in one write
+    assert wrote == ["wide-code slots", "raw_min", "raw_max", "position table", "pos_min_soft_counts",
+                     "pos_max_soft_counts", "p_kp_q88", "current_limit_counts", "stall_response", "r_q12", "stamp"]
     changed = bench.wrote()
     assert changed[0] == ("write", 0x91, NEW_SLOTS)
     assert changed[1:3] == [("set", "raw_min", "90"), ("set", "raw_max", "3780")]
@@ -526,10 +530,9 @@ def test_install_from_blank_equals_the_set(target, bench, tmp_path, capsys):
     assert changed[3:12] == [*(("write", postable.WINDOW_ADDR, bytes([p, postable.STORE]) + stores[p])
                               for p in range(postable.PAGES)),
                              ("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT]))]
-    assert changed[12:] == [("set", "pos_min_soft_counts", "3600"), ("set", "pos_max_soft_counts", "3700"),
-                            ("set", "p_kp_q88", "5026"), ("set", "current_limit_counts", "500"),
-                            ("set", "stall_response", "Yield"), ("set", "r_q12", "16000"),
-                            ("set", "pos_min_soft_counts", "3600"), ("run", "stamp")]
+    assert changed[12:] == [soft_write(3600, 3700), ("set", "p_kp_q88", "5026"),
+                            ("set", "current_limit_counts", "500"), ("set", "stall_response", "Yield"),
+                            ("set", "r_q12", "16000"), ("run", "stamp")]
     state = sc.servo_state()
     assert cn.differences(target, state) == []
     assert (state["data_state"], state["stamp"]) == ("clean", "0x1234 = live set")
@@ -643,16 +646,38 @@ def test_a_refusal_after_the_first_write_reboots(stored, bench, tmp_path):
     bench.log.clear()
     with pytest.raises(settings.Refused) as e:
         cn.install(deviated(stored, pos_min_soft_counts=3600, p_kp_q88=5026), root=tmp_path)
-    assert str(e.value) == ("pos_min_soft_counts: the servo refused 3600; rebooted: the servo is back on its "
-                            "saved state")
-    assert bench.wrote() == [("set", "pos_min_soft_counts", "3600"), ("set", "p_kp_q88", "5026"),
-                             ("set", "pos_min_soft_counts", "3600"), ("run", "reboot")]
+    assert str(e.value) == ("pos_min_soft_counts and pos_max_soft_counts: the servo refused 3600 and 3560; "
+                            "rebooted: the servo is back on its saved state")
+    assert bench.wrote() == [soft_write(3600, 3560), ("set", "p_kp_q88", "5026"), soft_write(3600, 3560),
+                             ("run", "reboot")]
     # a refused write with nothing landed before it reboots nothing
     bench.log.clear()
     with pytest.raises(settings.Refused) as e:
         cn.install(deviated(stored, pos_min_soft_counts=3600), root=tmp_path)
-    assert str(e.value) == "pos_min_soft_counts: the servo refused 3600"
-    assert bench.wrote() == [("set", "pos_min_soft_counts", "3600")] * 2
+    assert str(e.value) == "pos_min_soft_counts and pos_max_soft_counts: the servo refused 3600 and 3560"
+    assert bench.wrote() == [soft_write(3600, 3560)] * 2
+
+
+def test_soft_limits_go_off_and_back_on_in_one_write(stored, bench, tmp_path, capsys):
+    off = deviated(stored, pos_min_soft_counts=0, pos_max_soft_counts=0)
+    assert cn.install(off, root=tmp_path) == ["pos_min_soft_counts", "pos_max_soft_counts", "stamp"]
+    assert bench.wrote() == [soft_write(0, 0), ("run", "stamp")]
+    state = sc.servo_state()
+    assert cn.differences(off, state) == [] and state["data_state"] == "clean"
+    assert "pos_max_soft_counts: 3560 -> 0" in capsys.readouterr().out.splitlines()
+    # a field at a time, 0 / 0 is no pair the servo takes: one side is refused against the other as stored
+    with pytest.raises(subprocess.CalledProcessError):
+        bench.set_("pos_min_soft_counts", "314")
+    bench.log.clear()
+    assert cn.install(stored, root=tmp_path) == ["pos_min_soft_counts", "pos_max_soft_counts", "stamp"]
+    assert bench.wrote() == [soft_write(314, 3560), ("run", "stamp")]
+    assert cn.differences(stored, sc.servo_state()) == []
+
+
+def test_one_soft_limit_that_differs_goes_back_with_its_pair(stored, bench, tmp_path):
+    assert cn.install(deviated(stored, pos_max_soft_counts=3500), root=tmp_path) == [
+        "pos_min_soft_counts", "pos_max_soft_counts", "stamp"]
+    assert bench.wrote() == [soft_write(314, 3500), ("run", "stamp")]
 
 
 def test_a_reboot_that_does_not_answer_is_said(stored, bench, tmp_path, monkeypatch):
@@ -832,10 +857,9 @@ NO_CLASS = "the registry has no servo datasheet_class for synth__board"
 NO_LIMIT = f"current_limit_counts: held, {NO_CLASS}"
 NO_CEILING = f"speed_ceiling_cps: left out, {NO_CLASS}"
 NO_R = "r_q12: held, 3-servo/resistance has no result for synth__board"
-# and of the fields in counts of position under a policy with none of their entries: the range, the hold band
-# and the stall speed, which the fake servo holds, are held, the rest left out
-NO_RANGE = [*(f"pos_{end}_soft_counts: held, policy.json has no soft_margin_share" for end in ("min", "max")),
-            "pos_deadband_counts: held, policy.json has no hold_band_noise_multiple"]
+# and of the fields in counts of position under a policy with none of their entries: the hold band and the
+# stall speed, which the fake servo holds, are held, the rest left out; the range, with no margin share, is off
+NO_RANGE = ["pos_deadband_counts: held, policy.json has no hold_band_noise_multiple"]
 NO_STALL = "stall_omega_max_cps: held, policy.json has no stall_omega_max_deg_s"
 NO_RESPONSE = "stall_response: held, policy.json has no stall_response"
 NO_COUNTS = [f"{n}: left out, policy.json has no {key}" for n, key in (
@@ -847,7 +871,7 @@ NO_COUNTS = [f"{n}: left out, policy.json has no {key}" for n, key in (
 NO_RATIOS = "policy.json has no velocity_em_ratio"
 HELD_GAIN = f"p_kp_q88: held, {NO_RATIOS}"
 NO_GAINS = [f"{n}: left out, {NO_RATIOS}" for n in ("v_kp_q88", "v_ki_q412", "v_kaw_q412")]
-FRONT = [*NO_RANGE[:2], HELD_GAIN, NO_RANGE[2]]
+FRONT = [HELD_GAIN, *NO_RANGE]
 HELD_BLOCK = [*FRONT, NO_LIMIT, NO_RESPONSE, NO_STALL, NO_R, f"recip_ke_q: held, {NO_LADDER}"]
 # the current loop's gains under a policy with no bandwidth, and the times, the counts of samples and the
 # choices in words under one with none of their entries
@@ -1085,8 +1109,8 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
         "position table state: IDENTITY -> LIVE [measured, table.pos_lut]",
         f"position table points sha1: {NO_POINTS} -> {sha} [measured, table.pos_lut]",
         f"scale: none -> {SCALE:.4f} counts/deg, the table one",
-        "pos_min_soft_counts: 314 [none -> none, held, soft_min.stops]",
-        "pos_max_soft_counts: 3560 [none -> none, held, soft_max.stops]",
+        "pos_min_soft_counts: 314 -> 0 [policy, soft_min.stops]",
+        "pos_max_soft_counts: 3560 -> 0 [policy, soft_max.stops]",
         "p_kp_q88: 40212 [none -> none, held, p_kp.split]",
         "pos_deadband_counts: 4 [none -> none, held, deadband.pot_noise]",
         "current_limit_counts: 554 [none -> none, held, current_limit.stall_derate]",
@@ -1106,7 +1130,8 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
 def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
     inputs(tmp_path)
     doc, _ = built_on(first, tmp_path)
-    assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "angle_max_cdeg", "stamp"]
+    assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "pos_min_soft_counts",
+                                              "pos_max_soft_counts", "angle_max_cdeg", "stamp"]
     assert cn.check(doc) == []
 
 
@@ -1242,10 +1267,12 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
         "wide-code slots: held, 1-board/wide-codes has no result for board",
         "scale: none, 3-servo/pot-table has no result for synth__board", NO_SCALE, *HELD_BLOCK,
         f"angle_min_cdeg: held, {no_table}", f"angle_max_cdeg: held, {no_table}", *NO_BLOCK]
-    # the gear's two fields have a source, the registry; every other one has none, 11 of them held
-    assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 1 policy, 0 pinned, 14 none")
-    assert sum("held" in e for e in doc["fields"].values()) == 11
-    assert moved_hashes(first, doc) == [] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
+    # the gear's two fields have a source, the registry, and the soft limits, off with no margin share, the
+    # policy; every other one has none, 9 of them held
+    assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 3 policy, 0 pinned, 12 none")
+    assert sum("held" in e for e in doc["fields"].values()) == 9
+    # the soft limits going off is the one move
+    assert moved_hashes(first, doc) == ["plant"] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
     # held again on top of that set, the value still names the set it first came from
     again, _ = built_on(doc, tmp_path)
     assert again["fields"]["angle_max_cdeg"]["carried_from"] == first["hash"]["set"]
@@ -1254,9 +1281,11 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
     assert lone["fields"]["gear_class"] == {"value": "2 (metal)", **carried, "rule": "gear_class.registry",
                                             "held": "the registry has no servo gear_class for synth__board",
                                             "protection": None}
-    # with nothing to carry the field is left out, and said
+    # with nothing to carry the field is left out, and said; the soft limits, off, need nothing
     new, notes = cn.build(PAIR, None, root=tmp_path, registry=REG)
-    assert list(new["fields"]) == ["gear_ratio_centi", "gear_class"] and new["wide_codes"] is None
+    assert sorted(new["fields"]) == sorted(["gear_ratio_centi", "gear_class", "pos_min_soft_counts",
+                                            "pos_max_soft_counts"]) and new["wide_codes"] is None
+    assert [new["fields"][n]["value"] for n in ("pos_min_soft_counts", "pos_max_soft_counts")] == [0, 0]
     assert new["pos_table"] == {"state": "IDENTITY", "points_sha1": NO_POINTS, "class": "measured",
                                 "rule": "table.none"} and new["previous"] is None
     assert f"angle_max_cdeg: left out, {no_table}" in notes and notes[0].startswith("wide-code slots: left out, ")
@@ -1501,7 +1530,7 @@ def test_a_pin_binds_its_field_and_shows_as_pinned(first, tmp_path):
     assert doc["fields"]["angle_max_cdeg"]["class"] == "pinned" and doc["fields"]["angle_max_cdeg"]["value"] == 18433
     assert doc["inputs"]["pins"] == {"file": f"stages/5-closed-loop/calibration/{PAIR}.pins.json",
                                      "sha1": sc.file_sha1(pins)}
-    assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 2 policy, 2 pinned, 11 none")
+    assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 4 policy, 2 pinned, 9 none")
     pins.write_text(json.dumps({"p_kp_q88": {"value": 5026}}))
     with pytest.raises(ValueError, match="p_kp_q88 lacks its value, its why or its rung"):
         built_on(first, tmp_path)
@@ -2618,13 +2647,15 @@ def test_a_held_field_stands_beside_what_its_rule_gives_and_one_with_nothing_to_
         f"recip_ke_q: held, {HOLDS['recip_ke_q']}; its rule gives {would}",
         "r_bemf_q12: left out, the servo's image has no such field yet; its rule gives 5120"]
     assert list(doc["fields"]) == [*first["fields"], *JOINED[1:]]
-    # a value carried from before the path is still at a scale nothing recorded: holding it gave it none
+    # a value carried from before the path is still at a scale nothing recorded: holding it gave it none; the
+    # soft limits, off with no margin share, are bound and no longer carried
     unknown = [cn.described(d)[0].split("; ")[1] for d in (first, doc)]
-    assert unknown == ["4 per-count at an unknown scale"] * 2
-    # the two the policy holds, and the range, the hold band, the stall speed and the position gain, whose
-    # entries it lacks: held, they have no source still, and the four fields of the angle map and the gear have one
-    assert sum("held" in e for e in doc["fields"].values()) == 7
-    assert cn.classes(doc)["none"] == cn.classes(first)["none"] - 4 == len(cn.unsourced(doc))
+    assert unknown == ["4 per-count at an unknown scale", "2 per-count at an unknown scale"]
+    # the two the policy holds, and the hold band, the stall speed and the position gain, whose entries it
+    # lacks: held, they have no source still, and the four fields of the angle map and the gear and the soft
+    # limits have one
+    assert sum("held" in e for e in doc["fields"].values()) == 5
+    assert cn.classes(doc)["none"] == cn.classes(first)["none"] - 6 == len(cn.unsourced(doc))
 
 
 def test_a_deviation_releases_a_hold_and_the_rest_of_the_policy_stands(holding, tmp_path):
@@ -3358,6 +3389,14 @@ def test_a_policy_in_degrees_is_that_many_counts_at_the_scale_of_the_count(tmp_p
                and "scale_points_sha1" not in e for e in soft)
     wide = context(tmp_path, theta=theta, policy={"soft_margin_share": 0.125})
     assert [count_rule(wide, n)["value"] for n in RANGE] == [raw(82 + span / 8), raw(3792 - span / 8)]
+    # a share of 0, or none, leaves both at 0, off, the servo then at its physical stops: no stops are read
+    for policy in ({"soft_margin_share": 0.0}, {"soft_margin_share": None}):
+        off = context(tmp_path, theta=theta, policy=policy)
+        assert [(e["value"], e["class"], e["inputs"]) for e in (count_rule(off, n) for n in RANGE)] == [
+            (0, "policy", [])] * 2
+        off.policies = {k: v for k, v in off.policies.items() if k != "soft_margin_share"}
+        off.table = None
+        assert [count_rule(off, n)["value"] for n in RANGE] == [0, 0]
     # the screens that protect say which way protects less, and the limits of motion are of the plant
     assert [cn.LOOSER[n] for n in SCREENS] == ["down", "up"] and cn.LOOSER["sensor_delta_max"] == "up"
     assert not {*MOTION, *RANGE, "pos_deadband_counts"} & cn.PROTECTION
@@ -4443,6 +4482,9 @@ def test_save_backs_up_saves_and_reads_back(target, bench, tmp_path, committed):
 
 def test_save_refuses_a_deviation(cli, bench, tmp_path, monkeypatch):
     monkeypatch.setattr(results, "ROOT", tmp_path)
+    # soft limits off, as a build with no margin share gives them, so the adopted set is what a build gives
+    bench.set("pos_min_soft_counts", 0)
+    bench.set("pos_max_soft_counts", 0)
     cli("adopt", "--from", str(record(tmp_path)))
     path = cn.set_path(PAIR)
     derived = tmp_path / "derived.json"

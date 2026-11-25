@@ -13,7 +13,7 @@ use osc_protocol::table::{CAP_EXPERIMENT, CAPABILITY_FLAGS};
 use super::battery;
 use super::pump::{read_i32, read_snapshot};
 use super::snapshot::{read_u16, read_u32};
-use crate::instrument::limits::{CLASS_R_MIN, DutyPlan, ServoLimits};
+use crate::instrument::limits::{CLASS_R_MIN, DutyPlan, ServoLimits, travel};
 use crate::instrument::regs::{calib, config, telemetry};
 use crate::instrument::units::{self, SenseParams};
 
@@ -31,9 +31,15 @@ pub(crate) fn read<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<ServoLimits> {
         i_lim: read_u16(c, id, config::CURRENT_LIMIT_COUNTS)?,
         i_cont: read_u16(c, id, config::I_CONT_COUNTS)?,
         tau_trip: read_u16(c, id, config::STALL_TAU_TRIP_COUNTS)?,
-        soft: (
-            read_i32(c, id, config::POS_MIN_SOFT_COUNTS)?,
-            read_i32(c, id, config::POS_MAX_SOFT_COUNTS)?,
+        soft: travel(
+            (
+                read_i32(c, id, config::POS_MIN_SOFT_COUNTS)?,
+                read_i32(c, id, config::POS_MAX_SOFT_COUNTS)?,
+            ),
+            (
+                read_i32(c, id, config::POS_MIN_PHYS_COUNTS)?,
+                read_i32(c, id, config::POS_MAX_PHYS_COUNTS)?,
+            ),
         ),
         raw: (
             read_u16(c, id, calib::RAW_MIN)?,

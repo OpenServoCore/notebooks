@@ -55,7 +55,7 @@ never in a sitting.
 """
 import math
 
-from oscnb import constants, postable, results, scorecard, widecodes
+from oscnb import constants, osc, postable, results, scorecard, widecodes
 
 STEP_SIZES_DEG = (2, 20, 60)
 STEP_HOLD_MS = (1200, 1500, 2000)   # per size, the settle and the 500 ms rest window
@@ -156,8 +156,10 @@ def held(doc, names):
 
 
 def guard_of(doc):
-    """The soft range a rung on constant set `doc` runs in."""
-    return held(doc, ("pos_min_soft_counts", "pos_max_soft_counts"))
+    """The soft range a rung on constant set `doc` runs in: its soft
+    limits, or its physical stops while those are 0 / 0, off."""
+    soft = held(doc, osc.SOFT)
+    return held(doc, osc.PHYS) if soft == (0, 0) else soft
 
 
 def center_of(guard):

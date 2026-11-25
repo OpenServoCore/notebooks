@@ -287,7 +287,7 @@ def capture(label=None, settings_file=None, servo=None, board=None):
     ts = sc.testset()
     inp = ts.inputs(servo, pair)
     sc.preflight(servo, board)
-    guard = (osc.get("pos_min_soft_counts"), osc.get("pos_max_soft_counts"))
+    guard = osc.travel()
     cpd = inp["counts_per_deg"]
     margin = ts.FIT_MARGIN_DEG * cpd
     lo, hi = math.ceil(guard[0] + margin), math.floor(guard[1] - margin)

@@ -242,8 +242,10 @@ class Bench(Servo):
     and the reboot. With `stale` every boot reads STAMP_MISMATCH, as an
     image whose stored stamp is from before its covered fields changed,
     and with `unblessed` a stamp does not clear it, as from a tool that
-    computes another. A write of a CONFIG or CALIB field or a
-    COMMIT leaves the data state STAMP_MISMATCH until a stamp. `drop`
+    computes another. The soft limits also take one write of both at
+    the low one's address, 0 / 0 among the pairs it takes. A write of
+    a CONFIG or CALIB field or a COMMIT leaves the data state
+    STAMP_MISMATCH until a stamp. `drop`
     names fields whose write is answered and not taken, `drift` a field
     whose write moves another too."""
 
@@ -313,6 +315,16 @@ class Bench(Servo):
         self.log.append(("write", addr, bytes(data)))
         if addr == self.FIELDS[widecodes.FIELD][0]:
             self.table[addr:addr + len(data)] = data
+            return
+        if addr == self.FIELDS["pos_min_soft_counts"][0]:
+            assert len(data) == 8, "the soft limits go as one write of both"
+            lo, hi = (int.from_bytes(data[k:k + 4], "little", signed=True) for k in (0, 4))
+            if (lo, hi) != (0, 0) and lo >= hi:
+                raise subprocess.CalledProcessError(1, ["osc", "write", hex(addr), bytes(data).hex()])
+            for name in ("pos_min_soft_counts", "pos_max_soft_counts"):
+                if name not in self.drop:
+                    self.set(name, lo if name == "pos_min_soft_counts" else hi)
+            self.data, self.stamp = "STAMP_MISMATCH", STALE
             return
         assert addr == postable.WINDOW_ADDR
         page, cmd = data[0], data[1]

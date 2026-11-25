@@ -87,3 +87,33 @@ def test_a_record_holds_a_tools_sha1_and_its_version_line_and_no_path(tmp_path):
         assert osc.identity() == {"sha1": hashlib.sha1(old.read_bytes()).hexdigest(), "version": None}
     with osc.using(tmp_path / "nowhere"):
         assert osc.identity() is None
+
+
+def test_the_travel_is_the_soft_limits_or_the_physical_stops_while_they_are_off(monkeypatch):
+    regs = {"pos_min_soft_counts": 314, "pos_max_soft_counts": 3560}
+    read = []
+
+    def get(name):
+        read.append(name)
+        return regs[name]
+
+    monkeypatch.setattr(osc, "get", get)
+    assert osc.travel() == (314, 3560) and read == list(osc.SOFT)
+    regs.update(pos_min_soft_counts=0, pos_max_soft_counts=0, pos_min_phys_counts=82, pos_max_phys_counts=3792)
+    assert osc.travel() == (82, 3792)
+    # one side 0 is a pair like any other
+    regs.update(pos_max_soft_counts=3560)
+    assert osc.travel() == (0, 3560)
+
+
+def test_the_soft_limits_go_as_one_write_of_both_at_the_low_ones_address(monkeypatch):
+    places = {"pos_min_soft_counts": (0x28, 4, b""), "pos_max_soft_counts": (0x2c, 4, b"")}
+    wrote = []
+    monkeypatch.setattr(osc, "field", places.get)
+    monkeypatch.setattr(osc, "write", lambda addr, data: wrote.append((addr, bytes(data))))
+    osc.set_soft(0, 0)
+    osc.set_soft(-50, 3560)
+    assert wrote == [(0x28, bytes(8)), (0x28, (-50).to_bytes(4, "little", signed=True) + (3560).to_bytes(4, "little"))]
+    places["pos_max_soft_counts"] = (0x30, 4, b"")
+    with pytest.raises(RuntimeError, match="does not place pos_max_soft_counts right behind"):
+        osc.set_soft(0, 0)
