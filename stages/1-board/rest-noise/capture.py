@@ -1,7 +1,8 @@
 """Stage 1, rest-noise: the raw channels with the bridge off, streamed at the
 control rate, at a 1S, a USB and a 2S supply level. Needs the board on the DPS with the load
 on its terminals (the bare 5 ohm resistor, which draws nothing at rest) and
-the `osc` and `osc-lab` tools.
+the `osc` and `osc-lab` tools. The chip's 1.2 V reference is the servo's boot
+reading, kept once in `vref_raw.txt`.
 
   uv run python stages/1-board/rest-noise/capture.py [N]    writes telemetry/<board>/rest-noise/capture-N
 """
@@ -13,6 +14,7 @@ REST_MS = 3000      # the longest burst the servo arms is 65535 rows, 3277 ms at
 
 out = capture.dataset(boards.DEFAULT, "rest-noise")
 bench.power_up(LEVELS[0] + bench.DIODE_V)
+bench.record_vref(out)
 for v in LEVELS:
     dps_read, vsys = bench.set_vsys(v)
     print(f"VSYS {v} V: rail reads {vsys:.3f} V, DPS {dps_read:.3f} V")

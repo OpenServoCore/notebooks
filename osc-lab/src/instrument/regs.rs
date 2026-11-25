@@ -138,20 +138,22 @@ pub mod telemetry {
     pub const OMEGA_HAT_SRC: Reg = reg(0x0222, 1);
     /// The tick block, `I_TICK_COUNTS..=SAMPLE_TICK`, written every control
     /// tick: what a TEL row's first chunk copies.
-    pub const I_TICK_COUNTS: Reg = reg(0x024a, 2);
-    pub const VDIFF_COUNTS: Reg = reg(0x024c, 2);
+    pub const I_TICK_COUNTS: Reg = reg(0x0246, 2);
+    pub const VDIFF_COUNTS: Reg = reg(0x0248, 2);
     /// Signed PWM compare counts; full scale is `calib::PWM_PERIOD_TICKS`.
-    pub const DUTY_TICKS: Reg = reg(0x0246, 2);
-    pub const POS: Reg = reg(0x0238, 2);
-    pub const CURRENT_TROUGH: Reg = reg(0x0248, 2);
-    pub const CURRENT_RAW: Reg = reg(0x0240, 2);
-    pub const VMOTOR_A: Reg = reg(0x0242, 2);
-    pub const VMOTOR_B: Reg = reg(0x0244, 2);
-    pub const VBUS_RAW: Reg = reg(0x023c, 2);
-    pub const NTC_RAW: Reg = reg(0x023e, 2);
-    pub const VREF_RAW: Reg = reg(0x023a, 2);
+    pub const DUTY_TICKS: Reg = reg(0x0242, 2);
+    pub const POS: Reg = reg(0x0236, 2);
+    pub const CURRENT_TROUGH: Reg = reg(0x0244, 2);
+    pub const CURRENT_RAW: Reg = reg(0x023c, 2);
+    pub const VMOTOR_A: Reg = reg(0x023e, 2);
+    pub const VMOTOR_B: Reg = reg(0x0240, 2);
+    pub const VBUS_RAW: Reg = reg(0x0238, 2);
+    pub const NTC_RAW: Reg = reg(0x023a, 2);
+    /// The chip's 1.2 V reference, read once at boot (REFS, not the tick
+    /// block); 0 = no reading.
+    pub const VREF_RAW: Reg = reg(0x0274, 2);
     /// `osc_servo_core::regions::telemetry::tick_flag` bits.
-    pub const TICK_FLAGS: Reg = reg(0x0252, 2);
+    pub const TICK_FLAGS: Reg = reg(0x024e, 2);
     /// Published at the medium step: a TEL row carries it as last
     /// published, up to a tick old.
     pub const VBUS_COUNTS: Reg = reg(0x0266, 2);

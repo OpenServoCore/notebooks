@@ -227,8 +227,8 @@ pub(crate) fn check_tel_chunks(chunks: Chunks) -> Result<Chunks> {
     Ok(chunks)
 }
 
-/// Chunks as a user writes them, `addr+len` joined by `,` (`0x238+2`,
-/// `0x238+2,0x246+8`; addresses hex or decimal), checked against the arm
+/// Chunks as a user writes them, `addr+len` joined by `,` (`0x236+2`,
+/// `0x236+2,0x242+8`; addresses hex or decimal), checked against the arm
 /// rules.
 pub(crate) fn parse_tel_chunks(text: &str) -> Result<Chunks> {
     let mut chunks = Chunks::NONE;
@@ -546,8 +546,8 @@ mod tests {
     use osc_protocol::tel::Chunk;
 
     /// The static-load row and the rest row the notebooks stream.
-    const TEL_LOAD: Chunks = Chunks::one(0x23c, 12);
-    const TEL_REST: Chunks = Chunks::one(0x23a, 12);
+    const TEL_LOAD: Chunks = Chunks::one(0x238, 12);
+    const TEL_REST: Chunks = Chunks::one(0x236, 12);
 
     fn fake(rate: BaudRate) -> (Client<FakePipe>, Id) {
         let pipe = FakePipe::new(rate, &[1]);
@@ -587,7 +587,7 @@ mod tests {
         );
         assert_eq!(
             err(TEL_RAW, BaudRate::B3000000, 8),
-            "TEL chunks 0x238+2,0x240+10 make 12 B rows; the servo streams rows of at most 8 B (its \
+            "TEL chunks 0x236+2,0x23c+10 make 12 B rows; the servo streams rows of at most 8 B (its \
              tel_row_bytes_max, protocol sec 5.6)"
         );
         assert!(err(Chunks::NONE, BaudRate::B3000000, 12).contains("not a row"));
@@ -617,8 +617,9 @@ mod tests {
 
     /// A burst through the in-process servo stack decodes, field for field,
     /// the table bytes its rows copied from the sim's samples: the rows the
-    /// notebooks stream, the rail estimate in a second chunk, and a row with
-    /// `tick_flags`. The window is the servo's `i_window_min_ticks` on the
+    /// notebooks stream, the rail estimate in a second chunk, a row with
+    /// `tick_flags`, and one with the boot reference, which the sim never
+    /// seeds. The window is the servo's `i_window_min_ticks` on the
     /// duty, or the flags themselves.
     #[test]
     fn bursts_decode_what_the_servo_copied() {
@@ -628,8 +629,9 @@ mod tests {
             TEL_RAW,
             TEL_LOAD,
             TEL_REST,
-            Chunks::two(Chunk::new(0x246, 8), one(t::VBUS_COUNTS)),
-            Chunks::two(Chunk::new(0x238, 4), one(t::TICK_FLAGS)),
+            Chunks::two(Chunk::new(0x242, 8), one(t::VBUS_COUNTS)),
+            Chunks::two(Chunk::new(0x236, 4), one(t::TICK_FLAGS)),
+            Chunks::two(Chunk::new(0x236, 4), one(t::VREF_RAW)),
         ] {
             let (mut c, id) = fake(BaudRate::B3000000);
             let floor = read_u16(&mut c, id, calib::I_WINDOW_MIN_TICKS).unwrap();
@@ -660,7 +662,7 @@ mod tests {
                     vmotor_b: sel(t::VMOTOR_B).then_some(s.vmotor_b),
                     vbus_raw: sel(t::VBUS_RAW).then_some(s.vbus_raw),
                     ntc_raw: sel(t::NTC_RAW).then_some(s.ntc_raw),
-                    vref_raw: sel(t::VREF_RAW).then_some(s.vref_raw),
+                    vref_raw: sel(t::VREF_RAW).then_some(0),
                     row: RowBytes::new(&table_row(chunks, |tb| {
                         tb.telemetry.tick = s;
                         tb.telemetry.estimates.vbus_counts = vbus;
@@ -687,9 +689,9 @@ mod tests {
 
     #[test]
     fn chunks_parse_as_the_user_writes_them() {
-        assert_eq!(parse_tel_chunks("0x238+2,0x240+10").unwrap(), TEL_RAW);
-        assert_eq!(parse_tel_chunks("0x23c+12").unwrap(), TEL_LOAD);
-        assert_eq!(parse_tel_chunks("570+12").unwrap(), TEL_REST);
+        assert_eq!(parse_tel_chunks("0x236+2,0x23c+10").unwrap(), TEL_RAW);
+        assert_eq!(parse_tel_chunks("0x238+12").unwrap(), TEL_LOAD);
+        assert_eq!(parse_tel_chunks("566+12").unwrap(), TEL_REST);
         assert_eq!(parse_tel_chunks(&chunks_text(&TEL_RAW)).unwrap(), TEL_RAW);
         assert!(parse_tel_chunks("0x228").is_err());
         assert!(parse_tel_chunks("0x224+2,0x228+2,0x22c+2").is_err());
@@ -702,7 +704,7 @@ mod tests {
     fn the_arm_is_the_chunks_then_the_count() {
         assert_eq!(
             tel_arm(&TEL_RAW, 4000),
-            [0x38, 0x02, 2, 0, 0x40, 0x02, 10, 0, 0xA0, 0x0F]
+            [0x36, 0x02, 2, 0, 0x3c, 0x02, 10, 0, 0xA0, 0x0F]
         );
     }
 

@@ -188,19 +188,20 @@ def flash(image, rate=FLASH_RATE):
 # vmotor_a, vmotor_b, duty_ticks. The six are contiguous in the table and fill
 # the 12-byte row, so the position, which a resistor has no use for, stays out
 # and every stream carries the rail and the board temperature.
-CHUNKS_RAW = "0x23c+12"
+CHUNKS_RAW = "0x238+12"
 # the rail, then current_raw to current_trough: the crest and the trough of the shunt with the taps and the duty, no NTC
-CHUNKS_TROUGH = "0x23c+2,0x240+10"
+CHUNKS_TROUGH = "0x238+2,0x23c+10"
 
-# The TEL row a rest stream wants: vref_raw, then the same six less the duty,
-# which a rest has no use for. vref_raw is the ADC's own 1.2 V reference, so
-# a rest stream carries VDD, which every other count is a share of.
-CHUNKS_REST = "0x23a+12"
+# The TEL row a rest stream wants: pos, then the same six less the duty, which
+# a rest has no use for. The ADC's own 1.2 V reference, which gives VDD, is
+# not in the tick block: the servo reads it once at boot, and a capture reads
+# it once by name (`bench.read_vref`).
+CHUNKS_REST = "0x236+12"
 
 # The TEL row a servo capture wants: pos, then current_raw to current_trough,
 # the crest and the trough of the shunt with the taps and the duty. The rail
 # and the NTC stay out of the row; the runner polls them before each segment.
-CHUNKS_SERVO = "0x238+2,0x240+10"
+CHUNKS_SERVO = "0x236+2,0x23c+10"
 
 
 def sweep(out, duty, window_ms=150, baseline_ms=1000, rest_ms=500,

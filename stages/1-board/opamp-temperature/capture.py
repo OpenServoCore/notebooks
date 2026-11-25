@@ -1,8 +1,9 @@
 """Stage 1, opamp-temperature: the current chain's gain and zero against
 board temperature. DC laps against the meter at each of four plateaus of a
 controlled heat source, the same one ntc-curve used, the board NTC riding in
-every stream for the temperature, and a rest stream with the chip's 1.2 V
-reference before each plateau's laps, so VDD is read at every temperature. Needs the board on the heater on the DPS,
+every stream for the temperature, and a rest stream before each plateau's
+laps. The chip's 1.2 V reference, which gives VDD, is the servo's boot reading,
+kept once in `vref_raw.txt`, not one a plateau. Needs the board on the heater on the DPS,
 the bare load and the DMM off the heater, and the `osc` and `osc-lab` tools. Run ntc-curve first, so the NTC reading is a temperature.
 
   uv run python stages/1-board/opamp-temperature/capture.py [ammeter|rs1] [N]
@@ -33,6 +34,7 @@ else:
     expect = "DC A"
 (out / "route.txt").write_text(route + "\n")
 bench.power_up(LEVELS[0] + bench.DIODE_V)
+bench.record_vref(out)
 with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect=expect), osc.Limit(laps.LIMIT_COUNTS):
     marks = capture.Marks(out)
     for p in PLATEAUS:
@@ -44,7 +46,7 @@ with b41t.Meter() as meter, meter.log(out / "dmm.csv", expect=expect), osc.Limit
         marks.mark(p)
         folder = out / p.replace(" ", "-")
         bench.set_vsys(REST_V)
-        # the bridge off for two seconds with vref_raw in every row: VDD at this plateau.
+        # the bridge off for two seconds
         # a 5 % rung of 50 ms is the smallest the sweep records; the rest before it is the capture
         osc.sweep(folder / "rest", ["5@50"], baseline_ms=REST_MS, rest_ms=200, dirs="fwd", tel_chunks=osc.CHUNKS_REST)
         laps.run(folder, LEVELS, "bare")

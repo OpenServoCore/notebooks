@@ -41,12 +41,31 @@ def set_volts(volts, hold_s=2.0):
         p.close()
 
 
+def read_vref():
+    """The chip's 1.2 V reference as the servo read it (`vref_raw`), one read
+    by name: counts, 0 when the servo holds no reading."""
+    return int(osc.get("vref_raw"))
+
+
+def record_vref(out):
+    """`read_vref` once, kept as `vref_raw.txt` in `out` for a capture whose
+    rest rows no longer carry the reference; returns the counts."""
+    vref = read_vref()
+    (out / "vref_raw.txt").write_text(f"{vref}\n")
+    print(f"vref_raw {vref} (the servo's boot reading)")
+    return vref
+
+
 def read_vsys(board=None):
     """The rail as the board's own tap reads it, at the VDD its 1.2 V reference
-    reads. Below the regulator's dropout the tap alone reads high, since every
-    count is a share of a sagging VDD, and a trim on it walks the wrong way."""
+    reads, the nominal VDD when the servo holds no reading. Below the
+    regulator's dropout the tap alone reads high, since every count is a share
+    of a sagging VDD, and a trim on it walks the wrong way. The reference is
+    not sampled beside the pot, so the horn's position does not enter it."""
     board = board or boards.BOARDS[boards.DEFAULT]
-    return float(board.rail_v(osc.get("vbus_raw"), osc.get("vref_raw")))
+    # the servo's boot reading until the firmware offers a refresh: a supply
+    # moved under the regulator's edge since boot is not in it
+    return float(board.rail_v(osc.get("vbus_raw"), read_vref()))
 
 
 def set_vsys(target, tol=0.03, tries=4):

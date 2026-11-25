@@ -235,9 +235,9 @@ pub struct Args {
     /// the row lacks the field (vbus is vbus_counts, current i_tick_counts,
     /// duty_counts duty_ticks, vdiff vdiff_counts), then appends one column
     /// for every other field the chunks carry whole, named and decoded by
-    /// the servo's descriptor, in table order: 0x238+2,0x260+10 appends
+    /// the servo's descriptor, in table order: 0x236+2,0x260+10 appends
     /// tau_d_counts, i_lim_counts, t_winding_cc, omega_bemf_cps.
-    #[arg(long, default_value = "0x238+2,0x240+10")]
+    #[arg(long, default_value = "0x236+2,0x23c+10")]
     tel_chunks: String,
     #[command(flatten)]
     pub(crate) guarded: Guarded,
@@ -2278,7 +2278,7 @@ mod tests {
             "--schedule",
             "goal:-50@20",
             "--tel-chunks",
-            "0x238+2,0x240+10",
+            "0x236+2,0x23c+10",
             "--current-cap-ma",
             "300",
             "--current-cap-ms",
@@ -3907,7 +3907,7 @@ mod tests {
         );
         assert_eq!(
             meta["tel_chunks"],
-            serde_json::json!([[0x238, 2], [0x240, 10]])
+            serde_json::json!([[0x236, 2], [0x23c, 10]])
         );
         assert_eq!(meta["deadman"]["ticks"], 20_000);
         assert_eq!(
@@ -4053,7 +4053,7 @@ mod tests {
     fn the_extra_range_rides_each_segments_poll() {
         use crate::rig::testkit::Sent;
         let plain = captured(EXTRA_SCHEDULE, None, None);
-        let with = captured(EXTRA_SCHEDULE, Some("0x238:2"), None);
+        let with = captured(EXTRA_SCHEDULE, Some("0x236:2"), None);
         plain.r.unwrap();
         with.r.unwrap();
         assert_eq!(plain.segments.lines().next(), Some(SEGMENTS_HEADER));
@@ -4071,14 +4071,14 @@ mod tests {
         );
         assert_eq!(
             with.meta["poll_extra"],
-            serde_json::json!({ "addr": 0x238, "len": 2 })
+            serde_json::json!({ "addr": 0x236, "len": 2 })
         );
         assert_eq!(with.meta["extra_poll_failures"], 0);
 
         assert_eq!(with.track, plain.track);
         assert_eq!(masked(&with.segments, 1), masked(&plain.segments, 0));
         assert_eq!(without_extra_keys(&with.meta), plain.meta);
-        let extra = Sent::Read(0x238, 2);
+        let extra = Sent::Read(0x236, 2);
         let polls: Vec<usize> = (0..with.sent.len())
             .filter(|&i| with.sent[i] == extra)
             .collect();
@@ -4138,7 +4138,7 @@ mod tests {
                 "--schedule".into(),
                 schedule.into(),
                 "--poll-extra".into(),
-                "0x238:2".into(),
+                "0x236:2".into(),
             ]
         };
         let schedule = train(3);
@@ -4156,7 +4156,7 @@ mod tests {
         assert_eq!(extras, vec![Some("ed07".to_string()); 3]);
         assert_eq!(ran.extra_failures, 0);
         let sent = r.sent();
-        let (poll, extra) = (Read(POLL_BASE, POLL_LEN), Read(0x238, 2));
+        let (poll, extra) = (Read(POLL_BASE, POLL_LEN), Read(0x236, 2));
         let goal = Hold(control::GOAL_POSITION.addr);
         let arm = Hold(control::CHUNK0_ADDR.addr);
         let second = sent.iter().enumerate().filter(|(_, s)| **s == goal).nth(1);
@@ -4213,13 +4213,13 @@ mod tests {
     fn the_columns_are_the_descriptor_fields_the_chunks_carry_whole() {
         let d = crate::descriptor::builtin();
         let header = |text: &str| Columns::new(&d, &chunks(text)).header();
-        assert_eq!(header("0x238+2,0x240+10"), CSV_HEADER);
+        assert_eq!(header("0x236+2,0x23c+10"), CSV_HEADER);
         assert_eq!(
-            header("0x238+2,0x260+10"),
+            header("0x236+2,0x260+10"),
             format!("{CSV_HEADER},tau_d_counts,i_lim_counts,t_winding_cc,omega_bemf_cps")
         );
         assert_eq!(
-            header("0x258+8,0x24e+4"),
+            header("0x258+8,0x24a+4"),
             format!("{CSV_HEADER},vmotor_a_trough,vmotor_b_trough,theta_hat_q16,omega_hat_cps")
         );
         assert_eq!(
@@ -4227,7 +4227,7 @@ mod tests {
             format!("{CSV_HEADER},i_lim_counts,t_winding_cc,omega_bemf_cps,r_hat_q12")
         );
         assert_eq!(
-            header("0x252+6"),
+            header("0x24e+6"),
             format!("{CSV_HEADER},tick_flags,sample_tick")
         );
         assert_eq!(header("0x25a+4"), CSV_HEADER, "half of each estimate");
@@ -4258,13 +4258,13 @@ mod tests {
         }
     }
 
-    /// A row the core table holds for 0x238+2,0x260+10 decodes the rotor's
+    /// A row the core table holds for 0x236+2,0x260+10 decodes the rotor's
     /// fields by their kinds, signed ones negative; a row short of a field
     /// leaves it empty.
     #[test]
     fn a_synthetic_row_decodes_the_rotor_columns() {
         use crate::instrument::frame::{decode_row, table_row};
-        let c = chunks("0x238+2,0x260+10");
+        let c = chunks("0x236+2,0x260+10");
         let row = table_row(c, |tb| {
             tb.telemetry.tick.pos = 1979;
             let e = &mut tb.telemetry.estimates;
@@ -4298,7 +4298,7 @@ mod tests {
             "--mode",
             "position",
             "--tel-chunks",
-            "0x238+2,0x260+10",
+            "0x236+2,0x260+10",
             "--schedule",
             "goal:2100@20",
         ]);

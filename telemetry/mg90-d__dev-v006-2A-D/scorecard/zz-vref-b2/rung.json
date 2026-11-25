@@ -1,0 +1,93 @@
+{
+  "label": "zz-vref-b2",
+  "fw": "d3e0b8a9",
+  "image_sha": "4614bdfa559e2c75be3bd16ba9c93c0f271a4de9",
+  "tool": {
+    "sha1": "e78c97962c3d55757ab286dfd52ddf184b0fbb97",
+    "version": null
+  },
+  "note": "vref boot gate (PR 571) line 6, image B (d3e0b8a9), free horn, one run per phase",
+  "utc": "2026-11-25T03:44:24+00:00",
+  "config_hash": "dbafe572318c1a2e04aa9af390a643172b93c239a0869d0ad39ab0345511cbdb",
+  "constants_hash": "317cd3d47ae08d233aaf85a9a30c836be8ddf76589c9c7399307afc641f69498",
+  "runs_asked": 1,
+  "set": {
+    "file": "stages/5-closed-loop/calibration/mg90-d__dev-v006-2A-D.constants.json",
+    "hash": {
+      "plant": "85a9215518087a07949cf0961324be9e1b84ef37e188182cf632d1dc53d8667a",
+      "protection": "6dc2d1003d18ba15489ba22a62e0c4aee89f9a023a2e05db1deac68c104a75fa",
+      "scales": "ef6744736cf115b75e8b441a2e21ea74772bbde04bbb9c12ebc6e2aef96e9ead",
+      "set": "afc7744b70383bd4c121028eabc19aeff42f8398348d2c3ae382962c160801a9"
+    },
+    "classes": {
+      "measured": 16,
+      "bench": 6,
+      "datasheet": 1,
+      "policy": 39,
+      "pinned": 1,
+      "none": 1
+    }
+  },
+  "deviation": null,
+  "protection": {
+    "hash": "6dc2d1003d18ba15489ba22a62e0c4aee89f9a023a2e05db1deac68c104a75fa",
+    "moved": {}
+  },
+  "motion": {
+    "from": "test set",
+    "velocity_limit_cps": 1500,
+    "accel_limit_q88": 3840,
+    "speed_deg_s": 74.528,
+    "accel_deg_s2": 1490.6
+  },
+  "wide_goals": [
+    {
+      "stuck_code": 511,
+      "side": "above",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 511,
+      "side": "below",
+      "goal_counts": 473,
+      "raw_counts": 515
+    },
+    {
+      "stuck_code": 1023,
+      "side": "above",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 1023,
+      "side": "below",
+      "goal_counts": 961,
+      "raw_counts": 1029
+    },
+    {
+      "stuck_code": 2047,
+      "side": "above",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2047,
+      "side": "below",
+      "goal_counts": 2035,
+      "raw_counts": 2053
+    },
+    {
+      "stuck_code": 2559,
+      "side": "above",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    },
+    {
+      "stuck_code": 2559,
+      "side": "below",
+      "goal_counts": 2607,
+      "raw_counts": 2563
+    }
+  ]
+}

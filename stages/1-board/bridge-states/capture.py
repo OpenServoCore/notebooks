@@ -76,7 +76,7 @@ LADDER = DUTIES + [100]
 # vbus_raw, then current_raw, vmotor_a, vmotor_b, duty_ticks and current_trough,
 # 12 B. The trough shunt is the off phase under slow decay and the drive under
 # fast. The rail tap takes ntc_raw's place, and osc-lab writes no trough taps.
-ROW = "0x23c+2,0x240+10"
+ROW = "0x238+2,0x23c+10"
 # (folder, load between MOT_A and MOT_B), each change adding or removing one part
 WIRINGS = [
     ("r", "the bare resistor alone"),
