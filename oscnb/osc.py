@@ -136,6 +136,28 @@ def set_(field, value):
     run("set", field, value)
 
 
+SOFT = ("pos_min_soft_counts", "pos_max_soft_counts")
+PHYS = ("pos_min_phys_counts", "pos_max_phys_counts")
+
+
+def travel():
+    """The servo's travel, (low, high) counts: its soft limits, or its
+    physical stops while those are 0 / 0, off (protocol sec 5.8; core
+    regions/config.rs ConfigPosSoft::or_stops)."""
+    soft = tuple(get(f) for f in SOFT)
+    return soft if soft != (0, 0) else tuple(get(f) for f in PHYS)
+
+
+def set_soft(lo, hi):
+    """Both soft limits in one write, volatile until a SAVE: the servo
+    checks each side against the other as stored, so 0 / 0, off, is
+    reached in no other way (protocol sec 5.8)."""
+    lo_at, hi_at = field(SOFT[0]), field(SOFT[1])
+    if lo_at is None or hi_at is None or lo_at[0] + lo_at[1] != hi_at[0]:
+        raise RuntimeError(f"the servo's descriptor does not place {SOFT[1]} right behind {SOFT[0]}")
+    write(lo_at[0], int(lo).to_bytes(4, "little", signed=True) + int(hi).to_bytes(4, "little", signed=True))
+
+
 def write(addr, data):
     """`osc write`: raw bytes at a table address, committed."""
     run("write", f"0x{addr:x}", bytes(data).hex())

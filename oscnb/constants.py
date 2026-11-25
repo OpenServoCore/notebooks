@@ -1376,8 +1376,12 @@ def in_counts(key, per_tick=False):
 
 def soft_limit(high):
     """A soft limit, counts: the policy's share of the stops' span
-    inside the low stop, or inside the high one."""
+    inside the low stop, or inside the high one. A share of 0, or none,
+    leaves both at 0, off: the servo then holds to its physical stops
+    (protocol sec 5.8)."""
     def counts(c):
+        if not c.policies.get("soft_margin_share"):
+            return 0
         share = c.policy("soft_margin_share")
         lo, hi = c.stops
         return hi - share * (hi - lo) if high else lo + share * (hi - lo)
@@ -2695,8 +2699,9 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=
     (`winding_step`), with the gate's lines or ahead of the writes. The
     writes are the slots, the stops, the table, then the other fields
     that differ in the servo's table order, each read back, a field
-    the servo refuses tried once more after the rest. The
-    state read back whole must then be the set, and only then is it
+    the servo refuses tried once more after the rest. The soft limits
+    go whole, both in one write, where either differs (`osc.set_soft`).
+    The state read back whole must then be the set, and only then is it
     stamped, no save, and its data state required clean. A refusal
     after the first write reboots the servo onto its saved state and
     says so. `state` is the servo's state where the caller has just
@@ -2725,17 +2730,32 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=
     differ = [n for n in state["writable"] if n in doc["fields"] and state["fields"][n] != doc["fields"][n]["value"]]
     wrote = []
 
-    def put(name):
-        arg = plain(doc["fields"][name]["value"])
+    def value(name):
+        return doc["fields"][name]["value"] if name in doc["fields"] else state["fields"][name]
+
+    def put(names):
+        args = [plain(value(n)) for n in names]
         try:
-            osc.set_(name, arg)
+            if names == osc.SOFT:
+                osc.set_soft(*map(int, args))
+            else:
+                osc.set_(names[0], args[0])
         except subprocess.CalledProcessError:
-            raise Rejected(f"{name}: the servo refused {arg}") from None
-        wrote.append(name)
-        back = osc.get(name)
-        if not settings.same(arg, back):
-            raise settings.Refused(f"{name}: wrote {arg}, read back {back}")
-        print(f"{name}: {state['fields'][name]} -> {doc['fields'][name]['value']}")
+            raise Rejected(f"{' and '.join(names)}: the servo refused {' and '.join(args)}") from None
+        for name, arg in zip(names, args):
+            wrote.append(name)
+            back = osc.get(name)
+            if not settings.same(arg, back):
+                raise settings.Refused(f"{name}: wrote {arg}, read back {back}")
+            print(f"{name}: {state['fields'][name]} -> {value(name)}")
+
+    def units(names):
+        out = []
+        for n in names:
+            unit = osc.SOFT if n in osc.SOFT else (n,)
+            if unit not in out:
+                out.append(unit)
+        return out
 
     try:
         if slots is not None and bytes.fromhex(state["wide_codes"]) != bytes(slots["slots"]):
@@ -2743,22 +2763,22 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=
             data, old = widecodes.write_slots(bytes(slots["slots"]))
             print(f"{SLOTS}: {old.hex(' ')} -> {data.hex(' ')}")
         for name in (n for n in STOPS if n in differ):
-            put(name)
+            put((name,))
         if table is not None:
             wrote.append("position table")
             postable.install_table(table)
             print(f"position table: {state['pos_table']['state']} -> {doc['pos_table']['state']}, "
                   f"{postable.PAGES} pages read back")
-        pending = [n for n in differ if n not in STOPS]
+        pending = units([n for n in differ if n not in STOPS])
         for last in (False, True):
             again = []
-            for name in pending:
+            for unit in pending:
                 try:
-                    put(name)
+                    put(unit)
                 except Rejected:
                     if last:
                         raise
-                    again.append(name)
+                    again.append(unit)
             pending = again
         if wrote:
             state = sc.servo_state()

@@ -506,6 +506,8 @@ def test_inputs_come_through_the_chain():
 
 
 PAIR = sc.pair_of(SERVO, BOARD)
+# the fake servo's soft range held as it stands, which a build with no margin share would turn off
+SOFT_HELD = {n: "the fake servo's own soft range" for n in ("pos_min_soft_counts", "pos_max_soft_counts")}
 RESISTANCE = results.path("3-servo", "resistance", PAIR)      # the pair's stage 3 result of record
 
 
@@ -544,6 +546,7 @@ def bus(monkeypatch, tmp_path):
     record = tmp_path / "servo.json"
     record.write_text(json.dumps(sc.servo_state()))
     adopted, _ = cn.adopt(PAIR, record, root=tmp_path)
+    cn.set_path(PAIR, tmp_path).with_name(cn.POLICY).write_text(json.dumps({"hold": SOFT_HELD}))
     state["set"] = cn.load(cn.write(cn.build(PAIR, adopted, root=tmp_path)[0], cn.set_path(PAIR, tmp_path)))
     state["servo"].log.clear()
     return state
@@ -698,7 +701,7 @@ def test_a_rung_releases_a_hold_and_records_the_field_of_record_beside_deviated(
     dst.parent.mkdir(parents=True)
     shutil.copy(RESISTANCE, dst)
     cn.set_path(PAIR, tmp_path).with_name(cn.POLICY).write_text(json.dumps({
-        "rule": {"r_q12": "r.rails_fit"}, "hold": {"r_q12": "it moves on a rung of its own"}}))
+        "rule": {"r_q12": "r.rails_fit"}, "hold": {**SOFT_HELD, "r_q12": "it moves on a rung of its own"}}))
     held, _ = cn.build(PAIR, bus["set"], root=tmp_path)
     cn.write(held, cn.set_path(PAIR, tmp_path))
     e = held["fields"]["r_q12"]
@@ -719,7 +722,7 @@ def test_a_rung_releases_a_hold_and_records_the_field_of_record_beside_deviated(
 
 # --- the limits of motion a rung runs at ---
 
-DEFAULT_200 = {"velocity_limit_deg_s": 200.0, "accel_limit_deg_s2": 4000.0}
+DEFAULT_200 = {"velocity_limit_deg_s": 200.0, "accel_limit_deg_s2": 4000.0, "hold": SOFT_HELD}
 
 
 def default_200(bus, root):
@@ -1104,6 +1107,20 @@ def test_a_rung_whose_set_does_not_stand_is_refused_with_the_bus_untouched(bus, 
     assert bus["log"] == [] and bus["servo"].log == []
 
 
+def test_a_set_with_its_soft_limits_off_runs_between_its_physical_stops():
+    def doc(lo, hi):
+        values = {"pos_min_soft_counts": lo, "pos_max_soft_counts": hi, "pos_min_phys_counts": 82,
+                  "pos_max_phys_counts": 3792}
+        return {"fields": {n: {"value": v} for n, v in values.items()}}
+
+    assert TS.guard_of(doc(314, 3560)) == (314, 3560)
+    assert TS.guard_of(doc(0, 0)) == (82, 3792)
+    off = doc(0, 0)
+    del off["fields"]["pos_max_phys_counts"]
+    with pytest.raises(SystemExit, match="holds no pos_max_phys_counts"):
+        TS.guard_of(off)
+
+
 def test_the_test_set_is_planned_from_the_rungs_derived_set(bus, tmp_path):
     # the soft range the plan runs in is the derived set's, read off no servo
     f = deviation(tmp_path, "narrow", pos_min_soft_counts=400, pos_max_soft_counts=3500)
@@ -1308,7 +1325,8 @@ def test_an_ab_runs_each_side_on_its_own_derived_set(ab_bench, bus, tmp_path):
     for k in (1, 2):
         expected += [("set", "p_kp_q88", "5026"), ("run", "stamp"), ("capture", "11-a", f"run-{k}", 5026),
                      ("run", "reboot"),
-                     ("set", "pos_min_soft_counts", "400"), ("set", "p_kp_q88", "6000"), ("run", "stamp"),
+                     ("write", 0x28, (400).to_bytes(4, "little") + (3560).to_bytes(4, "little")),
+                     ("set", "p_kp_q88", "6000"), ("run", "stamp"),
                      ("capture", "11-b", f"run-{k}", 6000), ("run", "reboot")]
     assert events(bus) == expected
     hashes = []

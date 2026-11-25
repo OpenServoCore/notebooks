@@ -1,5 +1,6 @@
 //! The servo's own limits, as a drive plans against them: the current limit
-//! and the stall settings from CONFIG, the travel from the soft limits, and
+//! and the stall settings from CONFIG, the travel from the soft limits (or
+//! the physical stops while those are off), and
 //! the winding R and the rail that turn a duty into a stall current. The
 //! host reads the fields; everything decided from them lives here.
 
@@ -53,6 +54,12 @@ pub fn guards(soft: (u16, u16)) -> (u16, u16) {
     )
 }
 
+/// The travel soft limits `soft` hold to: as they are, or the physical
+/// stops `phys` while they are 0 / 0, off (protocol sec 5.8).
+pub fn travel(soft: (i32, i32), phys: (i32, i32)) -> (i32, i32) {
+    if soft == (0, 0) { phys } else { soft }
+}
+
 /// Soft limits spanning the whole pot: the board default, or limits a
 /// widened run never put back.
 pub fn is_board_default(soft: (i32, i32)) -> bool {
@@ -87,6 +94,8 @@ pub struct ServoLimits {
     pub i_cont: u16,
     /// `stall_tau_trip_counts`: the collision trip.
     pub tau_trip: u16,
+    /// The travel: the soft limits, or the physical stops while those are
+    /// off ([`travel`]).
     pub soft: (i32, i32),
     /// The pot stops, `raw_min` and `raw_max`.
     pub raw: (u16, u16),
@@ -104,7 +113,7 @@ pub struct ServoLimits {
 /// Why a drive is refused before anything moves.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Refusal {
-    /// The soft limits are not a calibrated range.
+    /// The travel is not a calibrated range.
     Uncalibrated { soft: (i32, i32) },
     /// A deliberate stall that would draw more than the current limit.
     StallOverLimit {
@@ -141,8 +150,9 @@ impl fmt::Display for Refusal {
         match self {
             Refusal::Uncalibrated { soft } => write!(
                 f,
-                "the servo's soft position limits {}..{} are not a calibrated range: run \
-                 `osc cal` first",
+                "the servo's travel {}..{} (its soft limits, or its physical stops while those \
+                 are off) is not a calibrated range: run `osc-ident run` and `osc-ident save` \
+                 first",
                 soft.0, soft.1
             ),
             Refusal::StallOverLimit {
@@ -268,7 +278,7 @@ impl ServoLimits {
         (self.r_q12 != 0 && self.vbus != 0).then_some(self.r_q12 as f64 / 4096.0)
     }
 
-    /// Soft limits inside the pot and in order: `osc cal` has run.
+    /// A travel inside the pot and in order: the stops have been found.
     pub fn calibrated(&self) -> bool {
         let (lo, hi) = self.soft;
         !is_board_default(self.soft) && lo >= 0 && hi <= POT_MAX && lo < hi
@@ -448,6 +458,30 @@ mod tests {
     }
 
     #[test]
+    fn soft_limits_of_0_0_are_off_and_the_physical_stops_stand_in() {
+        assert_eq!(travel((0, 0), (82, 3792)), (82, 3792));
+        assert_eq!(travel((314, 3560), (82, 3792)), (314, 3560));
+        assert_eq!(
+            travel((0, 3560), (-100, 3792)),
+            (0, 3560),
+            "one side 0 is a pair"
+        );
+        let off = ServoLimits {
+            soft: travel((0, 0), (82, 3792)),
+            ..mg90()
+        };
+        assert_eq!(off.envelope((None, None)).unwrap(), (182, 3692));
+        let fresh = ServoLimits {
+            soft: travel((0, 0), (0, 4095)),
+            ..mg90()
+        };
+        assert!(
+            fresh.envelope((None, None)).is_err(),
+            "the board's stops are no calibration"
+        );
+    }
+
+    #[test]
     fn the_abort_sits_a_quarter_over_the_current_limit() {
         assert_eq!(mg90().abort_default(), 350);
         let big = ServoLimits {
@@ -509,7 +543,11 @@ mod tests {
             let lim = ServoLimits { soft, ..mg90() };
             let err = lim.envelope((None, None)).unwrap_err();
             assert_eq!(err, Refusal::Uncalibrated { soft });
-            assert!(err.to_string().ends_with("run `osc cal` first"), "{err}");
+            assert!(
+                err.to_string()
+                    .ends_with("run `osc-ident run` and `osc-ident save` first"),
+                "{err}"
+            );
         }
     }
 

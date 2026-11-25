@@ -229,6 +229,17 @@ def test_a_capture_sweeps_the_soft_range_less_the_margin_under_the_speed_and_res
     assert wc.latest(KEY) == out
 
 
+def test_a_capture_with_the_soft_limits_off_sweeps_the_physical_stops_less_the_margin(bench, monkeypatch):
+    regs = {"torque_enable": "off", "pos_min_soft_counts": 0, "pos_max_soft_counts": 0, "pos_min_phys_counts": 314,
+            "pos_max_phys_counts": 3560}
+    monkeypatch.setattr(sc.osc, "get", regs.__getitem__)
+    out = wc.capture(servo=SERVO, board=BOARD)
+    margin = TS.FIT_MARGIN_DEG * 18.9
+    plan = json.loads((out / "plan.json").read_text())
+    assert plan["guard_counts"] == [314, 3560]
+    assert wc.swept(plan) == (math.ceil(314 + margin), math.floor(3560 - margin))
+
+
 def test_a_capture_restores_after_an_abort_and_refuses_before_anything_moves(bench):
     bench["abort"] = True
     with pytest.raises(RuntimeError, match="aborted"):

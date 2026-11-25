@@ -18,7 +18,7 @@ use super::servo::Servo;
 use super::snapshot::{read_bool, read_u16};
 use crate::instrument::burst::{self, ArmSeen, BurstIo, Capture, CaptureCfg, Pre};
 use crate::instrument::frame::{StreamAssembler, TelFrame, TelemetrySnapshot, chunks_text};
-use crate::instrument::limits::{DEADMAN_TICKS, PermitLease};
+use crate::instrument::limits::{DEADMAN_TICKS, PermitLease, travel};
 use crate::instrument::regs::{Reg, calib, config, control, telemetry};
 use crate::instrument::units::{self, SenseParams};
 
@@ -526,9 +526,15 @@ fn arm_seen<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<ArmSeen> {
         vbus_counts: tel.vbus_counts,
         mv_per_count: units::volts_per_count(&sense) * 1000.0,
         pos: tel.pos,
-        soft: (
-            read_i32(c, id, config::POS_MIN_SOFT_COUNTS)?,
-            read_i32(c, id, config::POS_MAX_SOFT_COUNTS)?,
+        soft: travel(
+            (
+                read_i32(c, id, config::POS_MIN_SOFT_COUNTS)?,
+                read_i32(c, id, config::POS_MAX_SOFT_COUNTS)?,
+            ),
+            (
+                read_i32(c, id, config::POS_MIN_PHYS_COUNTS)?,
+                read_i32(c, id, config::POS_MAX_PHYS_COUNTS)?,
+            ),
         ),
         limit_flags: tel.limit_flags,
         fault_flags: tel.fault_flags,

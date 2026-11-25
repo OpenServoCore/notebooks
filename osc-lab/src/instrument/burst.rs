@@ -226,7 +226,8 @@ pub struct ArmSeen {
     pub vbus_counts: u16,
     /// Millivolts a vcount of the terminal taps.
     pub mv_per_count: f64,
-    /// Raw `pos`, and the soft limits it must sit strictly inside.
+    /// Raw `pos`, and the travel it must sit strictly inside: the soft
+    /// limits, or the physical stops while those are off.
     pub pos: u16,
     pub soft: (i32, i32),
     pub limit_flags: u8,
