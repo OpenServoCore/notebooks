@@ -268,8 +268,8 @@ LOOSER = {
     "duty_max_q15": "up",
     # the one thermal limit: the overtemperature fault latches while the winding estimate reads it or more
     "cutoff_cc": "up",
-    # the fault under the floor; the slope of the fold over it, where 0 turns the fold off
-    "v_undervolt_counts": "down", "rail_fold_q8": "judged",
+    # the slope of the rail fold over the board's floor, where 0 turns the fold off
+    "rail_fold_q8": "judged",
     "pos_error_counts": "up", "pos_error_time_ticks": "up",
     # the most the output ever turns at, which protects the brushes
     "speed_ceiling_cps": "up",
@@ -291,6 +291,8 @@ LOOSER = {
 RETIRED = {
     # where the winding estimate began to fold the current limit, under the cutoff
     "derate_start_cc": "up",
+    # the undervolt fault's floor at the rail: no fault watches the supply, and the fold's floor is the board's
+    "v_undervolt_counts": "down",
     # the winding's resistance at 25 C, a record a host kept: r_q12 is stated at 25 C now
     "r0_q12": None,
     # the off-time of open-loop drive, the brake or the coast of fast decay: the drive has slow decay alone
@@ -807,8 +809,9 @@ class Context:
         return quantity[self.side.get(f"{name}:{'.'.join(path)}", "value")]
 
     def reg(self, kind, key):
-        """`key` of the pair's registry entry of `kind`."""
-        if key not in self.registry.get(kind, {}):
+        """`key` of the pair's registry entry of `kind`; a key the entry
+        holds as None it has not recorded."""
+        if self.registry.get(kind, {}).get(key) is None:
             raise Missing(f"the registry has no {kind} {key} for {self.pair}")
         value = self.registry[kind][key]
         self.inputs.setdefault("registry", {}).setdefault(kind, {})[key] = value
@@ -1668,23 +1671,16 @@ def duty_max(c):
     return share * DUTY_FULL_Q15
 
 
-# The undervolt floor is the policy's volts at the rail as the rail tap
-# reads them, through the board's measured rail line, its offset with
-# it (core kernel/phases/slow.rs compares the filtered tap). The rail
-# fold's slope is the admittance of the source the policy designs for,
-# shunt counts per rail count: the ceiling it puts on the current
-# reaches zero at the floor (core kernel/phases/loops/limits.rs
-# update_rail).
-@rule("v_undervolt_counts", "v_undervolt.rail", kind="u16", unit="vcounts", cls="policy",
-      mirrors="core kernel/phases/slow.rs slow, regions/config.rs vmotor_counts")
-def v_undervolt(c):
-    return c.q(CHAIN, "rail_offset_counts") + c.policy("v_undervolt_v") * c.q(CHAIN, "rail_counts_per_v")
-
-
-@rule("rail_fold_q8", "rail_fold.source", kind="u16", unit="ccounts/vcount", q=8, cls="policy",
+# The rail fold's slope is the admittance of the source the board is
+# designed for, its entry's `rail_source_mohm`, shunt counts per rail
+# count through the measured chains: the ceiling it puts on the current
+# reaches zero at the board's rail floor (core
+# kernel/phases/loops/limits.rs update_rail). The source is a choice
+# the board file makes, so the field is of class `policy`.
+@rule("rail_fold_q8", "rail_fold.board", kind="u16", unit="ccounts/vcount", q=8, cls="policy",
       mirrors="core kernel/phases/loops/limits.rs update_rail, regions/config.rs rail_fold_q8")
 def rail_fold(c):
-    return shunt_counts_per_a(c) / (c.q(CHAIN, "rail_counts_per_v") * c.policy("rail_source_ohm"))
+    return shunt_counts_per_a(c) * 1000 / (c.q(CHAIN, "rail_counts_per_v") * c.reg("board", "rail_source_mohm"))
 
 
 # --- the values read off the maker's sheet ---

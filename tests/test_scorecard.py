@@ -2287,8 +2287,12 @@ def test_a_deviation_the_set_of_record_has_overtaken_is_refused_and_the_set_bind
         # no hold is left for it to release, and the set binds each field it released by its rule, with no
         # value beside it; a literal it pinned is the value the set's rule gives
         assert not set(release) & set(policy["hold"]), name
+        # the undervolt floor's step released a field the firmware has since taken out: the set holds none
+        gone = [n for n in release if n in cn.RETIRED]
+        assert gone == (["v_undervolt_counts"] if name == "protection-undervolt" else []), name
+        assert not set(gone) & set(fields), name
         assert all("held" not in fields[n] and "would_be" not in fields[n] and "rule" in fields[n]
-                   for n in (*release, *pins)), name
+                   for n in (*release, *pins) if n not in gone), name
         assert all(fields[n]["value"] == pin["value"] and fields[n]["class"] == "measured"
                    for n, pin in pins.items()), name
         with pytest.raises(ValueError, match=re.escape(why.format(name, ", ".join(release)))):

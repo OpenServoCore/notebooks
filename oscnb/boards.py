@@ -59,13 +59,16 @@ class Board:
     v_window_min_ticks: int = 93
     # the firmware's compiled board constants, not measurements: the settle
     # gain the image multiplies a shunt sample by, Q15 words in 8-tick bands
-    # of drive width from the start, 1 past the table, and the bridge's
-    # shortest pulse, under which a drive is no pulse. Copied from the board
-    # file for a notebook that replays the image's integers; None on a board
-    # whose board file is not copied here
+    # of drive width from the start, 1 past the table, the bridge's
+    # shortest pulse, under which a drive is no pulse, and the supply's
+    # source resistance the image seeds the rail fold's slope for. Copied
+    # from the board file for a notebook that replays the image's integers
+    # and for the rail fold's rule; None on a board whose board file is not
+    # copied here
     i_settle_start_ticks: int | None = None
     i_settle_q15: tuple | None = None
     bridge_min_ticks: int | None = None
+    rail_source_mohm: int | None = None
     notes: str = ""
 
     # --- volts ---
@@ -217,6 +220,9 @@ BOARDS = {
                       33213, 33156, 33103, 33052, 33020, 32982, 32938, 32900,
                       32868, 32841, 32824, 32806, 32785),
         bridge_min_ticks=27,
+        # firmware/boards/osc-dev-v006/board.toml, protection rail_source_mohm:
+        # about what a USB lead and its connectors add
+        rail_source_mohm=800,
         notes="Rs1 60 mOhm, a JIERR JER1206F1R060 metal alloy 1206 part, 1 %, 50 ppm per C, 1 W to 70 C, on Kelvin pads, with the bare op-amp at Rf 6k4 / Rg 430. Terminal taps 6k4 over 1k6 "
               "returned to the VB node from 430 / 100. VSNS 6k4 / 1k6 to ground. 1k5 pull-ups from "
               "3V3 to both op-amp inputs, hand-soldered 1 % thick film. A twisted pair soldered to the Rs1 pads for the meter. Every value "
