@@ -64,6 +64,27 @@ pub mod calib {
     pub const RAIL_DROP_MV: Reg = reg(0x00ca, 2);
     /// The PWM period, compare counts: TEL `duty_counts`' full scale. RO.
     pub const PWM_PERIOD_TICKS: Reg = reg(0x00d0, 2);
+    /// The board facts block (protocol sec 5.5), all RO, `NTC_SITE..=
+    /// SHUNT_SETTLE_Q4` in one READ. `NTC_SITE` 0 is an image older than it.
+    pub const BOARD: Reg = reg(0x00e3, 75);
+    /// 1 air, 2 motor can.
+    pub const NTC_SITE: Reg = reg(0x00e3, 1);
+    pub const BRIDGE_MIN_TICKS: Reg = reg(0x00e4, 2);
+    pub const I_SETTLE_START_TICKS: Reg = reg(0x00e6, 2);
+    /// 24 LE u16 Q15 words: the board's table, then 0s.
+    pub const I_SETTLE_Q15: Reg = reg(0x00e8, 48);
+    pub const OC_TRIP_MA: Reg = reg(0x0118, 2);
+    pub const OC_TRIP_US: Reg = reg(0x011a, 2);
+    pub const RAIL_SOURCE_MOHM: Reg = reg(0x011c, 2);
+    pub const WINDOW_SCALE_Q15: Reg = reg(0x011e, 2);
+    /// i16.
+    pub const TERMINAL_OFFSET_Q4: Reg = reg(0x0120, 2);
+    pub const BRAKE_LOOP_MOHM: Reg = reg(0x0122, 2);
+    pub const CREST_SAMPLE_TICKS: Reg = reg(0x0124, 2);
+    pub const SHUNT_ON_LAG_Q4: Reg = reg(0x0126, 2);
+    pub const TAP_ON_LAG_Q4: Reg = reg(0x0128, 2);
+    pub const OFF_LAG_Q4: Reg = reg(0x012a, 2);
+    pub const SHUNT_SETTLE_Q4: Reg = reg(0x012c, 2);
 }
 
 pub mod control {
@@ -223,6 +244,21 @@ mod tests {
         ("vbus_div_bot_ohm", calib::VBUS_DIV_BOT_OHM),
         ("rail_drop_mv", calib::RAIL_DROP_MV),
         ("pwm_period_ticks", calib::PWM_PERIOD_TICKS),
+        ("ntc_site", calib::NTC_SITE),
+        ("bridge_min_ticks", calib::BRIDGE_MIN_TICKS),
+        ("i_settle_start_ticks", calib::I_SETTLE_START_TICKS),
+        ("i_settle_q15", calib::I_SETTLE_Q15),
+        ("oc_trip_ma", calib::OC_TRIP_MA),
+        ("oc_trip_us", calib::OC_TRIP_US),
+        ("rail_source_mohm", calib::RAIL_SOURCE_MOHM),
+        ("window_scale_q15", calib::WINDOW_SCALE_Q15),
+        ("terminal_offset_q4", calib::TERMINAL_OFFSET_Q4),
+        ("brake_loop_mohm", calib::BRAKE_LOOP_MOHM),
+        ("crest_sample_ticks", calib::CREST_SAMPLE_TICKS),
+        ("shunt_on_lag_q4", calib::SHUNT_ON_LAG_Q4),
+        ("tap_on_lag_q4", calib::TAP_ON_LAG_Q4),
+        ("off_lag_q4", calib::OFF_LAG_Q4),
+        ("shunt_settle_q4", calib::SHUNT_SETTLE_Q4),
         ("torque_enable", control::TORQUE_ENABLE),
         ("stall_permit", control::STALL_PERMIT),
         ("mode", control::MODE),
@@ -283,6 +319,11 @@ mod tests {
             assert_eq!(f.addr, reg.addr, "{name} addr");
             assert_eq!(f.width, reg.width as u16, "{name} width");
         }
+        assert_eq!(calib::BOARD.addr, calib::NTC_SITE.addr);
+        assert_eq!(
+            calib::BOARD.addr + calib::BOARD.width as u16,
+            calib::SHUNT_SETTLE_Q4.addr + calib::SHUNT_SETTLE_Q4.width as u16
+        );
         assert_eq!(control::INJECT.addr, control::INJECT_ACCEL_Q88.addr);
         assert_eq!(
             control::INJECT.addr + control::INJECT.width as u16,

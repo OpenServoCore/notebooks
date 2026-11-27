@@ -3858,6 +3858,7 @@ mod tests {
             "model",
             "plant",
             "sense",
+            "board",
             "tick_hz",
             "pwm_period_ticks",
             "vbus_counts",
