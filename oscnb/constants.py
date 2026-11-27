@@ -67,7 +67,7 @@ the control table had a field for it, loads as it was written, its
 `hash.limits` covering that block alone.
 
     uv run python -m oscnb.constants adopt --from SERVO_JSON [--origin TEXT]
-    uv run python -m oscnb.constants build [--out PATH [--deviation FILE]] [--protection NAME ...]
+    uv run python -m oscnb.constants build [--out PATH [--deviation FILE | --default]] [--protection NAME ...]
     uv run python -m oscnb.constants status
     uv run python -m oscnb.constants check
     uv run python -m oscnb.constants install [--protection NAME ...] [--loosen NAME ...]
@@ -112,7 +112,11 @@ it `needs`, so a field whose rule reads one has no source, and under
 `hold` the fields it holds back with the reason: a held field stays at
 the value the set had, with what its rule gives beside it (`would_be`)
 and what the rule read still listed, and one the set never held stays
-out of it, said with what its rule gives; `<pair>.pins.json` the
+out of it, said with what its rule gives. Six of its entries are each
+one form (FORMS): the fixed form, the value the record decided, or the
+rule form, a share or a multiple of what is measured. `default-policy.json`
+beside it holds the Default policy's rule forms, which `build --default`
+reads over the policy file, to `--out`. `<pair>.pins.json` the
 literals typed for one pair, each with its why and the rung that chose
 it. `<pair>.sources.json` says of one pair's fields what no rule can:
 under `bench` the fields whose value a bench record holds, each with
@@ -626,8 +630,36 @@ CURRENT = "current_counts_per_a"    # the shunt's counts per A, the scale a capt
 SCALES = {CURRENT: ("1-board/current-scale", "counts_per_a", "scales.current")}
 
 
+# Six policy entries are each one form, a dict of one key, as the tuning
+# policy file states them (osc.tuning-policy/1): the fixed form, a value in
+# the unit its key names, which ties the policy to one servo, or the rule
+# form, a share or a multiple of what is measured. The policy of record
+# states each fixed, at what the record decided. The Default policy
+# (DEFAULT, beside it) states each as its rule, its entries standing over
+# the policy file's: {"note", "policy": {...}, "why": {...}}.
+FORMS = {
+    "yield": ("ma", "torque_kg_cm"),
+    "stall_release": ("ma", "share_of_yield"),
+    "stall_speed": ("deg_s", "multiple_of_still_speed"),
+    "pot_jump": ("counts", "multiple_of_step4"),
+    "current_loop": ("hz", "multiple_of_electrical_corner"),
+    "observer": ("hz", "multiple_of_mechanical_corner"),
+}
+DEFAULT = "default-policy.json"
+
+
 class Missing(Exception):
     """An input a rule reads is not there; the message says which."""
+
+
+def form(c, key):
+    """(the form, its amount) of policy entry `key`, one of FORMS; an
+    entry that is not one of its forms is refused."""
+    stated = c.policy(key)
+    if not (isinstance(stated, dict) and len(stated) == 1 and next(iter(stated)) in FORMS[key]):
+        raise ValueError(f"{POLICY}: {key} is {stated!r}: it is one of "
+                         + ", ".join(f'{{"{f}": ...}}' for f in FORMS[key]))
+    return next(iter(stated.items()))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -720,9 +752,11 @@ class Context:
     (`none`). With a `deviation` (`deviation_of`) its policy entries
     stand over the policy file's and its pins over the pair's, the
     holds it releases are `released`, and the file is one of the
-    inputs."""
+    inputs. With `default` the Default policy's entries (DEFAULT) stand
+    over the policy file's, under a deviation's, and that file is one of
+    the inputs."""
 
-    def __init__(self, pair, root=results.ROOT, registry=None, deviation=None):
+    def __init__(self, pair, root=results.ROOT, registry=None, deviation=None, default=False):
         self.pair, self.root = pair, Path(root)
         self.registry = registry_of(pair) if registry is None else registry
         self.inputs, self.notes, self.docs = {}, [], {}
@@ -730,6 +764,12 @@ class Context:
         self.scale = self.table = None
         beside = set_path(pair, root).parent.relative_to(self.root)     # the policy and the pins lie beside the set
         self.policies = self.file("policy", beside / POLICY) or {}
+        if default:
+            over = self.file("default", beside / DEFAULT)
+            if over is None or not isinstance(over.get("policy"), dict):
+                raise ValueError(f"{(beside / DEFAULT).as_posix()}: the Default policy holds its entries under "
+                                 f"`policy`, and there is no such file or block")
+            self.policies = {**self.policies, **over["policy"]}
         self.pins = self.file("pins", beside / f"{pair}.pins.json") or {}
         self.sources = self.file("sources", beside / f"{pair}.sources.json") or {}
         self.released = ()
@@ -992,10 +1032,23 @@ def b_gain(c):
             * counts_per_motor_rad(c) / medium_hz(c))
 
 
+def observer_hz(c):
+    """The observer's bandwidth, Hz: the policy's, or its multiple of
+    the mechanical corner Ke^2 / (2 pi J R), the pole of the shaft's
+    speed under the winding's back-EMF damping, which the observer
+    tracks through B."""
+    how, amount = form(c, "observer")
+    if how == "hz":
+        return amount
+    corner = (ke_v_s_per_rad(c) ** 2
+              / (2 * math.pi * c.q("3-servo/run-up", "j_kg_m2") * c.q(*RESISTANCES["rails_fit"])))
+    return amount * corner
+
+
 def observer_pole(c):
-    """The observer's three coincident poles, at the policy's bandwidth
-    on the MEDIUM tick."""
-    return math.exp(-2 * math.pi * c.policy("observer_hz") / medium_hz(c))
+    """The observer's three coincident poles, at its bandwidth on the
+    MEDIUM tick."""
+    return math.exp(-2 * math.pi * observer_hz(c) / medium_hz(c))
 
 
 def resistance(result, key):
@@ -1097,8 +1150,18 @@ def l3(c):
 INDUCTANCE = ("3-servo/inductance", "l_mh")
 
 
+def current_loop_hz(c):
+    """The current loop's bandwidth, Hz: the policy's, or its multiple
+    of the electrical corner R / (2 pi L), the winding's pole, which the
+    PI cancels."""
+    how, amount = form(c, "current_loop")
+    if how == "hz":
+        return amount
+    return amount * c.q(*RESISTANCES["rails_fit"]) / (2 * math.pi * c.q(*INDUCTANCE) / 1000)
+
+
 def loop_rad_s(c):
-    return 2 * math.pi * c.policy("current_loop_hz")
+    return 2 * math.pi * current_loop_hz(c)
 
 
 def loop_ki(c):
@@ -1444,8 +1507,38 @@ def overlaid(doc, entries):
     return {**out, "hash": hashes(out)}
 
 
-rule("stall_omega_max_cps", "stall_omega_max.policy", kind="u16", unit="count/s", pos_unit=+1, cls="policy",
-     mirrors="core kernel/phases/loops/limits.rs fold")(in_counts("stall_omega_max_deg_s"))
+# The stall speed and the pot jump each sit at a multiple of what the
+# screen they bound must clear on a healthy servo (oscnb.screens): the
+# largest speed the observer reads over the still holds of a closed-loop
+# check, and the worst run of 4 successive RAIL-period pot steps over the
+# driven rows. Each is read from a result of the pair, which none yet
+# holds: a hold capture that streams the observer's speed gives the
+# first, and the record's 115 count/s is a replay's, earlier work.
+STILL = ("5-closed-loop/still-hold", "still_speed_cps")
+STEPS = ("5-closed-loop/pot-steps", "step4_counts")
+
+
+def still_speed(c):
+    """The largest |omega_hat| over the still holds, count/s on the
+    count the servo ran in."""
+    return c.q(*STILL)
+
+
+def pot_step4(c):
+    """The worst level 4 successive RAIL-period pot steps all pass over
+    the driven rows, raw counts."""
+    return c.q(*STEPS)
+
+
+@rule("stall_omega_max_cps", "stall_omega_max.policy", kind="u16", unit="count/s", pos_unit=+1, cls="policy",
+      mirrors="core kernel/phases/loops/limits.rs fold")
+def stall_omega_max(c):
+    how, amount = form(c, "stall_speed")
+    if how == "deg_s":
+        return amount * c.counts_per_deg
+    return amount * still_speed(c)
+
+
 rule("pos_error_counts", "pos_error.policy", kind="u16", unit="counts", pos_unit=+1, cls="policy",
      mirrors="core kernel/phases/rail.rs rail")(in_counts("pos_error_deg"))
 rule("pos_min_soft_counts", "soft_min.stops", kind="i32", unit="counts", cls="policy",
@@ -1467,7 +1560,10 @@ def deadband(c):
 @rule("sensor_delta_max", "sensor_delta.policy", kind="u16", unit="raw counts/tick", cls="policy",
       mirrors="core kernel/phases/loops/faults.rs sensor_sample")
 def sensor_delta(c):
-    return c.policy("sensor_delta_max_counts")
+    how, amount = form(c, "pot_jump")
+    if how == "counts":
+        return amount
+    return amount * pot_step4(c)
 
 
 # --- the protection rules ---
@@ -1510,16 +1606,63 @@ def limit_counts(key):
     return counts
 
 
-# The current-denominated limits under the cap: each a policy entry in
-# mA, the kernel comparing its own reading in shunt counts against the
-# field. The cap itself is read off the maker's sheet (`current_limit_a`).
-for _field, _key, _mirrors in (
-        ("yield_current_counts", "yield_current_ma",
-         "core kernel/phases/loops/limits.rs fold, yield_current_or_cap"),
-        ("stall_release_counts", "stall_release_ma", "core kernel/phases/loops/limits.rs fold"),
-        ("oc_trip_counts", "oc_trip_ma", "core kernel/phases/fast.rs measure")):
-    rule(_field, f"{_field.removesuffix('_counts')}.policy", kind="u16", unit="ccounts", cls="policy",
-         mirrors=_mirrors)(limit_counts(_key))
+# The current-denominated limits under the cap, the kernel comparing its
+# own reading in shunt counts against the field. The cap itself is read
+# off the maker's sheet (`current_limit_a`).
+#
+# The yield current, the level a stalled horn folds to, is the policy's in
+# mA, or a max yield torque taken to current by the torque ratio: the
+# torque over the stall torque the maker states, times the voltage the
+# stall is stated at over the winding's resistance. Two torques at one
+# voltage cancel Kt, the gear ratio and the train's efficiency, which no
+# result measures at the horn. With no torque a metal train keeps the cap,
+# 0, and a plastic one (or one of unknown class) takes the policy's
+# plastic torque limit, a torque over which needs `above_plastic_limit`.
+# The stall release is the policy's in mA, or its share of the yield
+# current as the kernel runs it, the cap where the yield current is 0.
+def yield_current_a(c):
+    """The yield current, A, 0 for the cap."""
+    how, torque = form(c, "yield")
+    if how == "ma":
+        return torque / 1000
+    if c.reg("servo", "gear_class") == "metal":
+        if torque is None:
+            return 0.0
+    else:
+        limit = c.policy("plastic_torque_limit_kg_cm")
+        if torque is None:
+            if limit is None:
+                raise Missing(f"{POLICY}: the plastic torque limit, the yield torque of a plastic train, is "
+                              f"not known yet")
+            torque = limit
+        elif limit is not None and torque > limit and c.policy("above_plastic_limit") is not True:
+            raise ValueError(f"{POLICY}: a yield torque of {torque:g} kg cm is over the plastic torque limit, "
+                             f"{limit:g} kg cm, and above_plastic_limit is not true: plastic teeth strip there "
+                             f"when the horn is blocked")
+    row = at_voltage(c, "stall_torque", "stall torque", STALL_VOLTAGE)
+    if row.get("unit") != "kg cm":
+        raise ValueError(f"the datasheet record states the stall torque in {row.get('unit')}, the yield torque "
+                         f"is in kg cm")
+    return torque / row["value"] * row["at_v"] / c.q(*RESISTANCES["rails_fit"])
+
+
+def stall_release_a(c):
+    """The stall release, A."""
+    how, amount = form(c, "stall_release")
+    if how == "ma":
+        return amount / 1000
+    folds_to = yield_current_a(c)
+    return amount * (folds_to if folds_to > 0 else current_limit_a(c))
+
+
+rule("yield_current_counts", "yield_current.policy", kind="u16", unit="ccounts", cls="policy",
+     mirrors="core kernel/phases/loops/limits.rs fold, yield_current_or_cap")(
+    lambda c: yield_current_a(c) * shunt_counts_per_a(c))
+rule("stall_release_counts", "stall_release.policy", kind="u16", unit="ccounts", cls="policy",
+     mirrors="core kernel/phases/loops/limits.rs fold")(lambda c: stall_release_a(c) * shunt_counts_per_a(c))
+# the overcurrent trip, a policy entry in mA
+rule("oc_trip_counts", "oc_trip.policy", kind="u16", unit="ccounts", cls="policy",
+     mirrors="core kernel/phases/fast.rs measure")(limit_counts("oc_trip_ma"))
 
 
 # The collision trip: a disturbance estimate over the field counts as a
@@ -2130,7 +2273,7 @@ def bound(c, name, carried, previous):
         c, name, {**held("value", r.name, carried, why, previous, e["value"]), "inputs": e["inputs"]}, open_)
 
 
-def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, deviation=None):
+def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, deviation=None, default=False):
     """(the pair's set, what there is to say of it), built offline from
     the results of record, the registry, the policy file and the pair's
     pins and sources, on top of `previous`, its set of record: first
@@ -2153,12 +2296,13 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
     that names it, and carried as it stood by the other. A set with
     nothing before it is built whole.
     `deviation` is a deviation file the build reads over the policy and
-    the pins (`derive`)."""
+    the pins (`derive`), and `default` reads the Default policy over the
+    policy file (Context)."""
     wrong = [n for n in protection if n not in PROTECTION]
     if wrong or (protection and previous is None):
         raise ValueError(f"{', '.join(wrong)} is no protection field" if wrong
                          else "there is no set to carry the plant from")
-    c = Context(pair, root, registry, deviation)
+    c = Context(pair, root, registry, deviation, default)
     slots = slots_of(c, previous)
     table = table_of(c, previous, slots)
     scale = c.scale
@@ -2945,6 +3089,8 @@ def main(argv=None):
                         "released holds")
     b.add_argument("--protection", nargs="+", default=[], metavar="NAME",
                    help="move these protection fields and carry the plant, not the other way about")
+    b.add_argument("--default", action="store_true",
+                   help=f"with --out: the rules bound from the Default policy ({DEFAULT}) over the policy file")
     sub.add_parser("status", help="offline: the set's input files against the files now, and its fields with "
                                   "no source")
     sub.add_parser("check", help="the servo read against the set, a line a difference; changes nothing")
@@ -2982,8 +3128,11 @@ def main(argv=None):
             if a.deviation and (a.out is None or a.protection or previous is None):
                 raise ValueError("a deviation is built on the set of record, to --out, and names its own "
                                  "protection fields: it is never the set of record")
+            if a.default and (a.out is None or a.deviation):
+                raise ValueError("a set from the Default policy is built to --out, with no deviation: it is "
+                                 "never the set of record")
             doc, notes = (derive(previous, a.deviation, root) if a.deviation
-                          else build(a.pair, previous, a.protection, root))
+                          else build(a.pair, previous, a.protection, root, default=a.default))
             out = write(doc, a.out or path)
             print("\n".join([f"wrote {sc.shown(out)}", *(changes(previous, doc) if previous else []), *notes,
                              *described(doc)]))
