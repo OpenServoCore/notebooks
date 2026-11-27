@@ -5,10 +5,9 @@ it. It installs with `cargo install --locked --path osc-lab` from this repo,
 and is found on the PATH or named by the OSC_LAB environment variable. Every
 other call (get, set, dump, read, write, status, ping, baud, flash) runs `osc`, on
 the PATH (`cargo install --path tools/osc` in the firmware repo) or named by
-the OSC environment variable, or for the calls of one body by `using`: the
-plant stamp is computed by the tool, so an image whose stamp covers other
-fields is blessed by the `osc` built from its own tree. Every call addresses
-one servo id, OSC_ID or 1.
+the OSC environment variable, or for the calls of one body by `using`: an
+image whose table differs is spoken to by the `osc` built from its own tree.
+Every call addresses one servo id, OSC_ID or 1.
 The tools print their connection status on stderr and their output on
 stdout, so stdout is parsed and stderr is passed through.
 """

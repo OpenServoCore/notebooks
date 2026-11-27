@@ -2,10 +2,9 @@
 
 A settings file is `{"fields": {name: value, ...}, "note": "..."}`. `apply`
 needs torque off. It reads and keeps every field's old value, writes each
-with `osc set` and reads it back, then blesses the set with `osc stamp`
-without `--save`, so a closed loop may start on it, and checks that
-`osc status` reads the data state clean. Nothing is ever saved, so
-`restore` is `osc reboot`: the servo comes back on its saved images.
+with `osc set` and reads it back; a closed loop runs on the set as written.
+Nothing is ever saved, so `restore` is `osc reboot`: the servo comes back
+on its saved images.
 
     uv run python -m oscnb.settings apply <file.json>
     uv run python -m oscnb.settings show <file.json>
@@ -57,33 +56,18 @@ def data_state(status):
     return m.group(1).strip()
 
 
-def plant_stamp(status):
-    """The stamp line of an `osc status` report, after "stamp"."""
-    m = re.search(r"^\s*stamp\s+(.+)$", status, re.M)
-    return m.group(1).strip() if m else None
+def unsaved(status):
+    """Whether an `osc status` report says the servo runs what a reboot
+    would not load (`unsaved true`)."""
+    m = re.search(r"\bunsaved\s+(true|false)\b", status)
+    if not m:
+        raise RuntimeError(f"osc status: no unsaved word in {status!r}")
+    return m.group(1) == "true"
 
 
-def require_clean():
-    """The `osc status` report, refused unless its data state is clean."""
-    status = osc.status()
-    state = data_state(status)
-    if state != "clean":
-        raise Refused(f"data state {state}: closed loop is refused")
-    return status
-
-
-def stamp_live():
-    """Bless the live set with `osc stamp`, no `--save`; returns the
-    `osc status` report, refused unless its data state is clean."""
-    osc.run("stamp")
-    return require_clean()
-
-
-def apply(fields, note="", stamp=True):
-    """Write `fields` volatile and stamp them; returns the old values.
-    `stamp` False leaves the stamp to the caller, for a step that writes
-    more first. A refusal past the first write leaves the servo half set:
-    `restore` puts it back."""
+def apply(fields, note=""):
+    """Write `fields` volatile; returns the old values. A refusal past the
+    first write leaves the servo half set: `restore` puts it back."""
     torque = osc.get("torque_enable")
     if not same("off", torque):
         raise Refused(f"torque_enable reads {torque}: apply runs with torque off")
@@ -93,8 +77,6 @@ def apply(fields, note="", stamp=True):
         back = osc.get(name)
         if not same(value, back):
             raise Refused(f"{name}: wrote {value}, read back {back}")
-    if stamp:
-        stamp_live()
     if note:
         print(note)
     for name, value in fields.items():
@@ -115,13 +97,13 @@ def await_boot():
 
 
 def restore():
-    """Reboot onto the saved images, wait for the bus, check the data state
-    is clean; returns the stamp line."""
+    """Reboot onto the saved images and wait for the bus; returns the data
+    state line, information."""
     osc.run("reboot")
     await_boot()
-    stamp = plant_stamp(require_clean())
-    print(f"plant stamp {stamp}")
-    return stamp
+    state = data_state(osc.status())
+    print(f"rebooted: data state {state}")
+    return state
 
 
 def show(fields):
@@ -136,7 +118,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m oscnb.settings",
                                  description="apply a set of CONFIG fields volatile, or reboot it away")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for cmd, doc in (("apply", "write and stamp the file's fields, no SAVE"),
+    for cmd, doc in (("apply", "write the file's fields volatile, no SAVE"),
                      ("show", "the current values of the file's fields")):
         sub.add_parser(cmd, help=doc).add_argument("file", type=Path)
     sub.add_parser("restore", help="reboot onto the saved images")

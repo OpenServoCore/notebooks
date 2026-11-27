@@ -248,7 +248,7 @@ def test_load_refuses_a_hand_edited_table(repo):
         pt.load(PAIR)
 
 
-def test_plan_writes_every_page_then_commits_and_reads_back_and_neither_stamps_nor_saves(repo):
+def test_plan_writes_every_page_then_commits_and_reads_back_and_does_not_save(repo):
     write_lookup(repo)
     t, _ = pt.build(PAIR, *STOPS)
     text = pt.plan(PAIR)
@@ -263,7 +263,7 @@ def test_plan_writes_every_page_then_commits_and_reads_back_and_neither_stamps_n
              for key in ("get torque_enable", "write 0x19c 0001", "write 0x19c 0003",
                          "write 0x19c 0702")]
     assert order == sorted(order)
-    # the stamp is the constant set's alone: the plan has no step that stamps or saves
+    # the SAVE is the constant set's alone: the plan has no step that saves
     words = {c.split()[3] for c in cmds}
     assert words <= {"get", "write"}
     assert "oscnb.constants install" in text

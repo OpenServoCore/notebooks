@@ -170,8 +170,8 @@ record is a weak one. `check` reads the servo
 and changes nothing it holds, its only writes the FETCH that brings a
 page of the table into the window (protocol sec 5.7): each field of the
 set by name, the table and the slots against the servo's, a line a
-difference, exit 1 when there is one, and refused when the servo's data
-state is not clean.
+difference, exit 1 when there is one. The servo's data state is
+information.
 
 `install` makes the servo equal the set, volatile, and writes only what
 differs. Torque must be off. It is refused before anything is written
@@ -189,10 +189,9 @@ in the order a count is defined: the slots, the stops, the table
 written as all-zero points, whose COMMIT must land IDENTITY, and a
 servo whose firmware lands it LIVE is refused as that), the other
 fields in table order, each read back, a write the servo refuses tried
-once more after the rest. The whole state is then read back, and only
-when it is the set does `osc stamp` bless it, no save, after which the
-data state must read clean. A refusal after the first write reboots the
-servo, which returns its saved state.
+once more after the rest. The whole state is then read back and must be
+the set; nothing is saved, and the servo reads unsaved. A refusal after
+the first write reboots the servo, which returns its saved state.
 
 `save` is a verb of its own, never a flag of `install`, and saves the
 pair's set of record alone. Before the bus is touched it refuses a
@@ -207,7 +206,7 @@ install behind the same gate, `--protection` and `--loosen` passed
 through, and the `check` after it must be clean. Then MGMT SAVE (`osc
 save`, protocol sec 9.4), a reboot, the wait, the state to `after.json`
 and its comparison with the set. A SAVE keeps CONFIG and CALIB whole,
-the slots, the stamp and the table's points with them, so it also keeps
+the slots and the table's points with them, so it also keeps
 what the set does not hold of those regions, the bus id and rate among
 it. A refusal before the SAVE leaves flash as it was. A servo that does
 not come back as the set is reported as that: flash then holds the new
@@ -242,7 +241,8 @@ FOLDER = postable.OUT_DIR.relative_to(results.ROOT)
 
 # What no set holds, by the descriptor's names: the comms fields of the
 # bus front (protocol sec 5), which say where a servo answers and not
-# what it is, and the stamp, which the servo computes over the rest.
+# what it is. STAMP is the register a state recorded on CALIB layout 7
+# holds and no servo has since: nothing writes it.
 COMMS = ("id", "baud_rate_idx", "response_deadline_us")
 STAMP = "plant_stamp"
 
@@ -554,21 +554,17 @@ def described(doc):
 
 def adopted(record, pair, origin):
     """The first set of a servo that already runs, from a record of its
-    state: every field the record names writable past the bus front, the
-    stamp left out, each at the value the record holds and of class
-    `none`, adopted from the record, with the table and the slots: a
-    value the servo held has no source. `origin` is what the set
-    says of the record. A record that names no writable fields, whose
-    data state is not clean, or whose hash is not its content's, is
-    refused."""
+    state: every field the record names writable past the bus front,
+    each at the value the record holds and of class `none`, adopted from
+    the record, with the table and the slots: a value the servo held has
+    no source. `origin` is what the set says of the record. A record
+    that names no writable fields, or whose hash is not its content's,
+    is refused; the data state it was read in is information."""
     if "writable" not in record:
         raise ValueError("the record names no writable fields: record the servo's state again "
                          "(`scorecard.servo_state`)")
     if record.get("hash") != sc.state_hash(record):
         raise ValueError("the record's hash is not that of its content")
-    if record["data_state"] != "clean":
-        raise ValueError(f"the record's data state is {record['data_state']}: a set is adopted from a state the "
-                         f"servo runs closed loop on")
     own = {"class": "none", "origin": ORIGIN}
     fields = {}
     for name in record["writable"]:
@@ -2549,7 +2545,7 @@ def unowned(doc, state):
     missing, then the ones no set holds."""
     own = set(doc["fields"]) | ({widecodes.FIELD} if doc["wide_codes"] is not None else set())
     out = [n for n in state["writable"] if n not in own]
-    never = [n for n in out if n in COMMS or n == STAMP]
+    never = [n for n in out if n in COMMS]
 
     def shown(names):
         return ", ".join(f"{n} = {state['fields'][n]}" for n in names)
@@ -2558,21 +2554,20 @@ def unowned(doc, state):
     if len(out) > len(never):
         lines.append(f"not in the set: {shown(n for n in out if n not in never)}")
     if never:
-        lines.append(f"in no set (the bus front and the stamp): {shown(never)}")
+        lines.append(f"in no set (the bus front): {shown(never)}")
     return lines
 
 
 def check(doc, state=None):
     """The servo against the set, nothing on the servo changed; prints
     the differences, what the set holds and what the servo holds outside
-    it, and returns the differences. Refused, after the lines, when the
-    servo's data state is not clean."""
+    it, and the data state and the unsaved word, information; returns
+    the differences."""
     state = sc.servo_state() if state is None else state
     out = differences(doc, state)
-    print("\n".join([*out, *described(doc), *unowned(doc, state)]))
-    if state["data_state"] != "clean":
-        raise settings.Refused(f"data state {state['data_state']}, not clean: the servo's constants are not a "
-                               f"state it runs closed loop on")
+    unsaved = "yes" if state.get("unsaved") else "no"
+    print("\n".join([*out, *described(doc), *unowned(doc, state),
+                     f"data state {state['data_state']}; unsaved {unsaved}; servo {state['hash'][:12]}"]))
     return out
 
 
@@ -2701,10 +2696,9 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=
     that differ in the servo's table order, each read back, a field
     the servo refuses tried once more after the rest. The soft limits
     go whole, both in one write, where either differs (`osc.set_soft`).
-    The state read back whole must then be the set, and only then is it
-    stamped, no save, and its data state required clean. A refusal
-    after the first write reboots the servo onto its saved state and
-    says so. `state` is the servo's state where the caller has just
+    The state read back whole must then be the set; nothing is saved. A
+    refusal after the first write reboots the servo onto its saved state
+    and says so. `state` is the servo's state where the caller has just
     read it."""
     torque = osc.get("torque_enable")
     if not settings.same("off", torque):
@@ -2785,10 +2779,6 @@ def install(doc, protection=(), loosen=(), root=results.ROOT, table=None, state=
             left = differences(doc, state)
             if left:
                 raise settings.Refused(f"the state read back is not the set: {'; '.join(left)}")
-        if wrote or state["data_state"] != "clean":
-            wrote.append("stamp")
-            stamp = settings.plant_stamp(settings.stamp_live())
-            print(f"stamped: data state clean, stamp {stamp}")
     except (settings.Refused, subprocess.CalledProcessError, RuntimeError) as e:
         if not wrote:
             raise
@@ -2845,7 +2835,7 @@ def save(pair, protection=(), loosen=(), root=results.ROOT):
     puts back. The set is installed from there (`install`, its gate,
     `protection` and `loosen` passed through) and checked, then MGMT
     SAVE (`osc save`, protocol sec 9.4) programs CONFIG and CALIB with
-    the slots, the stamp and the table's points into flash, and with
+    the slots and the table's points into flash, and with
     them whatever else of those regions the servo holds. After a reboot
     the state is written to `after.json` and must be the set. Returns
     the two paths."""
@@ -2890,7 +2880,7 @@ def save(pair, protection=(), loosen=(), root=results.ROOT):
     state = sc.servo_state()
     after.write_text(json.dumps(state, indent=2) + "\n")
     differ = differences(doc, state)
-    if differ or state["data_state"] != "clean":
+    if differ or state["data_state"] != "clean" or state.get("unsaved"):
         raise settings.Refused(
             f"after the SAVE and a reboot the servo is not the set (data state {state['data_state']}"
             f"{''.join('; ' + d for d in differ)}): the save did not land as verified. Flash now holds the new "
@@ -2940,7 +2930,7 @@ def main(argv=None):
     sub.add_parser("status", help="offline: the set's input files against the files now, and its fields with "
                                   "no source")
     sub.add_parser("check", help="the servo read against the set, a line a difference; changes nothing")
-    ins = sub.add_parser("install", help="make the servo equal the set, volatile, verified, then stamped")
+    ins = sub.add_parser("install", help="make the servo equal the set, volatile, verified")
     ins.add_argument("--protection", nargs="+", default=[], metavar="NAME",
                      help="the protection fields the install may change")
     ins.add_argument("--loosen", nargs="+", default=[], metavar="NAME",

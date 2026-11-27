@@ -2,8 +2,8 @@
 first set adopted from a record of its state, the file's bytes and its
 three hashes, what `load` refuses, the set against its input files, the
 servo read against the set, the set installed on it (the order of the
-writes, the protection gate, the read-back ahead of the stamp and the
-reboot after a refusal), and the set built by its rules: what a rule
+writes, the protection gate, the read-back and the reboot after a
+refusal), and the set built by its rules: what a rule
 reads recorded, the encoder, the bands, the fields held, and the one
 hash a build moves; the rules of the motor block, the feedforwards and
 the observer gains, a hold and its release by a deviation; the rules
@@ -47,16 +47,14 @@ ADOPTED = {"class": "none", "origin": "servo-state"}
 
 class Servo(synth.Servo):
     """The fake servo with a field of each kind a set tells apart: the
-    read-only front and a read-only CALIB field, the bus id, the stamp,
-    the slots, protection fields, per-count fields, one that is both."""
+    read-only front and a read-only CALIB field, the bus id, the slots, protection fields, per-count fields, one that is both."""
 
     FIELDS = {"model_number": (0x00, 2, "ro", "uint"), "id": (0x10, 1, "rw", "uint"),
               "pos_max_soft_counts": (0x2c, 4, "rw", "uint"), "p_kp_q88": (0x40, 2, "rw", "uint"),
               "pos_deadband_counts": (0x42, 2, "rw", "uint"), "current_limit_counts": (0x48, 2, "rw", "uint"),
               "drive_polarity": (0x4b, 1, "rw", "bool"), "stall_omega_max_cps": (0x50, 2, "rw", "uint"),
               "r_q12": (0x80, 2, "rw", "uint"), "recip_ke_q": (0x82, 2, "rw", "uint"),
-              "plant_stamp": (0x8a, 2, "rw", "uint"), wc.FIELD: (0x91, 16, "rw", "bytes"),
-              "tick_hz": (0xa2, 2, "ro", "uint"),
+              wc.FIELD: (0x91, 16, "rw", "bytes"), "tick_hz": (0xa2, 2, "ro", "uint"),
               "torque_enable": (0xc0, 1, "rw", "bool"), "pos_lut_state": (0xde, 1, "ro", "uint")}
     STORED = {**synth.Servo.STORED, "id": 1, "pos_max_soft_counts": 3560, "current_limit_counts": 554,
               "stall_omega_max_cps": 500, "recip_ke_q": 11817, "tick_hz": 20000}
@@ -95,7 +93,7 @@ def test_adopt_reproduces_the_servo_state(servo, tmp_path):
     doc, path = cn.adopt(PAIR, rec, root=tmp_path)
     assert path == tmp_path / "stages" / "5-closed-loop" / "calibration" / f"{PAIR}.constants.json"
     # every field a host may write past the bus front, in table order: not the read-only model number
-    # and tick rate, not the id, not the stamp, and the slots as the slots
+    # and tick rate, not the id, and the slots as the slots
     assert list(doc["fields"]) == OWNED
     assert all(e == {"value": state["fields"][n], **ADOPTED, "protection": cn.protection_of(n),
                      **({"scale": "unknown"} if "scale" in e else {})} for n, e in doc["fields"].items())
@@ -193,16 +191,40 @@ def test_a_pair_without_a_set_is_refused(tmp_path):
         cn.of_record(PAIR, tmp_path)
 
 
-def unclean(state):
-    state["data_state"] = "STAMP_MISMATCH"
+def on_defaults(state):
+    state["data_state"], state["unsaved"] = "CONFIG_VIRGIN | CALIB_VIRGIN", True
+
+
+def stamped(state):
+    """A record from a servo with a plant stamp: its register among the
+    fields, its stamp and data state lines, hashed with them."""
+    state["fields"]["plant_stamp"] = 0x9c45
+    state["writable"].insert(state["writable"].index("recip_ke_q") + 1, "plant_stamp")
+    state["stamp"], state["data_state"] = "0x9c45 = live set", "clean"
+    del state["unsaved"]
     state["hash"] = sc.state_hash(state)
 
 
+@pytest.mark.parametrize("change", [on_defaults, stamped], ids=["read on defaults", "from a stamped servo"])
+def test_adopt_takes_a_record_whatever_its_data_state_said(servo, tmp_path, change):
+    """The data state and the unsaved word are information outside the
+    hash; a record from a servo with a plant stamp hashes as it was
+    written and leaves the stamp out of the set."""
+    doc, _ = cn.adopt(PAIR, record(tmp_path, change), root=tmp_path)
+    assert list(doc["fields"]) == OWNED
+
+
+def test_a_state_hash_is_the_table_and_the_position_table_alone(servo):
+    state = sc.servo_state()
+    said = {**state, "data_state": "CALIB_STALE", "unsaved": True}
+    assert sc.state_hash(said) == state["hash"]
+    assert sc.state_hash({**state, "raw": "00" + state["raw"][2:]}) != state["hash"]
+
+
 @pytest.mark.parametrize("change, match", [
-    (unclean, "the record's data state is STAMP_MISMATCH"),
     (lambda s: s.update(raw="00" + s["raw"][2:]), "the record's hash is not that of its content"),
     (lambda s: s.pop("writable"), "the record names no writable fields: record the servo's state again"),
-], ids=["a state that is not clean", "a record edited", "a record without its writable fields"])
+], ids=["a record edited", "a record without its writable fields"])
 def test_adopt_refuses_a_record_it_cannot_stand_on(servo, tmp_path, change, match):
     with pytest.raises(ValueError, match=match):
         cn.adopt(PAIR, record(tmp_path, change), root=tmp_path)
@@ -335,8 +357,11 @@ def test_check_is_clean_on_the_adopted_servo(adopted, servo, capsys):
         f"position table IDENTITY, points sha1 {NO_POINTS} [none]",
         f"wide-code slots {SLOTS.hex(' ')} [none]",
         f"hash: plant {h['plant'][:12]}, protection {h['protection'][:12]} (2 fields), set {h['set'][:12]}",
-        "in no set (the bus front and the stamp): id = 1, plant_stamp = 40005",
+        "in no set (the bus front): id = 1",
+        f"data state clean; unsaved no; servo {sc.servo_state()['hash'][:12]}",
     ]
+    servo.log.clear()
+    assert cn.check(doc) == []
     # it reads only: the state's own 21 calls, every write a FETCH of a table page into the window
     assert len(servo.log) == 21
     assert all(c[0] in ("dump", "read", "get", "field", "status")
@@ -380,7 +405,7 @@ def test_check_names_what_the_servo_holds_outside_the_set(adopted, servo, monkey
     del doc["fields"]["r_q12"]
     assert cn.unowned(doc, sc.servo_state()) == [
         "not in the set: r_q12 = 17100",
-        "in no set (the bus front and the stamp): id = 1, plant_stamp = 40005",
+        "in no set (the bus front): id = 1",
     ]
     # a servo whose descriptor names no slots against a set that holds them
     monkeypatch.setattr(sc.osc, "field", lambda name: None)
@@ -388,17 +413,14 @@ def test_check_names_what_the_servo_holds_outside_the_set(adopted, servo, monkey
         f"wide-code slots: servo names none, set {SLOTS.hex(' ')} [none]"]
 
 
-def test_check_refuses_a_data_state_that_is_not_clean(adopted, servo, capsys):
+def test_check_says_the_data_state_and_refuses_nothing_on_it(adopted, servo, capsys):
     doc, _ = adopted
-    servo.data, servo.stamp = "STAMP_MISMATCH", "0x9c45 != live set 0x1234"
-    with pytest.raises(settings.Refused, match="data state STAMP_MISMATCH, not clean"):
-        cn.check(doc)
-    assert capsys.readouterr().out.splitlines()[0].startswith("8 fields: ")
-    # what differs is named ahead of the refusal
+    servo.data, servo.unsaved = "CONFIG_VIRGIN | CALIB_VIRGIN", True
+    assert cn.check(doc) == []
+    assert capsys.readouterr().out.splitlines()[-1].startswith(
+        "data state CONFIG_VIRGIN | CALIB_VIRGIN; unsaved yes; servo ")
     servo.set("r_q12", 16000)
-    with pytest.raises(settings.Refused, match="data state STAMP_MISMATCH, not clean"):
-        cn.check(doc)
-    assert capsys.readouterr().out.splitlines()[0] == "r_q12: servo 16000, set 17100 [none]"
+    assert cn.check(doc) == ["r_q12: servo 16000, set 17100 [none]"]
 
 
 # --- the command line ---
@@ -422,14 +444,13 @@ def test_the_verbs_as_commands(cli, servo, tmp_path, capsys):
     cli("status")
     cli("check")
     assert capsys.readouterr().out.splitlines()[0] == "0 input files, none moved"
-    # a difference is exit 1, a data state that is not clean a refusal
+    # a difference is exit 1; the data state is information
+    servo.data = "CALIB_STALE"
+    cli("check")
     servo.set("r_q12", 16000)
     with pytest.raises(SystemExit) as e:
         cli("check")
     assert e.value.code == 1
-    servo.data = "STAMP_MISMATCH"
-    with pytest.raises(SystemExit, match="refused: data state STAMP_MISMATCH, not clean"):
-        cli("check")
     with pytest.raises(SystemExit, match="refused: .*writes a pair's first set only"):
         cli("adopt", "--from", str(tmp_path / "servo.json"))
 
@@ -521,7 +542,7 @@ def test_install_from_blank_equals_the_set(target, bench, tmp_path, capsys):
     wrote = cn.install(target, **NAMED, root=tmp_path)
     # the order a count is defined in, then the rest in table order, the soft limits both in one write
     assert wrote == ["wide-code slots", "raw_min", "raw_max", "position table", "pos_min_soft_counts",
-                     "pos_max_soft_counts", "p_kp_q88", "current_limit_counts", "stall_response", "r_q12", "stamp"]
+                     "pos_max_soft_counts", "p_kp_q88", "current_limit_counts", "stall_response", "r_q12"]
     changed = bench.wrote()
     assert changed[0] == ("write", 0x91, NEW_SLOTS)
     assert changed[1:3] == [("set", "raw_min", "90"), ("set", "raw_max", "3780")]
@@ -532,16 +553,16 @@ def test_install_from_blank_equals_the_set(target, bench, tmp_path, capsys):
                              ("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT]))]
     assert changed[12:] == [soft_write(3600, 3700), ("set", "p_kp_q88", "5026"),
                             ("set", "current_limit_counts", "500"), ("set", "stall_response", "Yield"),
-                            ("set", "r_q12", "16000"), ("run", "stamp")]
+                            ("set", "r_q12", "16000")]
     state = sc.servo_state()
     assert cn.differences(target, state) == []
-    assert (state["data_state"], state["stamp"]) == ("clean", "0x1234 = live set")
+    assert (state["data_state"], state["unsaved"]) == ("clean", True)
     assert state["pos_table"]["state"] == "LIVE" and state["pos_table"]["points_sha1"] == cn.points_sha1(POINTS)
     out = capsys.readouterr().out.splitlines()
     assert out[0] == f"wide-code slots: {SLOTS.hex(' ')} -> {NEW_SLOTS.hex(' ')}"
     assert "stall_response: Fault (0) -> Yield (1)" in out
     assert "position table: IDENTITY -> LIVE, 8 pages read back" in out
-    assert out[-1] == "stamped: data state clean, stamp 0x1234 = live set"
+    assert out[-1] == "r_q12: 17100 -> 16000"
     assert cn.check(target) == []
     # the servo now holds the set: the same install, unnamed, writes nothing
     bench.log.clear()
@@ -552,15 +573,15 @@ def test_install_on_an_equal_servo_writes_nothing(stored, bench, tmp_path):
     assert cn.install(stored, root=tmp_path) == [] and bench.wrote() == []
     # it reads the torque and the state, and no more
     assert bench.log[0] == ("get", "torque_enable") and len(bench.log) == 22
-    # a set that differs in two fields is two writes, the read-back and the stamp
+    # a set that differs in two fields is two writes and the read-back
     two = deviated(stored, p_kp_q88=4000, r_q12=15000)
-    assert cn.install(two, root=tmp_path) == ["p_kp_q88", "r_q12", "stamp"]
-    assert bench.wrote() == [("set", "p_kp_q88", "4000"), ("set", "r_q12", "15000"), ("run", "stamp")]
+    assert cn.install(two, root=tmp_path) == ["p_kp_q88", "r_q12"]
+    assert bench.wrote() == [("set", "p_kp_q88", "4000"), ("set", "r_q12", "15000")]
     bench.log.clear()
     assert cn.install(two, root=tmp_path) == [] and bench.wrote() == []
-    # an equal servo whose data state is not clean is stamped, nothing else written
-    bench.data = "STAMP_MISMATCH"
-    assert cn.install(two, root=tmp_path) == ["stamp"] and bench.wrote() == [("run", "stamp")]
+    # an equal servo on its defaults is written nothing: the data state is information
+    bench.data = "CONFIG_VIRGIN | CALIB_VIRGIN"
+    assert cn.install(two, root=tmp_path) == [] and bench.wrote() == []
 
 
 def test_a_protection_change_needs_its_name(stored, bench, tmp_path):
@@ -578,7 +599,7 @@ def test_a_protection_change_needs_its_name(stored, bench, tmp_path):
         cn.install(tighter, protection=["current_limit_counts", "cutoff_cc"], root=tmp_path)
     assert bench.wrote() == []
     assert cn.install(tighter, protection=["current_limit_counts"], root=tmp_path) == [
-        "p_kp_q88", "current_limit_counts", "stamp"]
+        "p_kp_q88", "current_limit_counts"]
     # named and already there is no refusal: the same command runs twice
     assert cn.install(tighter, protection=["current_limit_counts"], root=tmp_path) == []
 
@@ -605,7 +626,7 @@ def test_a_looser_limit_needs_loosen(stored, bench, tmp_path):
         "--loosen stall_omega_max_cps"]
     assert bench.wrote() == []
     assert cn.install(higher, protection=["current_limit_counts"], loosen=["current_limit_counts"],
-                      root=tmp_path) == ["current_limit_counts", "stamp"]
+                      root=tmp_path) == ["current_limit_counts"]
     assert bench.decoded("current_limit_counts") == 600
 
 
@@ -660,8 +681,8 @@ def test_a_refusal_after_the_first_write_reboots(stored, bench, tmp_path):
 
 def test_soft_limits_go_off_and_back_on_in_one_write(stored, bench, tmp_path, capsys):
     off = deviated(stored, pos_min_soft_counts=0, pos_max_soft_counts=0)
-    assert cn.install(off, root=tmp_path) == ["pos_min_soft_counts", "pos_max_soft_counts", "stamp"]
-    assert bench.wrote() == [soft_write(0, 0), ("run", "stamp")]
+    assert cn.install(off, root=tmp_path) == ["pos_min_soft_counts", "pos_max_soft_counts"]
+    assert bench.wrote() == [soft_write(0, 0)]
     state = sc.servo_state()
     assert cn.differences(off, state) == [] and state["data_state"] == "clean"
     assert "pos_max_soft_counts: 3560 -> 0" in capsys.readouterr().out.splitlines()
@@ -669,15 +690,15 @@ def test_soft_limits_go_off_and_back_on_in_one_write(stored, bench, tmp_path, ca
     with pytest.raises(subprocess.CalledProcessError):
         bench.set_("pos_min_soft_counts", "314")
     bench.log.clear()
-    assert cn.install(stored, root=tmp_path) == ["pos_min_soft_counts", "pos_max_soft_counts", "stamp"]
-    assert bench.wrote() == [soft_write(314, 3560), ("run", "stamp")]
+    assert cn.install(stored, root=tmp_path) == ["pos_min_soft_counts", "pos_max_soft_counts"]
+    assert bench.wrote() == [soft_write(314, 3560)]
     assert cn.differences(stored, sc.servo_state()) == []
 
 
 def test_one_soft_limit_that_differs_goes_back_with_its_pair(stored, bench, tmp_path):
     assert cn.install(deviated(stored, pos_max_soft_counts=3500), root=tmp_path) == [
-        "pos_min_soft_counts", "pos_max_soft_counts", "stamp"]
-    assert bench.wrote() == [soft_write(314, 3500), ("run", "stamp")]
+        "pos_min_soft_counts", "pos_max_soft_counts"]
+    assert bench.wrote() == [soft_write(314, 3500)]
 
 
 def test_a_reboot_that_does_not_answer_is_said(stored, bench, tmp_path, monkeypatch):
@@ -692,16 +713,16 @@ def test_a_reboot_that_does_not_answer_is_said(stored, bench, tmp_path, monkeypa
         cn.install(deviated(stored, r_q12=16000), root=tmp_path)
 
 
-def test_the_stamp_is_written_only_after_the_read_back_matches(stored, bench, tmp_path):
+def test_the_state_is_read_back_whole_after_the_last_write(stored, bench, tmp_path):
     two = deviated(stored, p_kp_q88=5026, r_q12=16000)
     cn.install(two, root=tmp_path)
     kinds = [c[0] if c[0] != "run" else c[1] for c in bench.log]
-    # every write, then the state whole, then the stamp, then the status that must read clean
+    # every write, then the state whole, and nothing after it: no SAVE, the servo reads unsaved
     assert kinds.index("dump", kinds.index("set")) > max(i for i, k in enumerate(kinds) if k == "set")
     back = max(i for i, k in enumerate(kinds) if k == "dump")
-    assert kinds[back + 21:] == ["stamp", "status"] and kinds.count("stamp") == 1
-    assert bench.data == "clean"
-    # a write that lands and reads back, while the state whole is not the set: no stamp, a reboot
+    assert kinds[back + 21:] == [] and "save" not in kinds
+    assert bench.unsaved
+    # a write that lands and reads back, while the state whole is not the set: a reboot
     bench.reboot()
     bench.log.clear()
     bench.drift = {"r_q12": ("p_kp_q88", 1)}
@@ -756,11 +777,11 @@ def test_install_returns_a_live_table_to_the_identity(target, bench, tmp_path, c
     bench.log.clear()
     capsys.readouterr()
     # all-zero points against the set's stops, stored a page at a time and committed, each page read back
-    assert cn.install(identity(target), root=tmp_path) == ["position table", "stamp"]
+    assert cn.install(identity(target), root=tmp_path) == ["position table"]
     zero = bytes(2 * postable.PAGE_POINTS)
     assert bench.wrote() == [*(("write", postable.WINDOW_ADDR, bytes([p, postable.STORE]) + zero)
                                for p in range(postable.PAGES)),
-                             ("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT])), ("run", "stamp")]
+                             ("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT]))]
     assert capsys.readouterr().out.splitlines()[0] == "position table: LIVE -> IDENTITY, 8 pages read back"
     state = sc.servo_state()
     assert state["pos_table"]["state"] == "IDENTITY" and state["pos_table"]["points_sha1"] == NO_POINTS
@@ -776,7 +797,7 @@ def test_a_servo_that_lands_an_all_zero_table_live_is_refused_as_that(target, be
     assert str(e.value) == ("the COMMIT of an all-zero table landed LIVE, not IDENTITY: the servo's firmware lands "
                             "an all-zero table LIVE, and only a boot returns its table to IDENTITY; rebooted: the "
                             "servo is back on its saved state")
-    # nothing is read back or stamped past the COMMIT: the reboot is the next thing the servo is told
+    # nothing is read back past the COMMIT: the reboot is the next thing the servo is told
     assert bench.wrote()[-2:] == [("write", postable.WINDOW_ADDR, bytes([0, postable.COMMIT])), ("run", "reboot")]
 
 
@@ -806,9 +827,8 @@ def test_install_as_a_command(cli, bench, tmp_path, capsys):
     assert str(e.value).startswith("refused: the protection gate:\n  current_limit_counts: servo 554, set 600")
     cli("install", "--protection", "current_limit_counts", "--loosen", "current_limit_counts")
     out = capsys.readouterr().out.splitlines()
-    assert out[:3] == ["p_kp_q88: 40212 -> 5026", "current_limit_counts: 554 -> 600",
-                       "stamped: data state clean, stamp 0x1234 = live set"]
-    assert out[3].startswith("12 fields: ") and out[-1] == "volatile, not saved: `osc reboot` returns the saved state"
+    assert out[:2] == ["p_kp_q88: 40212 -> 5026", "current_limit_counts: 554 -> 600"]
+    assert out[2].startswith("12 fields: ") and out[-1] == "volatile, not saved: `osc reboot` returns the saved state"
     cli("install")
     assert capsys.readouterr().out.splitlines()[-1] == "the servo holds the set: nothing written"
     cli("check")
@@ -1131,7 +1151,7 @@ def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
     inputs(tmp_path)
     doc, _ = built_on(first, tmp_path)
     assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "pos_min_soft_counts",
-                                              "pos_max_soft_counts", "angle_max_cdeg", "stamp"]
+                                              "pos_max_soft_counts", "angle_max_cdeg"]
     assert cn.check(doc) == []
 
 
@@ -1927,7 +1947,7 @@ def test_a_set_carries_the_current_scale_it_is_scored_with_under_a_hash_of_its_o
     # the file renders, loads and builds again to the same bytes
     out = cn.write(doc, tmp_path / "x.constants.json")
     assert cn.load(out) == doc and cn.render(built_on(bare, tmp_path)[0]) == out.read_text()
-    assert cn.install(doc, root=tmp_path)[-1] == "stamp" and cn.check(doc) == []
+    assert cn.install(doc, root=tmp_path) and cn.check(doc) == []
     # a scale that moves is a build that moves that hash alone, and the set it stood in is stale
     current_scale(tmp_path, 1140.0)
     lines, stale = cn.status(doc, tmp_path, REG)
@@ -3242,7 +3262,7 @@ def test_an_install_that_moves_the_winding_model_says_what_the_estimate_reads(wa
     capsys.readouterr()
     loosen = [n for n in MODEL if n != "th_rise2_q016"]
     assert cn.install(high, protection=MODEL, loosen=loosen, root=tmp_path) == [
-        "thermal_tau_s", "thermal_tau2_s", "th_rise_q016", "th_rise2_q016", "stamp"]
+        "thermal_tau_s", "thermal_tau2_s", "th_rise_q016", "th_rise2_q016"]
     out = capsys.readouterr().out.splitlines()
     assert out[0] == said[5].strip() and out.index("thermal_tau_s: 115 -> 2") == out.index(said[-1].strip()) + 1
     # a servo that holds the four as the set does is told nothing of the model
@@ -4459,19 +4479,19 @@ def test_save_backs_up_saves_and_reads_back(target, bench, tmp_path, committed):
     assert (stored, after) == (folder / "stored.json", folder / "after.json")
     assert json.loads(stored.read_text()) == boot and boot["pos_table"]["points"] == bytes(512).hex()
     back = json.loads(after.read_text())
-    assert cn.differences(target, back) == [] and back["data_state"] == "clean"
+    assert cn.differences(target, back) == [] and (back["data_state"], back["unsaved"]) == ("clean", False)
     assert back["pos_table"]["state"] == "LIVE" and back["wide_codes"] == NEW_SLOTS.hex()
     assert str(tmp_path) not in stored.read_text() + after.read_text()
-    # torque read, the reboot onto the stored state, the install with its stamp, the SAVE, the reboot
+    # torque read, the reboot onto the stored state, the install, the SAVE, the reboot
     wrote = bench.wrote()
     assert bench.log[0] == ("get", "torque_enable") and wrote[0] == ("run", "reboot")
-    assert wrote[-3:] == [("run", "stamp"), ("run", "save"), ("run", "reboot")] and wrote.count(("run", "save")) == 1
+    assert wrote[-2:] == [("run", "save"), ("run", "reboot")] and wrote.count(("run", "save")) == 1
     # what a reboot returns from now on is the set
     bench.set("r_q12", 1)
     bench.reboot()
     assert cn.check(target) == []
     # and the record puts the state the servo had stored back, its identity table with it
-    assert cn.restore(stored, PAIR, **BOTH, root=tmp_path)[-1] == "stamp"
+    assert cn.restore(stored, PAIR, **BOTH, root=tmp_path)
     assert held(sc.servo_state()) == held(boot)
     # a second save of the same set keeps its files beside the first, which stand as they were
     first = stored.read_text()
@@ -4586,7 +4606,7 @@ def test_a_save_that_does_not_read_back_says_what_flash_holds_and_what_puts_the_
         cn.restore(stored, PAIR, root=tmp_path)
     cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pos_lut.json").unlink()
     wrote = cn.restore(stored, PAIR, **BOTH, root=tmp_path)
-    assert wrote[:4] == ["wide-code slots", "raw_min", "raw_max", "position table"] and wrote[-1] == "stamp"
+    assert wrote[:4] == ["wide-code slots", "raw_min", "raw_max", "position table"]
     assert held(sc.servo_state()) == held(json.loads(stored.read_text()))
     # a record that holds only the sha1 of its points cannot give its table back
     old = json.loads(stored.read_text())

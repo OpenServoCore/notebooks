@@ -38,9 +38,9 @@ compensated raw (`Table.lin` of `widecodes.compensated`).
 `build` writes stages/5-closed-loop/calibration/<pair>.pos_lut.json, `check`
 grades it offline, `plan` prints the `osc` commands an install takes and
 runs none of them. `install` runs the plan's steps 1 to 4 on the servo,
-each read checked and every page read back, and stops short of the stamp:
-nothing here stamps or saves. The stamp is the constant set's, written
-once the servo reads back as the whole set (oscnb.constants).
+each read checked and every page read back: nothing here saves. The SAVE
+is the constant set's, once the servo reads back as the whole set
+(oscnb.constants).
 """
 import argparse
 import hashlib
@@ -541,10 +541,9 @@ def plan(pair):
     lines = [f"# install {results.rel(out_path(pair))} (protocol sec 5.7); nothing here has run"]
     lines += [shown_step(s, o) for s in install_steps(t)]
     lines += [
-        "# 5. no stamp and no SAVE: the table stands volatile and the data state reads",
-        "#    STAMP_MISMATCH. The pair's constant set stamps, once the servo reads back as",
-        "#    the whole set (python -m oscnb.constants install), and osc reboot returns the",
-        "#    saved table.",
+        "# 5. no SAVE: the table stands volatile and the servo reads unsaved. The pair's",
+        "#    constant set saves it with the rest (python -m oscnb.constants install, then",
+        "#    save), and osc reboot returns the saved table.",
     ]
     return "\n".join(lines)
 
@@ -573,15 +572,15 @@ def fetch(page, n=2 * PAGE_POINTS):
 def on_servo():
     """(state, points) as the servo holds them: `pos_lut_state` by name
     and every page fetched, the 256 points i16 LE in a row. A FETCH is
-    never gated and moves neither the state nor the stamp (protocol sec
-    5.7)."""
+    never gated and moves neither the state nor the unsaved bit (protocol
+    sec 5.7)."""
     return state_name(osc.get("pos_lut_state")), b"".join(fetch(p) for p in range(PAGES))
 
 
 def install(pair):
     """Run `plan`'s steps 1 to 4 on the servo: the preconditions, STORE of
-    every page, COMMIT, LIVE, every page read back the same. No stamp and
-    no SAVE; returns the Table. A refusal past the first STORE leaves the
+    every page, COMMIT, LIVE, every page read back the same. No SAVE;
+    returns the Table. A refusal past the first STORE leaves the
     array loading: `osc reboot` returns the saved table."""
     return install_table(load(pair)[0])
 
@@ -630,7 +629,7 @@ def main(argv=None):
                    help="the servo's raw_min and raw_max")
     sub.add_parser("check", help="the verdict and the held-out grade through the table")
     sub.add_parser("plan", help="print the install's osc commands without running them")
-    sub.add_parser("install", help="run the plan's steps 1 to 4 on the servo; no stamp, no SAVE")
+    sub.add_parser("install", help="run the plan's steps 1 to 4 on the servo; no SAVE")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "build":
@@ -643,7 +642,7 @@ def main(argv=None):
         elif a.cmd == "install":
             install(a.pair)
             print(f"{results.rel(out_path(a.pair))}: LIVE, {PAGES} pages read back the same; not "
-                  "stamped and not saved (the constant set's install stamps, osc reboot drops it)")
+                  "saved (the constant set's save keeps it, osc reboot drops it)")
         else:
             print(plan(a.pair))
     except (ValueError, settings.Refused) as e:
