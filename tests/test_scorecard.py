@@ -664,7 +664,7 @@ def test_a_rung_records_its_set_and_its_deviation(bus, monkeypatch, tmp_path):
     track = sc.osc.track
 
     def tracked(out, mode, schedule, **kw):
-        seen.append((servo.decoded("p_kp_q88"), servo.decoded("pos_deadband_counts"), servo.data))
+        seen.append((servo.decoded("p_kp_q88"), servo.decoded("pos_deadband_counts"), servo.settings))
         return track(out, mode, schedule, **kw)
 
     monkeypatch.setattr(sc.osc, "track", tracked)
@@ -682,9 +682,9 @@ def test_a_rung_records_its_set_and_its_deviation(bus, monkeypatch, tmp_path):
     assert doc["protection"] == {"hash": bus["set"]["hash"]["protection"], "moved": {}}
     assert derived["hash"]["plant"] != bus["set"]["hash"]["plant"]
     assert not any(k in doc for k in ("settings", "pos_table", "wide_codes"))
-    # the install wrote the two fields, every capture ran on them with a clean data
-    # state, and the reboot at the end brought the stored state back
-    assert seen == [(5026, 8, "clean")] * 8
+    # the install wrote the two fields, every capture ran on them with the settings
+    # loaded, and the reboot at the end brought the stored state back
+    assert seen == [(5026, 8, "loaded")] * 8
     assert servo.wrote() == [("set", "p_kp_q88", "5026"), ("set", "pos_deadband_counts", "8"),
                              ("run", "reboot")]
     assert constants(rung, 1) == constants(rung, 2) and constants(rung, 1)["fields"]["p_kp_q88"] == 5026
@@ -1178,15 +1178,15 @@ def test_a_rung_off_its_set_does_not_start(bus, monkeypatch, tmp_path):
     f = deviation(tmp_path, "soft", p_kp_q88=5026)
     with pytest.raises(SystemExit) as e:
         sc.run("01-soft", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
-    assert str(e.value).endswith("01-soft: run-1 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [none, held, r.rails_fit])")
+    assert str(e.value).endswith("01-soft: run-1 does not start: the servo is not the rung's set (settings "
+                                 "loaded; r_q12: servo 16000, set 17100 [none, held, r.rails_fit])")
     # nothing is recorded, nothing is driven, and the stored state comes back
     assert bus["log"] == [] and not sc.rung_dir(PAIR, "01-soft").exists()
     assert servo.wrote()[-1] == ("run", "reboot") and servo.decoded("r_q12") == 17100
     # the servo on its stored state is not a derived set either, whoever asks
     r = sc.new_rung(PAIR, "01-soft", "abc123", "f" * 40, 1, deviation=f)
-    with pytest.raises(SystemExit, match=r"run-1 does not start: the servo is not the rung's set \(data state "
-                                         r"clean; p_kp_q88: servo 40212, set 5026 \[pinned\]\)"):
+    with pytest.raises(SystemExit, match=r"run-1 does not start: the servo is not the rung's set \(settings "
+                                         r"loaded; p_kp_q88: servo 40212, set 5026 \[pinned\]\)"):
         sc.record_constants(r, 1)
     assert not r["dir"].exists()
 
@@ -1266,7 +1266,7 @@ def ab_bench(bus, monkeypatch, tmp_path):
     under it, go into the servo's own log, so they stand in one order
     with its writes. A flash reboots the servo onto its stored state;
     `descriptors` gives an image its own fields and stored values, and
-    `stale` names the images every boot of which reads CALIB_STALE."""
+    `stale` names the images every boot of which reads `defaults: CALIB`."""
     servo = bus["servo"]
     images = {}
     for name in ("a", "b"):
@@ -1405,11 +1405,11 @@ def test_a_side_on_the_table_installs_it_around_its_own_runs_and_is_planned_in_i
     assert (constants(a, 1)["pos_table"]["state"], constants(b, 1)["pos_table"]["state"]) == ("IDENTITY", "LIVE")
 
 
-def test_a_side_whose_image_boots_on_defaults_runs_on_the_set_and_says_the_data_state(ab_bench, bus):
+def test_a_side_whose_image_boots_on_defaults_runs_on_the_set_and_says_the_settings(ab_bench, bus):
     """An image whose CALIB layout is newer than the saved one: every
-    boot of it reads CALIB_STALE. The install finds the servo the set
-    field by field and the run goes on it; the data state is recorded as
-    information."""
+    boot of it reads `defaults: CALIB`. The install finds the servo the
+    set field by field and the run goes on it; the settings word is
+    recorded as information."""
     ab_bench["stale"].add("b.bin")
     servo = bus["servo"]
     a, b = sc.ab(side(ab_bench, "12-a", "a"), side(ab_bench, "12-b", "b"), rounds=2, servo=SERVO, board=BOARD)
@@ -1420,12 +1420,12 @@ def test_a_side_whose_image_boots_on_defaults_runs_on_the_set_and_says_the_data_
     assert events(bus) == expected
     for k in (1, 2):
         state = constants(b, k)
-        assert state["data_state"] == "CALIB_STALE"
+        assert state["settings"] == "defaults: CALIB"
         assert cn.differences(cn.load(b / sc.SET_COPY), state) == [] and sc.run_complete(b / f"run-{k}")
-    assert servo.data == "CALIB_STALE"
+    assert servo.settings == "defaults: CALIB"
 
 
-def test_a_reboot_that_lands_another_data_state_than_before_the_install_is_refused(bus, monkeypatch, tmp_path):
+def test_a_reboot_that_lands_other_settings_than_before_the_install_is_refused(bus, monkeypatch, tmp_path):
     servo = bus["servo"]
     track = sc.osc.track
 
@@ -1435,8 +1435,8 @@ def test_a_reboot_that_lands_another_data_state_than_before_the_install_is_refus
 
     monkeypatch.setattr(sc.osc, "track", then_stale)
     f = deviation(tmp_path, "soft", p_kp_q88=5026)
-    with pytest.raises(settings.Refused, match="after the reboot the data state is CALIB_STALE, not the clean "
-                                               "of before the install"):
+    with pytest.raises(settings.Refused, match="after the reboot the settings are defaults: CALIB, not the "
+                                               "loaded of before the install"):
         sc.run("01-soft", "abc123", "f" * 40, runs=1, deviation=f, servo=SERVO, board=BOARD)
     assert servo.wrote()[-1] == ("run", "reboot")
 
@@ -1827,8 +1827,8 @@ def test_a_run_records_the_servos_constant_state(bus):
     rung = sc.run("00-baseline", "abc123", "f" * 40, runs=2, servo=SERVO, board=BOARD)
     doc = constants(rung, 1)
     assert constants(rung, 2) == doc
-    assert list(doc) == ["addr", "raw", "fields", "writable", "pos_table", "wide_codes", "data_state", "unsaved",
-                         "hash"]
+    assert list(doc) == ["addr", "raw", "fields", "writable", "pos_table", "wide_codes", "settings",
+                         "refused_modes", "unsaved", "hash"]
     # CONFIG and CALIB end where the servo's own descriptor places torque_enable, 0xc0 on the fake
     assert doc["addr"] == 0 and bytes.fromhex(doc["raw"]) == bytes(servo.table[:0xC0])
     assert doc["raw"][2 * 0x40:2 * 0x44] == "149d0400" and bytes.fromhex(doc["raw"])[0x91:0xA1] == SLOTS
@@ -1844,7 +1844,7 @@ def test_a_run_records_the_servos_constant_state(bus):
     assert doc["hash"] == sc.config_hash({**{k: doc[k] for k in sc.HASHED},
                                           "pos_table": {"state": "IDENTITY", "points_sha1": NO_POINTS}})
     assert doc["wide_codes"] == SLOTS.hex()
-    assert (doc["data_state"], doc["unsaved"]) == ("clean", False)
+    assert (doc["settings"], doc["refused_modes"], doc["unsaved"]) == ("loaded", "none", False)
     assert rung_json(rung)["constants_hash"] == doc["hash"]
     assert sorted(p.name for p in (rung / "run-1").iterdir()) == ["follow", "hold", "servo.json", "steps", "wide"]
 
@@ -1870,7 +1870,7 @@ def test_the_constant_state_is_read_once_a_run_after_the_set_is_on_and_before_it
     read += [("field", wc.FIELD), ("status",)]
     assert len(read) == 21
     # the install: the state, the one field with its read-back, the state again, which must be the set; then a
-    # state a run; then the reboot and its data state
+    # state a run; then the reboot and its settings word
     expected = [*read, ("set", "p_kp_q88", "5026"), ("get", "p_kp_q88"), *read]
     for k in (1, 2):
         expected += [*read, *(("capture", f"run-{k}", name) for name in TS.CAPTURES)]
@@ -1890,8 +1890,8 @@ def test_a_constant_changed_between_runs_is_refused_with_the_field_named(bus, mo
     monkeypatch.setattr(sc.osc, "track", tracked)
     with pytest.raises(SystemExit) as e:
         sc.run("00-baseline", "abc123", "f" * 40, runs=3, servo=SERVO, board=BOARD)
-    assert str(e.value).endswith("00-baseline: run-2 does not start: the servo is not the rung's set (data state "
-                                 "clean; r_q12: servo 16000, set 17100 [none, held, r.rails_fit])")
+    assert str(e.value).endswith("00-baseline: run-2 does not start: the servo is not the rung's set (settings "
+                                 "loaded; r_q12: servo 16000, set 17100 [none, held, r.rails_fit])")
     # nothing of run-2 is recorded or driven, and run-1 stands
     rung = sc.rung_dir(PAIR, "00-baseline")
     assert [name for name, _, _ in bus["log"]] == list(TS.CAPTURES)
@@ -1910,18 +1910,18 @@ def an_unnamed_byte(servo):
     servo.table[servo.UNNAMED] = 0xA5
 
 
-OFF = "does not start: the servo is not the rung's set (data state "
+OFF = "does not start: the servo is not the rung's set (settings "
 OTHER = "reads a constant state other than the one the rung's first run recorded: "
 
 
 @pytest.mark.parametrize("change, said", [
-    (lambda s: s.set("p_kp_q88", 5026), OFF + "clean; p_kp_q88: servo 5026, set 40212 [none, held, p_kp.split])"),
-    (lambda s: s.set("drive_polarity", 0), OFF + "clean; drive_polarity: servo off, set on [none])"),
+    (lambda s: s.set("p_kp_q88", 5026), OFF + "loaded; p_kp_q88: servo 5026, set 40212 [none, held, p_kp.split])"),
+    (lambda s: s.set("drive_polarity", 0), OFF + "loaded; drive_polarity: servo off, set on [none])"),
     (lambda s: s.set(wc.FIELD, bytes(16)),
-     OFF + f"clean; wide-code slots: servo {bytes(16).hex(' ')}, set {SLOTS.hex(' ')} [measured, slots.wide_codes])"),
+     OFF + f"loaded; wide-code slots: servo {bytes(16).hex(' ')}, set {SLOTS.hex(' ')} [measured, slots.wide_codes])"),
     (lambda s: s.set("pos_lut_state", 2),
-     OFF + "clean; position table state: servo LIVE, set IDENTITY [none])"),
-    (a_table_point, OFF + "clean; position table points sha1: servo "
+     OFF + "loaded; position table state: servo LIVE, set IDENTITY [none])"),
+    (a_table_point, OFF + "loaded; position table points sha1: servo "
                     f"{hashlib.sha1(bytes(3 * 64) + PAGE_3 + bytes(4 * 64)).hexdigest()}, set {NO_POINTS} "
                     "[none])"),
     # what no set holds is still the state of the rung's first run: a byte no field names
@@ -1943,9 +1943,11 @@ def test_what_the_servo_says_of_its_state_is_recorded_and_refuses_no_run(bus, tm
     r = {"dir": tmp_path / "rung", "set": bus["set"], "ran": bus["set"]}
     sc.record_constants(r, 1)
     servo = bus["servo"]
-    servo.data, servo.unsaved = "CALIB_STALE", True
+    servo.settings, servo.refused, servo.unsaved = "defaults: CALIB", "Current, Velocity, Position", True
     sc.record_constants(r, 2)
-    assert (constants(r["dir"], 2)["data_state"], constants(r["dir"], 2)["unsaved"]) == ("CALIB_STALE", True)
+    said = constants(r["dir"], 2)
+    assert (said["settings"], said["refused_modes"], said["unsaved"]) == (
+        "defaults: CALIB", "Current, Velocity, Position", True)
     assert constants(r["dir"], 2)["hash"] == constants(r["dir"], 1)["hash"]
 
 

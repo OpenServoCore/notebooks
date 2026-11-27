@@ -4,8 +4,12 @@ import pytest
 
 from oscnb import settings
 
-CLEAN = "id 1: model 0x0101\n      fault 0x00  unsaved false  trim 0\n      data  clean\n"
-FRESH = "id 1: model 0x0101\n      fault 0x00  unsaved true  trim 0\n      data  CONFIG_VIRGIN | CALIB_VIRGIN\n"
+CLEAN = "id 1: model 0x0101\n      fault 0x00  unsaved false  trim 0\n      settings loaded\n      refused  none\n"
+FRESH = ("id 1: model 0x0101\n      fault 0x00  unsaved true  trim 0\n      settings defaults: CONFIG, CALIB\n"
+         "      refused  Current, Velocity, Position\n"
+         "               closed mode refused: Ke, the current cap or the speed ceiling is 0, unset; run an "
+         "identification: osc-ident run\n"
+         "               changes not saved: a reboot loses them\n      fault config (7)\n")
 
 
 class FakeOsc:
@@ -85,12 +89,21 @@ def test_a_servo_on_its_defaults_is_written_like_any(fake):
     assert f.regs["p_kp_q88"] == 5026
 
 
-def test_restore_reboots_waits_for_the_bus_and_says_the_data_state(fake):
+def test_restore_reboots_waits_for_the_bus_and_says_the_settings(fake):
     f = fake(boot_pings=2)
-    assert settings.restore() == "clean"
+    assert settings.restore() == "loaded"
     assert f.log == [("run", "reboot"), ("ping",), ("ping",), ("ping",), ("status",)]
     fake(status=FRESH)
-    assert settings.restore() == "CONFIG_VIRGIN | CALIB_VIRGIN", "information, no refusal"
+    assert settings.restore() == "defaults: CONFIG, CALIB", "information, no refusal"
+
+
+def test_the_settings_and_the_refused_modes_read_their_own_lines():
+    assert (settings.settings(CLEAN), settings.refused(CLEAN)) == ("loaded", "none")
+    # the operator line that says a mode is refused is not the refused line
+    assert (settings.settings(FRESH), settings.refused(FRESH)) == ("defaults: CONFIG, CALIB",
+                                                                   "Current, Velocity, Position")
+    with pytest.raises(RuntimeError, match="no settings line"):
+        settings.settings("id 1: model 0x0101\n      data  clean\n")
 
 
 def test_unsaved_reads_the_health_line():

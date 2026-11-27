@@ -192,31 +192,44 @@ def test_a_pair_without_a_set_is_refused(tmp_path):
 
 
 def on_defaults(state):
-    state["data_state"], state["unsaved"] = "CONFIG_VIRGIN | CALIB_VIRGIN", True
+    state["settings"], state["refused_modes"], state["unsaved"] = "defaults: CONFIG, CALIB", "Current", True
 
 
 def stamped(state):
     """A record from a servo with a plant stamp: its register among the
-    fields, its stamp and data state lines, hashed with them."""
+    fields, its stamp and data state lines, hashed with them, and no
+    settings or refused modes."""
     state["fields"]["plant_stamp"] = 0x9c45
     state["writable"].insert(state["writable"].index("recip_ke_q") + 1, "plant_stamp")
     state["stamp"], state["data_state"] = "0x9c45 = live set", "clean"
-    del state["unsaved"]
+    for k in ("settings", "refused_modes", "unsaved"):
+        del state[k]
     state["hash"] = sc.state_hash(state)
 
 
 @pytest.mark.parametrize("change", [on_defaults, stamped], ids=["read on defaults", "from a stamped servo"])
-def test_adopt_takes_a_record_whatever_its_data_state_said(servo, tmp_path, change):
-    """The data state and the unsaved word are information outside the
-    hash; a record from a servo with a plant stamp hashes as it was
-    written and leaves the stamp out of the set."""
+def test_adopt_takes_a_record_whatever_its_settings_said(servo, tmp_path, change):
+    """The settings word, the refused modes and the unsaved word are
+    information outside the hash; a record from a servo with a plant
+    stamp hashes as it was written and leaves the stamp out of the set."""
     doc, _ = cn.adopt(PAIR, record(tmp_path, change), root=tmp_path)
     assert list(doc["fields"]) == OWNED
 
 
+def test_adopt_takes_a_field_the_record_names_by_its_old_name_under_its_new_one(servo, tmp_path):
+    def named_before(state):
+        state["fields"]["i_cont_counts"] = 277
+        state["writable"].append("i_cont_counts")
+
+    doc, _ = cn.adopt(PAIR, record(tmp_path, named_before), root=tmp_path)
+    assert list(doc["fields"]) == [*OWNED, "yield_current_counts"]
+    assert doc["fields"]["yield_current_counts"] == {
+        "value": 277, "class": "none", "origin": cn.ORIGIN, "protection": {"looser": "judged"}}
+
+
 def test_a_state_hash_is_the_table_and_the_position_table_alone(servo):
     state = sc.servo_state()
-    said = {**state, "data_state": "CALIB_STALE", "unsaved": True}
+    said = {**state, "settings": "defaults: CALIB", "refused_modes": "Current", "unsaved": True}
     assert sc.state_hash(said) == state["hash"]
     assert sc.state_hash({**state, "raw": "00" + state["raw"][2:]}) != state["hash"]
 
@@ -358,7 +371,7 @@ def test_check_is_clean_on_the_adopted_servo(adopted, servo, capsys):
         f"wide-code slots {SLOTS.hex(' ')} [none]",
         f"hash: plant {h['plant'][:12]}, protection {h['protection'][:12]} (2 fields), set {h['set'][:12]}",
         "in no set (the bus front): id = 1",
-        f"data state clean; unsaved no; servo {sc.servo_state()['hash'][:12]}",
+        f"0 differences; settings loaded; unsaved no; set {h['set'][:12]}; servo {sc.servo_state()['hash'][:12]}",
     ]
     servo.log.clear()
     assert cn.check(doc) == []
@@ -413,14 +426,18 @@ def test_check_names_what_the_servo_holds_outside_the_set(adopted, servo, monkey
         f"wide-code slots: servo names none, set {SLOTS.hex(' ')} [none]"]
 
 
-def test_check_says_the_data_state_and_refuses_nothing_on_it(adopted, servo, capsys):
+def test_check_says_the_settings_and_the_refused_modes_and_refuses_nothing_on_them(adopted, servo, capsys):
     doc, _ = adopted
-    servo.data, servo.unsaved = "CONFIG_VIRGIN | CALIB_VIRGIN", True
+    servo.settings, servo.unsaved = "defaults: CONFIG, CALIB", True
     assert cn.check(doc) == []
     assert capsys.readouterr().out.splitlines()[-1].startswith(
-        "data state CONFIG_VIRGIN | CALIB_VIRGIN; unsaved yes; servo ")
+        "0 differences; settings defaults: CONFIG, CALIB; unsaved yes; set ")
+    servo.refused = "Current, Velocity, Position"
+    assert cn.check(doc) == []
+    assert capsys.readouterr().out.splitlines()[-1] == f"refused Current, Velocity, Position: {cn.REFUSED}"
     servo.set("r_q12", 16000)
     assert cn.check(doc) == ["r_q12: servo 16000, set 17100 [none]"]
+    assert capsys.readouterr().out.splitlines()[-2].startswith("1 differences; settings defaults: CONFIG, CALIB; ")
 
 
 # --- the command line ---
@@ -444,8 +461,8 @@ def test_the_verbs_as_commands(cli, servo, tmp_path, capsys):
     cli("status")
     cli("check")
     assert capsys.readouterr().out.splitlines()[0] == "0 input files, none moved"
-    # a difference is exit 1; the data state is information
-    servo.data = "CALIB_STALE"
+    # a difference is exit 1; the settings are information
+    servo.settings = "defaults: CALIB"
     cli("check")
     servo.set("r_q12", 16000)
     with pytest.raises(SystemExit) as e:
@@ -556,7 +573,7 @@ def test_install_from_blank_equals_the_set(target, bench, tmp_path, capsys):
                             ("set", "r_q12", "16000")]
     state = sc.servo_state()
     assert cn.differences(target, state) == []
-    assert (state["data_state"], state["unsaved"]) == ("clean", True)
+    assert (state["settings"], state["unsaved"]) == ("loaded", True)
     assert state["pos_table"]["state"] == "LIVE" and state["pos_table"]["points_sha1"] == cn.points_sha1(POINTS)
     out = capsys.readouterr().out.splitlines()
     assert out[0] == f"wide-code slots: {SLOTS.hex(' ')} -> {NEW_SLOTS.hex(' ')}"
@@ -579,8 +596,8 @@ def test_install_on_an_equal_servo_writes_nothing(stored, bench, tmp_path):
     assert bench.wrote() == [("set", "p_kp_q88", "4000"), ("set", "r_q12", "15000")]
     bench.log.clear()
     assert cn.install(two, root=tmp_path) == [] and bench.wrote() == []
-    # an equal servo on its defaults is written nothing: the data state is information
-    bench.data = "CONFIG_VIRGIN | CALIB_VIRGIN"
+    # an equal servo on its defaults is written nothing: the settings are information
+    bench.settings = "defaults: CONFIG, CALIB"
     assert cn.install(two, root=tmp_path) == [] and bench.wrote() == []
 
 
@@ -635,7 +652,8 @@ def test_a_looser_limit_needs_loosen(stored, bench, tmp_path):
     ("stall_omega_max_cps", 500, 400, True), ("stall_omega_max_cps", 500, 600, False),
     ("th_rise_q016", 1143, 494, True), ("v_undervolt_counts", 720, 800, False),
     ("stall_response", "Fault (0)", "Yield (1)", True), ("stall_response", "Yield (1)", "Fault (0)", True),
-    ("i_cont_counts", 277, 0, True), ("i_cont_counts", 277, 200, True), ("rail_fold_q8", 1430, 0, True),
+    ("yield_current_counts", 277, 0, True), ("yield_current_counts", 277, 200, True),
+    ("rail_fold_q8", 1430, 0, True),
     ("ntc_k1_q88", 563, 212, True), ("cutoff_cc", 10000, "9000", True), ("cutoff_cc", 10000, 9000, False),
     ("derate_start_cc", 8000, 9000, True), ("speed_ceiling_cps", 8051, 8244, True),
     ("speed_ceiling_cps", 8051, 4025, False),
@@ -645,13 +663,17 @@ def test_looser_reads_a_direction_and_takes_what_it_cannot_read_as_less(name, on
 
 
 def test_every_protection_field_has_one_way_to_protect_less():
-    assert cn.PROTECTION == {*cn.LOOSER, "derate_start_cc"} and set(cn.LOOSER.values()) == {"up", "down", "judged"}
+    assert cn.PROTECTION == {*cn.LOOSER, "derate_start_cc", "i_cont_counts"}
+    assert set(cn.LOOSER.values()) == {"up", "down", "judged"}
     assert len(cn.LOOSER) == 26 and not cn.PROTECTION & {*cn.COMMS, cn.STAMP, wc.FIELD}
     # a field the firmware no longer names keeps the way it had, for the sets written while it stood, and a
     # field of the plant none: it is no field of the table now, and nothing binds it
     assert cn.RETIRED == {"derate_start_cc": "up", "r0_q12": None, "openloop_decay": None}
     assert not set(cn.RETIRED) & {*cn.LOOSER, *cn.RULES}
     assert [cn.protection_of(n) for n in cn.RETIRED] == [{"looser": "up"}, None, None]
+    # a field the descriptor names otherwise now protects as its new name does, for the sets written before
+    assert cn.RENAMED == {"i_cont_counts": "yield_current_counts"}
+    assert cn.protection_of("i_cont_counts") == cn.protection_of("yield_current_counts") == {"looser": "judged"}
 
 
 def test_a_refusal_after_the_first_write_reboots(stored, bench, tmp_path):
@@ -661,7 +683,7 @@ def test_a_refusal_after_the_first_write_reboots(stored, bench, tmp_path):
         cn.install(two, root=tmp_path)
     assert str(e.value) == "r_q12: wrote 16000, read back 17100; rebooted: the servo is back on its saved state"
     assert bench.wrote() == [("set", "p_kp_q88", "5026"), ("set", "r_q12", "16000"), ("run", "reboot")]
-    assert bench.decoded("p_kp_q88") == 40212 and bench.data == "clean"
+    assert bench.decoded("p_kp_q88") == 40212 and bench.settings == "loaded"
     assert cn.differences(stored, sc.servo_state()) == []
     # a write the servo refuses twice, after one that landed
     bench.log.clear()
@@ -684,7 +706,7 @@ def test_soft_limits_go_off_and_back_on_in_one_write(stored, bench, tmp_path, ca
     assert cn.install(off, root=tmp_path) == ["pos_min_soft_counts", "pos_max_soft_counts"]
     assert bench.wrote() == [soft_write(0, 0)]
     state = sc.servo_state()
-    assert cn.differences(off, state) == [] and state["data_state"] == "clean"
+    assert cn.differences(off, state) == [] and state["settings"] == "loaded"
     assert "pos_max_soft_counts: 3560 -> 0" in capsys.readouterr().out.splitlines()
     # a field at a time, 0 / 0 is no pair the servo takes: one side is refused against the other as stored
     with pytest.raises(subprocess.CalledProcessError):
@@ -785,7 +807,7 @@ def test_install_returns_a_live_table_to_the_identity(target, bench, tmp_path, c
     assert capsys.readouterr().out.splitlines()[0] == "position table: LIVE -> IDENTITY, 8 pages read back"
     state = sc.servo_state()
     assert state["pos_table"]["state"] == "IDENTITY" and state["pos_table"]["points_sha1"] == NO_POINTS
-    assert cn.differences(identity(target), state) == [] and state["data_state"] == "clean"
+    assert cn.differences(identity(target), state) == [] and state["settings"] == "loaded"
 
 
 def test_a_servo_that_lands_an_all_zero_table_live_is_refused_as_that(target, bench, tmp_path):
@@ -918,7 +940,7 @@ NO_BLOCK = [
     *NO_COUNTS,
     *(f"{n}: left out, 1-board/ntc-curve has no result for board" for n in ("ntc_raw_ref", "ntc_t_ref_cc",
                                                                            "ntc_k1_q88", "ntc_k2_q24")),
-    *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("i_cont", "stall_release", "oc_trip")),
+    *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("yield_current", "stall_release", "oc_trip")),
     "stall_tau_trip_counts: left out, policy.json has no collision_trip",
     "cutoff_cc: left out, policy.json has no cutoff_c",
     *(f"{n}: left out, 4-estimators/winding-temperature has no result for synth__board" for n in (
@@ -935,7 +957,8 @@ CLASS = "synth-class"
 CLASS_SHEET = f"stages/5-closed-loop/calibration/{CLASS}.datasheet.json"
 DOCUMENT = "the maker's page, at its address, read on a day"
 BOARD_REG = {"servo": {**REG["servo"], "datasheet_class": CLASS}, "board": {"tick_hz": 20_000}}
-LIMITS_MA = {"datasheet_derate_default": 0.5, "i_cont_ma": 250.0, "stall_release_ma": 90.0, "oc_trip_ma": 2200.0}
+LIMITS_MA = {"datasheet_derate_default": 0.5, "yield_current_ma": 250.0, "stall_release_ma": 90.0,
+             "oc_trip_ma": 2200.0}
 BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_bemf_q12": "r_bemf.small_step"},
                 **LIMITS_MA, "collision_trip": "off", "cutoff_c": 90.0, "winding_plateau_reading": "high", "winding_slow_basis_ratio": 1.0,
                 "stall_response": "fault"}
@@ -967,7 +990,7 @@ BLOCK_SAID = [
     *FRONT, "current_limit_counts: carried at 554, it would be 600: name it with --protection", NO_STALL,
     *NO_LOOP, *NO_GAINS, *NO_OFF, *NO_COUNTS,
     *(f"{n}: left out, name it with --protection" for n in (
-        "ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "i_cont_counts", "stall_release_counts",
+        "ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24", "yield_current_counts", "stall_release_counts",
         "oc_trip_counts", "stall_tau_trip_counts", "cutoff_cc", "thermal_tau_s", "thermal_tau2_s", "th_rise_q016",
         "th_rise2_q016")),
     *NO_CHOICES,
@@ -1751,7 +1774,7 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
                             "duty_max_q15", "v_kp_q88", "v_ki_q412", "v_kaw_q412", "p_kp_q88",
                             "pos_deadband_counts", "velocity_limit_cps", "accel_limit_q88",
                             "current_limit_counts", "stall_response",
-                            "stall_time_ticks", "stall_omega_max_cps", "i_cont_counts", "stall_release_counts",
+                            "stall_time_ticks", "stall_omega_max_cps", "yield_current_counts", "stall_release_counts",
                             "stall_tau_trip_counts", "oc_trip_counts", "oc_trip_ticks",
                             "openloop_zero_brake", "cutoff_cc", "v_undervolt_counts", "thermal_tau2_s",
                             "pos_error_time_ticks", "pos_error_counts", "sensor_delta_max", "sensor_bad_count",
@@ -1845,10 +1868,11 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     assert all((results.ROOT / "stages" / sc.STAGE / "scorecard" / "results" / postable.default_pair()
                 / f"{rung}.json").exists() for rungs in swept.values() for rung in rungs)
     assert not any("the owner's decision" in policy["why"][k] for k in swept)
-    assert {k: policy[k] for k in ("i_cont_ma", "stall_release_ma", "collision_trip", "hold_band_floor_counts")} == {
-        "i_cont_ma": 350.0, "stall_release_ma": 126.0, "collision_trip": "off", "hold_band_floor_counts": 4}
-    # the release moves with the continuous current at the ratio of the interim pair, 90 over 250
-    assert policy["stall_release_ma"] * 250 == policy["i_cont_ma"] * 90
+    assert {k: policy[k] for k in ("yield_current_ma", "stall_release_ma", "collision_trip",
+                                   "hold_band_floor_counts")} == {
+        "yield_current_ma": 350.0, "stall_release_ma": 126.0, "collision_trip": "off", "hold_band_floor_counts": 4}
+    # the release moves with the yield current at the ratio of the interim pair, 90 over 250
+    assert policy["stall_release_ma"] * 250 == policy["yield_current_ma"] * 90
     # an entry that restates a default nobody decided says that, under `undecided`, with what it needs: it
     # is no decision, so it has no why, and a field whose rule reads it has no source. None is left: the two
     # bandwidths left the list with their sweeps, and the two limits of motion with the owner's decision
@@ -2799,7 +2823,7 @@ def test_the_bench_pairs_block_is_what_its_record_gives_on_its_table():
 # --- the protection rules: the NTC curve and the current limits ---
 
 CURVE = ("ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24")        # the words of the curve that are fitted
-LIMITS = ("current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_trip_counts")
+LIMITS = ("current_limit_counts", "yield_current_counts", "stall_release_counts", "oc_trip_counts")
 
 
 def test_the_protection_rules_bind_in_a_build_that_names_them(first, tmp_path):
@@ -2823,9 +2847,18 @@ def test_the_protection_rules_bind_in_a_build_that_names_them(first, tmp_path):
         "document": DOCUMENT, "protection": {"looser": "up"}}
     # the limits under it: the policy's mA through the same counts per A
     assert {n: (f[n]["value"], f[n]["rule"]) for n in LIMITS[1:]} == {
-        "i_cont_counts": (250, "i_cont.policy"), "stall_release_counts": (90, "stall_release.policy"),
+        "yield_current_counts": (250, "yield_current.policy"), "stall_release_counts": (90, "stall_release.policy"),
         "oc_trip_counts": (2200, "oc_trip.policy")}
-    assert f["i_cont_counts"]["protection"] == {"looser": "judged"}
+    assert f["yield_current_counts"]["protection"] == {"looser": "judged"}
+    # a set written before the rename names the field by its old name, in its place, and loads as written;
+    # the build that names the new one takes it under the new name, where it stood
+    before = {**doc, "fields": {("i_cont_counts" if n == "yield_current_counts" else n): e
+                                for n, e in f.items()}}
+    before = {**before, "hash": cn.hashes(before)}
+    assert cn.load(cn.write(before, tmp_path / "before.constants.json")) == before
+    renamed, _ = cn.build(PAIR, before, protection=["yield_current_counts"], root=tmp_path, registry=BOARD_REG)
+    assert moved_hashes(before, renamed) == ["protection"] and renamed["hash"] == doc["hash"]
+    assert list(renamed["fields"]) == list(f) and renamed["fields"] == f
     # the curve: the design quadratic's three words as the board's result holds them, each in its field's unit
     assert f["ntc_k1_q88"] == {
         "value": 200, "class": "measured", "rule": "ntc_k1.design", "rule_rev": 1, "unit": "cC/count", "q": 8,
@@ -2895,7 +2928,7 @@ def steps(first, tmp_path):
     plain, _ = block(first, tmp_path)
     bound, _ = cn.build(PAIR, plain, protection=[*CURVE, *LIMITS], root=tmp_path, registry=BOARD_REG)
     why = "it moves on a protection step of its own"
-    inputs(tmp_path, policy={**BLOCK_POLICY, "datasheet_derate_default": 0.51, "i_cont_ma": 256.0,
+    inputs(tmp_path, policy={**BLOCK_POLICY, "datasheet_derate_default": 0.51, "yield_current_ma": 256.0,
                              "stall_release_ma": 92.0,
                              "oc_trip_ma": 2250.0, "hold": dict.fromkeys((*CURVE, *LIMITS), why)})
     plant(tmp_path, {"1-board/ntc-curve": {"design_t_ref_cc": (2430.0,), "design_k1_q88": (474.0,),
@@ -2915,7 +2948,7 @@ def test_a_deviation_moves_the_protection_fields_of_one_step_and_releases_its_ho
     assert curve["deviation"]["fields"] == {"ntc_t_ref_cc": [2600, 2430], "ntc_k1_q88": [200, 474],
                                             "ntc_k2_q24": [30000, 19934]}
     limits = derived("limits", release=list(LIMITS))
-    assert limits["deviation"]["fields"] == {"current_limit_counts": [600, 612], "i_cont_counts": [250, 256],
+    assert limits["deviation"]["fields"] == {"current_limit_counts": [600, 612], "yield_current_counts": [250, 256],
                                              "stall_release_counts": [90, 92], "oc_trip_counts": [2200, 2250]}
     assert moved_hashes(steps, curve) == moved_hashes(steps, limits) == ["protection"]
     assert all(limits["fields"][n] == steps["fields"][n] for n in CURVE)
@@ -2923,8 +2956,9 @@ def test_a_deviation_moves_the_protection_fields_of_one_step_and_releases_its_ho
     with pytest.raises(ValueError, match="the holds of the ntc curve are released together, and ntc_k2_q24 would "
                                          "stay held"):
         derived("half", release=list(CURVE[:2]))
-    with pytest.raises(ValueError, match="the holds of the current scale are released together, and i_cont_counts, "
-                                         "stall_release_counts, oc_trip_counts would stay held"):
+    with pytest.raises(ValueError, match="the holds of the current scale are released together, and "
+                                         "yield_current_counts, stall_release_counts, oc_trip_counts would stay "
+                                         "held"):
         derived("one", release=["current_limit_counts"])
     # two steps in one deviation are refused, grouped or not
     with pytest.raises(ValueError, match="a deviation moves the protection fields of one step, and these are of "
@@ -2937,14 +2971,14 @@ def test_a_deviation_moves_the_protection_fields_of_one_step_and_releases_its_ho
     # a pin is a literal typed for a rung: one limit alone, the others standing held
     lone = derived("limit", pins={"current_limit_counts": pin(400)})
     assert lone["deviation"]["fields"] == {"current_limit_counts": [600, 400]}
-    assert lone["fields"]["i_cont_counts"] == steps["fields"]["i_cont_counts"]
+    assert lone["fields"]["yield_current_counts"] == steps["fields"]["yield_current_counts"]
     # what the install of each step has to be told, against a servo that holds the set of record
     state = {"fields": {n: e["value"] for n, e in steps["fields"].items()}}
     assert cn.gate(limits, state) == [
         "current_limit_counts: servo 600, set 612, protects less (less is up): name it with --protection "
         "current_limit_counts and --loosen current_limit_counts",
-        "i_cont_counts: servo 250, set 256, judged, taken as protecting less: name it with --protection "
-        "i_cont_counts and --loosen i_cont_counts",
+        "yield_current_counts: servo 250, set 256, judged, taken as protecting less: name it with --protection "
+        "yield_current_counts and --loosen yield_current_counts",
         "stall_release_counts: servo 90, set 92, protects less (less is up): name it with --protection "
         "stall_release_counts and --loosen stall_release_counts",
         "oc_trip_counts: servo 2200, set 2250, protects less (less is up): name it with --protection "
@@ -2997,13 +3031,13 @@ def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_me
     assert [ma for ma in range(1, 4000) if raw(ma * nominal / 1000) == 554] == [500]
     assert ran_on()["current_limit_counts"] == 554 and f["current_limit_counts"]["value"] == 1043
     # field: (what the servo held before the set, the mA it was typed for, the policy's entry, what the rule gives)
-    limits = {"i_cont_counts": (277, 250, "i_cont_ma", 397), "stall_release_counts": (100, 90, "stall_release_ma", 143),
-              "oc_trip_counts": (2439, 2200, "oc_trip_ma", 2497)}
+    limits = {"yield_current_counts": (277, 250, "yield_current_ma", 397),
+              "stall_release_counts": (100, 90, "stall_release_ma", 143), "oc_trip_counts": (2439, 2200, "oc_trip_ma", 2497)}
     assert ("current_limit_counts", *limits) == LIMITS == cn.GROUPS["current scale"]
-    # the overcurrent trip stays at the mA it was typed for; the lock hold's plateau raised the continuous
+    # the overcurrent trip stays at the mA it was typed for; the lock hold's plateau raised the yield
     # current, and the release with it
     assert {n: policy[key] - ma for n, (_, ma, key, _) in limits.items()} == {
-        "i_cont_counts": 100.0, "stall_release_counts": 36.0, "oc_trip_counts": 0.0}
+        "yield_current_counts": 100.0, "stall_release_counts": 36.0, "oc_trip_counts": 0.0}
     for name, (stored, ma, key, gives) in limits.items():
         # the mA the stored counts were typed for: the one whole mA the board's nominal parts take to them
         typed = [m for m in range(1, 4000) if raw(m * nominal / 1000) == stored]
@@ -3018,9 +3052,9 @@ def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_me
         assert gives > stored and cn.LOOSER[name] in ("up", "judged"), name
     # what the servo's earlier counts were at the measured scale, and how far the rule's are over them, mA
     now = {n: round(1000 * stored / measured, 1) for n, (stored, _, _, _) in limits.items()}
-    assert now == {"i_cont_counts": 244.0, "stall_release_counts": 88.1, "oc_trip_counts": 2148.9}
+    assert now == {"yield_current_counts": 244.0, "stall_release_counts": 88.1, "oc_trip_counts": 2148.9}
     more = {n: round(1000 * (gives - stored) / measured, 1) for n, (stored, _, _, gives) in limits.items()}
-    assert more == {"i_cont_counts": 105.7, "stall_release_counts": 37.9, "oc_trip_counts": 51.1}
+    assert more == {"yield_current_counts": 105.7, "stall_release_counts": 37.9, "oc_trip_counts": 51.1}
     assert policy["why"]["oc_trip_ma"].startswith("a wiring or bridge fault detector")
     # the collision trip is off, no current: the policy says so, and off is the field's largest value
     e = cn.evaluate(cn.rule_of(c, "stall_tau_trip_counts"), c)
@@ -3135,14 +3169,14 @@ REST = [f"the rest after 600 s at 554 counts, {s} s in" for s in cn.REST_S]
 
 class Warm(Geared):
     """The fake servo with the winding model's four fields, one node on
-    the slow leak, and the continuous current beside the limit."""
+    the slow leak, and the yield current beside the limit."""
 
-    FIELDS = dict(sorted({**Geared.FIELDS, "i_cont_counts": (0x52, 2, "rw", "uint"),
+    FIELDS = dict(sorted({**Geared.FIELDS, "yield_current_counts": (0x52, 2, "rw", "uint"),
                           "thermal_tau_s": (0x54, 2, "rw", "uint"), "thermal_tau2_s": (0x56, 2, "rw", "uint"),
                           "th_rise_q016": (0xb0, 2, "rw", "uint"), "th_rise2_q016": (0xb2, 2, "rw", "uint")}.items(),
                          key=lambda item: item[1][0]))
-    STORED = {**Geared.STORED, "i_cont_counts": 277, "thermal_tau_s": 115, "th_rise_q016": 1143, "thermal_tau2_s": 0,
-              "th_rise2_q016": 0}
+    STORED = {**Geared.STORED, "yield_current_counts": 277, "thermal_tau_s": 115, "th_rise_q016": 1143,
+              "thermal_tau2_s": 0, "th_rise2_q016": 0}
 
 
 @pytest.fixture
@@ -3214,7 +3248,7 @@ def test_the_winding_model_moves_as_one_step_said_with_what_the_estimate_reads(w
     assert moved_hashes(doc, derived) == ["protection"]
     assert {n: derived["fields"][n]["class"] for n in MODEL} == {
         "thermal_tau_s": "measured", "th_rise_q016": "measured", "thermal_tau2_s": "policy", "th_rise2_q016": "policy"}
-    # the build says the step as what the estimate reads, at the set's own continuous current and limit
+    # the build says the step as what the estimate reads, at the set's own yield current and limit
     said = notes[notes.index("winding model: thermal_tau_s, th_rise_q016, thermal_tau2_s, th_rise2_q016 held at "
                              "115, 1143, 0, 0, wanted at 2, 524, 129, 1573"):]
     assert said[1] == ("winding model: the leaks run at 131.072 s, wanted at 2.048 s and 131.072 s (the nearest "
@@ -3275,7 +3309,7 @@ def test_an_install_that_moves_the_winding_model_says_what_the_estimate_reads(wa
     assert verdict.startswith("  winding model: the wanted four read cooler in ") and all(
         f"{case} (-" in verdict for case in REST)
     # a set without the limits the cases run at says so and compares nothing
-    bare = {"fields": {n: e for n, e in high["fields"].items() if n != "i_cont_counts"}}
+    bare = {"fields": {n: e for n, e in high["fields"].items() if n != "yield_current_counts"}}
     assert cn.winding_step(bare, {n: 0 for n in MODEL}) == [
         "winding model: the set holds no current limit to compare the estimate at"]
 
@@ -3317,7 +3351,7 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert all("held" not in f[n] and "would_be" not in f[n] for n in MODEL) and not set(MODEL) & set(policy["hold"])
     assert {n: f[n]["class"] for n in MODEL} == {n: e["class"] for n, e in es.items()}
     assert set(MODEL) <= cn.PROTECTION
-    cont, limit = f["i_cont_counts"]["value"], f["current_limit_counts"]["value"]
+    cont, limit = f["yield_current_counts"]["value"], f["current_limit_counts"]["value"]
     assert (cont, limit) == (397, 1043)
     # the file of the step released the four together, and an install on a servo that holds the stored four
     # says the step as what the estimate reads
@@ -3337,7 +3371,7 @@ def test_the_bench_pairs_winding_model_is_the_stage_4_high_reading_bound_as_one_
     assert lines[-3:-1] == ["  30 s on, 30 s off at 1043 counts, the peak of a cycle: 166.18 -> 327.67",
                             "  30 s on, 30 s off at 1043 counts, the mean of a cycle: 149.05 -> 268.40"]
     # the cases are the stage 4 result's own tables under the four it published, to the centi-C the estimate
-    # counts in, tabled at the limits of their day: 284 counts, the 250 mA the continuous current was before
+    # counts in, tabled at the limits of their day: 284 counts, the 250 mA the yield current was before
     # the lock hold, and 568, the 500 mA the cap was before it was read off the maker's sheet
     tables = result["joined_fields_vs_one_slow_node_c"]
     day, tabled = (pick(row["counts"] for row in tables["hold"]) for pick in (min, max))
@@ -4206,7 +4240,7 @@ STEPS = ("stall_response", "thermal_tau_s", "v_undervolt_counts", "thermal_tau2_
          "pos_error_counts", "sensor_delta_max", "rail_fold_q8", "th_rise_q016", "th_rise2_q016", "ntc_t_ref_cc",
          "ntc_k1_q88", "ntc_k2_q24")    # the fields the seven protection steps moved, in the set's order
 SHEET_STEP = ("current_limit_counts", "speed_ceiling_cps")     # and the step read off the maker's sheet
-HOLD_STEP = ("i_cont_counts", "stall_release_counts")     # and the step the lock hold's plateau set
+HOLD_STEP = ("yield_current_counts", "stall_release_counts")     # and the step the lock hold's plateau set
 # the fields of the stored table the firmware took out since, and the ones it added
 GONE = ("r0_q12", "openloop_decay")
 ADDED = ("r_brush_q12", "brush_cps", "g_window_q016")
@@ -4226,13 +4260,14 @@ def before_the_releases(doc):
     the file of a protection step released and the limits of motion,
     released since, at the value the reference rung ran on; the cap at
     the 500 mA it was before it was read off the maker's sheet, the
-    continuous current and the release at the 250 and 90 mA they were
+    yield current and the release at the 250 and 90 mA they were
     before the lock hold, no speed
     ceiling, which the table had no field for, the friction slope the
     cruise refit moved since (REFIT) and the fields the gains' rule moved
     since (RULED) at the value the rung ran on, and
     the table of that day: the fields the firmware took out since (GONE)
-    back at the values the rung ran on, the ones it added (ADDED) out."""
+    back at the values the rung ran on, the ones it added (ADDED) out,
+    and the ones it named otherwise since (RENAMED) by their old names."""
     plant = list(json.loads((DEVIATIONS / "plant-as-held.json").read_text())["pins"])
     steps = [n for path in sorted(DEVIATIONS.glob("protection-*.json"))
              for n in json.loads(path.read_text())["release"]]
@@ -4243,9 +4278,11 @@ def before_the_releases(doc):
         del before["fields"][n]
     before["fields"].update({n: {"value": None, "protection": None} for n in GONE})
     before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT, *RULED)},
-                      current_limit_counts=raw(0.5 * scale), i_cont_counts=raw(0.25 * scale),
+                      current_limit_counts=raw(0.5 * scale), yield_current_counts=raw(0.25 * scale),
                       stall_release_counts=raw(0.09 * scale))
-    return before, plant, steps
+    old = {new: old for old, new in cn.RENAMED.items()}
+    before["fields"] = {old.get(n, n): e for n, e in before["fields"].items()}
+    return {**before, "hash": cn.hashes(before)}, plant, steps
 
 
 def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_every_protection_step():
@@ -4257,11 +4294,12 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     rung = json.loads((results.ROOT / "telemetry" / doc["pair"] / "scorecard" / REFERENCE / "rung.json").read_text())
     assert before["hash"]["plant"] == rung["set"]["hash"]["plant"] != doc["hash"]["plant"]
     assert before["hash"]["set"][:12] == BEFORE != doc["hash"]["set"][:12]
-    state = {"fields": {n: e["value"] for n, e in before["fields"].items()}}
+    # a servo that stores it, read by today's names
+    state = {"fields": {cn.RENAMED.get(n, n): e["value"] for n, e in before["fields"].items()}}
     differ = [n for n in f if state["fields"].get(n) != f[n]["value"]]
     assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *HOLD_STEP, *ADDED, *REFIT,
                                             *RULED)]
-    assert (len(plant), len(steps)) == (11, 13) and set(GONE) == set(before["fields"]) - set(f)
+    assert (len(plant), len(steps)) == (11, 13) and {*GONE, *cn.RENAMED} == set(before["fields"]) - set(f)
     assert {n for n, less in cn.RETIRED.items() if less is None} == set(GONE)
     assert not set(plant) & cn.PROTECTION and [n for n in f if n in steps] == list(STEPS)
     # the step read off the maker's sheet is one of its own: the cap rises, which protects less, and the
@@ -4272,7 +4310,7 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
         cn.CEILING]["value"]}})["current_limit_counts"] == ("--protection current_limit_counts and --loosen "
                                                             "current_limit_counts")
     state["fields"].update({n: f[n]["value"] for n in SHEET_STEP})
-    # the step the lock hold's plateau set is one of its own too: the continuous current, which is judged, and
+    # the step the lock hold's plateau set is one of its own too: the yield current, which is judged, and
     # the release rise together
     assert [state["fields"][n] for n in HOLD_STEP] == [284, 102] and asked(doc, state) == {
         **{n: f"--protection {n}" + (f" and --loosen {n}" if n in LOOSEN else "") for n in STEPS},
@@ -4351,7 +4389,8 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
     assert cn.gate(derived, {"fields": {n: e["value"] for n, e in f.items()}}) == []
     before = before_the_releases(doc)[0]
     now = (*SHEET_STEP, *HOLD_STEP, *ADDED)
-    state = {"fields": {**{n: e["value"] for n, e in before["fields"].items()}, **{n: f[n]["value"] for n in now}}}
+    state = {"fields": {**{cn.RENAMED.get(n, n): e["value"] for n, e in before["fields"].items()},
+                        **{n: f[n]["value"] for n in now}}}
     assert cn.gate(derived, state) == cn.gate(doc, state) and list(asked(derived, state)) == list(STEPS)
     assert cn.gate(derived, state, protection=STEPS, loosen=LOOSEN) == []
     if name in SWEPT:
@@ -4466,7 +4505,7 @@ def stored_live(bench):
 
 
 def held(state):
-    return {k: state[k] for k in ("fields", "pos_table", "wide_codes", "data_state")}
+    return {k: state[k] for k in ("fields", "pos_table", "wide_codes", "settings", "refused_modes")}
 
 
 def test_save_backs_up_saves_and_reads_back(target, bench, tmp_path, committed):
@@ -4479,7 +4518,7 @@ def test_save_backs_up_saves_and_reads_back(target, bench, tmp_path, committed):
     assert (stored, after) == (folder / "stored.json", folder / "after.json")
     assert json.loads(stored.read_text()) == boot and boot["pos_table"]["points"] == bytes(512).hex()
     back = json.loads(after.read_text())
-    assert cn.differences(target, back) == [] and (back["data_state"], back["unsaved"]) == ("clean", False)
+    assert cn.differences(target, back) == [] and (back["settings"], back["unsaved"]) == ("loaded", False)
     assert back["pos_table"]["state"] == "LIVE" and back["wide_codes"] == NEW_SLOTS.hex()
     assert str(tmp_path) not in stored.read_text() + after.read_text()
     # torque read, the reboot onto the stored state, the install, the SAVE, the reboot
@@ -4593,8 +4632,8 @@ def test_a_save_that_does_not_read_back_says_what_flash_holds_and_what_puts_the_
     stored = backup(target, tmp_path) / "stored.json"
     after = stored.with_name("after.json")
     assert str(e.value) == (
-        "after the SAVE and a reboot the servo is not the set (data state clean; r_q12: servo 123, set 16000 "
-        f"[none]): the save did not land as verified. Flash now holds the new state, the one {after} records, "
+        "after the SAVE and a reboot the servo is not the set (settings loaded, unsaved no; r_q12: servo 123, set "
+        f"16000 [none]): the save did not land as verified. Flash now holds the new state, the one {after} records, "
         f"and no longer the old one. `uv run python -m oscnb.constants restore --from {stored}` installs, "
         "volatile, the state the servo had stored; to make that permanent again, adopt that record as the pair's "
         "set of record (`adopt --from`, which writes a pair's first set only: the present set's file out of the "
@@ -4624,7 +4663,7 @@ def test_save_and_restore_as_commands(cli, bench, tmp_path, committed, monkeypat
     out = capsys.readouterr().out.splitlines()[-1]
     folder = next((tmp_path / "telemetry" / PAIR / "constants").iterdir())
     shown = folder.relative_to(tmp_path)
-    assert out == (f"saved: after a reboot the servo reads as the set, data state clean; {shown / 'stored.json'} "
+    assert out == (f"saved: after a reboot the servo reads as the set, settings loaded; {shown / 'stored.json'} "
                    f"holds the state it had stored before, {shown / 'after.json'} the state it boots with now")
     bench.set("r_q12", 1)
     cli("restore", "--from", str(folder / "stored.json"))
