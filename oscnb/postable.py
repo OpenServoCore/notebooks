@@ -36,7 +36,7 @@ compensated raw (`Table.lin` of `widecodes.compensated`).
     uv run python -m oscnb.postable install
 
 `build` writes stages/5-closed-loop/calibration/<pair>.pos_lut.json, `check`
-grades it offline, `plan` prints the `osc` commands an install takes and
+grades it offline, `plan` prints the `osc-bus` commands an install takes and
 runs none of them. `install` runs the plan's steps 1 to 4 on the servo,
 each read checked and every page read back: nothing here saves. The SAVE
 is the constant set's, once the servo reads back as the whole set
@@ -535,15 +535,15 @@ def shown_step(s, o):
 
 
 def plan(pair):
-    """The install's wire steps as `osc` commands, one string; runs none."""
+    """The install's wire steps as `osc-bus` commands, one string; runs none."""
     t, doc = load(pair)
-    o = f"osc -i {osc.ID}"
+    o = f"osc-bus -i {osc.ID}"
     lines = [f"# install {results.rel(out_path(pair))} (protocol sec 5.7); nothing here has run"]
     lines += [shown_step(s, o) for s in install_steps(t)]
     lines += [
         "# 5. no SAVE: the table stands volatile and the servo reads unsaved. The pair's",
         "#    constant set saves it with the rest (python -m oscnb.constants install, then",
-        "#    save), and osc reboot returns the saved table.",
+        "#    save), and osc-bus reboot returns the saved table.",
     ]
     return "\n".join(lines)
 
@@ -581,7 +581,7 @@ def install(pair):
     """Run `plan`'s steps 1 to 4 on the servo: the preconditions, STORE of
     every page, COMMIT, LIVE, every page read back the same. No SAVE;
     returns the Table. A refusal past the first STORE leaves the
-    array loading: `osc reboot` returns the saved table."""
+    array loading: `osc-bus reboot` returns the saved table."""
     return install_table(load(pair)[0])
 
 
@@ -628,7 +628,7 @@ def main(argv=None):
     b.add_argument("--stops", type=int, nargs=2, required=True, metavar=("RAW_MIN", "RAW_MAX"),
                    help="the servo's raw_min and raw_max")
     sub.add_parser("check", help="the verdict and the held-out grade through the table")
-    sub.add_parser("plan", help="print the install's osc commands without running them")
+    sub.add_parser("plan", help="print the install's osc-bus commands without running them")
     sub.add_parser("install", help="run the plan's steps 1 to 4 on the servo; no SAVE")
     a = ap.parse_args(argv)
     try:
@@ -642,7 +642,7 @@ def main(argv=None):
         elif a.cmd == "install":
             install(a.pair)
             print(f"{results.rel(out_path(a.pair))}: LIVE, {PAGES} pages read back the same; not "
-                  "saved (the constant set's save keeps it, osc reboot drops it)")
+                  "saved (the constant set's save keeps it, osc-bus reboot drops it)")
         else:
             print(plan(a.pair))
     except (ValueError, settings.Refused) as e:

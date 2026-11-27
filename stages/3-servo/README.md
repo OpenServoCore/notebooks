@@ -24,7 +24,7 @@ electrical constant is graded against, with mg90-c's beside them as the
 spread.
 
 The board is `dev-v006-2A-D` with its stage 1 results, on the DPS, running
-the experiment image, with the adapter on its bus at 3 Mbps and the `osc`
+the experiment image, with the adapter on its bus at 3 Mbps and the `osc-bus`
 and `osc-lab` tools on the host.
 
 ## The sittings
@@ -253,7 +253,7 @@ horn, where neither the pot nor the back EMF reads well.
 Needs: the `servo-camera` state; the stage 0 camera-tag and clock-sync
 results; the ladder result for the sustaining floor.
 
-How: each block is one phone clip, the STAT lamp flashed by `osc clapper` at
+How: each block is one phone clip, the STAT lamp flashed by `osc-bus clapper` at
 its start, every segment's host time in its `segments.csv`. `pass`, the
 bracket, is 20 % each way over the whole runway at the open and the close.
 `crawl` kicks at 30 % for 150 ms and holds 3 s at the floor less 1 % up to

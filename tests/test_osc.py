@@ -1,4 +1,4 @@
-"""Which tool an `oscnb.osc` call runs: `osc` by default, the one `using`
+"""Which tool an `oscnb.osc` call runs: `osc-bus` by default, the one `using`
 names for the calls of its body and no longer, `osc-lab` for the capture
 verbs whatever `using` says, and what a record holds of a tool."""
 import hashlib

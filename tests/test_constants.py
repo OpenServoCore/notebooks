@@ -1,4 +1,4 @@
-"""The constant set of a pair with `osc` stubbed by a fake servo: the
+"""The constant set of a pair with `osc-bus` stubbed by a fake servo: the
 first set adopted from a record of its state, the file's bytes and its
 three hashes, what `load` refuses, the set against its input files, the
 servo read against the set, the set installed on it (the order of the
@@ -851,7 +851,7 @@ def test_install_as_a_command(cli, bench, tmp_path, capsys):
     cli("install", "--protection", "current_limit_counts", "--loosen", "current_limit_counts")
     out = capsys.readouterr().out.splitlines()
     assert out[:2] == ["p_kp_q88: 40212 -> 5026", "current_limit_counts: 554 -> 600"]
-    assert out[2].startswith("12 fields: ") and out[-1] == "volatile, not saved: `osc reboot` returns the saved state"
+    assert out[2].startswith("12 fields: ") and out[-1] == "volatile, not saved: `osc-bus reboot` returns the saved state"
     cli("install")
     assert capsys.readouterr().out.splitlines()[-1] == "the servo holds the set: nothing written"
     cli("check")
@@ -877,7 +877,7 @@ class Geared(Bench):
         return f"{v} ({cn.GEAR_CLASSES[v]})"
 
     def get(self, name):
-        # `osc get` prints a class as its number alone
+        # `osc-bus get` prints a class as its number alone
         v = super().get(name)
         return int(v.split()[0]) if self.FIELDS[name][3] == "class" else v
 
@@ -3648,7 +3648,7 @@ def test_a_time_a_count_of_samples_a_choice_in_words_and_the_supply_terms_are_th
         "stall_time_ticks": 10000, "pos_error_time_ticks": 2000, "oc_trip_ticks": 8, "sensor_bad_count": 4}
     assert gives("stall_time_ticks")["inputs"] == ["policy:stall_time_ms", "registry:tick_hz"]
     assert gives("pos_error_time_ticks", pos_error_time_ms=0.25)["value"] == 5
-    # a choice between named behaviors is the policy's word, written as `osc dump` prints the field
+    # a choice between named behaviors is the policy's word, written as `osc-bus dump` prints the field
     assert [gives("stall_response", stall_response=w)["value"] for w in ("fault", "yield")] == [
         "Fault (0)", "Yield (1)"]
     assert [gives("openloop_zero_brake", openloop_zero_brake=w)["value"] for w in ("off", "on")] == ["off", "on"]
@@ -4666,7 +4666,7 @@ def test_save_and_restore_as_commands(cli, bench, tmp_path, committed, monkeypat
                    f"holds the state it had stored before, {shown / 'after.json'} the state it boots with now")
     bench.set("r_q12", 1)
     cli("restore", "--from", str(folder / "stored.json"))
-    assert capsys.readouterr().out.splitlines()[-1] == "volatile, not saved: `osc reboot` returns the saved state"
+    assert capsys.readouterr().out.splitlines()[-1] == "volatile, not saved: `osc-bus reboot` returns the saved state"
     assert bench.decoded("r_q12") == 17100
     cli("restore", "--from", str(folder / "stored.json"))
     assert capsys.readouterr().out.splitlines()[-1] == "the servo holds the record's state: nothing written"

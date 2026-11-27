@@ -2,8 +2,8 @@
 
 A settings file is `{"fields": {name: value, ...}, "note": "..."}`. `apply`
 needs torque off. It reads and keeps every field's old value, writes each
-with `osc set` and reads it back; a closed loop runs on the set as written.
-Nothing is ever saved, so `restore` is `osc reboot`: the servo comes back
+with `osc-bus set` and reads it back; a closed loop runs on the set as written.
+Nothing is ever saved, so `restore` is `osc-bus reboot`: the servo comes back
 on its saved images.
 
     uv run python -m oscnb.settings apply <file.json>
@@ -49,31 +49,31 @@ def same(want, got):
 
 
 def line(status, word):
-    """What the line of an `osc status` report that `word` leads says."""
+    """What the line of an `osc-bus status` report that `word` leads says."""
     m = re.search(rf"^\s*{word}\s+(.+)$", status, re.M)
     if not m:
-        raise RuntimeError(f"osc status: no {word} line in {status!r}")
+        raise RuntimeError(f"osc-bus status: no {word} line in {status!r}")
     return m.group(1).strip()
 
 
 def settings(status):
-    """The settings word of an `osc status` report: "loaded", or the
+    """The settings word of an `osc-bus status` report: "loaded", or the
     images on their defaults ("defaults: CONFIG, CALIB")."""
     return line(status, "settings")
 
 
 def refused(status):
-    """The modes an `osc status` report says the servo refuses: "none"
+    """The modes an `osc-bus status` report says the servo refuses: "none"
     or their names, lowest first ("Current, Velocity, Position")."""
     return line(status, "refused")
 
 
 def unsaved(status):
-    """Whether an `osc status` report says the servo runs what a reboot
+    """Whether an `osc-bus status` report says the servo runs what a reboot
     would not load (`unsaved true`)."""
     m = re.search(r"\bunsaved\s+(true|false)\b", status)
     if not m:
-        raise RuntimeError(f"osc status: no unsaved word in {status!r}")
+        raise RuntimeError(f"osc-bus status: no unsaved word in {status!r}")
     return m.group(1) == "true"
 
 

@@ -122,7 +122,7 @@ pub fn select(reg: &Registry, model: u16, fw: u16) -> Result<(&Descriptor, Optio
 }
 
 /// External descriptor directory: `$OSC_CONFIG_DIR/descriptors` else
-/// `$HOME/.config/osc/descriptors`, the one `osc` reads.
+/// `$HOME/.config/osc/descriptors`, the one `osc-bus` reads.
 fn external_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("OSC_CONFIG_DIR") {
         return Path::new(&dir).join("descriptors");

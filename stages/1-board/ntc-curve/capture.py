@@ -3,7 +3,7 @@ board warms and cools. Needs the board on a controlled heat source (a 3D
 printer's heated bed, a hot plate with a thermostat, a filament dryer,
 anything that holds a set temperature with the whole board at one
 temperature) with the thermocouple tip taped to the board next to the NTC,
-the DMM on temperature, the board on the DPS and the `osc` tool. The heater
+the DMM on temperature, the board on the DPS and the `osc-bus` tool. The heater
 runs at two settings and then off; the script polls the NTC's raw count the
 whole time.
 

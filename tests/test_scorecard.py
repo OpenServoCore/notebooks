@@ -4,7 +4,7 @@ tick unwrap across a wrap, the reversal count, the test set's schedules
 and refusal, the hold rows past a torque-on head, a landing's drive
 after arrival and the landings that hunt, the crawl's swing inside a
 goal item, the servo's speed and position reports against the pot, and
-the runner's refusals with `osc` stubbed; then rungs end to end on a
+the runner's refusals with `osc-bus` stubbed; then rungs end to end on a
 fake servo that takes an install: a rung on the pair's constant set of
 record, on that set with one deviation, on a set with a live table, the
 set and the deviation it records, the test set planned from it, the
@@ -15,7 +15,7 @@ that is not the rung's set, and the rows read through the table and the
 slots of the rung's own record; an A/B of two rungs, each side on its
 own derived set and image, its flashes and refusals, and the flash's
 command line; three sides in an order, each side's calls through its own
-`osc` tool, a run lost to a short burst run again and kept in the
+`osc-bus` tool, a run lost to a short burst run again and kept in the
 record, and the wait for the host's load; the servo's constant state
 beside every run and a run
 that reads another refused by name; rungs recorded before a rung named
@@ -514,7 +514,7 @@ RESISTANCE = results.path("3-servo", "resistance", PAIR)      # the pair's stage
 @pytest.fixture
 def bus(monkeypatch, tmp_path):
     """A servo at rest on a 3 Mbps bus at 5 V, every call logged; osc-lab
-    track answered by the fake servo, and `osc` by `servo`, which takes
+    track answered by the fake servo, and `osc-bus` by `servo`, which takes
     an install. The repo is `tmp_path`: the board's stage 1 conversions,
     the pair's stage 3 results, a wide-code result of the board that
     gives the fake servo's own slots, and the pair's constant set of
@@ -1603,7 +1603,7 @@ def test_three_sides_are_refused_before_anything_is_flashed(ab_bench, bus, chang
 
 
 class Tagged(list):
-    """A fake servo's log with the `osc` tool in force at each call
+    """A fake servo's log with the `osc-bus` tool in force at each call
     ahead of the call."""
 
     def append(self, call):
@@ -1670,7 +1670,7 @@ def test_a_side_is_back_on_the_default_tool_after_an_abort_in_its_turn(ab_bench,
 def test_a_tool_that_is_not_there_or_changes_under_the_session_is_refused(ab_bench, bus, monkeypatch, tmp_path):
     stub = sc.osc.identity
     monkeypatch.setattr(sc.osc, "identity", IDENTITY)
-    with pytest.raises(SystemExit, match="35-b: no osc tool at nowhere/osc"):
+    with pytest.raises(SystemExit, match="35-b: no osc-bus tool at nowhere/osc"):
         sc.ab(side(ab_bench, "35-a", "a"), side(ab_bench, "35-b", "b", osc="nowhere/osc"), servo=SERVO,
               board=BOARD)
     assert events(bus) == [] and bus["log"] == []
@@ -1678,7 +1678,7 @@ def test_a_tool_that_is_not_there_or_changes_under_the_session_is_refused(ab_ben
     monkeypatch.setattr(sc.osc, "identity", lambda: {**stub(), "sha1": f"build {len(built)}"})
     track = sc.osc.track
     monkeypatch.setattr(sc.osc, "track", lambda out, *a, **kw: built.append(out) or track(out, *a, **kw))
-    with pytest.raises(SystemExit, match="35-b: its osc tool is not the binary the session began with"):
+    with pytest.raises(SystemExit, match="35-b: its osc-bus tool is not the binary the session began with"):
         sc.ab(side(ab_bench, "35-a", "a"), side(ab_bench, "35-b", "b", osc="b/osc"), servo=SERVO, board=BOARD)
     # a's first run is recorded, b's turn does not begin
     assert events(bus) == [("flash", "a.bin"), ("capture", "35-a", "run-1", 40212)]
@@ -1862,7 +1862,7 @@ def test_the_constant_state_is_read_once_a_run_after_the_set_is_on_and_before_it
     f = deviation(tmp_path, "soft", p_kp_q88=5026)
     sc.run("04-soft", "abc123", "f" * 40, runs=2, deviation=f, servo=SERVO, board=BOARD)
     # the fields and the bytes under them, the table's state and its 8 pages, the slots, the status: 21 calls,
-    # the bytes one `osc read` more on a servo whose CONFIG and CALIB outrun a status frame
+    # the bytes one `osc-bus read` more on a servo whose CONFIG and CALIB outrun a status frame
     read = [("dump",), ("read", 0, 0xC0), ("get", "pos_lut_state")]
     for page in range(postable.PAGES):
         read += [("write", postable.WINDOW_ADDR, bytes([page, postable.FETCH])),

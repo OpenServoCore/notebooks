@@ -3,7 +3,7 @@
 //! high-rate shunt bursts from rest (`burst`), closed-loop goal schedules
 //! (`track`) and loop-margin sweeps (`margin`). Raw captures only: nothing
 //! here fits, identifies or calibrates. Every other verb (get, set, status,
-//! baud, cal) is `osc`'s.
+//! baud) is `osc-bus`'s.
 
 mod burst;
 mod descriptor;
@@ -107,7 +107,7 @@ mod tests {
         assert!(parse_u16("0xg").is_err());
     }
 
-    /// The globals ride before or after the verb, as `osc` takes them.
+    /// The globals ride before or after the verb, as `osc-bus` takes them.
     #[test]
     fn the_globals_parse_on_either_side_of_the_verb() {
         let cli = Cli::try_parse_from(["osc-lab", "-i", "3", "burst", "--duty-pct", "25"]).unwrap();
