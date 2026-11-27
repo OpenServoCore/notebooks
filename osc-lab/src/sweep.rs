@@ -845,7 +845,7 @@ pub(crate) fn meta<P: Pipe>(
 
 /// What every recording's meta.json opens with: the servo, its tick rate
 /// and rail, the PWM period its duty counts are of, the table it ran
-/// (`plant`) and its sense constants.
+/// (`plant`), its sense constants and its board facts (`board`).
 pub(crate) fn servo_meta<P: Pipe>(
     c: &mut Client<P>,
     id: Id,
@@ -871,7 +871,48 @@ pub(crate) fn servo_meta<P: Pipe>(
     m.insert("vbus_counts".into(), tel.vbus_counts.into());
     m.insert("plant".into(), plant);
     m.insert("sense".into(), sense);
+    m.insert("board".into(), board_meta(c, id)?);
     Ok(m)
+}
+
+/// CALIB's board facts block as the servo publishes it, every word by its
+/// field name and the settle table with its zero fill.
+fn board_meta<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<serde_json::Value> {
+    let raw = c
+        .read(id, calib::BOARD.addr, calib::BOARD.width.into())
+        .context("board facts read")?;
+    if raw.len() != calib::BOARD.width as usize {
+        bail!(
+            "board facts read: {} bytes of {}",
+            raw.len(),
+            calib::BOARD.width
+        );
+    }
+    let at = |reg: Reg| &raw[(reg.addr - calib::BOARD.addr) as usize..][..reg.width as usize];
+    let word = |reg: Reg| u16::from_le_bytes([at(reg)[0], at(reg)[1]]);
+    let settle: Vec<u16> = at(calib::I_SETTLE_Q15)
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|w| u16::from_le_bytes(*w))
+        .collect();
+    Ok(serde_json::json!({
+        "ntc_site": at(calib::NTC_SITE)[0],
+        "bridge_min_ticks": word(calib::BRIDGE_MIN_TICKS),
+        "i_settle_start_ticks": word(calib::I_SETTLE_START_TICKS),
+        "i_settle_q15": settle,
+        "oc_trip_ma": word(calib::OC_TRIP_MA),
+        "oc_trip_us": word(calib::OC_TRIP_US),
+        "rail_source_mohm": word(calib::RAIL_SOURCE_MOHM),
+        "window_scale_q15": word(calib::WINDOW_SCALE_Q15),
+        "terminal_offset_q4": word(calib::TERMINAL_OFFSET_Q4) as i16,
+        "brake_loop_mohm": word(calib::BRAKE_LOOP_MOHM),
+        "crest_sample_ticks": word(calib::CREST_SAMPLE_TICKS),
+        "shunt_on_lag_q4": word(calib::SHUNT_ON_LAG_Q4),
+        "tap_on_lag_q4": word(calib::TAP_ON_LAG_Q4),
+        "off_lag_q4": word(calib::OFF_LAG_Q4),
+        "shunt_settle_q4": word(calib::SHUNT_SETTLE_Q4),
+    }))
 }
 
 /// How the drive was held: the firmware holds open-loop current to the
@@ -2077,12 +2118,23 @@ mod tests {
         out
     }
 
+    /// The board block's keys: `board` and every control table field in
+    /// CALIB's board facts span, by name.
+    fn board_keys() -> Vec<String> {
+        let span = calib::BOARD.addr..calib::BOARD.addr + calib::BOARD.width as u16;
+        let fields = osc_servo_core::regions::ControlTable::FIELDS
+            .iter()
+            .filter(|f| span.contains(&f.addr))
+            .map(|f| format!("board.{}", f.name));
+        std::iter::once("board".to_string()).chain(fields).collect()
+    }
+
     /// The meta a sweep writes on the in-process servo stack carries every
     /// key a committed capture's does, nested blocks included, less the
     /// host build's sha, the decay the firmware has no choice of and the
-    /// plant stamp it no longer keeps, its registers by today's names and
-    /// its data state as the stored state that replaced it; and nothing
-    /// else.
+    /// plant stamp it no longer keeps, its registers by today's names, its
+    /// data state as the stored state that replaced it, and the board facts
+    /// block the capture predates; and nothing else.
     #[test]
     fn meta_keys_match_a_committed_capture() {
         let want: serde_json::Value =
@@ -2109,6 +2161,7 @@ mod tests {
                         .map_or(k.clone(), |(_, new)| new.to_string()),
                 ],
             })
+            .chain(board_keys())
             .collect();
         want.sort();
 
@@ -2128,5 +2181,45 @@ mod tests {
             m["tel_chunks"],
             serde_json::json!([[0x236, 2], [0x23c, 10]])
         );
+    }
+
+    /// The board block holds the words the servo's board file states,
+    /// osc-dev-v006's `board.toml` on the sim servo: the settle table with
+    /// its zero fill, the NTC site as its code and the signed offset.
+    #[test]
+    fn the_meta_records_the_board_facts_the_servo_publishes() {
+        let mut rig = Rig::bench();
+        let id = rig.id();
+        let m = servo_meta(&mut rig.c, id).unwrap();
+        let mut settle = vec![
+            37138, 35303, 34342, 33918, 33643, 33470, 33374, 33259, 33213, 33156, 33103, 33052,
+            33020, 32982, 32938, 32900, 32868, 32841, 32824, 32806, 32785,
+        ];
+        settle.resize(24, 0);
+        assert_eq!(
+            m["board"],
+            serde_json::json!({
+                "ntc_site": 1,
+                "bridge_min_ticks": 27,
+                "i_settle_start_ticks": 40,
+                "i_settle_q15": settle,
+                "oc_trip_ma": 2200,
+                "oc_trip_us": 400,
+                "rail_source_mohm": 800,
+                "window_scale_q15": 32975,
+                "terminal_offset_q4": 38,
+                "brake_loop_mohm": 301,
+                "crest_sample_ticks": 31,
+                "shunt_on_lag_q4": 704,
+                "tap_on_lag_q4": 632,
+                "off_lag_q4": 224,
+                "shunt_settle_q4": 1152,
+            })
+        );
+        rig.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.calib.board.terminal_offset_q4 = -38;
+        });
+        let m = servo_meta(&mut rig.c, id).unwrap();
+        assert_eq!(m["board"]["terminal_offset_q4"], -38);
     }
 }
