@@ -640,7 +640,26 @@ feedforwards and the observer gains have the rules of the table below.
 A field with no rule, no pin and no record in the pair's sources file
 is carried at its value, with no source. `policy.json` holds the
 choices that are no measurement, in
-physical units, one file for every pair; a `<pair>.pins.json` beside
+physical units, one file for every pair. Six of its entries are each
+one form, a share or a multiple of what is measured or a fixed value,
+the forms of the tuning policy file: the yield current (`yield`), the
+stall release (`stall_release`), the stall speed (`stall_speed`), the
+pot jump (`pot_jump`), and the bandwidths of the current loop
+(`current_loop`) and of the observer (`observer`). The policy of record
+states the six fixed, at what the record decided, `{"ma": 350.0}` for
+the yield current. The Default policy,
+[calibration/default-policy.json](calibration/default-policy.json),
+states each as its rule, and `build --default --out PATH` reads it over
+`policy.json`. On the record's measured inputs the rules give a yield
+current of 0, the cap with no fold on a metal train, a stall release of
+376 counts, 0.36 of the cap's 0.919 A, and loop bandwidths of 1013.6 Hz
+and 15.12 Hz, 1.25 times R / (2 pi L) and 1.9 times Ke^2 / (2 pi J R).
+The stall speed is 4 times the largest speed the observer reads over
+the still holds, and the pot jump 4 times the worst level 4 successive
+RAIL-period pot steps all pass over the driven rows
+([oscnb/screens.py](../../oscnb/screens.py)). No result of the pair
+holds either yet, so a build on the Default holds both at the
+record's. A `<pair>.pins.json` beside
 it, where there is one, holds literals typed for one pair, each with
 its reason and the rung that chose it, and shows as `pinned`. A pin
 stands ahead of a record, and a record ahead of a rule. A rule
@@ -669,10 +688,10 @@ every rule to it.
 | `fric_fc_counts` | the friction line's intercept, I0 x shunt counts per A | the [cruise-friction](#cruise-friction) line, the current the velocity loop holds in a cruise with the window term off its reading | no |
 | `fric_fv_q016` | its slope, shunt counts per count/s, Iv x shunt counts per A / counts per motor rad, Iv per motor rad/s | the same | over |
 | `j_ff_q88` | the inertia feedforward, 1 / B | B | over |
-| `l1_q016` | the observer's position gain, 1 - p^3 | p = exp(-2 pi f / MEDIUM rate), f the policy's `observer_hz` | no |
+| `l1_q016` | the observer's position gain, 1 - p^3 | p = exp(-2 pi f / MEDIUM rate), f the policy's `observer` | no |
 | `l2_q88` | its speed gain, 1.5 (1 - p)^2 (1 + p) x MEDIUM rate | the same | no |
 | `l3_q88` | its disturbance gain, (1 - p)^3 x MEDIUM rate / (2 B) | p and B | over |
-| `i_kp_q88` | the current loop's proportional gain, w x L x tap counts per V / shunt counts per A | w = 2 pi f, f the policy's `current_loop_hz`; L the stage 3 inductance of the locked bursts | no |
+| `i_kp_q88` | the current loop's proportional gain, w x L x tap counts per V / shunt counts per A | w = 2 pi f, f the policy's `current_loop`; L the stage 3 inductance of the locked bursts | no |
 | `i_ki_q412` | its integral gain, w x R a FAST tick | w, and R the rails fit's at its own temperature | no |
 | `i_kaw_q412` | its anti-windup gain, twice the integral gain | the same | no |
 | `ke_uvs_per_rad` | Ke, uV s/rad | the stage 3 ladder | no |
@@ -689,7 +708,7 @@ three observer gains are the policy's by their rule: the bandwidth is a
 target, not a quantity of the servo. 15 Hz was an old tool's default
 target; it is now the pick of a bench sweep, which is its record, and
 the gains bound at it are of class `policy`. A deviation's
-`observer_hz` moves them: 10 Hz gives 5894,
+`observer` moves them: 10 Hz gives 5894,
 1446 and 25 for `l1_q016`, `l2_q88` and `l3_q88`, 15 Hz 8640, 3180 and
 84, 25 Hz 13757, 8433 and 371. The two ends are deviation files,
 [observer-10hz.json](scorecard/deviations/observer-10hz.json) and
@@ -704,13 +723,13 @@ proportional gain cancels the winding's electrical pole, w L, the
 integral gain sets the crossover, w R a FAST tick, and the anti-windup
 gain is twice the integral one, with L and R in counts through the
 measured stage 1 scales. The bandwidth is the policy's
-`current_loop_hz`, 1 kHz, a target as the observer's is: the old
+`current_loop`, 1 kHz, a target as the observer's is: the old
 tool's default, and now the pick of a bench sweep, its record. On
 this motor's 0.82 mH and
 4.18 ohm the rules give 289, 1176 and 2352, where the servo held 275,
 1580 and 3160, an old identification fit of another servo. The three
 are bound at the placement, of class `policy`. A deviation's
-`current_loop_hz` moves them in
+`current_loop` moves them in
 proportion: 144, 588 and 1176 at 500 Hz, 433, 1764 and 3528 at 1.5 kHz,
 the deviation files
 [current-loop-500hz.json](scorecard/deviations/current-loop-500hz.json)
@@ -1109,7 +1128,7 @@ counts, the policy's `hold_band_noise_multiple` and
 band sits on the floor, 4, the value the servo holds. The band of 4
 counts is a decision, said under `why`. The band at 8
 counts, over half the train's play, stays a pin of its own deviation.
-The sensor screen is the policy's `sensor_delta_max_counts`, raw
+The sensor screen is the policy's `pot_jump`, raw
 counts between two MEDIUM samples. It is decided at 64, twice the worst
 healthy step of the pot on 5 V, 32 counts, where the servo held the
 boot default's 256: the band bound as it stood, and the screen is
@@ -1141,7 +1160,7 @@ the old value:
 |---|---|---|---|---|
 | `stall_response` | `stall_response` yield | Fault | Yield | `--protection` and `--loosen`: judged |
 | `pos_error_counts`, `pos_error_time_ticks` | `pos_error_deg` 9.9, `pos_error_time_ms` 100 | 400, 10000 | 199, 2000 | `--protection`: both protect more |
-| `sensor_delta_max` | `sensor_delta_max_counts` 64 | 256 | 64 | `--protection`: it protects more |
+| `sensor_delta_max` | `pot_jump` 64 | 256 | 64 | `--protection`: it protects more |
 | `rail_fold_q8` | the board's `rail_source_mohm` 800 | 1430 | 1467 | `--protection` and `--loosen`: judged |
 
 A blocked horn now yields: the current limit folds to the continuous

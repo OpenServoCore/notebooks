@@ -28,11 +28,12 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from oscnb import constants as cn
 from oscnb import margin as mg
-from oscnb import boards, ntc, postable, results, scorecard as sc, settings, winding
+from oscnb import boards, ntc, postable, results, scorecard as sc, screens, settings, winding
 from oscnb import widecodes as wc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -903,11 +904,11 @@ NO_R = "r_q12: held, 3-servo/resistance has no result for synth__board"
 # and of the fields in counts of position under a policy with none of their entries: the hold band and the
 # stall speed, which the fake servo holds, are held, the rest left out; the range, with no margin share, is off
 NO_RANGE = ["pos_deadband_counts: held, policy.json has no hold_band_noise_multiple"]
-NO_STALL = "stall_omega_max_cps: held, policy.json has no stall_omega_max_deg_s"
+NO_STALL = "stall_omega_max_cps: held, policy.json has no stall_speed"
 NO_RESPONSE = "stall_response: held, policy.json has no stall_response"
 NO_COUNTS = [f"{n}: left out, policy.json has no {key}" for n, key in (
     ("velocity_limit_cps", "velocity_limit_deg_s"), ("accel_limit_q88", "accel_limit_deg_s2"),
-    ("pos_error_counts", "pos_error_deg"), ("sensor_delta_max", "sensor_delta_max_counts"))]
+    ("pos_error_counts", "pos_error_deg"), ("sensor_delta_max", "pot_jump"))]
 # and of the speed and position loops' gains under a policy with none of their ratios: the position gain, which
 # the fake servo holds, is held between the range and the band, in the servo's order, and the speed loop's three
 # are left out
@@ -918,7 +919,7 @@ FRONT = [HELD_GAIN, *NO_RANGE]
 HELD_BLOCK = [*FRONT, NO_LIMIT, NO_RESPONSE, NO_STALL, NO_R, f"recip_ke_q: held, {NO_LADDER}"]
 # the current loop's gains under a policy with no bandwidth, and the times, the counts of samples and the
 # choices in words under one with none of their entries
-NO_LOOP = [f"{n}: left out, policy.json has no current_loop_hz" for n in ("i_kp_q88", "i_ki_q412", "i_kaw_q412")]
+NO_LOOP = [f"{n}: left out, policy.json has no current_loop" for n in ("i_kp_q88", "i_ki_q412", "i_kaw_q412")]
 # the window term with no window-term result, and the brush term off under a policy that holds no brush term
 NO_WINDOW = "g_window_q016: left out, 3-servo/window-term has no result for synth__board"
 NO_OFF = [*(f"{n}: left out, policy.json has no brush_term" for n in ("r_brush_q12", "brush_cps"))]
@@ -932,7 +933,7 @@ NO_BLOCK = [
     *(f"{n}: left out, 5-closed-loop/cruise-friction has no result for synth__board" for n in ("fric_fc_counts",
                                                                                          "fric_fv_q016")),
     *(f"{n}: left out, {NO_LADDER}" for n in ("ke_vpc_q", "j_ff_q88")),
-    *(f"{n}: left out, policy.json has no observer_hz" for n in ("l1_q016", "l2_q88", "l3_q88")),
+    *(f"{n}: left out, policy.json has no observer" for n in ("l1_q016", "l2_q88", "l3_q88")),
     *NO_LOOP, *NO_GAINS,
     f"ke_uvs_per_rad: left out, {NO_LADDER}",
     "fric_breakaway_counts: left out, 3-servo/friction has no result for synth__board",
@@ -941,7 +942,8 @@ NO_BLOCK = [
     *NO_COUNTS,
     *(f"{n}: left out, 1-board/ntc-curve has no result for board" for n in ("ntc_raw_ref", "ntc_t_ref_cc",
                                                                            "ntc_k1_q88", "ntc_k2_q24")),
-    *(f"{n}_counts: left out, policy.json has no {n}_ma" for n in ("yield_current", "stall_release", "oc_trip")),
+    *(f"{n}_counts: left out, policy.json has no {key}" for n, key in (
+        ("yield_current", "yield"), ("stall_release", "stall_release"), ("oc_trip", "oc_trip_ma"))),
     "stall_tau_trip_counts: left out, policy.json has no collision_trip",
     "cutoff_cc: left out, policy.json has no cutoff_c",
     *(f"{n}: left out, 4-estimators/winding-temperature has no result for synth__board" for n in (
@@ -959,19 +961,19 @@ CLASS_SHEET = f"stages/5-closed-loop/calibration/{CLASS}.datasheet.json"
 DOCUMENT = "the maker's page, at its address, read on a day"
 BOARD_REG = {"servo": {**REG["servo"], "datasheet_class": CLASS},
              "board": {"tick_hz": 20_000, "rail_source_mohm": 500}}
-LIMITS_MA = {"datasheet_derate_default": 0.5, "yield_current_ma": 250.0, "stall_release_ma": 90.0,
+LIMITS_MA = {"datasheet_derate_default": 0.5, "yield": {"ma": 250.0}, "stall_release": {"ma": 90.0},
              "oc_trip_ma": 2200.0}
-BLOCK_POLICY = {"observer_hz": 15.0, "rule": {"r_bemf_q12": "r_bemf.small_step"},
+BLOCK_POLICY = {"observer": {"hz": 15.0}, "rule": {"r_bemf_q12": "r_bemf.small_step"},
                 **LIMITS_MA, "collision_trip": "off", "cutoff_c": 90.0, "winding_plateau_reading": "high", "winding_slow_basis_ratio": 1.0,
                 "stall_response": "fault"}
 # the policy entries the rules of the fields in counts of position read, and the pot's noise at rest
-COUNT_POLICY = {"velocity_limit_deg_s": 75.0, "accel_limit_deg_s2": 1500.0, "stall_omega_max_deg_s": 25.0,
+COUNT_POLICY = {"velocity_limit_deg_s": 75.0, "accel_limit_deg_s2": 1500.0, "stall_speed": {"deg_s": 25.0},
                 "pos_error_deg": 20.0, "soft_margin_share": 0.0625, "hold_band_noise_multiple": 2.5,
-                "hold_band_floor_counts": 4, "sensor_delta_max_counts": 256}
+                "hold_band_floor_counts": 4, "pot_jump": {"counts": 256}}
 POT_NOISE = {"3-servo/pot-table": {"pot_rest_sd_counts": (1.0, 0.0, 1.5)}}
 # the policy entries the other rules read: the current loop's bandwidth, the times, the counts of samples,
 # the choices in words and the duty cap's share of the rail
-CHOICE_POLICY = {"current_loop_hz": 1000.0, "stall_time_ms": 500.0, "pos_error_time_ms": 100.0, "oc_trip_samples": 8,
+CHOICE_POLICY = {"current_loop": {"hz": 1000.0}, "stall_time_ms": 500.0, "pos_error_time_ms": 100.0, "oc_trip_samples": 8,
                  "sensor_bad_samples": 4, "openloop_zero_brake": "off",
                  "duty_max_share": 1.0}
 # the speed and position loops' ratios and the shelf's margin
@@ -1849,7 +1851,7 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     assert isinstance(policy["angle_cw_stop_deg"], float) and isinstance(policy["hold"], dict)
     assert set(policy["hold"]) <= set(cn.RULES)
-    assert isinstance(policy["observer_hz"], float) and all(policy["hold"].values())
+    assert isinstance(policy["observer"]["hz"], float) and all(policy["hold"].values())
     # a choice that is a decision says so, under `why`, by the name of its entry, or of the field where the
     # value is not the policy file's: the registry's gear ratio, the winding model's slow pair, the family's
     # terms as a stage 4 result quotes them
@@ -1864,16 +1866,16 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     assert all(why.endswith((": the owner's decision", SWEEP_PICK)) for why in policy["why"].values())
     swept = {k: re.findall(r"zz-sweep-[a-z0-9-]+", why) for k, why in policy["why"].items()
              if why.endswith(SWEEP_PICK)}
-    assert swept == {"observer_hz": [f"zz-sweep-observer-{hz}hz" for hz in (10, 15, 25)],
-                     "current_loop_hz": [f"zz-sweep-current-loop-{hz}hz" for hz in (500, 1000, 1500)]}
+    assert swept == {"observer": [f"zz-sweep-observer-{hz}hz" for hz in (10, 15, 25)],
+                     "current_loop": [f"zz-sweep-current-loop-{hz}hz" for hz in (500, 1000, 1500)]}
     assert all((results.ROOT / "stages" / sc.STAGE / "scorecard" / "results" / postable.default_pair()
                 / f"{rung}.json").exists() for rungs in swept.values() for rung in rungs)
     assert not any("the owner's decision" in policy["why"][k] for k in swept)
-    assert {k: policy[k] for k in ("yield_current_ma", "stall_release_ma", "collision_trip",
+    assert {k: policy[k] for k in ("yield", "stall_release", "collision_trip",
                                    "hold_band_floor_counts")} == {
-        "yield_current_ma": 350.0, "stall_release_ma": 126.0, "collision_trip": "off", "hold_band_floor_counts": 4}
+        "yield": {"ma": 350.0}, "stall_release": {"ma": 126.0}, "collision_trip": "off", "hold_band_floor_counts": 4}
     # the release moves with the yield current at the ratio of the interim pair, 90 over 250
-    assert policy["stall_release_ma"] * 250 == policy["yield_current_ma"] * 90
+    assert policy["stall_release"]["ma"] * 250 == policy["yield"]["ma"] * 90
     # an entry that restates a default nobody decided says that, under `undecided`, with what it needs: it
     # is no decision, so it has no why, and a field whose rule reads it has no source. None is left: the two
     # bandwidths left the list with their sweeps, and the two limits of motion with the owner's decision
@@ -1888,8 +1890,8 @@ def test_the_policy_of_record_holds_what_the_rules_read():
     assert all("interim" in policy["why"][k] and policy["why"][k].endswith(": the owner's decision") for k in motion)
     # the decisions on the screens, the duty cap and the open loop, each an entry in the unit a person sets it
     # in, with its why
-    decided = {"stall_response": "yield", "stall_time_ms": 500.0, "stall_omega_max_deg_s": 24.84, "pos_error_deg": 9.9,
-               "pos_error_time_ms": 100.0, "sensor_delta_max_counts": 64, "sensor_bad_samples": 4,
+    decided = {"stall_response": "yield", "stall_time_ms": 500.0, "stall_speed": {"deg_s": 24.84}, "pos_error_deg": 9.9,
+               "pos_error_time_ms": 100.0, "pot_jump": {"counts": 64}, "sensor_bad_samples": 4,
                "duty_max_share": 1.0, "oc_trip_ma": 2200.0, "oc_trip_samples": 8, "openloop_zero_brake": "off",
                "brush_term": "off"}
     assert {k: policy[k] for k in decided} == decided and set(decided) <= set(policy["why"])
@@ -2769,7 +2771,7 @@ def test_the_rules_reproduce_the_firmware_repos_synthesis_on_its_own_test_plant(
             "i_kaw_q412": raw(2 * w * r_vpc / tick, 12)}
     assert loop == {"i_kp_q88": 576, "i_ki_q412": 4315, "i_kaw_q412": 8630}
     rust.update(loop)
-    inputs(tmp_path, policy={**BLOCK_POLICY, "current_loop_hz": 1000.0})
+    inputs(tmp_path, policy={**BLOCK_POLICY, "current_loop": {"hz": 1000.0}})
     plant(tmp_path, {
         "1-board/current-scale": {"counts_per_a": (cpa,)},
         "1-board/terminal-chain": {"terminal_counts_per_v": (cpv,)},
@@ -2930,8 +2932,8 @@ def steps(first, tmp_path):
     plain, _ = block(first, tmp_path)
     bound, _ = cn.build(PAIR, plain, protection=[*CURVE, *LIMITS], root=tmp_path, registry=BOARD_REG)
     why = "it moves on a protection step of its own"
-    inputs(tmp_path, policy={**BLOCK_POLICY, "datasheet_derate_default": 0.51, "yield_current_ma": 256.0,
-                             "stall_release_ma": 92.0,
+    inputs(tmp_path, policy={**BLOCK_POLICY, "datasheet_derate_default": 0.51, "yield": {"ma": 256.0},
+                             "stall_release": {"ma": 92.0},
                              "oc_trip_ma": 2250.0, "hold": dict.fromkeys((*CURVE, *LIMITS), why)})
     plant(tmp_path, {"1-board/ntc-curve": {"design_t_ref_cc": (2430.0,), "design_k1_q88": (474.0,),
                                            "design_k2_q24": (19934.0,)}})
@@ -3033,19 +3035,23 @@ def test_the_bench_pairs_current_limits_are_the_ma_they_were_typed_for_at_the_me
     assert [ma for ma in range(1, 4000) if raw(ma * nominal / 1000) == 554] == [500]
     assert ran_on()["current_limit_counts"] == 554 and f["current_limit_counts"]["value"] == 1043
     # field: (what the servo held before the set, the mA it was typed for, the policy's entry, what the rule gives)
-    limits = {"yield_current_counts": (277, 250, "yield_current_ma", 397),
-              "stall_release_counts": (100, 90, "stall_release_ma", 143), "oc_trip_counts": (2439, 2200, "oc_trip_ma", 2497)}
+    limits = {"yield_current_counts": (277, 250, "yield", 397),
+              "stall_release_counts": (100, 90, "stall_release", 143), "oc_trip_counts": (2439, 2200, "oc_trip_ma", 2497)}
     assert ("current_limit_counts", *limits) == LIMITS == cn.GROUPS["current scale"]
     # the overcurrent trip stays at the mA it was typed for; the lock hold's plateau raised the yield
     # current, and the release with it
-    assert {n: policy[key] - ma for n, (_, ma, key, _) in limits.items()} == {
+    # the yield current and the release are stated in their fixed form, the overcurrent trip in mA
+    def ma_of(key):
+        return policy[key]["ma"] if isinstance(policy[key], dict) else policy[key]
+
+    assert {n: ma_of(key) - ma for n, (_, ma, key, _) in limits.items()} == {
         "yield_current_counts": 100.0, "stall_release_counts": 36.0, "oc_trip_counts": 0.0}
     for name, (stored, ma, key, gives) in limits.items():
         # the mA the stored counts were typed for: the one whole mA the board's nominal parts take to them
         typed = [m for m in range(1, 4000) if raw(m * nominal / 1000) == stored]
         assert typed == [ma], name
         e = cn.evaluate(cn.rule_of(c, name), c)
-        assert e["value"] == gives == raw(policy[key] * measured / 1000), name
+        assert e["value"] == gives == raw(ma_of(key) * measured / 1000), name
         # bound: the set holds each at the policy's mA through the measured scale, of class `policy`: none
         # of the four mA is a default nobody decided
         assert key not in policy["undecided"], name
@@ -3431,7 +3437,7 @@ def test_a_policy_in_degrees_is_that_many_counts_at_the_scale_of_the_count(tmp_p
     assert gives == {"velocity_limit_cps": 1546, "accel_limit_q88": 3957, "stall_omega_max_cps": 515,
                      "pos_error_counts": 412}
     keys = {"velocity_limit_cps": "velocity_limit_deg_s", "accel_limit_q88": "accel_limit_deg_s2",
-            "stall_omega_max_cps": "stall_omega_max_deg_s", "pos_error_counts": "pos_error_deg"}
+            "stall_omega_max_cps": "stall_speed", "pos_error_counts": "pos_error_deg"}
     for name, value in gives.items():
         e = count_rule(c, name)
         assert (e["value"], e["class"], e["pos_unit"], e["scale_points_sha1"]) == (value, "policy", 1, sha), name
@@ -3479,7 +3485,7 @@ def test_the_hold_band_and_the_sensor_screen_are_in_the_pots_raw_counts_whatever
     # the pot sample before any table
     c = context(tmp_path, k=3.0)
     screen = count_rule(c, "sensor_delta_max")
-    assert (screen["value"], screen["inputs"], screen["unit"]) == (256, ["policy:sensor_delta_max_counts"],
+    assert (screen["value"], screen["inputs"], screen["unit"]) == (256, ["policy:pot_jump"],
                                                                  "raw counts/tick")
     assert count_rule(c, "pos_deadband_counts")["value"] == 4
     assert all(e["pos_unit"] == 0 and "scale_points_sha1" not in e and e["class"] == "policy"
@@ -3557,10 +3563,10 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     # the stall speed is decided at the speed its counts are on the set's count, so its rule gives the counts
     # the servo holds: it binds, of class `policy`, at a scale that is on record, and has no step
     stall = count_rule(c, "stall_omega_max_cps")
-    assert policy["stall_omega_max_deg_s"] == float(f"{500 / table:.4g}") == 24.84
+    assert policy["stall_speed"]["deg_s"] == float(f"{500 / table:.4g}") == 24.84
     assert stall["value"] == 500 and f["stall_omega_max_cps"] == {**stall, "protection": {"looser": "down"}}
     assert (stall["class"], stall["scale_points_sha1"]) == ("policy", doc["scale"]["points_sha1"])
-    assert "stall_omega_max_cps" not in policy["hold"] and "stall_omega_max_deg_s" in policy["why"]
+    assert "stall_omega_max_cps" not in policy["hold"] and "stall_speed" in policy["why"]
     # the position-error screen is decided at an angle, which is fewer counts than the servo held: bound by
     # its step at what the angle is on the set's count, of class `policy`, at a scale that is on record
     ran = ran_on()
@@ -3585,7 +3591,7 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     # a quarter of the boot default the servo held
     assert [(f[n]["value"], f[n]["class"], f[n]["rule"]) for n in ("pos_deadband_counts", "sensor_delta_max")] == [
         (4, "policy", "deadband.pot_noise"), (64, "policy", "sensor_delta.policy")]
-    assert f["sensor_delta_max"]["value"] == policy["sensor_delta_max_counts"] and ran["sensor_delta_max"] == 256
+    assert f["sensor_delta_max"]["value"] == policy["pot_jump"]["counts"] and ran["sensor_delta_max"] == 256
     assert "would_be" not in f["sensor_delta_max"] and "held" not in f["sensor_delta_max"]
     # the speed loop's two per-count gains are bound by their rule on the set's count: no field is left at a
     # scale nothing recorded
@@ -3732,7 +3738,7 @@ def test_the_bench_pairs_decisions_are_bound_the_ones_the_servo_held_and_the_one
     f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
     # a decision the servo already held: (the policy's entry, what its rule gives)
     stand = {"duty_max_q15": ("duty_max_share", 32767), "stall_time_ticks": ("stall_time_ms", 10000),
-             "stall_omega_max_cps": ("stall_omega_max_deg_s", 500), "oc_trip_counts": ("oc_trip_ma", 2497),
+             "stall_omega_max_cps": ("stall_speed", 500), "oc_trip_counts": ("oc_trip_ma", 2497),
              "oc_trip_ticks": ("oc_trip_samples", 8), "sensor_bad_count": ("sensor_bad_samples", 4),
              "openloop_zero_brake": ("openloop_zero_brake", "off")}
     for name, (key, gives) in stand.items():
@@ -3750,7 +3756,7 @@ def test_the_bench_pairs_decisions_are_bound_the_ones_the_servo_held_and_the_one
     moves = {"stall_response": ("stall_response", "Fault (0)", "Yield (1)"),
              "pos_error_time_ticks": ("pos_error_time_ms", 10000, 2000),
              "pos_error_counts": ("pos_error_deg", 400, 199),
-             "sensor_delta_max": ("sensor_delta_max_counts", 256, 64)}
+             "sensor_delta_max": ("pot_jump", 256, 64)}
     for name, (key, stored, gives) in moves.items():
         e = cn.evaluate(cn.rule_of(c, name), c)
         assert (e["value"], e["class"]) == (gives, "policy") and f"policy:{key}" in e["inputs"], name
@@ -3818,10 +3824,11 @@ OBSERVER = ("l1_q016", "l2_q88", "l3_q88")
 
 def swept(c, key, names, values):
     """What the rules of `names` give with the policy's `key` at each
-    of `values`, the rest of the policy as it stands."""
+    of `values`, Hz in its fixed form, the rest of the policy as it
+    stands."""
     was, out = c.policies, {}
     for value in values:
-        c.policies = {**was, key: value}
+        c.policies = {**was, key: {"hz": value}}
         out[value] = [cn.evaluate(cn.rule_of(c, n), c)["value"] for n in names]
     c.policies = was
     return out
@@ -3836,48 +3843,48 @@ def test_the_bench_pairs_current_loop_is_the_placement_on_this_motor_at_the_band
     per_ohm = chain["terminal_counts_per_v"]["value"] / doc["scales"][cn.CURRENT]["value"]
     # the firmware repo's placement (ident/src/gains.rs synthesize): w L, w R a FAST tick and twice that, in
     # counts through the measured scales, at the policy's bandwidth, 1 kHz
-    w = 2 * math.pi * policy["current_loop_hz"]
+    w = 2 * math.pi * policy["current_loop"]["hz"]
     by_hand = [raw(w * henry * per_ohm, 8), raw(w * ohm * per_ohm / board.tick_hz, 12),
                raw(2 * w * ohm * per_ohm / board.tick_hz, 12)]
     es = {n: cn.evaluate(cn.rule_of(c, n), c) for n in LOOP}
-    assert [e["value"] for e in es.values()] == by_hand == [289, 1176, 2352] and policy["current_loop_hz"] == 1000.0
+    assert [e["value"] for e in es.values()] == by_hand == [289, 1176, 2352] and policy["current_loop"]["hz"] == 1000.0
     assert (round(1000 * henry, 2), round(ohm, 2)) == (0.82, 4.18)
     # the band of the proportional gain is the inductance's, of the other two the resistance's
     assert [e["band"] for e in es.values()] == [[275, 308], [1174, 1181], [2347, 2361]]
-    assert es["i_kp_q88"]["inputs"] == ["policy:current_loop_hz", "3-servo/inductance:l_mh",
+    assert es["i_kp_q88"]["inputs"] == ["policy:current_loop", "3-servo/inductance:l_mh",
                                         "1-board/terminal-chain:terminal_counts_per_v",
                                         "1-board/current-scale:counts_per_a"]
     # the resistance is the rails fit, read through the same scales, at its own temperature: the one r_q12
     # reads before its step to 25 C
     assert es["i_ki_q412"]["inputs"] == es["i_kaw_q412"]["inputs"] == [
-        "policy:current_loop_hz", *f["r_q12"]["inputs"][:3], "registry:tick_hz"]
+        "policy:current_loop", *f["r_q12"]["inputs"][:3], "registry:tick_hz"]
     assert f["r_q12"]["inputs"][3] == "3-servo/resistance:board_ntc_c"
     # the three are bound at the placement, in place of the servo's old fit of another servo. The bandwidth
     # is a target, the policy's: its sweep ran and kept the 1 kHz, so the three are the policy's by their rule
-    ran, why = ran_on(), policy["why"]["current_loop_hz"]
+    ran, why = ran_on(), policy["why"]["current_loop"]
     assert [ran[n] for n in LOOP] == [275, 1580, 3160]
     for name, e in es.items():
         assert f[name] == {**e, "class": "policy", "protection": None}, name
     assert not set(LOOP) & set(policy["hold"]) and not set(LOOP) & cn.PROTECTION
-    assert "current_loop_hz" not in policy["undecided"] and why.endswith(SWEEP_PICK)
+    assert "current_loop" not in policy["undecided"] and why.endswith(SWEEP_PICK)
     assert why.startswith("1 kHz, the middle of the sweep's 500, 1000 and 1500 Hz")
     # a deviation's policy entry sweeps the bandwidth, and every gain is in proportion to it
-    assert swept(c, "current_loop_hz", LOOP, (500.0, 1000.0, 1500.0)) == {
+    assert swept(c, "current_loop", LOOP, (500.0, 1000.0, 1500.0)) == {
         500.0: [144, 588, 1176], 1000.0: [289, 1176, 2352], 1500.0: [433, 1764, 3528]}
 
 
 def test_the_bench_pairs_observer_gains_move_with_the_policys_bandwidth():
     doc, c, _ = of_the_bench_pair()
     f, policy = doc["fields"], json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
-    # what a deviation's `observer_hz` gives: the three gains bind at it, the disturbance gain with them now
+    # what a deviation's `observer` gives: the three gains bind at it, the disturbance gain with them now
     # that its hold is released
-    assert swept(c, "observer_hz", OBSERVER, (10.0, 15.0, 25.0)) == {
+    assert swept(c, "observer", OBSERVER, (10.0, 15.0, 25.0)) == {
         10.0: [5894, 1446, 25], 15.0: [8640, 3180, 84], 25.0: [13757, 8433, 371]}
-    assert policy["observer_hz"] == 15.0 and "observer_hz" not in policy["undecided"]
+    assert policy["observer"]["hz"] == 15.0 and "observer" not in policy["undecided"]
     assert [f[n]["value"] for n in OBSERVER] == [8640, 3180, 84] and all(f[n]["class"] == "policy" for n in OBSERVER)
     assert ["held" in f[n] for n in OBSERVER] == [False, False, False]
     # the bandwidth is a target, the policy's: its sweep ran and kept the 15 Hz
-    why = policy["why"]["observer_hz"]
+    why = policy["why"]["observer"]
     assert why.startswith("15 Hz, the middle of the sweep's 10, 15 and 25 Hz") and why.endswith(SWEEP_PICK)
     assert not any("reason" in f[n] for n in OBSERVER)
     # the release that held the disturbance gain's hold is built into the set: no hold of its three is left
@@ -4356,8 +4363,8 @@ SIDES = {
 }
 # the policy entries a point of a sweep states, and the holds it releases
 SWEPT = {
-    "current-loop-500hz": ({"current_loop_hz": 500.0}, []), "current-loop-1500hz": ({"current_loop_hz": 1500.0}, []),
-    "observer-10hz": ({"observer_hz": 10.0}, []), "observer-25hz": ({"observer_hz": 25.0}, []),
+    "current-loop-500hz": ({"current_loop": {"hz": 500.0}}, []), "current-loop-1500hz": ({"current_loop": {"hz": 1500.0}}, []),
+    "observer-10hz": ({"observer": {"hz": 10.0}}, []), "observer-25hz": ({"observer": {"hz": 25.0}}, []),
 }
 
 
@@ -4689,3 +4696,142 @@ def test_git_says_whether_a_set_file_is_committed(tmp_path):
     with pytest.raises(settings.Refused, match="git cannot say whether .*x.constants.json is committed"):
         cn.uncommitted(path)
 
+
+
+# --- the Default policy's rules on the record ---
+
+# The record's still-shaft speed, count/s: the largest observer speed over 308 hold segments of the scorecard,
+# read off a replay of the observer by the bringup analysis of the protection screens. Earlier work and no
+# result: the stall speed's rule is checked on it, and no set binds from it.
+STILL_OF_THE_ANALYSIS = 115.0
+# the capture of record whose rows hold the worst 4-step pot run of the repo's closed-loop rows
+# (tests/test_screens.py pins it)
+STEP4_CAPTURE = "telemetry/mg90-d__dev-v006-2A-D/scorecard/12a-pos-table-live/run-1/follow/track.csv"
+RULE_BOUND = ("yield_current_counts", "stall_release_counts", "stall_omega_max_cps", "sensor_delta_max")
+LOOP_RATES = ("i_kp_q88", "i_ki_q412", "i_kaw_q412", "l1_q016", "l2_q88", "l3_q88")
+
+
+def on_the_default(registry=None):
+    """(the bench pair's set of record, a Context on its table that reads
+    the Default policy over the policy of record)."""
+    pair = postable.default_pair()
+    doc = cn.of_record(pair)
+    c = cn.Context(pair, registry=registry, default=True)
+    cn.table_of(c, doc, cn.slots_of(c, doc))
+    return doc, c
+
+
+def test_the_policy_of_record_states_the_rule_bound_entries_fixed_and_the_default_as_their_rules():
+    policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
+    default = json.loads((results.ROOT / cn.FOLDER / cn.DEFAULT).read_text())
+    # the record's decisions, each in its fixed form
+    assert {k: policy[k] for k in cn.FORMS} == {
+        "yield": {"ma": 350.0}, "stall_release": {"ma": 126.0}, "stall_speed": {"deg_s": 24.84},
+        "pot_jump": {"counts": 64}, "current_loop": {"hz": 1000.0}, "observer": {"hz": 15.0}}
+    assert all(next(iter(policy[k])) == fixed for k, (fixed, _) in cn.FORMS.items())
+    # the Default's six as the tuning policy's Default states them, its plastic limit not known yet
+    assert set(default) == {"note", "policy", "why"} and set(default["why"]) == set(default["policy"]) - {"above_plastic_limit"}
+    assert default["policy"] == {
+        "yield": {"torque_kg_cm": None}, "plastic_torque_limit_kg_cm": None, "above_plastic_limit": False,
+        "stall_release": {"share_of_yield": 0.36}, "stall_speed": {"multiple_of_still_speed": 4},
+        "pot_jump": {"multiple_of_step4": 4}, "current_loop": {"multiple_of_electrical_corner": 1.25},
+        "observer": {"multiple_of_mechanical_corner": 1.9}}
+    assert all(next(iter(default["policy"][k])) == rule for k, (_, rule) in cn.FORMS.items())
+    # the release share is the record's ratio, 90 over 250
+    assert default["policy"]["stall_release"]["share_of_yield"] * 250 == 90
+
+
+def test_the_default_policys_rules_give_the_records_numbers_on_its_measured_inputs(monkeypatch):
+    doc, c = on_the_default()
+    f = doc["fields"]
+    # the loop rates over their plant corners: R / (2 pi L) and Ke^2 / (2 pi J R) of record
+    assert round(cn.current_loop_hz(c), 1) == 1013.6 and round(cn.observer_hz(c), 2) == 15.12
+    assert round(100 * (cn.current_loop_hz(c) / 1000 - 1), 1) == 1.4
+    assert round(100 * (cn.observer_hz(c) / 15 - 1), 1) == 0.8
+    rates = {n: cn.evaluate(cn.rule_of(c, n), c)["value"] for n in LOOP_RATES}
+    assert rates == {"i_kp_q88": 292, "i_ki_q412": 1192, "i_kaw_q412": 2384, "l1_q016": 8704, "l2_q88": 3229,
+                     "l3_q88": 86}
+    # metal, no yield torque: the cap, no fold, and the release at 0.36 of the cap in A
+    assert cn.yield_current_a(c) == 0.0
+    cap = cn.current_limit_a(c)
+    assert round(cap, 3) == 0.919 and raw(0.36 * cap * doc["scales"][cn.CURRENT]["value"]) == 376
+    bound = {n: cn.evaluate(cn.rule_of(c, n), c)["value"] for n in RULE_BOUND[:2]}
+    assert bound == {"yield_current_counts": 0, "stall_release_counts": 376}
+    # the stall speed and the pot jump read results no pair holds yet: on the record's measured inputs, the
+    # analysis' still-shaft speed and the 4-step run the reader gives on the rows of record
+    for name, result in (("stall_omega_max_cps", "5-closed-loop/still-hold"),
+                         ("sensor_delta_max", "5-closed-loop/pot-steps")):
+        with pytest.raises(cn.Missing, match=f"{result} has no result for {doc['pair']}"):
+            cn.evaluate(cn.rule_of(c, name), c)
+    step4 = screens.step_run(pd.read_csv(results.ROOT / STEP4_CAPTURE, usecols=["seg", "tick", "pos"]))
+    monkeypatch.setattr(cn, "still_speed", lambda c: STILL_OF_THE_ANALYSIS)
+    monkeypatch.setattr(cn, "pot_step4", lambda c: step4)
+    bound = {n: cn.evaluate(cn.rule_of(c, n), c)["value"] for n in RULE_BOUND[2:]}
+    assert (step4, bound) == (15, {"stall_omega_max_cps": 460, "sensor_delta_max": 60})
+    # against the record's fixed values: -8.0 % and -6.25 %
+    assert [round(100 * (bound[n] / f[n]["value"] - 1), 2) for n in RULE_BOUND[2:]] == [-8.0, -6.25]
+
+
+def test_a_build_on_the_default_moves_the_rates_and_holds_what_has_no_result():
+    pair = postable.default_pair()
+    record = cn.of_record(pair)
+    plant_side, notes = cn.build(pair, record, default=True)
+    assert plant_side["inputs"]["default"] == {"file": "stages/5-closed-loop/calibration/default-policy.json",
+                                               "sha1": sc.file_sha1(results.ROOT / cn.FOLDER / cn.DEFAULT)}
+    assert moved_hashes(record, plant_side) == ["plant"]
+    assert {n: plant_side["fields"][n]["value"] for n in LOOP_RATES} == {
+        "i_kp_q88": 292, "i_ki_q412": 1192, "i_kaw_q412": 2384, "l1_q016": 8704, "l2_q88": 3229, "l3_q88": 86}
+    guarded, notes = cn.build(pair, record, protection=list(RULE_BOUND), default=True)
+    assert moved_hashes(record, guarded) == ["protection"]
+    f = guarded["fields"]
+    assert (f["yield_current_counts"]["value"], f["stall_release_counts"]["value"]) == (0, 376)
+    # the two with no result stay at the record's value, held, with what is missing
+    for name, result in (("stall_omega_max_cps", "still-hold"), ("sensor_delta_max", "pot-steps")):
+        assert (f[name]["value"], f[name]["class"]) == (record["fields"][name]["value"], "none"), name
+        assert f[name]["held"] == f"5-closed-loop/{result} has no result for {pair}", name
+
+
+def test_a_yield_torque_is_the_torque_ratio_and_a_plastic_train_takes_its_limit(monkeypatch):
+    plastic = {**cn.registry_of(postable.default_pair())}
+    plastic["servo"] = {**plastic["servo"], "gear_class": "plastic"}
+    _, metal = on_the_default()
+    _, soft = on_the_default(plastic)
+    ohm = metal.q(*cn.RESISTANCES["rails_fit"])
+    # half the stall torque the sheet states at 4.8 V is half the stall current there, on either train
+    for c in (metal, soft):
+        c.policies = {**c.policies, "yield": {"torque_kg_cm": 0.9}}
+        assert cn.yield_current_a(c) == pytest.approx(0.5 * 4.8 / ohm)
+        # the release is its share of the yield current where the yield current is not the cap
+        assert cn.stall_release_a(c) == pytest.approx(0.36 * 0.5 * 4.8 / ohm)
+    # with no torque a plastic train takes the plastic limit, which is not known yet
+    soft.policies = {**soft.policies, "yield": {"torque_kg_cm": None}}
+    with pytest.raises(cn.Missing, match="the plastic torque limit, the yield torque of a plastic train, is not "
+                                         "known yet"):
+        cn.yield_current_a(soft)
+    soft.policies = {**soft.policies, "plastic_torque_limit_kg_cm": 0.6}
+    assert cn.yield_current_a(soft) == pytest.approx(0.6 / 1.8 * 4.8 / ohm)
+    # over the limit only with the checkbox
+    soft.policies = {**soft.policies, "yield": {"torque_kg_cm": 0.9}}
+    with pytest.raises(ValueError, match="over the plastic torque limit, 0.6 kg cm, and above_plastic_limit is "
+                                         "not true: plastic teeth strip"):
+        cn.yield_current_a(soft)
+    soft.policies = {**soft.policies, "above_plastic_limit": True}
+    assert cn.yield_current_a(soft) == pytest.approx(0.5 * 4.8 / ohm)
+    # the record's own fixed values go through as they are
+    metal.policies = {**metal.policies, "yield": {"ma": 350.0}}
+    assert (cn.yield_current_a(metal), cn.stall_release_a(metal)) == (0.35, pytest.approx(0.36 * 0.35))
+
+
+@pytest.mark.parametrize("key, stated", [("current_loop", 1000.0), ("observer", {"hz": 15.0, "x": 1}),
+                                         ("pot_jump", {"multiple_of_step2": 4}), ("yield", {"a": 1})])
+def test_an_entry_that_is_none_of_its_forms_is_refused(key, stated):
+    _, c = on_the_default()
+    c.policies = {**c.policies, key: stated}
+    forms = ", ".join(f'{{"{f}": ...}}' for f in cn.FORMS[key])
+    with pytest.raises(ValueError, match=re.escape(f"{cn.POLICY}: {key} is {stated!r}: it is one of {forms}")):
+        cn.form(c, key)
+
+
+def test_a_set_from_the_default_is_built_to_out_and_never_as_the_set_of_record(cli, capsys):
+    with pytest.raises(SystemExit, match="a set from the Default policy is built to --out"):
+        cli("build", "--default")
