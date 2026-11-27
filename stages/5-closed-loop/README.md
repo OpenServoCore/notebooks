@@ -868,12 +868,14 @@ in seven protection steps, one build a step with `--protection`
 naming the step's fields and nothing of the plant moving: the NTC
 curve's three words, the winding model's four fields, the
 position-error screen's angle and time, the sensor screen, the
-undervolt floor, the rail fold and the stall response. Each is said
+undervolt floor, the rail fold and the stall response. The firmware
+has since taken the undervolt fault and its field out of the table,
+so the set of record holds the fields of six of them. Each is said
 below with what the servo held before it. A servo that still stores
 the set from before these steps, set `297f3cb4a544`, differs from the
-set of record in those thirteen fields and in the eleven of the plant
-above, and an install on it names the thirteen (below, after the
-undervolt floor).
+set of record in the twelve fields of those six and in the eleven of
+the plant above, and an install on it names the twelve (below, after
+the rail floor).
 
 The board NTC's curve is the design quadratic of the board's stage 1
 `ntc-curve` result ([stage 1](../1-board/README.md)): `ntc_t_ref_cc`,
@@ -1113,9 +1115,10 @@ healthy step of the pot on 5 V, 32 counts, where the servo held the
 boot default's 256: the band bound as it stood, and the screen is
 bound at 64 by a protection step of its own.
 
-The other screens, the supply terms and the open loop's choice each
+The other screens, the duty cap and the open loop's choice each
 have a policy entry in the unit a person sets it in, its reason
-under `why`, and a rule: a time in ms is that many kernel ticks, a
+under `why`, and a rule, and the rail fold's slope has the board's
+source in place of the entry: a time in ms is that many kernel ticks, a
 count of samples is the field, and a choice between named behaviors is
 the policy's word, written as `osc dump` prints the field. Where the
 decision is the value the servo holds, the field binds, of class
@@ -1139,8 +1142,7 @@ the old value:
 | `stall_response` | `stall_response` yield | Fault | Yield | `--protection` and `--loosen`: judged |
 | `pos_error_counts`, `pos_error_time_ticks` | `pos_error_deg` 9.9, `pos_error_time_ms` 100 | 400, 10000 | 199, 2000 | `--protection`: both protect more |
 | `sensor_delta_max` | `sensor_delta_max_counts` 64 | 256 | 64 | `--protection`: it protects more |
-| `v_undervolt_counts` | `v_undervolt_v` 3.70 | 720 | 922 | `--protection`: it protects more |
-| `rail_fold_q8` | `rail_source_ohm` 0.8 | 1430 | 1467 | `--protection` and `--loosen`: judged |
+| `rail_fold_q8` | the board's `rail_source_mohm` 800 | 1430 | 1467 | `--protection` and `--loosen`: judged |
 
 A blocked horn now yields: the current limit folds to the continuous
 current and the servo recovers on the next command, as the Feetech
@@ -1148,45 +1150,52 @@ class does, with the 90 C cutoff as the backstop. The position error's
 100 ms is a time a healthy error never holds, and it catches a reversed
 motor before it reaches a stop; it is interim with the angle, and the
 two are one step. The rail fold's slope is the shunt counts a rail
-count of sag gives through the source the policy designs for, 0.8 ohm,
-a soft supply such as a battery on a long lead; a stiffer setting
-protects less, and it never acts on the 5 V bench supply. The 1430 the
-servo held is that source through the board's nominal parts. Through
+count of sag gives through the source the board is designed for, 800
+mohm, about what a USB lead and its connectors add: the firmware board
+file's `rail_source_mohm`, copied into the board's entry in
+[oscnb/boards.py](../../oscnb/boards.py), a choice the board file makes,
+so the field is of class `policy`. A stiffer setting protects less, and
+it never acts on the 5 V bench supply. The 1430 the servo held is that
+source through the board's nominal parts. Through
 the measured counts per amp and rail counts per volt the same source
 is 1467, a steeper slope, which folds later, so its install is judged
 and named to loosen.
 
-The undervolt floor stands on a bench record, the rail walk of
-2026-11-14, kept as a dated file beside the set with its rows under
-`telemetry/<pair>/rail-walk/`: the supply stepped down and back up with
+The fold's floor is the board's, a constant of the image (the
+firmware board file's `rail_floor_mv`, 3.5 V on this board), and no
+fault watches the supply. The floor stands on a bench record, the rail
+walk of 2026-11-14, kept as a dated file beside the set with its rows
+under `telemetry/<pair>/rail-walk/`: the supply stepped down and back up with
 torque off, the rail tap and the chip's supply read at each level. Down
 to a supply of 3.70 V the chip's supply, which is the ADC's reference,
 holds, and the rail reading follows the rail. Under it the chip's
 supply follows the rail down and the reading stops: 860 to 861 counts
 at the edge, 3.45 V at the rail on stage 1's rail line, and 857 to 862
-at every level down to 2.70 V. The 720 counts the servo held are under
-that floor, so the undervolt fault could not trip on a rail the chip
-survives. The policy's floor is 3.70 V at the rail, 0.25 V over the
-edge, for the 5 V bench supply, and its rule takes it through the
-measured rail line, offset and scale, to 922 counts, on the stretch
-that line is graded over, which is what the set binds. A 2S pack's
-floor waits for the pack on the
-board. The rail fold stands on the floor, so its band moves up with it.
+at every level down to 2.70 V, so a floor under that plateau never
+binds, and the board's 3.5 V is just over it. The 720 counts the
+servo held as its undervolt threshold are under that floor, so the
+undervolt fault could not trip on a rail the chip survives. A step
+bound the threshold at the policy's 3.70 V at the rail, 922 counts
+through the measured rail line, until the firmware took the fault and
+its field, `v_undervolt_counts`, out of the table. A set written while
+it stood names it and loads as it was written, and a build with
+`--protection v_undervolt_counts` leaves it out, as the set of record's
+last build did.
 
 A servo that stores the set from before the releases, set
 `297f3cb4a544`, holds the plant the reference rung `14a-set-of-record`
 ran on and the thirteen protection fields at the values the tables
 above give as held. The install of the set of record on it writes the
 eleven plant fields with no name asked, and the gate asks for the
-thirteen, in the set's order:
+twelve the set holds, in the set's order:
 
 ```
---protection stall_response thermal_tau_s v_undervolt_counts thermal_tau2_s pos_error_time_ticks pos_error_counts sensor_delta_max rail_fold_q8 th_rise_q016 th_rise2_q016 ntc_t_ref_cc ntc_k1_q88 ntc_k2_q24
+--protection stall_response thermal_tau_s thermal_tau2_s pos_error_time_ticks pos_error_counts sensor_delta_max rail_fold_q8 th_rise_q016 th_rise2_q016 ntc_t_ref_cc ntc_k1_q88 ntc_k2_q24
 --loosen stall_response thermal_tau_s thermal_tau2_s rail_fold_q8 th_rise_q016 ntc_t_ref_cc ntc_k1_q88 ntc_k2_q24
 ```
 
 Eight are named to loosen: the seven that are judged, and the fast
-rise, which falls. The other five protect more. A deviation of the
+rise, which falls. The other four protect more. A deviation of the
 plant over the set asks for the same names on such a servo, since it
 moves no protection field. One test holds both lists to the gate.
 
