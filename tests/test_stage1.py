@@ -29,6 +29,41 @@ def test_board_from_meta_and_check(tmp_path):
     assert boards.from_meta(meta) is None
 
 
+def published_board(**words):
+    """A `board` block as osc-lab records it off an image of board D's file:
+    the settle table zero filled to its 24 words, then `words` over it."""
+    block = {"ntc_site": 1, "bridge_min_ticks": 27, "i_settle_start_ticks": 40,
+             "i_settle_q15": list(B.i_settle_q15) + [0] * (24 - len(B.i_settle_q15)),
+             "oc_trip_ma": 2200, "oc_trip_us": 400, "rail_source_mohm": 800,
+             "window_scale_q15": 32975, "terminal_offset_q4": 38, "brake_loop_mohm": 301,
+             "crest_sample_ticks": 31, "shunt_on_lag_q4": 704, "tap_on_lag_q4": 632,
+             "off_lag_q4": 224, "shunt_settle_q4": 1152}
+    return {**block, **words}
+
+
+def test_board_constants_are_checked_against_a_captures_board_block(tmp_path):
+    synth.write(tmp_path)
+    _, meta = tel.load(tmp_path, B)
+    assert "board" not in meta
+    B.check_meta(meta, "x")  # a capture from before the block
+    B.check_meta({**meta, "board": published_board()}, "x")
+    settle = published_board()["i_settle_q15"]
+    settle[3] += 1
+    with pytest.raises(ValueError, match="board dev-v006-2A-D"):
+        B.check_meta({**meta, "board": published_board(i_settle_q15=settle)}, "x")
+    for word in ({"i_settle_start_ticks": 48}, {"bridge_min_ticks": 0}, {"rail_source_mohm": 500},
+                 {"i_settle_q15": settle[:20] + [0] * 4}):
+        with pytest.raises(ValueError):
+            B.check_meta({**meta, "board": published_board(**word)}, "x")
+    # an image older than the block reads its reserved zeros: nothing is published to check
+    zeros = {k: [0] * 24 if k == "i_settle_q15" else 0 for k in published_board()}
+    B.check_meta({**meta, "board": zeros}, "x")
+    # a board whose image constants are not copied here has nothing to check
+    E = boards.BOARDS["dev-v006-2A-E"]
+    assert E.board == {}
+    E.check_meta({**meta, "board": published_board(i_settle_q15=settle)}, "x")
+
+
 def test_tel_rungs_recover_the_lap_current_and_a_dropped_frame(tmp_path):
     synth.write(tmp_path, rail_v=7.4, r_load=5.09, climb_rows=220, drop_at=(2, 500))
     df, meta = tel.load(tmp_path)

@@ -15,10 +15,14 @@ checked at, and are no measurement of record.
 
 Authority: every capture's meta.json carries a `sense` block read from the
 servo at capture time, and `check_meta` fails loudly when a capture was
-taken on parts other than the entry declares. Never edit a number here to
-silence that error; fix the entry or the selection.
+taken on parts other than the entry declares. A capture of an image that
+publishes its board facts (CALIB's board block, protocol sec 5.5) also
+carries a `board` block, and `check_meta` holds the entry's compiled
+constants to it. Never edit a number here to silence either error; fix the
+entry or the selection.
 """
 from dataclasses import dataclass
+from itertools import takewhile
 
 import numpy as np
 
@@ -63,8 +67,9 @@ class Board:
     # shortest pulse, under which a drive is no pulse, and the supply's
     # source resistance the image seeds the rail fold's slope for. Copied
     # from the board file for a notebook that replays the image's integers
-    # and for the rail fold's rule; None on a board whose board file is not
-    # copied here
+    # and for the rail fold's rule, and the record of the images historical
+    # captures ran; a capture's `board` block is checked against them. None
+    # on a board whose board file is not copied here
     i_settle_start_ticks: int | None = None
     i_settle_q15: tuple | None = None
     bridge_min_ticks: int | None = None
@@ -193,10 +198,30 @@ class Board:
                 "vmotor_div_top": self.vmotor_div_top, "vmotor_div_bot": self.vmotor_div_bot,
                 "vdd_mv": self.vdd_mv}
 
+    @property
+    def board(self):
+        """The compiled constants copied here, by the names a capture's
+        `board` block gives them, the settle table without its zero fill;
+        a constant not copied is left out."""
+        words = {"bridge_min_ticks": self.bridge_min_ticks,
+                 "i_settle_start_ticks": self.i_settle_start_ticks,
+                 "i_settle_q15": self.i_settle_q15,
+                 "rail_source_mohm": self.rail_source_mohm}
+        return {k: v for k, v in words.items() if v is not None}
+
     def check_meta(self, meta, where=""):
         got = {k: meta["sense"].get(k) for k in self.sense}
         if got != self.sense:
             raise ValueError(f"{where}: meta.json sense {got} != board {self.key} {self.sense}")
+        # no block: a capture from before osc-lab recorded it; ntc_site 0: an image older than it
+        block = meta.get("board") or {}
+        if not block.get("ntc_site"):
+            return
+        got = {k: block.get(k) for k in self.board}
+        if "i_settle_q15" in got:
+            got["i_settle_q15"] = tuple(takewhile(bool, got["i_settle_q15"] or ()))
+        if got != self.board:
+            raise ValueError(f"{where}: meta.json board {got} != board {self.key} {self.board}")
 
 
 BOARDS = {
