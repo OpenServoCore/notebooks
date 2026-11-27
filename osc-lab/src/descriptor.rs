@@ -8,9 +8,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use control_table::descriptor::FieldKind;
-use osc_client::descriptor::{
-    Access, Descriptor, Field, Kind, Registry, Selection, StampSpec, Variant,
-};
+use osc_client::descriptor::{Access, Descriptor, Field, Kind, Registry, Selection, Variant};
 use osc_protocol::models::MODEL_OSC_SERVO;
 use osc_protocol::version::unpack_version;
 use osc_servo_core::regions::ControlTable;
@@ -55,14 +53,6 @@ pub fn builtin() -> Descriptor {
         firmware_major,
         firmware_minor,
         table_size: core::mem::size_of::<ControlTable>() as u16,
-        stamp: Some(StampSpec {
-            tag: osc_servo_core::stamp::TAG.into(),
-            covered: osc_servo_core::stamp::COVERED_NAMES
-                .iter()
-                .map(|n| n.to_string())
-                .collect(),
-            pos_lut_points: osc_servo_core::pos_lut::INTERVALS,
-        }),
         fields,
     }
 }
@@ -183,25 +173,18 @@ pub fn field<'a>(d: &'a Descriptor, name: &str) -> Result<&'a Field> {
 mod tests {
     use super::*;
 
-    /// The built-in names the servo model, its fw and the stamp recipe, and
-    /// carries every field the capture reads by name.
+    /// The built-in names the servo model and its fw, and carries every
+    /// field the capture reads by name.
     #[test]
     fn the_builtin_is_the_pinned_control_table() {
         let d = builtin();
         assert_eq!(d.model_number, 0x0101);
         assert_eq!(d.fields.len(), ControlTable::FIELDS.len());
-        let stamp = d.stamp.as_ref().unwrap();
-        assert_eq!(stamp.tag, "osc-plant-1");
-        assert_eq!(stamp.pos_lut_points, 256);
-        for name in &stamp.covered {
-            assert!(d.field(name).is_some(), "{name} not a field");
-        }
         for name in ["openloop_zero_brake", "tel_count"] {
             assert!(field(&d, name).is_ok(), "{name}");
         }
         let id = d.field("id").unwrap();
         assert_eq!((id.min, id.max), (Some(1), Some(249)));
-        assert!(d.stamp().is_ok(), "the client reads the recipe");
         let mut reg = Registry::new();
         reg.push(d.clone());
         let fw = osc_servo_core::FIRMWARE_VERSION;

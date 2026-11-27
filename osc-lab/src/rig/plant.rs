@@ -1,16 +1,15 @@
 //! The plant data the servo holds beside its recordings: the position table
-//! as the kernel applies it, the plant stamp against the live set, and the
-//! data state. A capture is only as interpretable as this record: the same
-//! raw pot linearizes to different counts under different tables.
+//! as the kernel applies it and the stored state. A capture is only as
+//! interpretable as this record: the same raw pot linearizes to different
+//! counts under different tables.
 
 use anyhow::Result;
+use osc_client::Id;
 use osc_client::blocking::Client;
-use osc_client::data_state::DataState;
 use osc_client::descriptor::Descriptor;
 use osc_client::pipe::Pipe;
 use osc_client::pos_lut::{INTERVALS, state};
-use osc_client::stamp::{UNSTAMPED, Verdict};
-use osc_client::{Error, Id};
+use osc_client::store_state::StoreState;
 use osc_protocol::crc::osc_crc;
 use osc_servo_core::pos_lut::GRID;
 use serde_json::{Value, json};
@@ -39,8 +38,8 @@ impl Lut {
         }
     }
 
-    /// CRC-16/ARC over the effective points LE, the bytes as the stamp
-    /// hashes them; the identity has its own value.
+    /// CRC-16/ARC over the effective points LE; the identity has its own
+    /// value.
     pub(crate) fn crc(&self) -> u16 {
         let bytes: Vec<u8> = self.points.iter().flat_map(|k| k.to_le_bytes()).collect();
         osc_crc(&bytes)
@@ -68,46 +67,27 @@ impl Lut {
     }
 }
 
-/// The table, the stamp verdict and the data state as one reading.
+/// The table and the stored state as one reading.
 pub(crate) struct Snapshot {
     pub(crate) lut: Lut,
-    /// None when the descriptor carries no stamp recipe.
-    pub(crate) stamp: Option<Verdict>,
-    pub(crate) data: DataState,
+    pub(crate) store: StoreState,
 }
 
 impl Snapshot {
     pub(crate) fn read<P: Pipe>(c: &mut Client<P>, id: Id, d: &Descriptor) -> Result<Self> {
         let lut = Lut::read(c, id, d)?;
-        let stamp = match c.stamp_verdict(id, d) {
-            Ok(v) => Some(v),
-            Err(Error::Descriptor(_)) => None,
-            Err(e) => return Err(e.into()),
-        };
-        let data = c.data_state(id, d)?;
-        Ok(Self { lut, stamp, data })
+        let store = c.store_state(id, d)?;
+        Ok(Self { lut, store })
     }
 
-    pub(crate) fn stamp_verdict(&self) -> &'static str {
-        match self.stamp {
-            None => "none",
-            Some(v) if v.stored == UNSTAMPED => "unstamped",
-            Some(v) if v.matches() => "match",
-            Some(_) => "mismatch",
-        }
-    }
-
-    pub(crate) fn data_names(&self) -> Vec<&'static str> {
-        self.data.reasons().iter().map(|r| r.name()).collect()
-    }
-
-    /// The `plant` block of a recording's meta.
+    /// The `plant` block of a recording's meta: the table, the settings
+    /// word (`loaded`, or the images on their defaults), the modes the
+    /// servo refuses and whether RAM differs from what a reboot loads.
     pub(crate) fn json(&self) -> Value {
         let mut v = self.lut.json();
-        v["plant_stamp"] = json!(self.stamp.map(|s| format!("{:#06x}", s.stored)));
-        v["stamp_computed"] = json!(self.stamp.map(|s| format!("{:#06x}", s.computed)));
-        v["stamp_verdict"] = json!(self.stamp_verdict());
-        v["data_flags"] = json!(self.data_names());
+        v["settings"] = json!(self.store.settings());
+        v["refused_modes"] = json!(self.store.refused_modes);
+        v["unsaved"] = json!(self.store.unsaved());
         v
     }
 }
@@ -115,7 +95,7 @@ impl Snapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use osc_client::data_state::STAMP_MISMATCH;
+    use osc_client::store_state::{CALIB_DEFAULTS, UNSAVED};
 
     fn bent() -> Lut {
         let mut points = [0i16; INTERVALS];
@@ -153,16 +133,14 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_records_table_stamp_and_data() {
+    fn snapshot_records_table_and_store() {
         let a = Snapshot {
             lut: bent(),
-            stamp: Some(Verdict {
-                stored: 0x1234,
-                computed: 0x1234,
-            }),
-            data: DataState {
-                flags: 0,
+            store: StoreState {
+                status: 0,
+                refused: 0,
                 fault_code: 0,
+                refused_modes: Vec::new(),
             },
         };
         let j = a.json();
@@ -170,42 +148,27 @@ mod tests {
         assert_eq!(j["lut_nonzero_points"], 185);
         assert_eq!(j["lut_band"], json!([560, 3504]));
         assert_eq!(j["lut_crc"], format!("{:#06x}", bent().crc()));
-        assert_eq!(j["plant_stamp"], "0x1234");
-        assert_eq!(j["stamp_verdict"], "match");
-        assert_eq!(j["data_flags"], json!([]));
+        assert_eq!(j["settings"], "loaded");
+        assert_eq!(j["refused_modes"], json!([]));
+        assert_eq!(j["unsaved"], false);
+        assert!(j.get("stamp_verdict").is_none());
 
         let b = Snapshot {
-            lut: bent(),
-            stamp: Some(Verdict {
-                stored: 0x1234,
-                computed: 0x5678,
-            }),
-            data: DataState {
-                flags: STAMP_MISMATCH,
-                fault_code: 0,
-            },
-        };
-        assert_eq!(b.json()["stamp_verdict"], "mismatch");
-        assert_eq!(b.json()["data_flags"], json!(["STAMP_MISMATCH"]));
-
-        let unstamped = Snapshot {
             lut: Lut {
                 state: state::IDENTITY,
                 points: [0; INTERVALS],
             },
-            stamp: Some(Verdict {
-                stored: UNSTAMPED,
-                computed: 7,
-            }),
-            data: a.data,
+            store: StoreState {
+                status: CALIB_DEFAULTS | UNSAVED,
+                refused: 1 << 3,
+                fault_code: 0,
+                refused_modes: vec!["Position".into()],
+            },
         };
-        assert_eq!(unstamped.stamp_verdict(), "unstamped");
-        assert_eq!(unstamped.json()["lut_band"], Value::Null);
-        let no_recipe = Snapshot {
-            stamp: None,
-            ..unstamped
-        };
-        assert_eq!(no_recipe.json()["plant_stamp"], Value::Null);
-        assert_eq!(no_recipe.stamp_verdict(), "none");
+        let j = b.json();
+        assert_eq!(j["settings"], "defaults: CALIB");
+        assert_eq!(j["refused_modes"], json!(["Position"]));
+        assert_eq!(j["unsaved"], true);
+        assert_eq!(j["lut_band"], Value::Null);
     }
 }

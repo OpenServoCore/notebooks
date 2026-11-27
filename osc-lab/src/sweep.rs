@@ -803,9 +803,9 @@ pub(crate) fn chunks_json(chunks: &Chunks) -> serde_json::Value {
 }
 
 /// The run's constants, written as meta.json before the first burst. The
-/// `plant` block names the table that linearizes the recording's `pos`,
-/// its stamp verdict and its data state at that moment; `drive` is the
-/// rule the drive ran under and the servo settings that held it.
+/// `plant` block names the table that linearizes the recording's `pos`
+/// and the servo's stored state at that moment; `drive` is the rule the
+/// drive ran under and the servo settings that held it.
 /// `tel_chunks` is the row as `[addr, len]` pairs; recordings from before
 /// chunked rows carry `tel_mask` instead. A backdrive run adds
 /// `backdrive`, its mode (`coast` or `brake`), and its `captures`.
@@ -890,7 +890,7 @@ pub(crate) fn drive(
     m.insert("rule".into(), RULE.into());
     m.insert("current_limit_counts".into(), lim.i_lim.into());
     m.insert("window_floor_q15".into(), lim.window_floor_q15.into());
-    m.insert("i_cont_counts".into(), lim.i_cont.into());
+    m.insert("yield_current_counts".into(), lim.yield_current.into());
     m.insert("stall_release_counts".into(), stall.release.into());
     m.insert("stall_time_ticks".into(), stall.time_ticks.into());
     m.insert("stall_response".into(), stall.response().into());
@@ -1363,7 +1363,7 @@ mod tests {
     fn mg90() -> ServoLimits {
         ServoLimits {
             i_lim: 280,
-            i_cont: 168,
+            yield_current: 168,
             tau_trip: 280,
             soft: (432, 3626),
             raw: (209, 3849),
@@ -2079,14 +2079,38 @@ mod tests {
 
     /// The meta a sweep writes on the in-process servo stack carries every
     /// key a committed capture's does, nested blocks included, less the
-    /// host build's sha and the decay the firmware has no choice of; and
-    /// nothing else.
+    /// host build's sha, the decay the firmware has no choice of and the
+    /// plant stamp it no longer keeps, its registers by today's names and
+    /// its data state as the stored state that replaced it; and nothing
+    /// else.
     #[test]
     fn meta_keys_match_a_committed_capture() {
         let want: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(fixture("meta.json")).unwrap()).unwrap();
-        let mut want = keys(&want);
-        want.retain(|k| k != "host_git_sha" && k != "decay");
+        let gone = [
+            "host_git_sha",
+            "decay",
+            "plant.plant_stamp",
+            "plant.stamp_computed",
+            "plant.stamp_verdict",
+        ];
+        let renamed = [("drive.i_cont_counts", "drive.yield_current_counts")];
+        let mut want: Vec<String> = keys(&want)
+            .into_iter()
+            .filter(|k| !gone.contains(&k.as_str()))
+            .flat_map(|k| match k.as_str() {
+                "plant.data_flags" => ["plant.settings", "plant.refused_modes", "plant.unsaved"]
+                    .map(String::from)
+                    .to_vec(),
+                _ => vec![
+                    renamed
+                        .iter()
+                        .find(|(old, _)| *old == k)
+                        .map_or(k.clone(), |(_, new)| new.to_string()),
+                ],
+            })
+            .collect();
+        want.sort();
 
         let mut rig = Rig::bench();
         let id = rig.id();

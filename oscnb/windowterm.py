@@ -31,6 +31,15 @@ TRACK_COLS = ["seg", "goal", "tick", "window_valid", "pos", "current_trough",
               "duty_counts", "current_raw", "vmotor_a", "vmotor_b"]
 
 
+
+def _live_set(plant: dict) -> bool:
+    """The capture ran on the servo's stored set: older captures carry the plant
+    stamp's verdict, newer ones the stored-state word."""
+    if "stamp_verdict" in plant:
+        return plant["stamp_verdict"] == "match"
+    return plant.get("settings") == "loaded"
+
+
 def board_of(meta, where):
     """The board a capture's sense block names, checked against it."""
     board = boards.from_meta(meta)
@@ -54,7 +63,7 @@ def load_sweep(folder):
     where = str(results.rel(folder))
     meta = json.loads((folder / "meta.json").read_text())
     board = board_of(meta, where)
-    if meta["rows_dropped"] or meta["plant"]["stamp_verdict"] != "match":
+    if meta["rows_dropped"] or not _live_set(meta["plant"]):
         raise ValueError(f"{where}: rows dropped or not the live set")
     rows = pd.read_csv(folder / "sweep.csv", usecols=SWEEP_COLS)
     _ticks_whole(rows, where)
@@ -216,7 +225,7 @@ def load_track(folder, table, slots):
     meta = json.loads((folder / "meta.json").read_text())
     board = board_of(meta, where)
     plant = meta["plant"]
-    if (plant["lut_state"] != "LIVE" or plant["stamp_verdict"] != "match"
+    if (plant["lut_state"] != "LIVE" or not _live_set(plant)
             or meta["rows_dropped"]):
         raise ValueError(f"{where}: not the live table, or rows dropped")
     rows = pd.read_csv(folder / "track.csv", usecols=TRACK_COLS)

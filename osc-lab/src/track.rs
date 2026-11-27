@@ -38,9 +38,9 @@ use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
 use osc_client::Id;
 use osc_client::blocking::Client;
-use osc_client::data_state::{allows, fault};
 use osc_client::descriptor::{self as desc, Access, Descriptor, Field, Kind, Value};
 use osc_client::pipe::Pipe;
+use osc_client::store_state::{self, fault};
 use osc_protocol::tel::Chunks;
 use osc_servo_core::estimator::thermal::{NtcCfg, ntc_cc};
 use osc_servo_core::kernel::TICK_HZ;
@@ -101,11 +101,6 @@ impl Mode {
             Mode::Velocity => control::GOAL_VELOCITY,
             Mode::Current => control::GOAL_CURRENT,
         }
-    }
-
-    /// The data state gates these on the identified set (protocol sec 5.7).
-    fn closed(self) -> bool {
-        self != Mode::Current
     }
 
     pub(crate) fn as_str(self) -> &'static str {
@@ -224,9 +219,7 @@ pub struct Args {
     /// written. `rest@MS` captures nothing while the watchdog polls. A
     /// capture is at most one burst, 3276 ms. Every CONFIG field a `set:`
     /// wrote is put back to its value before the run once torque is off at
-    /// the end. Until then a `set:` of a plant-stamp field (a gain, a limit,
-    /// the deadband) reads STAMP_MISMATCH, so a closed-loop entry is refused,
-    /// a centering from velocity or current mode included.
+    /// the end.
     #[arg(long, value_delimiter = ',', value_parser = parse_item, required = true)]
     schedule: Vec<Item>,
     /// TEL row: table chunks as addr+len, at most two, comma-joined (hex
@@ -671,8 +664,8 @@ pub(crate) struct Cfg {
     pub(crate) items: Vec<Item>,
     /// Each `set:` item resolved, by index.
     pub(crate) sets: Vec<Option<SetReg>>,
-    /// `data_flags` at preflight, what the put-back is judged against.
-    pub(crate) data_flags: u8,
+    /// `refused_modes` at preflight, what the put-back is judged against.
+    pub(crate) refused: u8,
     pub(crate) chunks: Chunks,
     pub(crate) tick_hz: f64,
     pub(crate) wd: Watchdog,
@@ -941,8 +934,8 @@ fn resolve_set(d: &Descriptor, field: &str, value: &str) -> Result<(Reg, i32), S
 
 /// Read the servo and refuse, before any torque, every run it cannot
 /// take: an experiment image, a line that streams no TEL, a flat pack, a
-/// data state that refuses the mode, a standing fault, a shaft outside the
-/// guard, and any item, cap or dead-man the servo cannot carry.
+/// standing fault, a shaft outside the guard, and any item, cap or
+/// dead-man the servo cannot carry.
 pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
     let chunks = pump::parse_tel_chunks(&a.tel_chunks).context("--tel-chunks")?;
     let mut cfg = preflight(s, &a.guarded, a.mode, chunks)?;
@@ -991,8 +984,8 @@ pub(crate) fn prepare<S: Servo>(s: &mut S, a: &Args) -> Result<Cfg> {
 
 /// What every closed-loop run refuses before torque, read once, and the
 /// guards it runs under: an experiment image, a line that streams no TEL
-/// row of `chunks`, a flat pack, a data state that refuses `mode`, and a
-/// cap or dead-man the servo cannot carry. The schedule is the caller's.
+/// row of `chunks`, a flat pack, and a cap or dead-man the servo cannot
+/// carry. The schedule is the caller's.
 /// Reads only.
 pub(crate) fn preflight<S: Servo>(
     s: &mut S,
@@ -1015,14 +1008,17 @@ pub(crate) fn preflight<S: Servo>(
     if let Verdict::Refuse(m) = battery::drive_gate(rail, pack) {
         return refuse(m);
     }
-    let data = crate::state::check(s.client(), id)?;
-    if !allows(data.flags, mode.closed()) {
-        return refuse(format!(
-            "the servo's data state ({}) refuses {} mode: {}",
-            data.names(),
-            mode.as_str(),
-            data.message().unwrap_or_default()
-        ));
+    let store = crate::state::check(s.client(), id)?;
+    let centers = !g.no_center && mode != Mode::Position;
+    for m in std::iter::once(mode).chain(centers.then_some(Mode::Position)) {
+        if store.refuses(m.value() as u8) {
+            eprintln!(
+                "warning: id {}: the run enters {} mode, which the servo refuses now: torque on \
+                 there latches the config fault",
+                id.as_byte(),
+                m.as_str()
+            );
+        }
     }
     let lim = crate::rig::limits::read(s.client(), id).map_err(as_refusal)?;
     let tick_hz = s.tick_hz()?;
@@ -1083,7 +1079,7 @@ pub(crate) fn preflight<S: Servo>(
         mode,
         items: Vec::new(),
         sets: Vec::new(),
-        data_flags: data.flags,
+        refused: store.refused,
         chunks,
         tick_hz,
         wd,
@@ -1226,8 +1222,8 @@ pub(crate) struct Ran {
     pub(crate) kept: Vec<Kept>,
     /// What the put-back wrote, last-set first.
     pub(crate) restored: Vec<Kept>,
-    /// `data_flags` once the put-back ran.
-    pub(crate) data_flags_after: Option<u8>,
+    /// The modes refused once the put-back ran, by name.
+    pub(crate) refused_modes_after: Option<Vec<String>>,
     /// `--poll-extra` reads that failed or came back short.
     pub(crate) extra_failures: u32,
 }
@@ -1267,17 +1263,16 @@ fn remember<S: Servo>(s: &mut S, ran: &mut Ran, set: &SetReg) -> Result<()> {
     Ok(())
 }
 
-/// Polls of `data_flags` the put-back waits through for the servo's stamp
-/// checkpoint, which runs in its main loop after each write's reply.
-const DATA_POLLS: u32 = 5;
-const DATA_POLL_MS: u32 = 10;
+/// Polls of `refused_modes` the put-back waits through: the servo
+/// publishes it within a medium period of the write that moved it.
+const REFUSED_POLLS: u32 = 5;
+const REFUSED_POLL_MS: u32 = 10;
 
 /// With torque off, write every kept field back, last-set first, then read
-/// `data_flags` and warn about a mismatch or any reason new since
-/// preflight. Never turns torque on or changes mode. Every write is tried;
-/// Err is the first that failed.
+/// `refused_modes` and warn about any mode refused that preflight did not
+/// find refused. Never turns torque on or changes mode. Every write is
+/// tried; Err is the first that failed.
 pub(crate) fn put_back<S: Servo>(s: &mut S, cfg: &Cfg, ran: &mut Ran) -> Result<()> {
-    use osc_client::data_state::{STAMP_MISMATCH, reasons};
     let mut first: Option<anyhow::Error> = None;
     for k in std::mem::take(&mut ran.kept).into_iter().rev() {
         match s.write(k.reg, k.before) {
@@ -1288,31 +1283,29 @@ pub(crate) fn put_back<S: Servo>(s: &mut S, cfg: &Cfg, ran: &mut Ran) -> Result<
         }
     }
     let id = s.id();
-    let flags = (|| -> Result<u8> {
+    let store = (|| -> Result<store_state::StoreState> {
         let d = crate::state::descriptor(s.client(), id)?;
-        let mut flags = s.client().data_state(id, &d)?.flags;
-        for _ in 0..DATA_POLLS {
-            if flags & STAMP_MISMATCH == 0 && flags & !cfg.data_flags == 0 {
+        let mut store = s.client().store_state(id, &d)?;
+        for _ in 0..REFUSED_POLLS {
+            if store.refused & !cfg.refused == 0 {
                 break;
             }
-            s.sleep(DATA_POLL_MS);
-            flags = s.client().data_state(id, &d)?.flags;
+            s.sleep(REFUSED_POLL_MS);
+            store = s.client().store_state(id, &d)?;
         }
-        Ok(flags)
+        Ok(store)
     })();
-    match flags {
-        Ok(f) => {
-            ran.data_flags_after = Some(f);
-            if f & STAMP_MISMATCH != 0 || f & !cfg.data_flags != 0 {
-                let names: Vec<_> = reasons(f).iter().map(|r| r.name()).collect();
+    match store {
+        Ok(st) => {
+            if st.refused & !cfg.refused != 0 {
                 eprintln!(
-                    "warning: id {}: after the put-back data_flags names {} (at preflight {:#04x}): \
-                     the next closed-loop entry is refused until the set matches its stamp",
+                    "warning: id {}: after the put-back the servo refuses {} (at preflight {:#04x})",
                     id.as_byte(),
-                    names.join(" | "),
-                    cfg.data_flags
+                    st.refused_said(),
+                    cfg.refused
                 );
             }
+            ran.refused_modes_after = Some(st.refused_modes);
         }
         Err(e) => {
             first.get_or_insert(e);
@@ -1967,7 +1960,7 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg) -> Result<serde_json::Value> {
         "config": serde_json::Value::Null,
         "control": serde_json::Value::Null,
         "restored": [],
-        "data_flags_after": serde_json::Value::Null,
+        "refused_modes_after": serde_json::Value::Null,
         "ended": serde_json::Value::Null,
     });
     meta_extra(&mut m, cfg.extra, 0);
@@ -1998,13 +1991,10 @@ fn land(meta: &mut serde_json::Value, cfg: &Cfg, ran: &Ran, r: &Result<()>) {
         .map(|k| serde_json::json!({ "field": k.field, "from": k.shown(k.last), "to": k.shown(k.before) }))
         .collect::<Vec<_>>()
         .into();
-    meta["data_flags_after"] = ran.data_flags_after.map_or(serde_json::Value::Null, |f| {
-        osc_client::data_state::reasons(f)
-            .iter()
-            .map(|r| r.name())
-            .collect::<Vec<_>>()
-            .into()
-    });
+    meta["refused_modes_after"] = ran
+        .refused_modes_after
+        .as_ref()
+        .map_or(serde_json::Value::Null, |m| m.clone().into());
     meta["ended"] = match r {
         Ok(()) => "ok".into(),
         Err(e) => match e.downcast_ref::<Abort>() {
@@ -2119,13 +2109,13 @@ mod tests {
         <Cli as clap::Parser>::try_parse_from(v).unwrap().args
     }
 
-    /// The bench servo, its data state clear, the shaft at `pos` raw with
+    /// The bench servo, refusing no mode, the shaft at `pos` raw with
     /// the board NTC at room temperature and `i` counts held.
     fn rig_at(pos: u16, i: i16) -> Rig {
         let mut r = Rig::bench();
         at(&mut r.c, pos, i, 1913);
         r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
-            t.telemetry.mode.data_flags = 0;
+            t.telemetry.mode.refused_modes = 0;
         });
         r
     }
@@ -2372,9 +2362,9 @@ mod tests {
     }
 
     /// Each refusal before torque, exit 2, with nothing written: the
-    /// experiment image, a data state that refuses the mode, a standing
-    /// fault, a shaft outside the guard, a flat pack, and items or a
-    /// dead-man the servo cannot carry.
+    /// experiment image, a standing fault, a shaft outside the guard, a
+    /// flat pack, and items or a dead-man the servo cannot carry. A mode
+    /// the servo refuses is a warning: the belt is the servo's to apply.
     #[test]
     fn preflight_refuses_before_any_torque() {
         let pos = ["--mode", "position", "--schedule", "goal:2100@20"];
@@ -2382,21 +2372,11 @@ mod tests {
         r.experiment = true;
         assert!(refused(&mut r, &pos).contains("experiment image"));
 
-        // the bench table's covered edits read STAMP_MISMATCH
-        let mut r = Rig::bench();
-        at(&mut r.c, 2029, 0, 1913);
-        let e = refused(&mut r, &pos);
-        assert!(
-            e.contains("STAMP_MISMATCH") && e.contains("position mode"),
-            "{e}"
-        );
-        assert!(
-            prepare(
-                &mut r,
-                &parse(&["--mode", "current", "--schedule", "goal:50@20"])
-            )
-            .is_ok()
-        );
+        let mut r = rig_at(2029, 0);
+        r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
+            t.telemetry.mode.refused_modes = 1 << Mode::Position.value();
+        });
+        assert!(prepare(&mut r, &parse(&pos)).is_ok());
 
         let mut r = rig_at(2029, 0);
         r.latch(1, 1);
@@ -3762,7 +3742,7 @@ mod tests {
                 ("pos_deadband_counts", 9, band0 as i64)
             ]
         );
-        assert!(ran.data_flags_after.is_some());
+        assert!(ran.refused_modes_after.is_some());
         assert_eq!(
             ran.set.unwrap()["config"]["velocity_limit_cps"],
             555,
@@ -3831,7 +3811,7 @@ mod tests {
             meta["restored"],
             serde_json::json!([{ "field": "velocity_limit_cps", "from": 777, "to": vel0 }])
         );
-        assert!(meta["data_flags_after"].is_array());
+        assert!(meta["refused_modes_after"].is_array());
         std::fs::remove_dir_all(&out).unwrap();
     }
 
@@ -3893,7 +3873,7 @@ mod tests {
             "config",
             "control",
             "restored",
-            "data_flags_after",
+            "refused_modes_after",
             "ended",
         ] {
             assert!(meta.get(k).is_some(), "meta has no {k}");

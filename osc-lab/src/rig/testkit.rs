@@ -32,7 +32,7 @@ pub(crate) fn table_at(rate: BaudRate, vbus_raw: u16) -> (Client<FakePipe>, Id) 
     for (reg, v) in [
         (config::CURRENT_LIMIT_COUNTS, 280),
         (config::STALL_RESPONSE, 1),
-        (config::I_CONT_COUNTS, 168),
+        (config::YIELD_CURRENT_COUNTS, 168),
         (config::STALL_RELEASE_COUNTS, 84),
         (config::POS_MIN_SOFT_COUNTS, 432),
         (config::POS_MAX_SOFT_COUNTS, 3626),
@@ -165,12 +165,12 @@ impl Rig {
         }
     }
 
-    /// The bench rig, its data state clear, with a [`Plant`] whose shaft
+    /// The bench rig, refusing no mode, with a [`Plant`] whose shaft
     /// rests at `shaft` linearized counts (the bench table is the identity).
     pub(crate) fn plant_at(shaft: i32, honors_stimulus: bool) -> Self {
         let mut r = Self::bench();
         r.c.pipe_mut().sim_mut().servo_table_mut(0, |t| {
-            t.telemetry.mode.data_flags = 0;
+            t.telemetry.mode.refused_modes = 0;
         });
         r.plant = Some(Plant {
             shaft,

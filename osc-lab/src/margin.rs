@@ -953,7 +953,7 @@ fn run_step<S: Servo>(
 
 /// Torque on at a zero goal in Velocity mode, the dead-man check, every
 /// step, the centering, torque off; then the fields zeroed and read back
-/// on every exit, and the data state read. Each burst reaches `on_burst`
+/// on every exit, and the refused modes read. Each burst reaches `on_burst`
 /// as it lands, so an abort keeps what was captured before it.
 pub(crate) fn record<S: Servo>(
     s: &mut S,
@@ -1059,7 +1059,7 @@ fn meta<S: Servo>(s: &mut S, cfg: &Cfg, sweep: &Sweep, a: &Args) -> Result<serde
         "control": serde_json::Value::Null,
         "inject_after": serde_json::Value::Null,
         "restored": [],
-        "data_flags_after": serde_json::Value::Null,
+        "refused_modes_after": serde_json::Value::Null,
         "ended": serde_json::Value::Null,
     });
     meta_extra(&mut m, cfg.extra, 0);
@@ -1093,16 +1093,11 @@ fn land(meta: &mut serde_json::Value, cfg: &Cfg, sweep: &Sweep, sw: &Swept, r: &
         .map(|k| serde_json::json!({ "field": k.field, "from": k.last, "to": k.before }))
         .collect::<Vec<_>>()
         .into();
-    meta["data_flags_after"] = sw
+    meta["refused_modes_after"] = sw
         .ran
-        .data_flags_after
-        .map_or(serde_json::Value::Null, |f| {
-            osc_client::data_state::reasons(f)
-                .iter()
-                .map(|r| r.name())
-                .collect::<Vec<_>>()
-                .into()
-        });
+        .refused_modes_after
+        .as_ref()
+        .map_or(serde_json::Value::Null, |m| m.clone().into());
     meta["ended"] = match r {
         Ok(()) => "ok".into(),
         Err(e) => match e.downcast_ref::<Abort>() {
@@ -1570,7 +1565,7 @@ mod tests {
     /// meta's `ended` carry both, the firmware's flags and code first.
     #[test]
     fn a_burst_the_rows_and_the_servo_both_trip_names_both() {
-        use osc_client::data_state::fault;
+        use osc_client::store_state::fault;
         use osc_servo_core::kernel::phases::loops::faults::BIT_POSITION_ERROR;
         let mut r = rig(true);
         let argv = [&SMALL[..], &["--guard-hi", "2600"]].concat();
@@ -1762,7 +1757,7 @@ mod tests {
             "watchdog",
             "config",
             "control",
-            "data_flags_after",
+            "refused_modes_after",
         ] {
             assert!(meta.get(k).is_some(), "meta has no {k}");
         }
