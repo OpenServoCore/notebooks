@@ -2,7 +2,7 @@
 the tool writes (track.csv, segments.csv, meta.json) and the plan.json the
 runner puts beside them, from rows a test chooses or from a fake servo
 that answers a schedule, a board's wide-code result file, the constant
-state a fake servo answers `osc` with, and a fake servo that takes the
+state a fake servo answers `osc-bus` with, and a fake servo that takes the
 writes of an install, a SAVE and a reboot.
 
 A test fixture, not a model of record. `fake_track` runs each goal as a
@@ -144,7 +144,7 @@ def wide_result(path, codes, root=None):
 
 
 class Servo:
-    """The constant state a fake servo answers `osc` with: a few CONFIG
+    """The constant state a fake servo answers `osc-bus` with: a few CONFIG
     and CALIB fields where its descriptor places them, a byte no field
     names among them, the first fields of CONTROL after them, the
     position table behind its window and the status report. The places
@@ -169,7 +169,7 @@ class Servo:
         self.reboot()
 
     def reboot(self):
-        """The stored fields back, as `osc reboot` brings them."""
+        """The stored fields back, as `osc-bus reboot` brings them."""
         for name, v in self.STORED.items():
             self.set(name, v)
 
@@ -217,7 +217,7 @@ class Servo:
                 f"      settings {self.settings}\n      refused  {self.refused}\n")
 
     def stub(self, monkeypatch, regs=dict):
-        """`osc`'s reads and its window write answered by this servo;
+        """`osc-bus`'s reads and its window write answered by this servo;
         `get` reads `regs()` first, a fixture's own registers. Returns the
         servo."""
         def get(name):
@@ -231,7 +231,7 @@ class Servo:
 
 
 class Bench(Servo):
-    """The fake servo with the writes an install makes: `osc set` by
+    """The fake servo with the writes an install makes: `osc-bus set` by
     name, refused where it would put the low soft limit at or past the
     high one, the table's STORE and COMMIT behind the window (a COMMIT
     of all-zero points lands IDENTITY, or LIVE with `zero_live`, as a
@@ -289,7 +289,7 @@ class Bench(Servo):
         return f"{self.VARIANTS[v]} ({v})"
 
     def get(self, name):
-        # `osc get` is read up to the first space, an enum as its name
+        # `osc-bus get` is read up to the first space, an enum as its name
         v = super().get(name)
         return v.split()[0] if self.FIELDS[name][3] == "enum" else v
 
@@ -300,7 +300,7 @@ class Bench(Servo):
              else int(value))
         soft = {n: self.decoded(n) for n in ("pos_min_soft_counts", "pos_max_soft_counts")}
         if name in soft and {**soft, name: v}["pos_min_soft_counts"] >= {**soft, name: v}["pos_max_soft_counts"]:
-            raise subprocess.CalledProcessError(1, ["osc", "set", name, value])
+            raise subprocess.CalledProcessError(1, ["osc-bus", "set", name, value])
         if name not in self.drop:
             self.set(name, v)
         if name in self.drift:
@@ -316,7 +316,7 @@ class Bench(Servo):
             assert len(data) == 8, "the soft limits go as one write of both"
             lo, hi = (int.from_bytes(data[k:k + 4], "little", signed=True) for k in (0, 4))
             if (lo, hi) != (0, 0) and lo >= hi:
-                raise subprocess.CalledProcessError(1, ["osc", "write", hex(addr), bytes(data).hex()])
+                raise subprocess.CalledProcessError(1, ["osc-bus", "write", hex(addr), bytes(data).hex()])
             for name in ("pos_min_soft_counts", "pos_max_soft_counts"):
                 if name not in self.drop:
                     self.set(name, lo if name == "pos_min_soft_counts" else hi)
@@ -339,7 +339,7 @@ class Bench(Servo):
         self.log.append(("run", *args))
         if args[0] == "save":
             if self.decoded("torque_enable") == "on":
-                raise subprocess.CalledProcessError(1, ["osc", "save"])
+                raise subprocess.CalledProcessError(1, ["osc-bus", "save"])
             self.flash = (bytes(self.table[:0xc0]), list(self.pages))
             self.unsaved = False
         elif args[0] == "reboot":

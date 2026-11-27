@@ -215,9 +215,9 @@ and how late the lamp follows the host's write. Lands in the camera's
 registry entry. The DMM's own lag against the host is the dmm experiment.
 
 Needs: clapper (a servo board on the bus, with a firmware that has
-`stat_flash_ticks`), the `osc` tool, camera, host.
+`stat_flash_ticks`), the `osc-bus` tool, camera, host.
 
-How: `osc clapper` flashes the servo's STAT lamp a dozen times at irregular
+How: `osc-bus clapper` flashes the servo's STAT lamp a dozen times at irregular
 gaps, logging the host time either side of each write, while the phone
 films the lamp. The lamp's level per frame comes out of the clip in the
 extraction; the flash onsets against the logged writes give offset and

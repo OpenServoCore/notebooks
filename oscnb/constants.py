@@ -3,7 +3,7 @@ says what the servo is to hold, and the verbs that read against it.
 
 stages/5-closed-loop/calibration/<pair>.constants.json holds every
 CONFIG and CALIB field a host may write past the bus front, each with
-its value as `osc dump` prints it, its class and where the value came
+its value as `osc-bus dump` prints it, its class and where the value came
 from, with the ADC wide-code slots, the position table's state and the
 sha1 of its points, and three hashes. It is generated, never typed: the
 same inputs give the same bytes, and `load` refuses a file whose hashes
@@ -203,7 +203,7 @@ the state the servo has stored, its table's points in it, to
 (a save of the same set after the first keeps its files in a numbered
 folder inside that one). It installs the set from there, the same
 install behind the same gate, `--protection` and `--loosen` passed
-through, and the `check` after it must be clean. Then MGMT SAVE (`osc
+through, and the `check` after it must be clean. Then MGMT SAVE (`osc-bus
 save`, protocol sec 9.4), a reboot, the wait, the state to `after.json`
 and its comparison with the set. A SAVE keeps CONFIG and CALIB whole,
 the slots and the table's points with them, so it also keeps
@@ -684,7 +684,7 @@ def rule_of(c, field):
 def encode(r, x, fit=True):
     """A rule's value as the field holds it: rounded to its Q format,
     half away from zero, a derated cap (`Rule.cap`) down, and refused,
-    never clamped, when it does not fit the field. Text, a value `osc
+    never clamped, when it does not fit the field. Text, a value `osc-bus
     dump` prints in words, passes."""
     if isinstance(x, str):
         return x
@@ -918,7 +918,7 @@ def gear_ratio(c):
 
 
 @rule("gear_class", "gear_class.registry", kind="u8", unit="class", cls="bench",
-      mirrors="client calib.rs GearClass, tools/osc main.rs dump")
+      mirrors="client calib.rs GearClass, tools/osc-bus main.rs dump")
 def gear_class(c):
     name = c.reg("servo", "gear_class")
     if name not in GEAR_CLASSES[1:]:
@@ -1612,7 +1612,7 @@ rule("th_rise2_q016", "th_rise2.family", kind="u16", unit="cC/count^2", q=16, cl
 #
 # A time the policy states in ms is that many kernel ticks (core
 # regions/config.rs ms_ticks), and a count of samples is the field. A
-# choice between named behaviors is the policy's word, written as `osc
+# choice between named behaviors is the policy's word, written as `osc-bus
 # dump` prints the field: an enum's name with its number, a flag as on
 # or off.
 STALL_RESPONSES = ("fault", "yield")    # core regions/config.rs StallResponse, by number
@@ -2596,7 +2596,7 @@ class Rejected(settings.Refused):
 
 
 def plain(value):
-    """A value as `osc set` takes it: `osc dump`'s text less the note in
+    """A value as `osc-bus set` takes it: `osc-bus dump`'s text less the note in
     parentheses it prints after an enum's name or a class's number."""
     return re.sub(r"\s*\(.*\)$", "", str(value))
 
@@ -2852,7 +2852,7 @@ def save(pair, protection=(), loosen=(), root=results.ROOT):
     written to `stored.json` under `backup_dir`, the record a `restore`
     puts back. The set is installed from there (`install`, its gate,
     `protection` and `loosen` passed through) and checked, then MGMT
-    SAVE (`osc save`, protocol sec 9.4) programs CONFIG and CALIB with
+    SAVE (`osc-bus save`, protocol sec 9.4) programs CONFIG and CALIB with
     the slots and the table's points into flash, and with
     them whatever else of those regions the servo holds. After a reboot
     the state is written to `after.json` and must be the set. Returns
@@ -3004,13 +3004,13 @@ def main(argv=None):
         elif a.cmd == "restore":
             wrote = restore(a.record, a.pair, a.protection, a.loosen, root)
             print("the servo holds the record's state: nothing written" if not wrote
-                  else "volatile, not saved: `osc reboot` returns the saved state")
+                  else "volatile, not saved: `osc-bus reboot` returns the saved state")
         else:
             doc = the_set()
             wrote = install(doc, a.protection, a.loosen, root)
             print("\n".join([*described(doc),
                              "the servo holds the set: nothing written" if not wrote
-                             else "volatile, not saved: `osc reboot` returns the saved state"]))
+                             else "volatile, not saved: `osc-bus reboot` returns the saved state"]))
     except (ValueError, settings.Refused) as e:
         raise SystemExit(f"refused: {e}")
 

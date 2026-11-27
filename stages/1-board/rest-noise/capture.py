@@ -1,7 +1,7 @@
 """Stage 1, rest-noise: the raw channels with the bridge off, streamed at the
 control rate, at a 1S, a USB and a 2S supply level. Needs the board on the DPS with the load
 on its terminals (the bare 5 ohm resistor, which draws nothing at rest) and
-the `osc` and `osc-lab` tools. The chip's 1.2 V reference is the servo's boot
+the `osc-bus` and `osc-lab` tools. The chip's 1.2 V reference is the servo's boot
 reading, kept once in `vref_raw.txt`.
 
   uv run python stages/1-board/rest-noise/capture.py [N]    writes telemetry/<board>/rest-noise/capture-N

@@ -238,13 +238,13 @@ arm, on one base that lies flat or stands on edge.
 ### clapper
 
 The servo board's STAT lamp, flashed from the host through the
-`stat_flash_ticks` register (`osc clapper`). Like a film clapper, every
+`stat_flash_ticks` register (`osc-bus clapper`). Like a film clapper, every
 recording sees the same flash, so the camera's clip and the host's log can
 be lined up afterwards.
 
 ### host
 
-The computer running `osc` and `osc-lab` over the osc adapter, with the capture scripts in
+The computer running `osc-bus` and `osc-lab` over the osc adapter, with the capture scripts in
 this repo. Python comes through `uv`, see Setup. On Linux, turn USB
 autosuspend off for the Bluetooth dongle (`options btusb enable_autosuspend=0`
 in modprobe.d). A dongle that suspends between the DMM's packets resets on
@@ -296,7 +296,7 @@ It is the only capture instrument. Nothing in it fits, identifies or
 calibrates. It is a raw instrument on purpose, so a dataset never goes
 through identification code on its way to disk. Everything else a capture
 script does to the servo, like `get`, `set`, `status` or `baud`, still goes
-through `osc` from the firmware repo.
+through `osc-bus` from the firmware repo.
 
 To install it, you will need a nightly Rust toolchain (the
 `rust-toolchain.toml` in the folder picks it for you). Then run this in

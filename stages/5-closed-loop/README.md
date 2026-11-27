@@ -396,7 +396,7 @@ is the order of the sides within a round, their letters once each,
 `abc` when it is left out. Each side names its image file, and the
 image sha in its `rung.json` is that file's sha1. Before a side's run
 the servo is flashed with its image whenever it holds another one, and
-before the first run always. A flash counts when `osc flash` ends with
+before the first run always. A flash counts when `osc-bus flash` ends with
 the image installed and its version confirmed, else the session stops.
 No stamp is asked of the image as it boots. What the servo then holds
 is verified by the side's install and by the state read before the
@@ -412,11 +412,11 @@ an A/B is the set against the set with one thing changed, the one
 thing named in the record. Each side comes out a rung like any other,
 for `score` and `table`.
 
-A side can name its own `osc` tool with `--a-osc PATH`. The plant
+A side can name its own `osc-bus` tool with `--a-osc PATH`. The plant
 stamp is computed by the tool and not by the servo, so an image whose
-stamp covers other fields needs the `osc` built from its own tree, and
+stamp covers other fields needs the `osc-bus` built from its own tree, and
 the tool of one image cannot bless a set on the other. A side's turn
-runs from its flash to the reboot after its run. Every `osc` call in
+runs from its flash to the reboot after its run. Every `osc-bus` call in
 the turn goes through the side's tool: the flash and the wait for
 boot, the state read, the install with its stamp, the reboot. Outside the turn the tool is the one of `OSC` or the PATH
 again, and a side that names none uses that one. `osc-lab` records the
@@ -431,9 +431,9 @@ candidate with one constant changed.
 
 ```
 uv run python -m oscnb.scorecard ab --rounds 3 --order abc --max-load 4 \
-  --a-label 30-main --a-fw <main rev> --a-image <main.bin> --a-osc <main's osc> --a-note "control" \
-  --b-label 30-new --b-fw <new rev> --b-image <new.bin> --b-osc <the new tree's osc> \
-  --c-label 30-new-one --c-fw <new rev> --c-image <new.bin> --c-osc <the new tree's osc> \
+  --a-label 30-main --a-fw <main rev> --a-image <main.bin> --a-osc <main's osc-bus> --a-note "control" \
+  --b-label 30-new --b-fw <new rev> --b-image <new.bin> --b-osc <the new tree's osc-bus> \
+  --c-label 30-new-one --c-fw <new rev> --c-image <new.bin> --c-osc <the new tree's osc-bus> \
   --c-deviation stages/5-closed-loop/scorecard/deviations/<one>.json
 ```
 
@@ -488,7 +488,7 @@ The constants a servo is to hold are one generated file per pair,
 `calibration/<servo>__<board>.constants.json`, written and read by
 `oscnb/constants.py`: every CONFIG and CALIB field a host may write, the
 bus id, rate and deadline and the plant stamp left out, each with its
-value as `osc dump` prints it, its class and where the value came from;
+value as `osc-bus dump` prints it, its class and where the value came from;
 the ADC wide-code slots; the position table's state and the sha1 of its
 points. The file is never typed. The same inputs give the same bytes,
 and a file whose hashes are not those of its content is refused.
@@ -1120,7 +1120,7 @@ have a policy entry in the unit a person sets it in, its reason
 under `why`, and a rule, and the rail fold's slope has the board's
 source in place of the entry: a time in ms is that many kernel ticks, a
 count of samples is the field, and a choice between named behaviors is
-the policy's word, written as `osc dump` prints the field. Where the
+the policy's word, written as `osc-bus dump` prints the field. Where the
 decision is the value the servo holds, the field binds, of class
 `policy`, and nothing moves:
 

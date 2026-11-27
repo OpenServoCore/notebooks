@@ -2,7 +2,7 @@
 carries, at the range's edges and too wide for a byte, and a thin sweep
 refused; the slots; the step on a recording's readings and its load; the
 bench sweep's code histogram; the sweep's schedule and its capture with
-`osc` stubbed; and the install against a fake bus and the slots read
+`osc-bus` stubbed; and the install against a fake bus and the slots read
 back off it."""
 import hashlib
 import json
@@ -301,7 +301,7 @@ SLOTS_OF_RECORD = bytes([0, 0, 0, 88, 16, 0, 0, 80, 16, 48, 0, 0, 0, 0, 0, 0])
 
 
 class FakeBus:
-    """The servo's control table behind `osc`: `get` by name prints the
+    """The servo's control table behind `osc-bus`: `get` by name prints the
     descriptor's line, or the tool's error when the image has no field;
     writes land in the table, `flip` xor-ed into the first byte read back."""
 
@@ -377,7 +377,7 @@ def test_install_refuses_when_an_older_image_rejects_the_write(wide_bus, monkeyp
     wide_bus()
 
     def rejected(addr, data):
-        raise subprocess.CalledProcessError(1, ["osc", "write"])
+        raise subprocess.CalledProcessError(1, ["osc-bus", "write"])
     monkeypatch.setattr(wc.osc, "write", rejected)
     with pytest.raises(wc.settings.Refused, match="refused the write of adc_wide_mid_q4 at 0x1f0"):
         wc.install(KEY)

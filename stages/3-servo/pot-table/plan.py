@@ -4,7 +4,7 @@ the travel, the backlash, the travel in degrees, the gear ratio check, the
 table's drift between the open and the close, and the crawl. The plans of
 `python -m oscnb.sitting servo-camera`, 5 V.
 
-Each block is one phone clip: the recording started at a prompt, `osc
+Each block is one phone clip: the recording started at a prompt, `osc-bus
 clapper` flashing the STAT lamp at its start for the clock fit, the sweeps,
 then the clip copied into the dataset under the block's name. Every
 segment's host time is in its `segments.csv`. A clip is kept near a

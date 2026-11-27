@@ -1,4 +1,4 @@
-"""A settings rung with `osc` stubbed: the order of the calls, the old
+"""A settings rung with `osc-bus` stubbed: the order of the calls, the old
 values kept, the refusals, and the reboot that puts it all back."""
 import pytest
 

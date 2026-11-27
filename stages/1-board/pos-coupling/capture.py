@@ -5,7 +5,7 @@ from its 3V3 pin to POS1 and 2.2 k from POS1 to its GND pin, so the position
 is a constant voltage from the pot's own source impedance and reads about
 1640 counts. The load is the RL dummy, the bare 5 ohm resistor in series
 with the two power inductors. Needs the board on the DPS, the divider, the
-dummy and the `osc` and `osc-lab` tools. No meter.
+dummy and the `osc-bus` and `osc-lab` tools. No meter.
 
   uv run python stages/1-board/pos-coupling/capture.py [N] [vref]    writes telemetry/<board>/pos-coupling/capture-N
 

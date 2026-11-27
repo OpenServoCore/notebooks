@@ -56,15 +56,15 @@ they are.
 `ab` records two or three such rungs at once, the sides a, b and c
 with the same flags each, one run of each per round in `--order`,
 flashing a side's image whenever the servo holds another, so all share
-the servo's drift through the session. A flash that `osc flash` does
+the servo's drift through the session. A flash that `osc-bus flash` does
 not confirm ends the session; what the image then holds is verified by
 the set's install and the state read before the run, as on any rung.
 Each
 side names its own set and deviation, installed on its own image around
 its own runs: an A/B is the set against the set with one thing changed,
-the one thing named. A side also names its own `osc`, `--a-osc`: an
+the one thing named. A side also names its own `osc-bus`, `--a-osc`: an
 image whose table differs is flashed, read and installed on by the tool
-built from its own tree. Every `osc` call of the side's turn, from its
+built from its own tree. Every `osc-bus` call of the side's turn, from its
 flash to the reboot after its run, goes through that tool, and none
 outside it. `rung.json` names the tool by the sha1 of its binary and
 its `--version` line, never a path. A run that ends because a telemetry
@@ -851,7 +851,7 @@ def preflight(servo, board):
     osc.require_3m()
     torque = osc.get("torque_enable")
     if torque not in ("off", 0):
-        raise SystemExit(f"torque is {torque}: the scorecard starts from torque off (osc set torque_enable off)")
+        raise SystemExit(f"torque is {torque}: the scorecard starts from torque off (osc-bus set torque_enable off)")
     vsys = bench.read_vsys(board)
     if abs(vsys - servo.rated_v) > RAIL_TOL_V:
         raise SystemExit(f"the rail reads {vsys:.2f} V, not within {RAIL_TOL_V} V of the servo's rated "
@@ -886,18 +886,18 @@ def state_hash(doc):
 def servo_state():
     """The servo's constant state as it holds it now. `raw` is the bytes
     of CONFIG and CALIB from `addr`, the span taken off the servo's own
-    descriptor (`osc dump`): the table's first field to the first field
-    of CONTROL. `fields` is every field there by name, as `osc dump`
+    descriptor (`osc-bus dump`): the table's first field to the first field
+    of CONTROL. `fields` is every field there by name, as `osc-bus dump`
     decodes it, and `writable` the names of those the descriptor lets a
     host write, in table order. With them the position table's state,
     its 256 points as fetched back, i16 LE in a row, and their sha1, the
     ADC wide-code slots, and the settings word, the refused modes and the
-    unsaved word of `osc status`. `hash` is `state_hash` of it."""
+    unsaved word of `osc-bus status`. `hash` is `state_hash` of it."""
     rows = osc.dump()
     lo = min(addr for addr, _, _, _ in rows)
     end = next((addr for addr, name, _, _ in rows if name == CONTROL_FIRST), None)
     if end is None:
-        raise SystemExit(f"osc dump names no {CONTROL_FIRST}: where CONFIG and CALIB end is unknown")
+        raise SystemExit(f"osc-bus dump names no {CONTROL_FIRST}: where CONFIG and CALIB end is unknown")
     raw = osc.read(lo, end - lo)
     lut_state, points = postable.on_servo()
     slots = widecodes.on_servo()
@@ -1137,7 +1137,7 @@ def record_run(r, k, s):
     """Run `k` of rung `r` on bench set `s`: the servo's constant state
     (`record_constants`), then the captures the set built, in the test
     set's order, and `rung.json` once the rung's first capture lands:
-    the `osc` tool the rung's bus calls go through (`osc.identity`),
+    the `osc-bus` tool the rung's bus calls go through (`osc.identity`),
     the constant set by its file, its three hashes and its fields by
     class, the deviation with every field it moved as [of record,
     deviated], the protection hash with what the install moved against
@@ -1263,7 +1263,7 @@ def ab(*sides, rounds=3, order=None, max_load=None, servo=None, board=None):
     seven optional;
     each rung is the one `run` records, its image sha the image file's.
     A side's turn is everything from its flash to the reboot after its
-    run, and every `osc` call in it goes through the side's own tool,
+    run, and every `osc-bus` call in it goes through the side's own tool,
     the file of "osc" (`osc.using`), which is the default again outside
     it. In a turn the side's image is flashed and the bus awaited
     whenever the servo holds another image, and before the first run
@@ -1296,7 +1296,7 @@ def ab(*sides, rounds=3, order=None, max_load=None, servo=None, board=None):
         with osc.using(r["osc"]):
             r["tool"] = osc.identity()
         if r["osc"] and r["tool"] is None:
-            raise SystemExit(f"{r['label']}: no osc tool at {r['osc']}")
+            raise SystemExit(f"{r['label']}: no osc-bus tool at {r['osc']}")
         rungs.append(r)
     sets = bench_sets(servo, board, pair, rungs)
     turns = [(rungs[letters.index(x)], sets[letters.index(x)]) for x in order]
@@ -1307,7 +1307,7 @@ def ab(*sides, rounds=3, order=None, max_load=None, servo=None, board=None):
             for r, s in turns:
                 with osc.using(r["osc"]):
                     if osc.identity() != r["tool"]:
-                        raise SystemExit(f"{r['label']}: its osc tool is not the binary the session began with")
+                        raise SystemExit(f"{r['label']}: its osc-bus tool is not the binary the session began with")
                     if on_servo is None or on_servo["image_sha"] != r["image_sha"]:
                         on_servo, flashing = None, r
                         osc.flash(r["image"])
@@ -1479,8 +1479,8 @@ def main(argv=None):
         x.add_argument(f"--{side}-image", required=need, type=Path, help="the raw .bin image to flash")
         set_args(x, f"{side}-")
         x.add_argument(f"--{side}-note", default="")
-        x.add_argument(f"--{side}-osc", help="the osc tool every bus call of the side's turn goes through, "
-                                              "the one of OSC or the PATH if omitted")
+        x.add_argument(f"--{side}-osc", help="the osc-bus tool every bus call of the side's turn goes through, "
+                                              "the one of OSC_BUS or the PATH if omitted")
     x.add_argument("--rounds", type=int, default=3)
     x.add_argument("--order", help="the sides' order within a round, their letters once each: abc if omitted")
     x.add_argument("--max-load", type=float, help=LOAD_HELP)

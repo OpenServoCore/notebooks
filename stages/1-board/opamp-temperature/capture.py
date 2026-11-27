@@ -4,7 +4,7 @@ controlled heat source, the same one ntc-curve used, the board NTC riding in
 every stream for the temperature, and a rest stream before each plateau's
 laps. The chip's 1.2 V reference, which gives VDD, is the servo's boot reading,
 kept once in `vref_raw.txt`, not one a plateau. Needs the board on the heater on the DPS,
-the bare load and the DMM off the heater, and the `osc` and `osc-lab` tools. Run ntc-curve first, so the NTC reading is a temperature.
+the bare load and the DMM off the heater, and the `osc-bus` and `osc-lab` tools. Run ntc-curve first, so the NTC reading is a temperature.
 
   uv run python stages/1-board/opamp-temperature/capture.py [ammeter|rs1] [N]
                                                           writes telemetry/<board>/opamp-temperature/capture-N

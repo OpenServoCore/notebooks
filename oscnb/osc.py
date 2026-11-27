@@ -1,12 +1,12 @@
-"""The `osc` and `osc-lab` tools from a capture script.
+"""The `osc-bus` and `osc-lab` tools from a capture script.
 
 `osc-lab` is the capture instrument: `sweep()`, `bursts()` and `track()` run
 it. It installs with `cargo install --locked --path osc-lab` from this repo,
 and is found on the PATH or named by the OSC_LAB environment variable. Every
-other call (get, set, dump, read, write, status, ping, baud, flash) runs `osc`, on
-the PATH (`cargo install --path tools/osc` in the firmware repo) or named by
-the OSC environment variable, or for the calls of one body by `using`: an
-image whose table differs is spoken to by the `osc` built from its own tree.
+other call (get, set, dump, read, write, status, ping, baud, flash) runs `osc-bus`, on
+the PATH (`cargo install --path tools/osc-bus` in the firmware repo) or named by
+the OSC_BUS environment variable, or for the calls of one body by `using`: an
+image whose table differs is spoken to by the `osc-bus` built from its own tree.
 Every call addresses one servo id, OSC_ID or 1.
 The tools print their connection status on stderr and their output on
 stdout, so stdout is parsed and stderr is passed through.
@@ -19,23 +19,23 @@ import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 
-TOOL = os.environ.get("OSC", "osc")
+TOOL = os.environ.get("OSC_BUS", "osc-bus")
 LAB = os.environ.get("OSC_LAB", "osc-lab")
 ID = os.environ.get("OSC_ID", "1")
 _using = []     # the tools `using` has in force, the innermost last
 
 
 def tool():
-    """The `osc` a call goes through now: the one `using` names for the
+    """The `osc-bus` a call goes through now: the one `using` names for the
     body the call is in, else TOOL."""
     return _using[-1] if _using else TOOL
 
 
 @contextmanager
 def using(path):
-    """`path` as the `osc` of every call made in the body, read when the
+    """`path` as the `osc-bus` of every call made in the body, read when the
     call is made; the tool of before is back when the body ends or
-    raises. `osc-lab` is not `osc` and stays LAB. None changes nothing."""
+    raises. `osc-lab` is not `osc-bus` and stays LAB. None changes nothing."""
     if path is None:
         yield
         return
@@ -47,7 +47,7 @@ def using(path):
 
 
 def identity():
-    """What a record can hold of the `osc` in force without its path:
+    """What a record can hold of the `osc-bus` in force without its path:
     the sha1 of the binary and its `--version` line, None from a tool
     that has no such flag. None when no such tool is found."""
     path = shutil.which(tool())
@@ -59,7 +59,7 @@ def identity():
 
 
 def run(*args, capture=False, check=True, lab=False):
-    """Run `<tool> -i <id> <args>`, `osc` or with `lab` `osc-lab`; returns
+    """Run `<tool> -i <id> <args>`, `osc-bus` or with `lab` `osc-lab`; returns
     stdout when `capture`."""
     cmd = [LAB if lab else tool(), "-i", ID, *map(str, args)]
     r = subprocess.run(cmd, stdout=subprocess.PIPE if capture else None, text=True, check=check)
@@ -86,7 +86,7 @@ def require_3m():
     record on a slower one rather than lose frames."""
     baud = bus_baud()
     if baud < 3_000_000:
-        raise SystemExit(f"the bus is at {baud} baud; TEL needs 3000000 (osc baud 3000000, then osc save)")
+        raise SystemExit(f"the bus is at {baud} baud; TEL needs 3000000 (osc-bus baud 3000000, then osc-bus save)")
 
 
 def value(text):
@@ -103,25 +103,25 @@ def get(field):
     out = run("get", field, capture=True)
     m = re.search(rf"^{re.escape(field)} = (\S+)", out, re.M)
     if not m:
-        raise RuntimeError(f"osc get {field}: unexpected output {out!r}")
+        raise RuntimeError(f"osc-bus get {field}: unexpected output {out!r}")
     return value(m.group(1))
 
 
 def dump():
-    """`osc dump`: the whole control table, one (addr, name, access, value)
+    """`osc-bus dump`: the whole control table, one (addr, name, access, value)
     a field of the servo's own descriptor, in table order. A value is the
     tool's whole text for it: an enum with its number, bytes as hex."""
     out = run("dump", capture=True)
     rows = [(int(m.group(1), 16), m.group(2), m.group(3), value(m.group(4)))
             for m in re.finditer(r"^(0x[0-9a-f]+)\s+(\S+)\s+(r[ow])\s+(.*\S)\s*$", out, re.M)]
     if not rows:
-        raise RuntimeError(f"osc dump: unexpected output {out!r}")
+        raise RuntimeError(f"osc-bus dump: unexpected output {out!r}")
     return rows
 
 
 def field(name):
     """(addr, width, raw bytes) of a register as the servo's own descriptor
-    places it, off `osc get`'s line; None when the descriptor names no such
+    places it, off `osc-bus get`'s line; None when the descriptor names no such
     field (the tool's own error on stderr says why)."""
     out = run("get", name, capture=True, check=False) or ""
     m = re.search(rf"^{re.escape(name)} = .*\(addr (0x[0-9a-f]+), (\d+) B, raw ([0-9a-f ]*)\)\s*$", out, re.M)
@@ -158,7 +158,7 @@ def set_soft(lo, hi):
 
 
 def write(addr, data):
-    """`osc write`: raw bytes at a table address, committed."""
+    """`osc-bus write`: raw bytes at a table address, committed."""
     run("write", f"0x{addr:x}", bytes(data).hex())
 
 
@@ -166,7 +166,7 @@ READ_MAX = 252          # B, the most one status frame carries (protocol sec 5.1
 
 
 def read(addr, n):
-    """`osc read`: `n` raw bytes from a table address, off its hex dump,
+    """`osc-bus read`: `n` raw bytes from a table address, off its hex dump,
     READ_MAX a call."""
     data = b""
     while len(data) < n:
@@ -174,7 +174,7 @@ def read(addr, n):
         out = run("read", f"0x{at:x}", k, capture=True)
         got = b"".join(bytes.fromhex(m.group(1)) for m in re.finditer(r"^0x[0-9a-f]+\s+(.+)$", out, re.M))
         if len(got) != k:
-            raise RuntimeError(f"osc read 0x{at:x} {k}: unexpected output {out!r}")
+            raise RuntimeError(f"osc-bus read 0x{at:x} {k}: unexpected output {out!r}")
         data += got
     return data
 
@@ -191,7 +191,7 @@ def last_line(out):
 
 
 def flash(image, rate=FLASH_RATE):
-    """`osc flash`: install the raw .bin `image` on this servo through its
+    """`osc-bus flash`: install the raw .bin `image` on this servo through its
     bootloader at `rate`, the bus at the rate the tool finds; returns when
     the tool has the app back. The tool's progress rewrites one line with
     carriage returns, so stdout is captured and only its last line shown;
@@ -200,7 +200,7 @@ def flash(image, rate=FLASH_RATE):
     r = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
     last = last_line(r.stdout)
     if r.returncode != 0:
-        raise RuntimeError(f"osc flash {image}: exit {r.returncode}, {last or 'no output'}")
+        raise RuntimeError(f"osc-bus flash {image}: exit {r.returncode}, {last or 'no output'}")
     print(last)
     return last
 
@@ -295,7 +295,7 @@ def track(out, mode, schedule, tel_chunks=CHUNKS_SERVO, current_cap_ma=None,
 
 
 def clapper(path, flashes):
-    """`osc clapper`: `flashes` flashes of the STAT lamp, one CSV line per
+    """`osc-bus clapper`: `flashes` flashes of the STAT lamp, one CSV line per
     flash with the host time either side, into `path`."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,7 @@
 bridge state when the load carries a real inductive current. The load is the
 RL dummy, the bare 5 ohm resistor in series with one or both of the two 1 mH
 power inductors, with the resistor alone as the control on the same rail.
-Needs the board on the DPS, the bare load, the two inductors and the `osc`
+Needs the board on the DPS, the bare load, the two inductors and the `osc-bus`
 and `osc-lab` tools. No meter.
 
   uv run python stages/1-board/bridge-states/capture.py [N]    writes telemetry/<board>/bridge-states/capture-N

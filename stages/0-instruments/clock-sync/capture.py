@@ -1,9 +1,9 @@
 """Stage 0, clock-sync: the camera's clock against the host's. The host
-flashes the servo's STAT lamp through `stat_flash_ticks` (the `osc clapper`
+flashes the servo's STAT lamp through `stat_flash_ticks` (the `osc-bus clapper`
 command, which logs the host time either side of each write) while the
 phone films the lamp. Needs a servo board on the bus running a firmware
-with that register, the `osc` tool on the PATH (`cargo install --path
-tools/osc` in the firmware repo), the DPS on the board's power leads, and
+with that register, the `osc-bus` tool on the PATH (`cargo install --path
+tools/osc-bus` in the firmware repo), the DPS on the board's power leads, and
 the phone on its mount with the STAT lamp in view.
 
 The script powers the board from the DPS at the bench rail once the leads
@@ -24,7 +24,7 @@ VOLTS = 7.4  # the bench rail, a 2S pack's nominal
 AMPS = 1.0  # the board idles with torque off; the lamp is the only load
 
 out = capture.dataset("instruments", "clock-sync")
-osc = os.environ.get("OSC", "osc")
+osc = os.environ.get("OSC_BUS", "osc-bus")
 capture.prompt(f"DPS leads on the board's power input. The script sets {VOLTS} V and turns the output on.")
 dps = dps150.open_supply()
 try:
