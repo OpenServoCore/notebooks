@@ -1510,23 +1510,25 @@ def overlaid(doc, entries):
 # The stall speed and the pot jump each sit at a multiple of what the
 # screen they bound must clear on a healthy servo (oscnb.screens): the
 # largest speed the observer reads over the still holds of a closed-loop
-# check, and the worst run of 4 successive RAIL-period pot steps over the
-# driven rows. Each is read from a result of the pair, which none yet
-# holds: a hold capture that streams the observer's speed gives the
-# first, and the record's 115 count/s is a replay's, earlier work.
+# check from 10 ms into each, and the worst run of 4 successive
+# RAIL-period pot steps over the driven rows and the wide-code holds,
+# outside the pot holes. Each is read from a result of the pair, which
+# none yet holds: a hold capture that streams the observer's speed gives
+# the first, and the record's 115 count/s is a replay's, earlier work.
 STILL = ("5-closed-loop/still-hold", "still_speed_cps")
 STEPS = ("5-closed-loop/pot-steps", "step4_counts")
 
 
 def still_speed(c):
-    """The largest |omega_hat| over the still holds, count/s on the
-    count the servo ran in."""
+    """The largest |omega_hat| over the still holds from 10 ms into each,
+    count/s on the count the servo ran in."""
     return c.q(*STILL)
 
 
 def pot_step4(c):
     """The worst level 4 successive RAIL-period pot steps all pass over
-    the driven rows, raw counts."""
+    the run's driven rows and its wide-code holds, the rows inside its
+    pot holes left out, raw counts."""
     return c.q(*STEPS)
 
 

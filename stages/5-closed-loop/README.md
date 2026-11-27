@@ -654,12 +654,28 @@ states each as its rule, and `build --default --out PATH` reads it over
 current of 0, the cap with no fold on a metal train, a stall release of
 376 counts, 0.36 of the cap's 0.919 A, and loop bandwidths of 1013.6 Hz
 and 15.12 Hz, 1.25 times R / (2 pi L) and 1.9 times Ke^2 / (2 pi J R).
-The stall speed is 4 times the largest speed the observer reads over
-the still holds, and the pot jump 4 times the worst level 4 successive
-RAIL-period pot steps all pass over the driven rows
-([oscnb/screens.py](../../oscnb/screens.py)). No result of the pair
-holds either yet, so a build on the Default holds both at the
-record's. A `<pair>.pins.json` beside
+The stall speed is 4 times the largest speed the observer reads over the
+still holds, and the pot jump 4 times the worst level 4 successive
+RAIL-period pot steps all pass
+([oscnb/screens.py](../../oscnb/screens.py)). Each still hold is read
+from 10 ms in, because a burst of rows that starts on a still shaft
+disturbs the pot over its first rows. A wide-code hold is not a still
+hold. The pot steps are read over the driven rows of an identification
+run, its spins, its table's rungs and its closed-loop check, and over
+the check's wide-code holds. Those are two 2 s holds at the middle of
+each wide code that takes a slot, as the scorecard's `wide` capture
+holds them ([scorecard/testset.py](scorecard/testset.py)). The record's
+15 counts sit on the wide code at 2047, which skips 11 codes, where a
+shaft resting across the code's edge flips the reading across the span
+the code skips. Holds off every wide code read 2 to 4 counts. Rows
+inside the run's pot holes are left out, because the bound is what a
+healthy pot must clear. A pot hole is a stretch of travel where the
+pot's counts per ripple cycle on a slow pass of the table run over 1 + 4
+s times the pass's median, s the 99th percentile of the ratio's spread
+over the inner travel. The dead low end of a worn track is one. No
+result of the pair holds either statistic yet, so a build on the Default
+holds both at the record's.
+A `<pair>.pins.json` beside
 it, where there is one, holds literals typed for one pair, each with
 its reason and the rung that chose it, and shows as `pinned`. A pin
 stands ahead of a record, and a record ahead of a rule. A rule

@@ -15,7 +15,7 @@
   "plastic_torque_limit_kg_cm": "not known yet: the SG90's tooth slip, about 0.3 A static, through the SG90's Kt, the gear ratio and the train's efficiency, which an SG90 identification gives",
   "stall_release": "it moves with the yield current, at the record's ratio, 90 over 250, of the yield current as the kernel runs it: the owner's decision",
   "stall_speed": "four times the speed noise of a still shaft: the owner's decision",
-  "pot_jump": "four times the worst healthy value of the statistic the screen tests, the worst run of 4 successive RAIL-period steps over the run's driven rows: the owner's decision",
+  "pot_jump": "four times the worst healthy value of the statistic the screen tests, the worst run of 4 successive RAIL-period steps over the run's driven rows and its wide-code holds, outside its pot holes: the owner's decision",
   "current_loop": "the current loop at a multiple of the electrical corner it closes on, R over 2 pi L: on the record 1013.6 Hz against the bench sweep's 1 kHz",
   "observer": "the observer at a multiple of the mechanical corner, Ke^2 over 2 pi J R: on the record 15.12 Hz against the bench sweep's 15 Hz"
  }
