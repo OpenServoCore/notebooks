@@ -3,8 +3,12 @@
 //! plus its rail_drop_mv, all from the servo's own calib table. A drive
 //! reads the rail and takes a rail in USB's range for USB, which has no
 //! gate, and anything else for a 2S pack, and it only warns: the supply is
-//! the user's, a bench supply sits at whatever level an experiment asks
-//! for, and the servo's own undervoltage trip is the guard against a sag.
+//! the user's, and a bench supply sits at whatever level an experiment asks
+//! for. Nothing on the servo watches the pack: no fault latches on the
+//! supply, and the rail fold only eases the current to 0 as the rail nears
+//! the board's floor (3.5 V on the dev board, protocol sec 5.8) so the
+//! motor cannot sag the chip off its supply, far under a 2S pack's floor.
+//! This check at rest before a drive is the only pack check there is.
 
 use anyhow::Result;
 use osc_client::Id;
