@@ -170,8 +170,8 @@ record is a weak one. `check` reads the servo
 and changes nothing it holds, its only writes the FETCH that brings a
 page of the table into the window (protocol sec 5.7): each field of the
 set by name, the table and the slots against the servo's, a line a
-difference, exit 1 when there is one. The servo's data state is
-information.
+difference, exit 1 when there is one. The servo's settings word, its
+unsaved word and the modes it refuses are information.
 
 `install` makes the servo equal the set, volatile, and writes only what
 differs. Torque must be off. It is refused before anything is written
@@ -245,6 +245,11 @@ FOLDER = postable.OUT_DIR.relative_to(results.ROOT)
 # holds and no servo has since: nothing writes it.
 COMMS = ("id", "baud_rate_idx", "response_deadline_us")
 STAMP = "plant_stamp"
+# The fields the descriptor names otherwise now, old name to new: the
+# bytes are the same. A set written before holds the old name and loads
+# as it was written, under the new name's protection; a build, an adopt
+# and a restore take the old name as the new.
+RENAMED = {"i_cont_counts": "yield_current_counts"}
 
 # The fields whose change is a change of what protects the motor, the
 # train and the rail, by the descriptor's names, each with the way its
@@ -255,8 +260,8 @@ STAMP = "plant_stamp"
 LOOSER = {
     # the cap of the current band; the collision trip over the disturbance torque
     "current_limit_counts": "up", "stall_tau_trip_counts": "up",
-    # the press arms over the continuous current and folds to it, and 0 reads as the cap; it lets go under the release
-    "i_cont_counts": "judged", "stall_release_counts": "up",
+    # the press arms over the yield current and folds to it, and 0 reads as the cap; it lets go under the release
+    "yield_current_counts": "judged", "stall_release_counts": "up",
     # fold or fault, neither the tighter one; the time a press takes; the speed a press is stalled under
     "stall_response": "judged", "stall_time_ticks": "up", "stall_omega_max_cps": "down",
     "oc_trip_counts": "up", "oc_trip_ticks": "up",
@@ -291,7 +296,8 @@ RETIRED = {
     # the off-time of open-loop drive, the brake or the coast of fast decay: the drive has slow decay alone
     "openloop_decay": None,
 }
-PROTECTION = frozenset((*LOOSER, *(n for n, less in RETIRED.items() if less)))
+PROTECTION = frozenset((*LOOSER, *(n for n, less in RETIRED.items() if less),
+                        *(old for old, new in RENAMED.items() if new in LOOSER)))
 
 # The protection fields that are one step together: the four words of
 # the NTC curve, which are one curve, the current limits, which one
@@ -304,7 +310,7 @@ PROTECTION = frozenset((*LOOSER, *(n for n, less in RETIRED.items() if less)))
 MODEL = "winding model"
 GROUPS = {
     "ntc curve": ("ntc_raw_ref", "ntc_t_ref_cc", "ntc_k1_q88", "ntc_k2_q24"),
-    "current scale": ("current_limit_counts", "i_cont_counts", "stall_release_counts", "oc_trip_counts"),
+    "current scale": ("current_limit_counts", "yield_current_counts", "stall_release_counts", "oc_trip_counts"),
     MODEL: ("thermal_tau_s", "th_rise_q016", "thermal_tau2_s", "th_rise2_q016"),
     "position error": ("pos_error_counts", "pos_error_time_ticks"),
 }
@@ -361,7 +367,9 @@ def group_of(name):
 
 def way(name):
     """The way protection field `name` moves to protect less: LOOSER's,
-    or RETIRED's for a protection field the firmware no longer names."""
+    under its new name for a RENAMED one, or RETIRED's for a protection
+    field the firmware no longer names."""
+    name = RENAMED.get(name, name)
     return LOOSER[name] if name in LOOSER else RETIRED[name]
 
 
@@ -557,9 +565,11 @@ def adopted(record, pair, origin):
     state: every field the record names writable past the bus front,
     each at the value the record holds and of class `none`, adopted from
     the record, with the table and the slots: a value the servo held has
-    no source. `origin` is what the set says of the record. A record
-    that names no writable fields, or whose hash is not its content's,
-    is refused; the data state it was read in is information."""
+    no source. A field the record names by its old name (RENAMED) is
+    taken under its new one. `origin` is what the set says of the
+    record. A record that names no writable fields, or whose hash is not
+    its content's, is refused; the settings it was read in are
+    information."""
     if "writable" not in record:
         raise ValueError("the record names no writable fields: record the servo's state again "
                          "(`scorecard.servo_state`)")
@@ -570,7 +580,8 @@ def adopted(record, pair, origin):
     for name in record["writable"]:
         if name in COMMS or name in (STAMP, widecodes.FIELD):
             continue
-        fields[name] = {"value": record["fields"][name], **own, "protection": protection_of(name)}
+        value, name = record["fields"][name], RENAMED.get(name, name)
+        fields[name] = {"value": value, **own, "protection": protection_of(name)}
         if name in PER_COUNT:
             fields[name]["scale"] = "unknown"
     slots = record["wide_codes"]
@@ -1500,7 +1511,8 @@ def limit_counts(key):
 # mA, the kernel comparing its own reading in shunt counts against the
 # field. The cap itself is read off the maker's sheet (`current_limit_a`).
 for _field, _key, _mirrors in (
-        ("i_cont_counts", "i_cont_ma", "core kernel/phases/loops/limits.rs fold, i_cont_or_cap"),
+        ("yield_current_counts", "yield_current_ma",
+         "core kernel/phases/loops/limits.rs fold, yield_current_or_cap"),
         ("stall_release_counts", "stall_release_ma", "core kernel/phases/loops/limits.rs fold"),
         ("oc_trip_counts", "oc_trip_ma", "core kernel/phases/fast.rs measure")):
     rule(_field, f"{_field.removesuffix('_counts')}.policy", kind="u16", unit="ccounts", cls="policy",
@@ -2168,7 +2180,7 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
                              "the plant first, then the protection fields")
         slots, table, scale = (copy.deepcopy(x) for x in stood)
         scales = copy.deepcopy(was)
-    before = previous["fields"] if previous else {}
+    before = {RENAMED.get(n, n): e for n, e in (previous["fields"] if previous else {}).items()}
     fields = {}
     for name in dict.fromkeys([*before, *RULES, *c.pins, *c.sources.get("bench", {}),
                                *c.sources.get("datasheet", {})]):
@@ -2278,7 +2290,7 @@ def changes(previous, doc):
 # is what the estimate then reads, so it is printed as that, by the
 # kernel's own integers (oscnb.winding.stored_rise_c): the rise over
 # the board NTC under the four held and under the four wanted, in a
-# hold from rest at the continuous current and at the limit, the rest
+# hold from rest at the yield current and at the limit, the rest
 # after one, and duty cycles at the limit. The gate stands as it is,
 # every field named; this is what is read before naming them.
 HOLD_S = (1, 3, 10, 30, 60, 120, 300, 600, 3600)    # s into a hold from rest
@@ -2340,20 +2352,20 @@ def winding_step(doc, was):
     """The lines a step of the winding model is said with
     (`winding_compared`), from the four as `was`, {field: value}, holds
     them to the four of set `doc`: none where the two hold the same
-    four or either lacks one. The cases run at the set's own continuous
+    four or either lacks one. The cases run at the set's own yield
     current, the limit where that is 0 (core
-    kernel/phases/loops/limits.rs i_cont_or_cap), and at its current
-    limit."""
+    kernel/phases/loops/limits.rs yield_current_or_cap), and at its
+    current limit."""
     f = doc["fields"]
     if not all(n in f and n in was for n in GROUPS[MODEL]):
         return []
     held_, wanted = [was[n] for n in GROUPS[MODEL]], [f[n]["value"] for n in GROUPS[MODEL]]
     if held_ == wanted:
         return []
-    if not all(n in f for n in ("i_cont_counts", "current_limit_counts")):
+    if not all(n in f for n in ("yield_current_counts", "current_limit_counts")):
         return [f"{MODEL}: the set holds no current limit to compare the estimate at"]
     limit = f["current_limit_counts"]["value"]
-    return winding_compared(held_, wanted, f["i_cont_counts"]["value"] or limit, limit)[0]
+    return winding_compared(held_, wanted, f["yield_current_counts"]["value"] or limit, limit)[0]
 
 
 # --- a deviation ---
@@ -2558,16 +2570,26 @@ def unowned(doc, state):
     return lines
 
 
+# What `osc-ident check` says of a refused mode (osc-client store_state REFUSED).
+REFUSED = ("closed mode refused: Ke, the current cap or the speed ceiling is 0, unset; run an identification: "
+           "osc-ident run")
+
+
 def check(doc, state=None):
     """The servo against the set, nothing on the servo changed; prints
     the differences, what the set holds and what the servo holds outside
-    it, and the data state and the unsaved word, information; returns
-    the differences."""
+    it, and the line `osc-ident check` closes with: the count, the
+    settings word, the unsaved word and the two hashes, then the modes
+    the servo refuses where it refuses any, information; returns the
+    differences."""
     state = sc.servo_state() if state is None else state
     out = differences(doc, state)
     unsaved = "yes" if state.get("unsaved") else "no"
+    refused = state.get("refused_modes", "none")
     print("\n".join([*out, *described(doc), *unowned(doc, state),
-                     f"data state {state['data_state']}; unsaved {unsaved}; servo {state['hash'][:12]}"]))
+                     f"{len(out)} differences; settings {state['settings']}; unsaved {unsaved}; "
+                     f"set {doc['hash']['set'][:12]}; servo {state['hash'][:12]}",
+                     *([f"refused {refused}: {REFUSED}"] if refused != "none" else [])]))
     return out
 
 
@@ -2880,11 +2902,11 @@ def save(pair, protection=(), loosen=(), root=results.ROOT):
     state = sc.servo_state()
     after.write_text(json.dumps(state, indent=2) + "\n")
     differ = differences(doc, state)
-    if differ or state["data_state"] != "clean" or state.get("unsaved"):
+    if differ or state["settings"] != settings.LOADED or state.get("unsaved"):
         raise settings.Refused(
-            f"after the SAVE and a reboot the servo is not the set (data state {state['data_state']}"
-            f"{''.join('; ' + d for d in differ)}): the save did not land as verified. Flash now holds the new "
-            f"state, the one {sc.shown(after)} records, and no longer the old one. {puts_back(stored)}; to make "
+            f"after the SAVE and a reboot the servo is not the set (settings {state['settings']}, unsaved "
+            f"{'yes' if state.get('unsaved') else 'no'}{''.join('; ' + d for d in differ)}): the save did not "
+            f"land as verified. Flash now holds the new state, the one {sc.shown(after)} records, and no longer the old one. {puts_back(stored)}; to make "
             f"that permanent again, adopt that record as the pair's set of record (`adopt --from`, which writes "
             f"a pair's first set only: the present set's file out of the way first), commit it and `save` it")
     return stored, after
@@ -2981,7 +3003,7 @@ def main(argv=None):
             if a.derived:
                 raise ValueError(f"{sc.shown(a.derived)} is a derived set: only the pair's set of record is saved")
             stored, after = save(a.pair, a.protection, a.loosen, root)
-            print(f"saved: after a reboot the servo reads as the set, data state clean; {sc.shown(stored)} holds "
+            print(f"saved: after a reboot the servo reads as the set, settings loaded; {sc.shown(stored)} holds "
                   f"the state it had stored before, {sc.shown(after)} the state it boots with now")
         elif a.cmd == "restore":
             wrote = restore(a.record, a.pair, a.protection, a.loosen, root)

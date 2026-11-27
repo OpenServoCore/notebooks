@@ -20,6 +20,7 @@ from . import osc
 
 BOOT_WAIT_S = 0.5       # s, before the first ping after a reboot
 BOOT_TRIES = 10         # pings, BOOT_WAIT_S apart, before giving up
+LOADED = "loaded"       # the settings word of a servo that booted on both of its saved images
 
 
 class Refused(RuntimeError):
@@ -47,13 +48,24 @@ def same(want, got):
         return str(want).lower() == str(got).lower()
 
 
-def data_state(status):
-    """The data state line of an `osc status` report: "clean" or the
-    reasons' names."""
-    m = re.search(r"^\s*data\s+(.+)$", status, re.M)
+def line(status, word):
+    """What the line of an `osc status` report that `word` leads says."""
+    m = re.search(rf"^\s*{word}\s+(.+)$", status, re.M)
     if not m:
-        raise RuntimeError(f"osc status: no data line in {status!r}")
+        raise RuntimeError(f"osc status: no {word} line in {status!r}")
     return m.group(1).strip()
+
+
+def settings(status):
+    """The settings word of an `osc status` report: "loaded", or the
+    images on their defaults ("defaults: CONFIG, CALIB")."""
+    return line(status, "settings")
+
+
+def refused(status):
+    """The modes an `osc status` report says the servo refuses: "none"
+    or their names, lowest first ("Current, Velocity, Position")."""
+    return line(status, "refused")
 
 
 def unsaved(status):
@@ -97,13 +109,13 @@ def await_boot():
 
 
 def restore():
-    """Reboot onto the saved images and wait for the bus; returns the data
-    state line, information."""
+    """Reboot onto the saved images and wait for the bus; returns the
+    settings word, information."""
     osc.run("reboot")
     await_boot()
-    state = data_state(osc.status())
-    print(f"rebooted: data state {state}")
-    return state
+    word = settings(osc.status())
+    print(f"rebooted: settings {word}")
+    return word
 
 
 def show(fields):

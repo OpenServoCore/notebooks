@@ -29,7 +29,8 @@ state back after them. Before a run's first capture the servo's
 constant state is read into `run-K/servo.json`: the bytes of CONFIG and
 CALIB with every field there by name and the writable ones named, the
 position table's state and its points as fetched back with their sha1,
-the wide-code slots, the data state and the unsaved word. A servo that
+the wide-code slots, the settings word, the refused modes and the
+unsaved word. A servo that
 is not the rung's set then does not start the run. `rung.json` keeps the hash of the first run's state, and a
 later run that reads another is refused, what differs named. It names
 the set by its file, its three hashes and its fields by class, the
@@ -873,9 +874,9 @@ def state_hash(doc):
     """The hash of a state record: the table bytes and the position table.
     Not `fields`, which `raw` holds, `writable`, which is the descriptor's
     and not the servo's state, the table's points, which their sha1 stands
-    for, or what the servo says of its state (`data_state`, `unsaved`). A
-    record with a `stamp` line is one from a servo with a plant stamp, and
-    hashes as it was written."""
+    for, or what the servo says of its state (`settings`, `refused_modes`,
+    `unsaved`). A record with a `stamp` line is one from a servo with a
+    plant stamp, and hashes as it was written, its `data_state` with it."""
     keys = HASHED + (STAMPED if "stamp" in doc else ())
     covered = {k: doc[k] for k in keys}
     covered["pos_table"] = {k: doc["pos_table"][k] for k in ("state", "points_sha1")}
@@ -890,8 +891,8 @@ def servo_state():
     decodes it, and `writable` the names of those the descriptor lets a
     host write, in table order. With them the position table's state,
     its 256 points as fetched back, i16 LE in a row, and their sha1, the
-    ADC wide-code slots, and the data state and the unsaved word of `osc
-    status`. `hash` is `state_hash` of it."""
+    ADC wide-code slots, and the settings word, the refused modes and the
+    unsaved word of `osc status`. `hash` is `state_hash` of it."""
     rows = osc.dump()
     lo = min(addr for addr, _, _, _ in rows)
     end = next((addr for addr, name, _, _ in rows if name == CONTROL_FIRST), None)
@@ -907,7 +908,8 @@ def servo_state():
         "writable": [name for addr, name, access, _ in rows if addr < end and access == "rw"],
         "pos_table": {"state": lut_state, "points_sha1": hashlib.sha1(points).hexdigest(), "points": points.hex()},
         "wide_codes": None if slots is None else slots.hex(),
-        "data_state": settings.data_state(status), "unsaved": settings.unsaved(status),
+        "settings": settings.settings(status), "refused_modes": settings.refused(status),
+        "unsaved": settings.unsaved(status),
     }
     return {**doc, "hash": state_hash(doc)}
 
@@ -915,11 +917,11 @@ def servo_state():
 def differing(first, now):
     """What constant state `now` holds other than `first`, each as
     `name: old -> new`: the fields by name, the table, the slots and the
-    data state, and failing those the bytes no field names."""
+    settings word, and failing those the bytes no field names."""
     def items(doc):
         return {**doc["fields"], "position table state": doc["pos_table"]["state"],
                 "position table points sha1": doc["pos_table"]["points_sha1"],
-                "wide-code slots": doc["wide_codes"], "data state": doc["data_state"]}
+                "wide-code slots": doc["wide_codes"], "settings": doc["settings"]}
 
     a, b = items(first), items(now)
     named = [f"{n}: {a.get(n)} -> {b.get(n)}" for n in dict.fromkeys([*a, *b]) if a.get(n) != b.get(n)]
@@ -935,7 +937,7 @@ def record_constants(r, k):
     run's `servo.json`, with a copy of the rung's set beside `rung.json`
     on the first. A servo that is not the rung's set at the limits of
     motion its runs ask (`run_motion`) is refused before anything is
-    recorded or driven: the run does not start. Its data state is
+    recorded or driven: the run does not start. Its settings word is
     information. The rung's first state is kept on
     `r`, for `rung.json`'s hash; a later run that reads another is
     refused the same way, what differs named."""
@@ -943,8 +945,8 @@ def record_constants(r, k):
     now = servo_state()
     off = cn.differences(r["ran"], now)
     if off:
-        raise SystemExit(f"{shown(r['dir'])}: run-{k} does not start: the servo is not the rung's set (data state "
-                         f"{now['data_state']}{''.join('; ' + d for d in off)})")
+        raise SystemExit(f"{shown(r['dir'])}: run-{k} does not start: the servo is not the rung's set (settings "
+                         f"{now['settings']}{''.join('; ' + d for d in off)})")
     first = r.setdefault("constants", now)
     if now["hash"] != first["hash"]:
         raise SystemExit(f"{shown(r['dir'])}: run-{k} reads a constant state other than the one the rung's "
@@ -1116,21 +1118,19 @@ def applied(r):
     finally:
         # the stored state comes back whether the runs ended or aborted
         if wrote or gave_up:
-            stored_back(state["data_state"])
+            stored_back(state["settings"])
 
 
-def stored_back(data_state):
-    """Reboot onto the stored state and wait for the bus. The data
-    state must then be `data_state`, the one the servo held before the
-    install: a reboot onto the same images reads the same."""
+def stored_back(word):
+    """Reboot onto the stored state and wait for the bus. The settings
+    word must then be `word`, the one the servo held before the install:
+    a reboot onto the same images reads the same."""
     osc.run("reboot")
     settings.await_boot()
-    status = osc.status()
-    now = settings.data_state(status)
-    if now != data_state:
-        raise settings.Refused(f"after the reboot the data state is {now}, not the {data_state} of before the "
-                               f"install")
-    print(f"rebooted: data state {now}")
+    now = settings.settings(osc.status())
+    if now != word:
+        raise settings.Refused(f"after the reboot the settings are {now}, not the {word} of before the install")
+    print(f"rebooted: settings {now}")
 
 
 def record_run(r, k, s):

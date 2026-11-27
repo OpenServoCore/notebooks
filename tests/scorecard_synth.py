@@ -163,7 +163,7 @@ class Servo:
     def __init__(self):
         self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
         self.window = bytes(2 * postable.PAGE_POINTS)
-        self.data, self.unsaved = "clean", False
+        self.settings, self.refused, self.unsaved = "loaded", "none", False
         self.table = bytearray(0x100)
         self.log = []
         self.reboot()
@@ -214,7 +214,7 @@ class Servo:
     def status(self):
         self.log.append(("status",))
         return (f"id 1: model 0x0101\n      fault 0x00  unsaved {str(self.unsaved).lower()}  trim 0\n"
-                f"      data  {self.data}\n")
+                f"      settings {self.settings}\n      refused  {self.refused}\n")
 
     def stub(self, monkeypatch, regs=dict):
         """`osc`'s reads and its window write answered by this servo;
@@ -236,8 +236,8 @@ class Bench(Servo):
     high one, the table's STORE and COMMIT behind the window (a COMMIT
     of all-zero points lands IDENTITY, or LIVE with `zero_live`, as a
     firmware that judges only the shape lands it), the slots, the SAVE
-    and the reboot. With `stale` every boot reads CALIB_STALE, as an
-    image whose CALIB layout is newer than the saved one, on defaults.
+    and the reboot. With `stale` every boot reads `defaults: CALIB`, as
+    an image whose CALIB layout is newer than the saved one.
     The soft limits also take one write of both at the low one's
     address, 0 / 0 among the pairs it takes. A write of a CONFIG or
     CALIB field, a STORE or a COMMIT reads unsaved until a SAVE or a
@@ -273,11 +273,11 @@ class Bench(Servo):
         land leaves them."""
         super().reboot()
         self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
-        self.data, self.unsaved = "clean", False
+        self.settings, self.unsaved = "loaded", False
         if self.flash:
             self.table[:0xc0], self.pages = self.flash[0], list(self.flash[1])
         if self.stale:
-            self.data = "CALIB_STALE"
+            self.settings = "defaults: CALIB"
         for name, v in self.torn.items():
             self.set(name, v)
         self.set("pos_lut_state", postable.STATES.index("LIVE" if any(any(p) for p in self.pages) else "IDENTITY"))

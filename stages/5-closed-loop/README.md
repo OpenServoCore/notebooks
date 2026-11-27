@@ -952,7 +952,7 @@ No direction field by field says what that step does, so an install
 on a servo that holds another four prints what the estimate reads
 over the board NTC under the servo's four and under the set's, by the
 kernel's integers: a hold
-from rest at the continuous current and at the limit, the rest after
+from rest at the yield current and at the limit, the rest after
 it, four duty cycles, and whether the wanted four read at least as hot
 in every case. Over the four the servo held they do, in every case.
 The install still names all four as `--protection`, and
@@ -966,7 +966,7 @@ which already holds the driver's own current, so the in-drive offset
 of stage 1 is not added. The three under the cap are each a policy
 entry in mA. The stored counts were typed for 250, 90 and 2200 mA, the
 whole mA the board's nominal parts take to each stored count; the
-overcurrent trip's entry is still that, and the continuous current and
+overcurrent trip's entry is still that, and the yield current and
 the release have moved since, on the lock hold. The cap was a typed
 entry too, 500 mA, which the owner judged conservative. It is now read
 off the maker's sheet: the voltage the page states the stall torque at
@@ -980,14 +980,14 @@ every other field rounds half away from zero.
 | field | policy | the servo held | which was | the rule gives |
 |---|---|---|---|---|
 | `current_limit_counts` | 0.8 x 4.8 V / 4.177 ohm, 919.4 mA | 554 | 488.1 mA | 1043 |
-| `i_cont_counts` | 350 mA | 277 | 244.0 mA | 397 |
+| `yield_current_counts` | 350 mA | 277 | 244.0 mA | 397 |
 | `stall_release_counts` | 126 mA | 100 | 88.1 mA | 143 |
 | `oc_trip_counts` | 2200 mA | 2439 | 2148.9 mA | 2497 |
 
 Each limit the servo held was 2.3 % under the current it was typed
 for, and the rule's value puts more counts on the same mA, which
 protects less than what the servo held. The four were bound at what
-their rules gave then, the continuous current and the release at 284
+their rules gave then, the yield current and the release at 284
 and 102 for their 250 and 90 mA, the cap at 568 for its 500 mA: one
 rung of three runs on the set with the four moved
 (`zz-current-limits-true-ma`) raised no fault and left every hold at
@@ -998,7 +998,7 @@ and not alternated with it, its 60 degree move settles in 883 [874,
 ramps' goals went out late on a busy host, so its follow rows are not
 a comparison.
 
-The four mA are decisions. The continuous current is 350 mA, the
+The four mA are decisions. The yield current is 350 mA, the
 owner's choice from the lock hold: a clamped horn held at 0.25 A rose
 26 C over the board in 300 s by the winding estimate, still rising
 slowly, and at 0.40 A the 90 C cutoff latched 154 s in. On the set's
@@ -1025,7 +1025,7 @@ with `--protection`. An install of the NTC curve's step on a servo
 that holds the stored curve names the three words it moves as
 `--protection` and again as `--loosen`: the curve's words are judged.
 The current limits' step
-was installed the same way, the continuous current judged and the
+was installed the same way, the yield current judged and the
 other three moving up.
 
 The fields in counts of position were typed when the servo ran on the
@@ -1045,7 +1045,7 @@ are decided.
 | `speed_ceiling_cps` | the most the output turns at, the clamp of the profile's speed and of the position loop's command, count/s; a protection field | 400 deg/s, the sheet's 600 x 2/3 | no such field | - | 8050 |
 | `velocity_limit_cps` | the move speed, the profile's speed, at most the ceiling, 0 being the ceiling, count/s | 200 deg/s | 1500 | 74.53 deg/s | 4025 |
 | `accel_limit_q88` | the speed the profile may add in a MEDIUM tick, count/s, Q8.8 | 4000 deg/s^2 | 3840 | 1491 deg/s^2 | 10305 |
-| `stall_omega_max_cps` | a press over the continuous current counts toward a stall while the estimate's speed is under this, count/s | 24.84 deg/s | 500 | 24.84 deg/s | 500 |
+| `stall_omega_max_cps` | a press over the yield current counts toward a stall while the estimate's speed is under this, count/s | 24.84 deg/s | 500 | 24.84 deg/s | 500 |
 | `pos_error_counts` | the profile less the estimate, over this for the error time, faults; counts | 9.9 deg | 400 | 19.87 deg | 199 |
 
 The servo has two speeds, the owner's decision. One is the speed
