@@ -89,9 +89,9 @@ pub fn stall_counts(duty: f64, r_vpc: f64, vbus: f64) -> f64 {
 pub struct ServoLimits {
     /// `current_limit_counts`.
     pub i_lim: u16,
-    /// `i_cont_counts`: the continuous current, the press trigger and the
+    /// `yield_current_counts`: the yield current, the press trigger and the
     /// limit a press folds back to.
-    pub i_cont: u16,
+    pub yield_current: u16,
     /// `stall_tau_trip_counts`: the collision trip.
     pub tau_trip: u16,
     /// The travel: the soft limits, or the physical stops while those are
@@ -350,11 +350,11 @@ impl ServoLimits {
         let ma = self.ma();
         let lim = ma.of(self.i_lim as f64);
         let mut w = Vec::new();
-        if self.i_cont >= self.i_lim {
+        if self.yield_current >= self.i_lim {
             w.push(format!(
-                "the continuous current, {}, is not below the current limit of {lim}: a press \
-                 never trips or backs off (set i_cont_counts under the limit)",
-                ma.of(self.i_cont as f64)
+                "the yield current, {}, is not below the current limit of {lim}: a press \
+                 never trips or backs off (set yield_current_counts under the limit)",
+                ma.of(self.yield_current as f64)
             ));
         }
         // u16::MAX is the boot value: no trip until identification sets it
@@ -435,7 +435,7 @@ mod tests {
     fn mg90() -> ServoLimits {
         ServoLimits {
             i_lim: 280,
-            i_cont: 545,
+            yield_current: 545,
             tau_trip: 2182,
             soft: (432, 3626),
             raw: (209, 3849),
@@ -664,7 +664,7 @@ mod tests {
         assert_eq!(PermitLease::new(false).held_reg(), control::STALL_PERMIT);
     }
 
-    /// The bench MG90's SG90-era continuous current and trip: both warned
+    /// The bench MG90's SG90-era yield current and trip: both warned
     /// about; the boot trip value (off) is not.
     #[test]
     fn stall_settings_above_the_limit_are_warned() {
@@ -672,19 +672,19 @@ mod tests {
         assert_eq!(w.len(), 2, "{w:?}");
         assert_eq!(
             w[0],
-            "the continuous current, 545 counts (488 mA), is not below the current limit of \
-             280 counts (251 mA): a press never trips or backs off (set i_cont_counts under \
+            "the yield current, 545 counts (488 mA), is not below the current limit of \
+             280 counts (251 mA): a press never trips or backs off (set yield_current_counts under \
              the limit)"
         );
         assert!(w[1].starts_with("the collision trip, 2182 counts (1953 mA), is over twice"));
         let tidy = ServoLimits {
-            i_cont: 168,
+            yield_current: 168,
             tau_trip: 280,
             ..mg90()
         };
         assert!(tidy.warnings().is_empty());
         let unset = ServoLimits {
-            i_cont: 168,
+            yield_current: 168,
             tau_trip: u16::MAX,
             ..mg90()
         };

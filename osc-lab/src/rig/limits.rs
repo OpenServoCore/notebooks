@@ -29,7 +29,7 @@ pub(crate) fn read<P: Pipe>(c: &mut Client<P>, id: Id) -> Result<ServoLimits> {
     let tel = read_snapshot(c, id)?;
     let lim = ServoLimits {
         i_lim: read_u16(c, id, config::CURRENT_LIMIT_COUNTS)?,
-        i_cont: read_u16(c, id, config::I_CONT_COUNTS)?,
+        yield_current: read_u16(c, id, config::YIELD_CURRENT_COUNTS)?,
         tau_trip: read_u16(c, id, config::STALL_TAU_TRIP_COUNTS)?,
         soft: travel(
             (
@@ -97,7 +97,7 @@ fn vcounts_of_rail_tap(raw: u16, (vt, vb): (u16, u16), (mt, mb): (u16, u16)) -> 
 /// once it trips, and when a fold lets go.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Stall {
-    /// A stall folds the limit to the continuous current; else it latches
+    /// A stall folds the limit to the yield current; else it latches
     /// a fault.
     pub(crate) folds: bool,
     /// Kernel ticks.
@@ -155,7 +155,7 @@ mod tests {
         let (mut c, id) = testkit::table(1961);
         let lim = read(&mut c, id).unwrap();
         assert_eq!(
-            (lim.i_lim, lim.i_cont, lim.soft, lim.raw),
+            (lim.i_lim, lim.yield_current, lim.soft, lim.raw),
             (280, 168, (432, 3626), (232, 3849))
         );
         assert_eq!((lim.window_floor_q15, lim.vbus), (4356, 3204));

@@ -188,7 +188,7 @@ checksum = "4bd422bfb4f24a97243f60b6a4443e63d810c925d8da4bb2d8fde26a7c1d57ec"
 [[package]]
 name = "control-table"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "control-table-derive",
  "heapless",
@@ -197,7 +197,7 @@ dependencies = [
 [[package]]
 name = "control-table-derive"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -273,6 +273,12 @@ checksum = "2564b9f813c544241430e147d8bc454815ef9ac998878d30cc3055449f7fd4c0"
 dependencies = [
  "embedded-io",
 ]
+
+[[package]]
+name = "equivalent"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826"
 
 [[package]]
 name = "errno"
@@ -395,6 +401,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.17.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "735eaa21a6a5ffb2e84362faaeb90c05ba8e19797ca30428478cb6ea3a4921bc"
+
+[[package]]
 name = "heapless"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -409,6 +421,16 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
+name = "indexmap"
+version = "2.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855"
+dependencies = [
+ "equivalent",
+ "hashbrown",
+]
 
 [[package]]
 name = "io-kit-sys"
@@ -600,9 +622,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
+name = "osc-board-file"
+version = "0.0.0"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
+dependencies = [
+ "toml",
+]
+
+[[package]]
 name = "osc-client"
 version = "0.1.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "futures-lite",
  "futures-timer",
@@ -619,7 +649,7 @@ dependencies = [
 [[package]]
 name = "osc-host"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "osc-protocol",
 ]
@@ -627,10 +657,11 @@ dependencies = [
 [[package]]
 name = "osc-integration"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "control-table",
  "log",
+ "osc-board-file",
  "osc-host",
  "osc-protocol",
  "osc-servo-core",
@@ -655,7 +686,7 @@ dependencies = [
 [[package]]
 name = "osc-log"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "log",
 ]
@@ -663,12 +694,12 @@ dependencies = [
 [[package]]
 name = "osc-protocol"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 
 [[package]]
 name = "osc-servo-core"
 version = "0.1.2"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "bbqueue",
  "bitflags",
@@ -683,7 +714,7 @@ dependencies = [
 [[package]]
 name = "osc-servo-drivers"
 version = "0.0.0"
-source = "git+https://github.com/OpenServoCore/open-servo-core?rev=04321be3b82c38579c3dcc0565f7c9db75ac745d#04321be3b82c38579c3dcc0565f7c9db75ac745d"
+source = "git+https://github.com/OpenServoCore/open-servo-core?rev=693019f4b08abbffb38ad347e6da1cf7f799a42e#693019f4b08abbffb38ad347e6da1cf7f799a42e"
 dependencies = [
  "heapless",
  "osc-log",
@@ -839,6 +870,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_spanned"
+version = "1.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c187e0a369471c550af028cba56d4f4fa2a489ad28151ae95a4d340a2a8b782"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
 name = "sharded-slab"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -918,6 +958,45 @@ dependencies = [
  "embedded-io",
  "embedded-io-async",
 ]
+
+[[package]]
+name = "toml"
+version = "1.2.3+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26b1f26e9485c1fa43ee89fe76e9f3fb9e2e52bb227f8594b4d687496b83d073"
+dependencies = [
+ "indexmap",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_parser",
+ "toml_writer",
+ "winnow",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "1.1.3+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
+name = "toml_parser"
+version = "1.1.7+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bb28d6e049a9766c3bd91a8326e6179f5b132dec87906bb97018ef7a2f3431a"
+dependencies = [
+ "winnow",
+]
+
+[[package]]
+name = "toml_writer"
+version = "1.2.0+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "009dbb7700f11c55ef83aebbe4c0e9cf1f1ac0844bd8d6f00dc38f302026e13a"
 
 [[package]]
 name = "tracing"
@@ -1205,6 +1284,12 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "winnow"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c3b93199df0ab874cdf0c6a94f0a0dc3423fe41f1cafb62b8bd7b1deb277aef"
 
 [[package]]
 name = "zmij"
