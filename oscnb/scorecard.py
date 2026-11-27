@@ -24,14 +24,13 @@ range, and where its position table is LIVE the table's counts at the
 table's scale, centered on the raw center read through it (testset.py).
 The set is installed before the runs (`constants.install`, volatile,
 behind its protection gate, which `--protection` and `--loosen` name
-fields for, and stamped there alone) and a reboot brings the stored
+fields for) and a reboot brings the stored
 state back after them. Before a run's first capture the servo's
 constant state is read into `run-K/servo.json`: the bytes of CONFIG and
 CALIB with every field there by name and the writable ones named, the
 position table's state and its points as fetched back with their sha1,
-the wide-code slots, the stamp and the data state. A servo that is not
-the rung's set then, or whose data state is not clean, does not start
-the run. `rung.json` keeps the hash of the first run's state, and a
+the wide-code slots, the data state and the unsaved word. A servo that
+is not the rung's set then does not start the run. `rung.json` keeps the hash of the first run's state, and a
 later run that reads another is refused, what differs named. It names
 the set by its file, its three hashes and its fields by class, the
 deviation by its file and every field it moved as [of record,
@@ -58,14 +57,12 @@ with the same flags each, one run of each per round in `--order`,
 flashing a side's image whenever the servo holds another, so all share
 the servo's drift through the session. A flash that `osc flash` does
 not confirm ends the session; what the image then holds is verified by
-the set's install and the state read before the run, as on any rung,
-so an image that boots with a stamp from before its covered fields
-changed runs once the install has stamped it. Each
+the set's install and the state read before the run, as on any rung.
+Each
 side names its own set and deviation, installed on its own image around
 its own runs: an A/B is the set against the set with one thing changed,
-the one thing named. A side also names its own `osc`, `--a-osc`: the
-plant stamp is computed by the tool, so an image whose stamp covers
-other fields is flashed, read, installed on and stamped by the tool
+the one thing named. A side also names its own `osc`, `--a-osc`: an
+image whose table differs is flashed, read and installed on by the tool
 built from its own tree. Every `osc` call of the side's turn, from its
 flash to the reboot after its run, goes through that tool, and none
 outside it. `rung.json` names the tool by the sha1 of its binary and
@@ -867,14 +864,20 @@ def config_hash(config):
 # The first field of CONTROL: CONFIG and CALIB, the regions a SAVE keeps,
 # are the table from its first field up to this one's address.
 CONTROL_FIRST = "torque_enable"
-HASHED = ("addr", "raw", "pos_table", "wide_codes", "stamp", "data_state")
+HASHED = ("addr", "raw", "pos_table", "wide_codes")
+# A record written while servos carried a plant stamp hashed these too.
+STAMPED = ("stamp", "data_state")
 
 
 def state_hash(doc):
-    """The hash of a state record: all of it but `fields`, which `raw`
-    holds, `writable`, which is the descriptor's and not the servo's
-    state, and the table's points, which their sha1 stands for."""
-    covered = {k: doc[k] for k in HASHED}
+    """The hash of a state record: the table bytes and the position table.
+    Not `fields`, which `raw` holds, `writable`, which is the descriptor's
+    and not the servo's state, the table's points, which their sha1 stands
+    for, or what the servo says of its state (`data_state`, `unsaved`). A
+    record with a `stamp` line is one from a servo with a plant stamp, and
+    hashes as it was written."""
+    keys = HASHED + (STAMPED if "stamp" in doc else ())
+    covered = {k: doc[k] for k in keys}
     covered["pos_table"] = {k: doc["pos_table"][k] for k in ("state", "points_sha1")}
     return config_hash(covered)
 
@@ -887,7 +890,7 @@ def servo_state():
     decodes it, and `writable` the names of those the descriptor lets a
     host write, in table order. With them the position table's state,
     its 256 points as fetched back, i16 LE in a row, and their sha1, the
-    ADC wide-code slots, and the stamp and the data state of `osc
+    ADC wide-code slots, and the data state and the unsaved word of `osc
     status`. `hash` is `state_hash` of it."""
     rows = osc.dump()
     lo = min(addr for addr, _, _, _ in rows)
@@ -904,20 +907,19 @@ def servo_state():
         "writable": [name for addr, name, access, _ in rows if addr < end and access == "rw"],
         "pos_table": {"state": lut_state, "points_sha1": hashlib.sha1(points).hexdigest(), "points": points.hex()},
         "wide_codes": None if slots is None else slots.hex(),
-        "stamp": settings.plant_stamp(status), "data_state": settings.data_state(status),
+        "data_state": settings.data_state(status), "unsaved": settings.unsaved(status),
     }
     return {**doc, "hash": state_hash(doc)}
 
 
 def differing(first, now):
     """What constant state `now` holds other than `first`, each as
-    `name: old -> new`: the fields by name, the table, the slots, the
-    stamp and the data state, and failing those the bytes no field
-    names."""
+    `name: old -> new`: the fields by name, the table, the slots and the
+    data state, and failing those the bytes no field names."""
     def items(doc):
         return {**doc["fields"], "position table state": doc["pos_table"]["state"],
                 "position table points sha1": doc["pos_table"]["points_sha1"],
-                "wide-code slots": doc["wide_codes"], "stamp": doc["stamp"], "data state": doc["data_state"]}
+                "wide-code slots": doc["wide_codes"], "data state": doc["data_state"]}
 
     a, b = items(first), items(now)
     named = [f"{n}: {a.get(n)} -> {b.get(n)}" for n in dict.fromkeys([*a, *b]) if a.get(n) != b.get(n)]
@@ -932,15 +934,15 @@ def record_constants(r, k):
     """The servo's constant state before run `k` of rung `r`, into the
     run's `servo.json`, with a copy of the rung's set beside `rung.json`
     on the first. A servo that is not the rung's set at the limits of
-    motion its runs ask (`run_motion`), or whose data
-    state is not clean, is refused before anything is recorded or
-    driven: the run does not start. The rung's first state is kept on
+    motion its runs ask (`run_motion`) is refused before anything is
+    recorded or driven: the run does not start. Its data state is
+    information. The rung's first state is kept on
     `r`, for `rung.json`'s hash; a later run that reads another is
     refused the same way, what differs named."""
     cn = constants()
     now = servo_state()
     off = cn.differences(r["ran"], now)
-    if off or now["data_state"] != "clean":
+    if off:
         raise SystemExit(f"{shown(r['dir'])}: run-{k} does not start: the servo is not the rung's set (data state "
                          f"{now['data_state']}{''.join('; ' + d for d in off)})")
     first = r.setdefault("constants", now)
@@ -1093,8 +1095,7 @@ def bench_sets(servo, board, pair, rungs):
 def applied(r):
     """Rung `r`'s constant set on the servo for the body, at the limits
     of motion its runs ask (`run_motion`):
-    `constants.install`, the one place a state is stamped, behind its
-    protection gate, and the protection fields it moves against the
+    `constants.install`, behind its protection gate, and the protection fields it moves against the
     servo's values kept on `r` for `rung.json`. A reboot brings the
     stored state back when the body ends or aborts, where the install
     wrote anything, and always after a run given up as lost
@@ -1121,9 +1122,7 @@ def applied(r):
 def stored_back(data_state):
     """Reboot onto the stored state and wait for the bus. The data
     state must then be `data_state`, the one the servo held before the
-    install: clean, or on an image whose stored stamp is from before
-    its covered fields changed the mismatch every boot of it gives,
-    which the install stamps away for the run alone."""
+    install: a reboot onto the same images reads the same."""
     osc.run("reboot")
     settings.await_boot()
     status = osc.status()
@@ -1131,7 +1130,7 @@ def stored_back(data_state):
     if now != data_state:
         raise settings.Refused(f"after the reboot the data state is {now}, not the {data_state} of before the "
                                f"install")
-    print(f"rebooted: data state {now}, plant stamp {settings.plant_stamp(status)}")
+    print(f"rebooted: data state {now}")
 
 
 def record_run(r, k, s):
@@ -1268,12 +1267,10 @@ def ab(*sides, rounds=3, order=None, max_load=None, servo=None, board=None):
     the file of "osc" (`osc.using`), which is the default again outside
     it. In a turn the side's image is flashed and the bus awaited
     whenever the servo holds another image, and before the first run
-    always. No stamp is asked of the image as it boots: the side's
-    constant set, the set of record or its own derived set, is
-    installed around its own run alone, on the image it runs on, and
-    the install makes the servo the set field by field, stamps it where
-    the data state is not clean and requires clean, so a side whose
-    install cannot do that does not start. Its test set is planned from
+    always. The side's constant set, the set of record or its own
+    derived set, is installed around its own run alone, on the image it
+    runs on, and the install makes the servo the set field by field, so
+    a side whose install cannot do that does not start. Its test set is planned from
     the set. A tool that
     is not found, or is another binary at a later turn than at the
     session's start, is refused. Returns the rungs' folders, a first."""

@@ -28,7 +28,7 @@ def every_call(tmp_path):
     flash, the clapper and a started tool, then the three capture verbs."""
     osc.get("p_kp_q88")
     osc.set_("p_kp_q88", 5)
-    osc.run("stamp")
+    osc.run("reboot")
     osc.bus_baud()
     osc.flash(tmp_path / "fw.bin")
     osc.clapper(tmp_path / "clap.csv", 3)

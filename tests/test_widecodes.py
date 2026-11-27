@@ -203,7 +203,7 @@ def bench(monkeypatch, tmp_path):
             synth.meta(plan["center_counts"], plan["guard_counts"], 20_000)))
 
     monkeypatch.setattr(sc.osc, "track", track)
-    monkeypatch.setattr(wc.settings, "apply", lambda fields, note="", stamp=True: state["log"].append(
+    monkeypatch.setattr(wc.settings, "apply", lambda fields, note="": state["log"].append(
         ("apply", dict(fields))))
     monkeypatch.setattr(wc.settings, "restore", lambda: state["log"].append(("restore",)))
     return state

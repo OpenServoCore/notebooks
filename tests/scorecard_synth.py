@@ -154,17 +154,16 @@ class Servo:
     # name: (addr, width, access, kind), in table order
     FIELDS = {"model_number": (0x00, 2, "ro", "uint"), "p_kp_q88": (0x40, 2, "rw", "uint"),
               "pos_deadband_counts": (0x42, 2, "rw", "uint"), "drive_polarity": (0x4b, 1, "rw", "bool"),
-              "r_q12": (0x80, 2, "rw", "uint"), "plant_stamp": (0x8a, 2, "rw", "uint"),
-              widecodes.FIELD: (0x91, 16, "rw", "bytes"),
+              "r_q12": (0x80, 2, "rw", "uint"), widecodes.FIELD: (0x91, 16, "rw", "bytes"),
               "torque_enable": (0xc0, 1, "rw", "bool"), "pos_lut_state": (0xde, 1, "ro", "uint")}
     STORED = {"model_number": 257, "p_kp_q88": 40212, "pos_deadband_counts": 4, "drive_polarity": 1,
-              "r_q12": 17100, "plant_stamp": 0x9c45, widecodes.FIELD: bytes([0, 0, 0, 88] + [0] * 12)}
+              "r_q12": 17100, widecodes.FIELD: bytes([0, 0, 0, 88] + [0] * 12)}
     UNNAMED = 0x7f
 
     def __init__(self):
         self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
         self.window = bytes(2 * postable.PAGE_POINTS)
-        self.stamp, self.data = "0x9c45 = live set", "clean"
+        self.data, self.unsaved = "clean", False
         self.table = bytearray(0x100)
         self.log = []
         self.reboot()
@@ -214,7 +213,8 @@ class Servo:
 
     def status(self):
         self.log.append(("status",))
-        return f"id 1: model 0x0101\n      data  {self.data}\n      stamp {self.stamp}\n"
+        return (f"id 1: model 0x0101\n      fault 0x00  unsaved {str(self.unsaved).lower()}  trim 0\n"
+                f"      data  {self.data}\n")
 
     def stub(self, monkeypatch, regs=dict):
         """`osc`'s reads and its window write answered by this servo;
@@ -230,22 +230,18 @@ class Servo:
         return self
 
 
-STALE = "0x9c45 != live set 0x1234"     # how `osc status` words a stamp that is not the live set's
-
-
 class Bench(Servo):
     """The fake servo with the writes an install makes: `osc set` by
     name, refused where it would put the low soft limit at or past the
     high one, the table's STORE and COMMIT behind the window (a COMMIT
     of all-zero points lands IDENTITY, or LIVE with `zero_live`, as a
-    firmware that judges only the shape lands it), the slots, the stamp
-    and the reboot. With `stale` every boot reads STAMP_MISMATCH, as an
-    image whose stored stamp is from before its covered fields changed,
-    and with `unblessed` a stamp does not clear it, as from a tool that
-    computes another. The soft limits also take one write of both at
-    the low one's address, 0 / 0 among the pairs it takes. A write of
-    a CONFIG or CALIB field or a COMMIT leaves the data state
-    STAMP_MISMATCH until a stamp. `drop`
+    firmware that judges only the shape lands it), the slots, the SAVE
+    and the reboot. With `stale` every boot reads CALIB_STALE, as an
+    image whose CALIB layout is newer than the saved one, on defaults.
+    The soft limits also take one write of both at the low one's
+    address, 0 / 0 among the pairs it takes. A write of a CONFIG or
+    CALIB field, a STORE or a COMMIT reads unsaved until a SAVE or a
+    reboot. `drop`
     names fields whose write is answered and not taken, `drift` a field
     whose write moves another too."""
 
@@ -255,7 +251,7 @@ class Bench(Servo):
               "current_limit_counts": (0x48, 2, "rw", "uint"), "stall_response": (0x4a, 1, "rw", "enum"),
               "drive_polarity": (0x4b, 1, "rw", "bool"), "stall_omega_max_cps": (0x50, 2, "rw", "uint"),
               "r_q12": (0x80, 2, "rw", "uint"), "recip_ke_q": (0x82, 2, "rw", "uint"),
-              "plant_stamp": (0x8a, 2, "rw", "uint"), widecodes.FIELD: (0x91, 16, "rw", "bytes"),
+              widecodes.FIELD: (0x91, 16, "rw", "bytes"),
               "tick_hz": (0xa2, 2, "ro", "uint"), "raw_min": (0xa4, 2, "rw", "uint"),
               "raw_max": (0xa6, 2, "rw", "uint"),
               "torque_enable": (0xc0, 1, "rw", "bool"), "pos_lut_page": (0xdc, 1, "rw", "uint"),
@@ -267,21 +263,21 @@ class Bench(Servo):
 
     def __init__(self):
         self.drop, self.drift, self.flash, self.torn, self.zero_live = set(), {}, None, {}, False
-        self.stale = self.unblessed = False
+        self.stale = False
         super().__init__()
 
     def reboot(self):
         """The stored state back: the board's defaults and the identity
         table, or what the last SAVE programmed, CONFIG and CALIB with
-        the table's points and the stamp, `torn` fields reading as a
-        save that did not land leaves them."""
+        the table's points, `torn` fields reading as a save that did not
+        land leaves them."""
         super().reboot()
         self.pages = [bytes(2 * postable.PAGE_POINTS)] * postable.PAGES
-        self.stamp, self.data = "0x9c45 = live set", "clean"
+        self.data, self.unsaved = "clean", False
         if self.flash:
-            self.table[:0xc0], self.pages, self.stamp = self.flash[0], list(self.flash[1]), self.flash[2]
+            self.table[:0xc0], self.pages = self.flash[0], list(self.flash[1])
         if self.stale:
-            self.stamp, self.data = STALE, "STAMP_MISMATCH"
+            self.data = "CALIB_STALE"
         for name, v in self.torn.items():
             self.set(name, v)
         self.set("pos_lut_state", postable.STATES.index("LIVE" if any(any(p) for p in self.pages) else "IDENTITY"))
@@ -309,7 +305,7 @@ class Bench(Servo):
             self.set(name, v)
         if name in self.drift:
             self.set(*self.drift[name])
-        self.data, self.stamp = "STAMP_MISMATCH", STALE
+        self.unsaved |= self.FIELDS[name][0] < 0xc0
 
     def write(self, addr, data):
         self.log.append(("write", addr, bytes(data)))
@@ -324,28 +320,28 @@ class Bench(Servo):
             for name in ("pos_min_soft_counts", "pos_max_soft_counts"):
                 if name not in self.drop:
                     self.set(name, lo if name == "pos_min_soft_counts" else hi)
-            self.data, self.stamp = "STAMP_MISMATCH", STALE
+            self.unsaved = True
             return
         assert addr == postable.WINDOW_ADDR
         page, cmd = data[0], data[1]
         if cmd == postable.STORE:
             self.pages[page] = bytes(data[2:])
             self.set("pos_lut_state", postable.STATES.index("LOADING"))
+            self.unsaved = True
         elif cmd == postable.COMMIT:
             live = self.zero_live or any(any(p) for p in self.pages)
             self.set("pos_lut_state", postable.STATES.index("LIVE" if live else "IDENTITY"))
-            self.data = "STAMP_MISMATCH"
+            self.unsaved = True
         else:
             self.window = self.pages[page]
 
     def run(self, *args, **kw):
         self.log.append(("run", *args))
-        if args[0] == "stamp" and not self.unblessed:
-            self.stamp, self.data = "0x1234 = live set", "clean"
-        elif args[0] == "save":
+        if args[0] == "save":
             if self.decoded("torque_enable") == "on":
                 raise subprocess.CalledProcessError(1, ["osc", "save"])
-            self.flash = (bytes(self.table[:0xc0]), list(self.pages), self.stamp)
+            self.flash = (bytes(self.table[:0xc0]), list(self.pages))
+            self.unsaved = False
         elif args[0] == "reboot":
             self.reboot()
 

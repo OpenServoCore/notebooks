@@ -4,8 +4,8 @@ import pytest
 
 from oscnb import settings
 
-CLEAN = "id 1: model 0x0101\n      data  clean\n      stamp 0x9c45 = live set\n"
-STALE = "id 1: model 0x0101\n      data  STAMP_MISMATCH\n      stamp 0x9c45 != live set 0x1234\n"
+CLEAN = "id 1: model 0x0101\n      fault 0x00  unsaved false  trim 0\n      data  clean\n"
+FRESH = "id 1: model 0x0101\n      fault 0x00  unsaved true  trim 0\n      data  CONFIG_VIRGIN | CALIB_VIRGIN\n"
 
 
 class FakeOsc:
@@ -49,7 +49,7 @@ def fake(monkeypatch):
     return make
 
 
-def test_apply_reads_writes_stamps_then_checks_in_that_order(fake):
+def test_apply_reads_then_writes_in_that_order_and_nothing_else(fake):
     f = fake()
     old = settings.apply({"p_kp_q88": 5026, "v_kp_q88": 320}, "a rung")
     assert old == {"p_kp_q88": 4000, "v_kp_q88": 300}
@@ -59,25 +59,8 @@ def test_apply_reads_writes_stamps_then_checks_in_that_order(fake):
         ("get", "p_kp_q88"), ("get", "v_kp_q88"),
         ("set", "p_kp_q88", 5026), ("get", "p_kp_q88"),
         ("set", "v_kp_q88", 320), ("get", "v_kp_q88"),
-        ("run", "stamp"),
-        ("status",),
     ]
-    assert not any("save" in str(c) for c in f.log)
-
-
-def test_apply_without_its_stamp_leaves_it_to_the_caller(fake):
-    f = fake()
-    settings.apply({"p_kp_q88": 5026}, stamp=False)
-    assert ("run", "stamp") not in f.log and ("status",) not in f.log
-    f.log.clear()
-    settings.stamp_live()
-    assert f.log == [("run", "stamp"), ("status",)]
-
-
-def test_stamp_refuses_a_data_state_that_is_not_clean(fake):
-    fake(status=STALE)
-    with pytest.raises(settings.Refused, match="STAMP_MISMATCH"):
-        settings.stamp_live()
+    assert not any("save" in str(c) or "stamp" in str(c) for c in f.log)
 
 
 def test_apply_refuses_with_torque_on_and_writes_nothing(fake):
@@ -94,19 +77,27 @@ def test_apply_refuses_a_write_that_did_not_land(fake, monkeypatch):
     monkeypatch.setattr(settings.osc, "set_", lambda field, value: f.log.append(("set", field, value)))
     with pytest.raises(settings.Refused, match="read back 4000"):
         settings.apply({"p_kp_q88": 5026})
-    assert ("run", "stamp") not in f.log
 
 
-def test_apply_refuses_a_data_state_that_is_not_clean(fake):
-    fake(status=STALE)
-    with pytest.raises(settings.Refused, match="STAMP_MISMATCH"):
-        settings.apply({"p_kp_q88": 5026})
+def test_a_servo_on_its_defaults_is_written_like_any(fake):
+    f = fake(status=FRESH)
+    settings.apply({"p_kp_q88": 5026})
+    assert f.regs["p_kp_q88"] == 5026
 
 
-def test_restore_reboots_waits_for_the_bus_and_checks_clean(fake):
+def test_restore_reboots_waits_for_the_bus_and_says_the_data_state(fake):
     f = fake(boot_pings=2)
-    assert settings.restore() == "0x9c45 = live set"
+    assert settings.restore() == "clean"
     assert f.log == [("run", "reboot"), ("ping",), ("ping",), ("ping",), ("status",)]
+    fake(status=FRESH)
+    assert settings.restore() == "CONFIG_VIRGIN | CALIB_VIRGIN", "information, no refusal"
+
+
+def test_unsaved_reads_the_health_line():
+    assert settings.unsaved(FRESH) is True
+    assert settings.unsaved(CLEAN) is False
+    with pytest.raises(RuntimeError):
+        settings.unsaved("id 1: model 0x0101\n")
 
 
 def test_restore_gives_up_on_a_silent_bus(fake):
