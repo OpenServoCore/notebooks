@@ -33,7 +33,7 @@ import pytest
 
 from oscnb import constants as cn
 from oscnb import margin as mg
-from oscnb import boards, ntc, postable, results, scorecard as sc, screens, settings, winding
+from oscnb import boards, ntc, postable, results, scorecard as sc, screens, settings, stopcontact, winding
 from oscnb import widecodes as wc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -883,7 +883,9 @@ class Geared(Bench):
         return int(v.split()[0]) if self.FIELDS[name][3] == "class" else v
 
 
-REG = {"servo": {"gear_ratio": 308.0533, "gear_class": "metal"}}
+# a rated travel of 157.5 deg puts the soft window at 314 and 3560 on STOPS, the counts the tests read
+REG = {"servo": {"gear_ratio": 308.0533, "gear_class": "metal", "rated_travel_deg": 157.5},
+       "motor": {"ripple_per_rev": 6}}
 STOPS = (82, 3792)
 THETA = (-90.0, 90.0)      # the tag angle at the stops: 180 deg of travel, 3710 counts
 SCALE = (STOPS[1] - STOPS[0]) / 180
@@ -959,7 +961,7 @@ NO_BLOCK = [
 CLASS = "synth-class"
 CLASS_SHEET = f"stages/5-closed-loop/calibration/{CLASS}.datasheet.json"
 DOCUMENT = "the maker's page, at its address, read on a day"
-BOARD_REG = {"servo": {**REG["servo"], "datasheet_class": CLASS},
+BOARD_REG = {"servo": {**REG["servo"], "datasheet_class": CLASS}, "motor": REG["motor"],
              "board": {"tick_hz": 20_000, "rail_source_mohm": 500}}
 LIMITS_MA = {"datasheet_derate_default": 0.5, "yield": {"ma": 250.0}, "stall_release": {"ma": 90.0},
              "oc_trip_ma": 2200.0}
@@ -968,7 +970,7 @@ BLOCK_POLICY = {"observer": {"hz": 15.0}, "rule": {"r_bemf_q12": "r_bemf.small_s
                 "stall_response": "fault"}
 # the policy entries the rules of the fields in counts of position read, and the pot's noise at rest
 COUNT_POLICY = {"velocity_limit_deg_s": 75.0, "accel_limit_deg_s2": 1500.0, "stall_speed": {"deg_s": 25.0},
-                "pos_error_deg": 20.0, "soft_margin_share": 0.0625, "hold_band_noise_multiple": 2.5,
+                "pos_error_deg": 20.0, "hold_band_noise_multiple": 2.5,
                 "hold_band_floor_counts": 4, "pot_jump": {"counts": 256}}
 POT_NOISE = {"3-servo/pot-table": {"pot_rest_sd_counts": (1.0, 0.0, 1.5)}}
 # the policy entries the other rules read: the current loop's bandwidth, the times, the counts of samples,
@@ -1155,8 +1157,8 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
         "position table state: IDENTITY -> LIVE [measured, table.pos_lut]",
         f"position table points sha1: {NO_POINTS} -> {sha} [measured, table.pos_lut]",
         f"scale: none -> {SCALE:.4f} counts/deg, the table one",
-        "pos_min_soft_counts: 314 -> 0 [policy, soft_min.stops]",
-        "pos_max_soft_counts: 3560 -> 0 [policy, soft_max.stops]",
+        "pos_min_soft_counts: 314 [none -> policy, soft_min.window]",
+        "pos_max_soft_counts: 3560 [none -> policy, soft_max.window]",
         "p_kp_q88: 40212 [none -> none, held, p_kp.split]",
         "pos_deadband_counts: 4 [none -> none, held, deadband.pot_noise]",
         "current_limit_counts: 554 [none -> none, held, current_limit.stall_derate]",
@@ -1176,8 +1178,7 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
 def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
     inputs(tmp_path)
     doc, _ = built_on(first, tmp_path)
-    assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "pos_min_soft_counts",
-                                              "pos_max_soft_counts", "angle_max_cdeg"]
+    assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "angle_max_cdeg"]
     assert cn.check(doc) == []
 
 
@@ -1255,6 +1256,10 @@ def scales_by_its_unit(r, root, k, theta):
 @pytest.mark.parametrize("theta", [THETA, THETA[::-1]], ids=["ascending", "descending"])
 def test_every_rule_scales_by_its_position_unit(tmp_path, theta, flat):
     for r in cn.rules():
+        # the soft limits are positions, a center the scale does not move and a half-width it does: their own
+        # test reads them at another scale
+        if r.field in RANGE:
+            continue
         assert scales_by_its_unit(r, tmp_path, 1.25, theta), r.name
         # the check has teeth: the same rule declared at another power fails it
         if not isinstance(r.fn(context(tmp_path, theta=theta, record=WORKED)), str):
@@ -1309,16 +1314,18 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
     assert doc["fields"]["angle_max_cdeg"] == {"value": 18774, **carried, "rule": "angle_max.table",
                                                "held": no_table, "protection": None}
     assert doc["fields"]["gear_ratio_centi"]["class"] == "policy"
+    no_stops = "the pair has no position table: the stops its count runs between are not known"
     assert notes == [
         "wide-code slots: held, 1-board/wide-codes has no result for board",
-        "scale: none, 3-servo/pot-table has no result for synth__board", NO_SCALE, *HELD_BLOCK,
+        "scale: none, 3-servo/pot-table has no result for synth__board", NO_SCALE,
+        f"pos_min_soft_counts: held, {no_stops}", f"pos_max_soft_counts: held, {no_stops}", *HELD_BLOCK,
         f"angle_min_cdeg: held, {no_table}", f"angle_max_cdeg: held, {no_table}", *NO_BLOCK]
-    # the gear's two fields have a source, the registry, and the soft limits, off with no margin share, the
-    # policy; every other one has none, 9 of them held
-    assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 3 policy, 0 pinned, 12 none")
-    assert sum("held" in e for e in doc["fields"].values()) == 9
-    # the soft limits going off is the one move
-    assert moved_hashes(first, doc) == ["plant"] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
+    # the gear's field has a source, the registry, and every other one has none, 11 of them held, the soft limits
+    # among them: their window is centered between the table's stops
+    assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 1 policy, 0 pinned, 14 none")
+    assert sum("held" in e for e in doc["fields"].values()) == 11
+    # with every value held where it stood, no hash moves
+    assert moved_hashes(first, doc) == [] and cn.load(cn.write(doc, tmp_path / "x.constants.json")) == doc
     # held again on top of that set, the value still names the set it first came from
     again, _ = built_on(doc, tmp_path)
     assert again["fields"]["angle_max_cdeg"]["carried_from"] == first["hash"]["set"]
@@ -1327,11 +1334,10 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
     assert lone["fields"]["gear_class"] == {"value": "2 (metal)", **carried, "rule": "gear_class.registry",
                                             "held": "the registry has no servo gear_class for synth__board",
                                             "protection": None}
-    # with nothing to carry the field is left out, and said; the soft limits, off, need nothing
+    # with nothing to carry the field is left out, and said, the soft limits among them
     new, notes = cn.build(PAIR, None, root=tmp_path, registry=REG)
-    assert sorted(new["fields"]) == sorted(["gear_ratio_centi", "gear_class", "pos_min_soft_counts",
-                                            "pos_max_soft_counts"]) and new["wide_codes"] is None
-    assert [new["fields"][n]["value"] for n in ("pos_min_soft_counts", "pos_max_soft_counts")] == [0, 0]
+    assert sorted(new["fields"]) == sorted(["gear_ratio_centi", "gear_class"]) and new["wide_codes"] is None
+    assert f"pos_min_soft_counts: left out, {no_stops}" in notes
     assert new["pos_table"] == {"state": "IDENTITY", "points_sha1": NO_POINTS, "class": "measured",
                                 "rule": "table.none"} and new["previous"] is None
     assert f"angle_max_cdeg: left out, {no_table}" in notes and notes[0].startswith("wide-code slots: left out, ")
@@ -1694,8 +1700,8 @@ def test_a_datasheet_value_names_its_document_and_where_the_repo_records_it(firs
 def test_a_field_with_no_source_says_why_and_what_would_give_it_one(first, tmp_path):
     held = "it moves on a rung of its own"
     why = {"reason": "boot default restated, no decision", "needs": "a decision on the speed"}
-    inputs(tmp_path, policy={**COUNT_POLICY, "hold": {"pos_max_soft_counts": held},
-                             "undecided": {"accel_limit_deg_s2": why, "soft_margin_share": why}})
+    inputs(tmp_path, policy={**COUNT_POLICY, "soft_travel_deg": 157.5, "hold": {"pos_max_soft_counts": held},
+                             "undecided": {"accel_limit_deg_s2": why, "soft_travel_deg": why}})
     plant(tmp_path, POT_NOISE)
     sources(tmp_path, none={
         "r_q12": {"reason": "old identification fit of another servo", "needs": "an existing result to bind"},
@@ -2201,7 +2207,7 @@ def test_a_range_of_operating_voltage_reads_the_speed_at_the_voltage_the_policy_
         "inputs": ["registry:datasheet_class", "datasheet:operating_voltage", "datasheet:no_load_time",
                    "policy:datasheet_speed_voltage", "registry:rated_v", "policy:datasheet_derate_speed", "scale"]}
     assert read(doc) == (4.8, 600.0, 400.0, CEILING) and not any(n.startswith(cn.CEILING) for n in notes)
-    assert doc["inputs"]["registry"] == {"servo": RAIL_REG["servo"]}
+    assert doc["inputs"]["registry"] == {"servo": RAIL_REG["servo"], "motor": RAIL_REG["motor"]}
     assert doc["hash"] == single["hash"]
     lines, stale = cn.status(doc, tmp_path, RAIL_REG)
     assert not stale and (
@@ -3445,23 +3451,38 @@ def test_a_policy_in_degrees_is_that_many_counts_at_the_scale_of_the_count(tmp_p
     assert count_rule(c, "accel_limit_q88")["inputs"] == ["policy:accel_limit_deg_s2", "scale", "registry:tick_hz"]
     assert (cn.RULES["accel_limit_q88"]["accel_limit.policy"].q, count_rule(c, "accel_limit_q88")["unit"]) == (
         8, "(count/s)/tick")
-    # the range is a share of the travel inside each stop, on a count that reads the stops as themselves:
-    # it takes the stops and no scale, whichever way the angle runs
-    span = STOPS[1] - STOPS[0]
+    # the range is a window of degrees centered between the stops, on a count that reads the stops as
+    # themselves, its half-width carried by the scale: by default the rated travel, which the registry holds
+    middle = (STOPS[0] + STOPS[1]) / 2
     soft = [count_rule(c, n) for n in RANGE]
-    assert [e["value"] for e in soft] == [raw(STOPS[0] + span / 16), raw(STOPS[1] - span / 16)] == [314, 3560]
-    assert all(e["inputs"] == ["policy:soft_margin_share", "pos_table:stops"] and e["pos_unit"] == 0
+    assert [e["value"] for e in soft] == [raw(middle - 78.75 * SCALE), raw(middle + 78.75 * SCALE)] == [314, 3560]
+    assert all(e["inputs"] == ["pos_table:stops", "scale", "registry:ripple_per_rev", "registry:gear_ratio",
+                               "registry:rated_travel_deg"] and e["pos_unit"] == 0
                and "scale_points_sha1" not in e for e in soft)
-    wide = context(tmp_path, theta=theta, policy={"soft_margin_share": 0.125})
-    assert [count_rule(wide, n)["value"] for n in RANGE] == [raw(82 + span / 8), raw(3792 - span / 8)]
-    # a share of 0, or none, leaves both at 0, off, the servo then at its physical stops: no stops are read
-    for policy in ({"soft_margin_share": 0.0}, {"soft_margin_share": None}):
-        off = context(tmp_path, theta=theta, policy=policy)
-        assert [(e["value"], e["class"], e["inputs"]) for e in (count_rule(off, n) for n in RANGE)] == [
-            (0, "policy", [])] * 2
-        off.policies = {k: v for k, v in off.policies.items() if k != "soft_margin_share"}
-        off.table = None
-        assert [count_rule(off, n)["value"] for n in RANGE] == [0, 0]
+    # the policy's soft travel stands over the rating, narrower or wider
+    narrow = context(tmp_path, theta=theta, policy={"soft_travel_deg": 170.0})
+    assert [count_rule(narrow, n)["value"] for n in RANGE] == [raw(middle - 85 * SCALE), raw(middle + 85 * SCALE)]
+    assert count_rule(narrow, RANGE[0])["inputs"][-1] == "policy:soft_travel_deg"
+    assert not any(n.startswith("soft limits") for n in narrow.notes)
+    # a window over the stops less K at each end, 1.0 deg on this train, is clamped to it, and said
+    wide = context(tmp_path, theta=theta, policy={"soft_travel_deg": 999.0})
+    assert [count_rule(wide, n)["value"] for n in RANGE] == [raw(middle - 89 * SCALE), raw(middle + 89 * SCALE)]
+    assert wide.notes[-1] == ("soft limits: policy.json's soft_travel_deg, 999 deg, is over the stops' 180.00 "
+                              "deg less 1.00 deg at each end: the window is clamped to 178.00 deg, centered on "
+                              "the stops")
+    # and one under two K is held there
+    tight = context(tmp_path, theta=theta, policy={"soft_travel_deg": 0.0})
+    assert [count_rule(tight, n)["value"] for n in RANGE] == [raw(middle - SCALE), raw(middle + SCALE)]
+    assert "under the least window, 2.00 deg" in tight.notes[-1]
+    # on a low-ratio train K is 1.25 x the cut of 4 cycles: 10 deg at 2 deg a cycle
+    c.registry = {**c.registry, "servo": {**c.registry["servo"], "gear_ratio": 30.0}}
+    assert stopcontact.hold_margin_deg(stopcontact.deg_per_cycle(6, 30.0)) == 10.0
+    c.policies = {**c.policies, "soft_travel_deg": 999.0}
+    assert [count_rule(c, n)["value"] for n in RANGE] == [raw(middle - 80 * SCALE), raw(middle + 80 * SCALE)]
+    # stops no wider than K at each end leave no room for a window: refused
+    c.registry = {**c.registry, "servo": {**c.registry["servo"], "gear_ratio": 3.0}}
+    with pytest.raises(ValueError, match="there is no room for a soft window"):
+        count_rule(c, RANGE[0])
     # the screens that protect say which way protects less, and the limits of motion are of the plant
     assert [cn.LOOSER[n] for n in SCREENS] == ["down", "up"] and cn.LOOSER["sensor_delta_max"] == "up"
     assert not {*MOTION, *RANGE, "pos_deadband_counts"} & cn.PROTECTION
@@ -3575,15 +3596,17 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     assert ran["pos_error_counts"] == 400 and f["pos_error_counts"] == {**error, "protection": {"looser": "up"}}
     assert (error["class"], error["scale_points_sha1"]) == ("policy", doc["scale"]["points_sha1"])
     assert not {"pos_error_counts", "pos_error_time_ticks"} & set(policy["hold"])
-    # the range is what it was typed as, a sixteenth of the stops' span inside each stop, and binds as it stands
+    # the range is the rated travel, 180 deg, centered between the stops on the table's count: the policy states
+    # no soft travel, and the stops, 184.33 deg apart, leave room for it inside K, 1.0 deg, at each end
     lo, hi = (f[n]["value"] for n in cn.STOPS)
-    assert policy["soft_margin_share"] == 1 / 16
-    assert [(f[n]["value"], f[n]["class"]) for n in RANGE] == [(raw(lo + (hi - lo) / 16), "policy"),
-                                                               (raw(hi - (hi - lo) / 16), "policy")]
-    assert [f[n]["value"] for n in RANGE] == [314, 3560]
-    # on the raw pot those counts sat nearer the stops than on the table, deg inside the low and the high one
-    inside = [(float(c.table.lin(314)) - lo) / table, (hi - float(c.table.lin(3560))) / table]
-    assert [round(x, 2) for x in inside] == [10.4, 10.86] and round((314 - lo) / table, 2) == 11.53
+    assert "soft_travel_deg" not in policy and "soft_margin_share" not in policy
+    assert round((hi - lo) / table, 2) == 184.33
+    assert [(f[n]["value"], f[n]["class"]) for n in RANGE] == [(raw((lo + hi) / 2 - 90 * table), "policy"),
+                                                               (raw((lo + hi) / 2 + 90 * table), "policy")]
+    assert [f[n]["value"] for n in RANGE] == [126, 3748]
+    # each soft limit 2.19 deg inside its stop on the table: the slack, (184.33 - 180) / 2, and the rounding
+    inside = [(126 - lo) / table, (hi - 3748) / table]
+    assert [round(x, 2) for x in inside] == [2.19, 2.19]
     # the band on its floor over the pot's noise, and the sensor screen, in the pot's raw counts
     noise = results.read_file(results.path("3-servo", "pot-table", doc["pair"]))["pot_rest_sd_counts"]
     assert max(policy["hold_band_noise_multiple"] * noise[k] for k in ("value", "lo", "hi")) < 4
@@ -4256,6 +4279,8 @@ LOOSEN = ("stall_response", "thermal_tau_s", "thermal_tau2_s", "rail_fold_q8", "
 # the fields the speed and position gains' rule moved off the values the reference rung ran on: the speed loop's
 # three, at the set the margin record measured, where the position gain is the count the rung ran
 RULED = ("v_kp_q88", "v_ki_q412", "v_kaw_q412")
+# the soft limits the window rule moved off the share of the stops' span the reference rung ran at
+WINDOWED = ("pos_min_soft_counts", "pos_max_soft_counts")
 
 
 def before_the_releases(doc):
@@ -4268,8 +4293,9 @@ def before_the_releases(doc):
     yield current and the release at the 250 and 90 mA they were
     before the lock hold, no speed
     ceiling, which the table had no field for, the friction slope the
-    cruise refit moved since (REFIT) and the fields the gains' rule moved
-    since (RULED) at the value the rung ran on, and
+    cruise refit moved since (REFIT), the fields the gains' rule moved
+    since (RULED) and the soft limits the window rule moved (WINDOWED)
+    at the value the rung ran on, and
     the table of that day: the fields the firmware took out since (GONE
     and UNDERVOLT_STEP) back at the values the rung ran on, the ones it
     added (ADDED) out, and the ones it named otherwise since (RENAMED) by
@@ -4283,7 +4309,7 @@ def before_the_releases(doc):
     for n in (cn.CEILING, *ADDED):
         del before["fields"][n]
     before["fields"].update({n: {"value": None, "protection": cn.protection_of(n)} for n in (*GONE, *UNDERVOLT_STEP)})
-    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT, *RULED)},
+    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT, *RULED, *WINDOWED)},
                       current_limit_counts=raw(0.5 * scale), yield_current_counts=raw(0.25 * scale),
                       stall_release_counts=raw(0.09 * scale))
     old = {new: old for old, new in cn.RENAMED.items()}
@@ -4304,7 +4330,7 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     state = {"fields": {cn.RENAMED.get(n, n): e["value"] for n, e in before["fields"].items()}}
     differ = [n for n in f if state["fields"].get(n) != f[n]["value"]]
     assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *HOLD_STEP, *ADDED, *REFIT,
-                                            *RULED)]
+                                            *RULED, *WINDOWED)]
     assert (len(plant), len(steps)) == (11, 13)
     assert {*GONE, *UNDERVOLT_STEP, *cn.RENAMED} == set(before["fields"]) - set(f)
     assert {n for n, less in cn.RETIRED.items() if less is None} == set(GONE)
@@ -4428,7 +4454,7 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
         # reference rung ran on, the table of that day once more (`before_the_releases`)
         assert rung["set"]["hash"]["plant"] == before["hash"]["plant"] != derived["hash"]["plant"]
         assert [n for n in f if n not in cn.PROTECTION and ran.get(n) != f[n]["value"]] == [
-            n for n in f if n in (*whole, *MOTION, *ADDED, *REFIT, *RULED)]
+            n for n in f if n in (*whole, *MOTION, *ADDED, *REFIT, *RULED, *WINDOWED)]
         assert [n for n in whole if n not in GONE] == [n for n in f if n in whole] and len(whole) == 11
         # the arms of the bisect and the current gains' side cut it in groups: the resistance, the back-EMF
         # constant, the model block and the friction term each alone, the current loop's three, and the two

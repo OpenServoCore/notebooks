@@ -1120,17 +1120,26 @@ so the field moved, with the screen's time, as one protection step
 (below).
 
 Three more fields are counts of position and move with no table. The
-soft limits are positions: `osc cal` typed them a sixteenth of the
-travel inside each stop on a straight line between the stops, and the
-table's count is that line, reading the stops as themselves. Their
-rule is the policy's `soft_margin_share` of the stops' span inside
-each stop, 314 and 3560, the values the servo holds, so they bind and
-are of class `policy`. On the raw pot the same counts sat 10.4 and
-10.9 deg inside the stops; on the table they are 11.5 deg, what they
-were typed for. They keep the train off its stops, the wall that zeroes
-the current into a stop and the clamp of a goal, and are not among the
-protection fields yet: naming them there moves two hashes of every
-set with no value moved, which is a step of its own.
+soft limits are positions. `osc cal` typed them a sixteenth of the
+travel inside each stop, 314 and 3560, the values the servo held. Their
+rule is a window of degrees centered between the stops, on the table's
+count, which reads each stop as itself. The window is as wide as the
+policy's `soft_travel_deg` where it states one, and the servo's rated
+travel where it does not. This MG90 is sold as a 180 deg servo, and
+neither maker document states a travel, so the registry carries 180 deg
+as its user's entry. A window wider than the stops less a hold margin
+K at each end is clamped to that width, and the build says so. K is
+1.0 deg, the larger of 1 deg and 1.25 times the 4 ripple cycles a
+stop's contact read cuts off before contact, 0.78 deg on this train
+(`oscnb.stopcontact`). The stops sit 184.33 deg apart on the table, so
+the 180 deg window fits with no clamp. It puts the limits at 126 and
+3748, each about 2.2 deg inside its stop, of class `policy`. The
+window's half-width is in the table's degrees, so it reaches counts only
+through the table and never through a straight pot scale. The limits
+keep the train off its stops, the wall that zeroes the current into a
+stop and the clamp of a goal, and are not among the protection fields
+yet: naming them there moves two hashes of every set with no value
+moved, which is a step of its own.
 
 The hold band, `pos_deadband_counts`, and the sensor screen,
 `sensor_delta_max`, are in the raw counts of the pot whatever the

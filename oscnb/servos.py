@@ -23,7 +23,9 @@ plastic on a metal train and took a set on another unit at about 0.32 A.
 A servo whose maker publishes a sheet for its class names that class
 (`datasheet_class`). What the maker states is a record beside the constant
 sets (`oscnb.constants`), with the document it was read from, never typed
-here.
+here. The rated travel, the output travel a servo is sold for, is the one
+exception: where no maker's document states it, its user enters it here,
+with where it was read (`rated_travel_source`).
 """
 import os
 from dataclasses import dataclass
@@ -55,6 +57,10 @@ class Servo:
     gear_teeth: tuple[int, ...] = ()
     notes: str = ""
     datasheet_class: str = ""     # the class its maker's sheet is of, "" for none
+    # the output's travel as the maker rates it, deg, where the soft window
+    # takes its width by default, and where it was read
+    rated_travel_deg: float | None = None
+    rated_travel_source: str = ""
 
     @property
     def motor_entry(self):
@@ -109,6 +115,10 @@ SERVOS = {
               "motor, the top of that range taken, which a 100 % lap holds "
               "to 3.7 V by the type R",
         datasheet_class="vorpal-mg90",
+        rated_travel_deg=180.0,
+        rated_travel_source="the user: the MG90 is sold as a 180 deg servo, "
+                            "and neither the Vorpal page nor the TowerPro "
+                            "MG90S record states a travel",
     ),
 }
 DEFAULT = "mg90-d"
