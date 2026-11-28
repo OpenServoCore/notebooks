@@ -22,13 +22,20 @@ the pot's speed there over a table's counts a cycle. A rung's track that
 reads counts a cycle off the table's has followed another line, and its
 rung is left out of its stop, named.
 
+The rotor cannot pass its stop. Every sample a table is fitted on is a
+free-running shaft, each stop rung's cut CUT_CYCLES before its own contact,
+so every fitted sample lies on the free side of the true contact. A rung
+that went still with a rise short of its stop, at a stretch the train is
+stiffer over, reads a contact the fitted samples lie past: it is a stall
+short of the stop, and is left out of its stop, named.
+
 `read` takes one rung's rows and gives its contact. `cycles_past` counts
 the cycles from a pot code to the contact, the reference read on rows
 whose pot is sound at that code. `placed` puts a contact in a table's
-frame and checks its track. `stop` takes a stop's rungs to its median
-and spread, `travel_deg`
-the two stops to the physical travel, and `hold_margin_deg` gives K, the
-least distance from a soft limit to first contact.
+frame and checks its track. `short_of` names the contacts the fitted
+samples lie past, `stop` takes a stop's rungs to its median and spread,
+`travel_deg` the two stops to the physical travel, and `hold_margin_deg`
+gives K, the least distance from a soft limit to first contact.
 
 Rows run at 20 kHz unless `fs` says otherwise. Rows are indices into the
 arrays a function is given.
@@ -62,7 +69,9 @@ CHECK_SHARE = 0.15
 # 4 cycles clears both at the mean plus 1 sd.
 CUT_CYCLES = 4.0
 SAMPLE_ROWS = 16        # rows a placement sample, and the pot's centered mean at it
-ODD_CYCLES = 4.0        # a rung this far off its stop's median is named
+# a rung this far off its stop's median is named, and a contact a fitted sample lies this far past toward its
+# stop is a stall short of it
+ODD_CYCLES = 4.0
 # K, the least distance from a soft limit to first contact: a landing at
 # a soft limit overshoots it by up to 0.75 deg at the default move and
 # rests within the hold band, 0.3 deg, and the pot's low-end bumper starts
@@ -259,30 +268,48 @@ def placed(contact, pos, angle, slots=None, span=None):
 class Stop:
     """One stop from its rungs' contacts, cycles: the median, the spread
     (max - min) and the sd over the rungs kept, the rungs more than
-    ODD_CYCLES off the median and the rungs left out, each by its index
-    in the list given."""
+    ODD_CYCLES off the median, the rungs left out and the rungs short of
+    the stop, each by its index in the list given."""
     contact: float
     spread: float
     sd: float
     n: int
     odd: list
     left_out: list
+    short: list
 
 
-def stop(angles, kept=None):
+def short_of(angles, dir, farthest, kept=None):
+    """The rungs, by index, whose contact angle, cycles, a fitted sample
+    lies past toward the stop by more than ODD_CYCLES: each a stall short
+    of the stop. `dir` is the stop's side (-1 low, +1 high) and `farthest`
+    the table's angle, cycles, at the fitted sample farthest toward it. A
+    rung `kept` marks False is left out already, its track on another
+    line, and is not named here."""
+    a = np.asarray(angles, float)
+    keep = np.ones(len(a), bool) if kept is None else np.asarray(kept, bool)
+    return [int(i) for i in np.flatnonzero(keep & (dir * (farthest - a) > ODD_CYCLES))]
+
+
+def stop(angles, kept=None, short=()):
     """The Stop of one end from each rung's contact angle, cycles. A rung
     `kept` marks False, one whose track failed its check, is left out of
-    the median and named. No other rung is dropped: one far off the
+    the median and named, and so is a rung in `short` (`short_of`), a
+    stall short of the stop. No other rung is dropped: one far off the
     median is named."""
     a = np.asarray(angles, float)
     keep = np.ones(len(a), bool) if kept is None else np.asarray(kept, bool)
-    if not keep.any():
-        raise ValueError("no rung read this stop's contact")
-    m = float(np.median(a[keep]))
-    k = a[keep]
+    stalled = np.zeros(len(a), bool)
+    stalled[list(short)] = True
+    use = keep & ~stalled
+    if not use.any():
+        said = f"; rungs {sorted(short)} stalled short of it" if len(short) else ""
+        raise ValueError(f"no rung read this stop's contact{said}")
+    m = float(np.median(a[use]))
+    k = a[use]
     return Stop(contact=m, spread=float(k.max() - k.min()), sd=float(np.std(k, ddof=1)) if len(k) > 1 else 0.0,
-                n=int(len(k)), odd=[int(i) for i in np.flatnonzero(keep & (np.abs(a - m) > ODD_CYCLES))],
-                left_out=[int(i) for i in np.flatnonzero(~keep)])
+                n=int(len(k)), odd=[int(i) for i in np.flatnonzero(use & (np.abs(a - m) > ODD_CYCLES))],
+                left_out=[int(i) for i in np.flatnonzero(~keep)], short=[int(i) for i in np.flatnonzero(stalled)])
 
 
 def deg_per_cycle(ripple_per_rev, gear_ratio):
