@@ -1129,11 +1129,15 @@ travel where it does not. This MG90 is sold as a 180 deg servo, and
 neither maker document states a travel, so the registry carries 180 deg
 as its user's entry. A window wider than the stops less a hold margin
 K at each end is clamped to that width, and the build says so. K is
-1.0 deg, the larger of 1 deg and 1.25 times the 4 ripple cycles a
+2.5 deg, the larger of 2.5 deg and 1.25 times the 4 ripple cycles a
 stop's contact read cuts off before contact, 0.78 deg on this train
-(`oscnb.stopcontact`). The stops sit 184.33 deg apart on the table, so
-the 180 deg window fits with no clamp. It puts the limits at 126 and
-3748, each about 2.2 deg inside its stop, of class `policy`. The
+(`oscnb.stopcontact`). The 2.5 deg holds a landing's overshoot at the
+default move, up to 0.75 deg, the hold band, 0.3 deg, and the pot's
+bumper at the low stop, which starts up to 1.2 deg above the ripple's
+first contact, so a goal at a soft limit does not land in the bumper.
+The stops sit 184.33 deg apart on the table, so the 180 deg window is
+clamped to 179.33 deg. It puts the limits at 132 and 3742, each 2.48
+deg inside its stop to the rounding, of class `policy`. The
 window's half-width is in the table's degrees, so it reaches counts only
 through the table and never through a straight pot scale. The limits
 keep the train off its stops, the wall that zeroes the current into a

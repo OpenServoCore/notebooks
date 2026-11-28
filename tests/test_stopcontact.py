@@ -132,6 +132,6 @@ def test_the_travel_and_the_hold_margin_are_in_the_trains_degrees():
     per = st.deg_per_cycle(6, 308.0533)
     assert round(per, 4) == 0.1948
     assert st.travel_deg(27.31, 965.08, 6, 308.0533) == pytest.approx(937.77 * per)
-    # K is 1 deg where the cut is under it, else 1.25 x the cut
-    assert st.hold_margin_deg(per) == 1.0
+    # K is 2.5 deg where 1.25 x the cut is under it, else 1.25 x the cut
+    assert st.hold_margin_deg(per) == 2.5
     assert st.hold_margin_deg(st.deg_per_cycle(6, 30.0)) == pytest.approx(10.0)

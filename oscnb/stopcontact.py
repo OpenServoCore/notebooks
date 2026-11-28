@@ -63,12 +63,16 @@ CHECK_SHARE = 0.15
 CUT_CYCLES = 4.0
 SAMPLE_ROWS = 16        # rows a placement sample, and the pot's centered mean at it
 ODD_CYCLES = 4.0        # a rung this far off its stop's median is named
-# K, the least distance from a soft limit to first contact: the high contact
-# moved 0.58 deg within one day of sittings, the hold band is 0.2..0.3 deg,
-# 0.9 deg together, rounded up. On a low-ratio train, where CUT_CYCLES is
-# more than 1 deg, K stays HOLD_CUT_RATIO x the cut so a soft limit lies on
-# samples a table was fitted on.
-HOLD_MARGIN_DEG = 1.0
+# K, the least distance from a soft limit to first contact: a landing at
+# a soft limit overshoots it by up to 0.75 deg at the default move and
+# rests within the hold band, 0.3 deg, and the pot's low-end bumper starts
+# up to 1.2 deg above the run's ripple contact, 2.3 deg together, rounded
+# up. A K that covers only the contact's drift and the hold band lets every
+# landing press the bumper, where a worn pot misreads and the loop answers
+# the false error at full duty. On a low-ratio train, where HOLD_CUT_RATIO
+# x CUT_CYCLES is wider, K is that, so a soft limit lies on samples a table
+# was fitted on.
+HOLD_MARGIN_DEG = 2.5
 HOLD_CUT_RATIO = 1.25
 
 
