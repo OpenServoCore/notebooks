@@ -232,7 +232,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from . import boards, margin, osc, postable, results, servos, settings, widecodes, winding
+from . import boards, margin, motors, osc, postable, results, servos, settings, stopcontact, widecodes, winding
 from . import scorecard as sc
 
 FORMAT = 1
@@ -731,12 +731,17 @@ def encode(r, x, fit=True):
 
 
 def registry_of(pair):
-    """The registry entries of a pair's servo and board, as plain
-    fields; a kind the registry has no entry for is left out."""
+    """The registry entries of a pair's servo, the motor inside it and
+    its board, as plain fields, the motor's with its ripple events a
+    turn; a kind the registry has no entry for is left out."""
     servo, _, board = pair.partition("__")
-    return {kind: dataclasses.asdict(entries[key])
-            for kind, entries, key in (("servo", servos.SERVOS, servo), ("board", boards.BOARDS, board))
-            if key in entries}
+    out = {kind: dataclasses.asdict(entries[key])
+           for kind, entries, key in (("servo", servos.SERVOS, servo), ("board", boards.BOARDS, board))
+           if key in entries}
+    motor = motors.MOTORS.get(servos.SERVOS[servo].motor) if servo in servos.SERVOS else None
+    if motor is not None:
+        out["motor"] = {**dataclasses.asdict(motor), "ripple_per_rev": motor.ripple_per_rev}
+    return out
 
 
 class Context:
@@ -1427,11 +1432,11 @@ rule("brush_cps", "brush_cps.off", kind="u16", unit="count/s", pos_unit=+1, cls=
 # kernel/phases/loops/trajectory.rs, limits.rs, phases/rail.rs). A
 # speed, an acceleration and an angle the policy states in degrees are
 # that many counts there, so each rule carries the scale once. The soft
-# limits are positions and no lengths: a share of the travel inside
-# each stop, on a count that reads the stops as themselves, so they
-# take the stops and not the scale. Two fields are in the raw counts of
-# the pot whatever the table, and carry no scale: the hold band, which
-# the kernel takes through the table's local gain itself (core
+# limits are positions: a window of degrees centered between the stops,
+# on a count that reads the stops as themselves, its half-width carried
+# by the scale. Two fields are in the raw counts of the pot whatever the
+# table, and carry no scale: the hold band, which the kernel takes
+# through the table's local gain itself (core
 # kernel/phases/loops/position.rs band_q16), and the sensor screen,
 # which reads the pot sample before any table (core
 # kernel/phases/loops/faults.rs sensor_sample).
@@ -1447,17 +1452,57 @@ def in_counts(key, per_tick=False):
     return counts
 
 
+SOFT_TRAVEL = "soft_travel_deg"     # the policy entry that sets the soft window's width, deg
+# deg, the narrowest soft window, as a multiple of the hold margin K: one
+# K either side of the window's center, the room each soft limit keeps
+# from its stop. A width under it, a typo of 0 among them, would put both
+# limits on the center, where a goal has no travel to land in.
+SOFT_FLOOR_MARGINS = 2
+
+
+def soft_window(c):
+    """(the low soft limit, the high one, counts, and what a clamp says,
+    None when there is none). The window is centered between the stops
+    the table reads as themselves, which stand for the two first
+    contacts: the record's are a hand reading, and a table pinned by
+    the ripple is pinned at them (`stopcontact`). Its width W is the
+    policy's soft_travel_deg where it states one, else the servo's rated
+    travel, clamped to at most the physical travel P less the hold
+    margin K at each end (`stopcontact.hold_margin_deg`) and to at least
+    SOFT_FLOOR_MARGINS x K. The degrees are the scale's, so a half-width
+    reaches counts only through the table. A clamp is said, never
+    refused, and a pair with no room for a window at all is refused."""
+    lo, hi = c.stops
+    per_deg = c.counts_per_deg
+    per_cycle = stopcontact.deg_per_cycle(c.reg("motor", "ripple_per_rev"), c.reg("servo", "gear_ratio"))
+    margin = stopcontact.hold_margin_deg(per_cycle)
+    physical = (hi - lo) / per_deg
+    if SOFT_TRAVEL in c.policies:
+        asked, whose = c.policy(SOFT_TRAVEL), f"{POLICY}'s {SOFT_TRAVEL}"
+    else:
+        asked, whose = c.reg("servo", "rated_travel_deg"), "the rated travel"
+    most, least = physical - 2 * margin, SOFT_FLOOR_MARGINS * margin
+    if most <= 0:
+        raise ValueError(f"the stops are {physical:.2f} deg apart, no wider than {margin:.2f} deg at each end: "
+                         "there is no room for a soft window")
+    width, said = min(max(asked, least), most), None
+    if width != asked:
+        why = (f"over the stops' {physical:.2f} deg less {margin:.2f} deg at each end" if asked > most
+               else f"under the least window, {least:.2f} deg")
+        said = (f"soft limits: {whose}, {asked:g} deg, is {why}: the window is clamped to {width:.2f} deg, "
+                "centered on the stops")
+    middle, half = (lo + hi) / 2, width / 2 * per_deg
+    return middle - half, middle + half, said
+
+
 def soft_limit(high):
-    """A soft limit, counts: the policy's share of the stops' span
-    inside the low stop, or inside the high one. A share of 0, or none,
-    leaves both at 0, off: the servo then holds to its physical stops
-    (protocol sec 5.8)."""
+    """A soft limit, counts: the low or the high end of `soft_window`.
+    A clamp is said once among the build's notes."""
     def counts(c):
-        if not c.policies.get("soft_margin_share"):
-            return 0
-        share = c.policy("soft_margin_share")
-        lo, hi = c.stops
-        return hi - share * (hi - lo) if high else lo + share * (hi - lo)
+        low, high_, said = soft_window(c)
+        if said and said not in c.notes:
+            c.notes.append(said)
+        return high_ if high else low
     return counts
 
 
@@ -1543,9 +1588,9 @@ def stall_omega_max(c):
 
 rule("pos_error_counts", "pos_error.policy", kind="u16", unit="counts", pos_unit=+1, cls="policy",
      mirrors="core kernel/phases/rail.rs rail")(in_counts("pos_error_deg"))
-rule("pos_min_soft_counts", "soft_min.stops", kind="i32", unit="counts", cls="policy",
+rule("pos_min_soft_counts", "soft_min.window", kind="i32", unit="counts", cls="policy",
      mirrors="core kernel/phases/loops/trajectory.rs goal_q16, limits.rs fold")(soft_limit(False))
-rule("pos_max_soft_counts", "soft_max.stops", kind="i32", unit="counts", cls="policy",
+rule("pos_max_soft_counts", "soft_max.window", kind="i32", unit="counts", cls="policy",
      mirrors="core kernel/phases/loops/trajectory.rs goal_q16, limits.rs fold")(soft_limit(True))
 
 

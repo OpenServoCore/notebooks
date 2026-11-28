@@ -2196,15 +2196,20 @@ def test_a_set_on_the_table_gives_inputs_that_name_the_tables_scale_and_file():
 
 def test_the_plans_of_a_rung_on_the_table_rebuild_byte_for_byte_from_the_set_of_record():
     """`13a`'s recorded plans, run-1, every capture: the pair's set of
-    record holds the table, the slots and the soft range that rung ran
-    on, so a rung on it is given the same goals, the wide holds among
-    them. The `wide` plan also reads the board's wide-code result, for
-    the codes it skips: the file the set names by its sha1."""
+    record holds the table and the slots that rung ran on, so a rung on
+    it in the soft range that rung ran in is given the same goals, the
+    wide holds among them. The soft range has moved since, from a share
+    of the stops' span to the rated window, so the rung's own range is
+    the one its plans rebuild in. The `wide` plan also reads the board's
+    wide-code result, for the codes it skips: the file the set names by
+    its sha1."""
     pair = sc.pair_of(SERVO, BOARD)
     doc = cn.of_record(pair)
     assert cn.status(doc)[1] is False
     run = results.ROOT / "telemetry" / pair / "scorecard" / "13a-wide-step-on-table" / "run-1"
-    inp, guard = TS.inputs(SERVO, pair, BOARD.key, doc), TS.guard_of(doc)
+    ran_in = tuple(json.loads((run / TS.CAPTURES[0] / "plan.json").read_text())["guard_counts"])
+    assert (ran_in, TS.guard_of(doc)) == ((314, 3560), (126, 3748))
+    inp, guard = TS.inputs(SERVO, pair, BOARD.key, doc), ran_in
     center, sets = TS.build(guard, inp)
     assert list(sets) == list(TS.CAPTURES)
     for name in TS.CAPTURES:
