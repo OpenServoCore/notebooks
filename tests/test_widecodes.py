@@ -1,6 +1,7 @@
 """The ADC's wide-code finder on synthetic sweeps, bands at and off the 256
 carries, at the range's edges and too wide for a byte, and a thin sweep
-refused; the slots; the step on a recording's readings and its load; the
+refused; a code one direction alone reads wide, and a run one direction
+alone would lengthen; the slots; the step on a recording's readings and its load; the
 bench sweep's code histogram; the sweep's schedule and its capture with
 `osc-bus` stubbed; and the install against a fake bus and the slots read
 back off it."""
@@ -85,6 +86,57 @@ def test_a_code_never_read_under_a_code_that_does_not_read_wide_takes_no_slot():
     assert wide.wide and wide.slot == 3
     s = wc.slots(f.bands)
     assert s[6] == 0 and s[3] == 4 * wc.Q4_PER_SKIPPED
+
+
+def split_sweep(lo, hi, rising, falling, rows_per_code=200):
+    """Raw pot rows and their directions of a sweep from `lo` to `hi`,
+    `rows_per_code` a code each way; `rising` and `falling` map a code to
+    the multiple of that it reads in that direction, 0 for one never read."""
+    pos, direction = [], []
+    for d, times in ((1, rising), (-1, falling)):
+        codes = np.arange(lo - 3, hi + 4)
+        n = np.array([round(times.get(c, 1) * rows_per_code) for c in codes])
+        pos.append(np.repeat(codes, n))
+        direction.append(np.full(n.sum(), d))
+    return np.concatenate(pos), np.concatenate(direction)
+
+
+def test_a_carry_one_direction_reads_wide_takes_its_slot_where_the_pool_falls_short():
+    skipped = {c: 0 for c in range(2048, 2059)}
+    pos, d = split_sweep(900, 2700, {**skipped, 2047: 8}, {**skipped, 2047: 1})
+    bar = wc.WIDE_MIN_SHARE * (1 + 11)
+    pooled = wc.find(pos, 900, 2700)
+    band = next(b for b in pooled.bands if b.stuck == 2047)
+    assert band.skipped == 11 and band.ratio == pytest.approx(4.5, rel=0.01) and band.ratio < bar
+    assert (band.wide, band.slot) == (False, None)
+    f = wc.find(pos, 900, 2700, d)
+    band = next(b for b in f.bands if b.stuck == 2047)
+    assert band.ratio == pytest.approx(4.5, rel=0.01)
+    assert (band.rising, band.falling) == (pytest.approx(8, rel=0.01), pytest.approx(1, rel=0.01))
+    assert (band.wide, band.wide_by, band.slot, band.value) == (True, "rising", 7, 88)
+    assert wc.slots(f.bands)[7] == 88
+    # the falling side alone reads it as well
+    pos, d = split_sweep(900, 2700, {**skipped, 2047: 1}, {**skipped, 2047: 8})
+    assert next(b for b in wc.find(pos, 900, 2700, d).bands if b.stuck == 2047).wide_by == "falling"
+
+
+def test_a_code_one_direction_never_reads_does_not_lengthen_the_run():
+    # 2306 reads in the falling passes only: the rising ones alone would
+    # count a run of 3 under 2303, the pool counts 2
+    pos, d = split_sweep(900, 2700, {2304: 0, 2305: 0, 2306: 0, 2303: 4}, {2304: 0, 2305: 0, 2306: 0.5, 2303: 1})
+    f = wc.find(pos, 900, 2700, d)
+    band = next(b for b in f.bands if b.stuck == 2303)
+    assert band.skipped == 2 < wc.MIN_SKIPPED
+    assert band.rising >= wc.WIDE_MIN_SHARE * (1 + 3)
+    assert (band.wide, band.wide_by, band.slot) == (False, None, None)
+    assert wc.slots(f.bands) == bytes(16)
+
+
+def test_the_pooled_read_is_named_first():
+    b = wc.Band(2047, 11, 6.0, 9.0, 3.0)
+    assert (b.wide, b.wide_by) == (True, "pooled")
+    assert wc.Band(2047, 11, 5.9, 0.0, 0.0).wide_by is None
+    assert wc.Band(2047, 2, 5.9, 9.0, 9.0).wide_by is None
 
 
 def test_slots_hold_the_wide_representable_bands_only():
@@ -260,11 +312,13 @@ def test_find_writes_the_boards_result_with_the_bands_slots_and_ramp_servo(monke
     folder.mkdir(parents=True)
     (folder / "sweep.json").write_text(json.dumps({"board": KEY, "ramp_servo": SERVO.key}))
     pos, (lo, hi) = bench_rows()
-    (folder / "track.csv").write_text("pos\n" + "\n".join(map(str, pos)) + "\n")
-    segs = wc.segments(1937, 18.9, lo, hi, TS)
+    segs = [{"seg": k, **s} for k, s in enumerate(wc.segments(1937, 18.9, lo, hi, TS))]
+    up, down = (next(s["seg"] for s in segs if s.get("direction") == d) for d in (1, -1))
+    seg = np.where(np.arange(len(pos)) % 2 == 0, up, down)
+    (folder / "track.csv").write_text("seg,pos\n" + "\n".join(f"{s},{p}" for s, p in zip(seg, pos)) + "\n")
     (folder / "plan.json").write_text(json.dumps({"segments": segs}))
     f = wc.find_capture(folder)
-    assert "1023 11 11.5 yes 3 88 yes" in " ".join(wc.show(f).split())
+    assert "1023 11 11.5 11.5 11.5 pooled 3 88 yes" in " ".join(wc.show(f).split())
     path = wc.write_result(KEY, folder, f)
     assert str(path) == f"stages/1-board/wide-codes/results/{KEY}.json"
     doc = results.read("1-board", "wide-codes", KEY)
@@ -272,7 +326,9 @@ def test_find_writes_the_boards_result_with_the_bands_slots_and_ramp_servo(monke
     assert doc["ramp_servo"] == SERVO.key
     assert doc["adc_wide_mid_q4"] == [0, 0, 0, 88, 0, 0, 0, 80, 0, 48, 0, 0, 0, 0, 0, 0]
     assert doc["wide_codes"][0] == {"stuck_code": 1023, "skipped": 11, "ratio": pytest.approx(11.5, abs=0.1),
-                                    "wide": True, "representable": True, "slot": 3, "value_q4": 88}
+                                    "ratio_rising": pytest.approx(11.5, abs=0.1),
+                                    "ratio_falling": pytest.approx(11.5, abs=0.1), "wide": True,
+                                    "wide_by": "pooled", "representable": True, "slot": 3, "value_q4": 88}
     assert (doc["swept_lo_counts"]["value"], doc["swept_hi_counts"]["value"]) == (lo, hi)
     assert doc["median_rows_per_code"]["value"] == 234
     assert wc.slots_of_record(KEY) == bytes(doc["adc_wide_mid_q4"])
