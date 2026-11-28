@@ -10,6 +10,14 @@ every code gets many rows, a code never read inside the swept range is a
 code the converter skips, and the code just under a run of them reads
 several times the median rows.
 
+The run is counted over every row of the sweep. Its code reads wide when
+its rows over the median reach WIDE_MIN_SHARE x (1 + skipped) over every
+row, or over the rows of one direction's passes alone against that
+direction's own median: the two directions do not dwell on a stuck code
+alike, and one alone can carry it where the pool falls short. The run is
+never counted over one direction: half the rows turn a thin code into one
+never read.
+
 `adc_wide_mid_q4` is 16 bytes, one slot per carry: slot k is added, in
 1/16 counts, to the position the servo reads when the converter returns
 exactly (k << 8) | 0xff on the pot. A stuck code holds the middle of the
@@ -87,18 +95,32 @@ ITEM_MAX_MS = 3000          # one goal item, under osc-lab track's 3276 ms limit
 @dataclass(frozen=True)
 class Band:
     """A run of codes never read: the code just under it, the codes it
-    skips and how many times the median rows the stuck code reads."""
+    skips and how many times the median rows the stuck code reads, over
+    every row and over the rising and the falling passes' rows alone,
+    each against its own median (0 for a sweep not split)."""
     stuck: int
     skipped: int
     ratio: float
+    rising: float = 0.0
+    falling: float = 0.0
 
     @property
     def value(self):
         return Q4_PER_SKIPPED * self.skipped
 
     @property
+    def wide_by(self):
+        """Which rows read the code wide, every row first: "pooled",
+        "rising", "falling", or None."""
+        if self.skipped < MIN_SKIPPED:
+            return None
+        bar = WIDE_MIN_SHARE * (1 + self.skipped)
+        return next((by for by, r in (("pooled", self.ratio), ("rising", self.rising), ("falling", self.falling))
+                     if r >= bar), None)
+
+    @property
     def wide(self):
-        return self.skipped >= MIN_SKIPPED and self.ratio >= WIDE_MIN_SHARE * (1 + self.skipped)
+        return self.wide_by is not None
 
     @property
     def representable(self):
@@ -124,13 +146,22 @@ class Finding:
         return self.lo + EDGE_MARGIN_COUNTS, self.hi - EDGE_MARGIN_COUNTS
 
 
-def find(pos, lo, hi):
+def histogram(pos):
+    """Rows a code of raw pot rows `pos`, codes past the converter's span
+    left out."""
+    pos = np.asarray(pos, np.int64)
+    return np.bincount(pos[(pos >= 0) & (pos <= ADC_MASK)], minlength=ADC_MASK + 1)
+
+
+def find(pos, lo, hi, direction=None):
     """The ADC's wide codes from a sweep from `lo` to `hi` counts, its raw
     pot rows `pos`: every run of codes never read lying wholly inside the range less
-    EDGE_MARGIN_COUNTS at each end. Raises when the sweep is too thin to
-    tell a skipped code from chance."""
+    EDGE_MARGIN_COUNTS at each end. `direction`, one per row, is +1 on a
+    rising pass's rows, -1 on a falling one's and 0 elsewhere; without it
+    the bands read no direction's ratio. Raises when the sweep is too thin
+    to tell a skipped code from chance."""
     pos = np.asarray(pos, np.int64)
-    h = np.bincount(pos[(pos >= 0) & (pos <= ADC_MASK)], minlength=ADC_MASK + 1)
+    h = histogram(pos)
     a, b = lo + EDGE_MARGIN_COUNTS, hi - EDGE_MARGIN_COUNTS
     if b - a < 2:
         raise ValueError(f"the sweep {lo}..{hi} leaves no codes inside its {EDGE_MARGIN_COUNTS}-count margins")
@@ -141,7 +172,14 @@ def find(pos, lo, hi):
     zero = np.r_[False, h == 0, False].astype(np.int8)
     edges = np.diff(zero)
     starts, ends = np.flatnonzero(edges == 1), np.flatnonzero(edges == -1) - 1
-    bands = [Band(int(s) - 1, int(e - s + 1), float(h[s - 1] / med))
+    split = []
+    if direction is not None:
+        direction = np.asarray(direction)
+        split = [(hd, float(np.median(hd[a:b + 1]))) for hd in (histogram(pos[direction == d]) for d in (1, -1))]
+
+    def by_direction(c):
+        return [float(hd[c] / md) if md > 0 else 0.0 for hd, md in split] or [0.0, 0.0]
+    bands = [Band(int(s) - 1, int(e - s + 1), float(h[s - 1] / med), *by_direction(s - 1))
              for s, e in zip(starts, ends) if s >= a and e <= b]
     return Finding(bands, med, lo, hi)
 
@@ -213,7 +251,7 @@ def bands_of_record(board):
     path = result_file(board)
     if not path.exists():
         return []
-    return [Band(b["stuck_code"], b["skipped"], b["ratio"])
+    return [Band(b["stuck_code"], b["skipped"], b["ratio"], b.get("ratio_rising", 0.0), b.get("ratio_falling", 0.0))
             for b in results.read_file(path).get("wide_codes", [])]
 
 
@@ -313,22 +351,25 @@ def capture(label=None, settings_file=None, servo=None, board=None):
 # --- find and install ---
 
 def find_capture(folder):
-    """`find` on a recorded sweep's rows and plan."""
+    """`find` on a recorded sweep's rows and plan, each row's direction its
+    pass's."""
     folder = Path(folder)
-    lo, hi = swept(json.loads((folder / "plan.json").read_text()))
-    pos = pd.read_csv(folder / "track.csv", usecols=["pos"])["pos"].to_numpy()
-    return find(pos, lo, hi)
+    plan = json.loads((folder / "plan.json").read_text())
+    lo, hi = swept(plan)
+    rows = pd.read_csv(folder / "track.csv", usecols=["seg", "pos"])
+    dirs = {s["seg"]: s["direction"] for s in plan["segments"] if s["test"] == "pass"}
+    return find(rows["pos"].to_numpy(), lo, hi, rows["seg"].map(dirs).fillna(0).to_numpy())
 
 
 def show(f):
     """The ADC's wide codes as a table, one line a band."""
     a, b = f.inside
     lines = [f"swept {f.lo}..{f.hi} counts, read over {a}..{b}: median {f.median_rows:g} rows per code",
-             "stuck  skipped  x median  wide  slot  value  representable"]
+             "stuck  skipped  x median  rising  falling  wide by  slot  value  representable"]
     for band in f.bands:
         slot = "-" if band.slot is None else str(band.slot)
-        lines.append(f"{band.stuck:5d}  {band.skipped:7d}  {band.ratio:8.1f}  {'yes' if band.wide else 'no':>4}  "
-                     f"{slot:>4}  {band.value:5d}  "
+        lines.append(f"{band.stuck:5d}  {band.skipped:7d}  {band.ratio:8.1f}  {band.rising:6.1f}  {band.falling:7.1f}  "
+                     f"{band.wide_by or 'no':>7}  {slot:>4}  {band.value:5d}  "
                      f"{'yes' if band.representable else 'no'}")
     if not f.bands:
         lines.append("(no code inside the range went unread)")
@@ -357,7 +398,8 @@ def write_result(board, folder, f):
         swept_hi_counts=results.q(f.hi, unit="counts"),
         edge_margin_counts=results.q(EDGE_MARGIN_COUNTS, unit="counts"),
         median_rows_per_code=results.q(f.median_rows, unit="rows"),
-        wide_codes=[{"stuck_code": b.stuck, "skipped": b.skipped, "ratio": b.ratio, "wide": b.wide,
+        wide_codes=[{"stuck_code": b.stuck, "skipped": b.skipped, "ratio": b.ratio, "ratio_rising": b.rising,
+                     "ratio_falling": b.falling, "wide": b.wide, "wide_by": b.wide_by,
                      "representable": b.representable, "slot": b.slot, "value_q4": b.value}
                     for b in f.bands],
         **{FIELD: list(slots(f.bands))},

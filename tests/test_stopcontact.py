@@ -125,6 +125,30 @@ def test_a_stop_is_its_rungs_median_with_the_spread_and_a_far_rung_named():
         st.stop([])
     with pytest.raises(ValueError, match="no rung"):
         st.stop([27.3], kept=[False])
+    assert st.stop([27.31, 27.20]).short == []
+
+
+def test_a_contact_a_fitted_sample_lies_past_is_a_stall_short_of_the_stop():
+    # a recorded table run's low stop, cycles in its fit's frame: two stop rungs went still at a stretch the
+    # train is stiffer over, the third's track read 41 % off the table's counts a cycle, and a fitted sample
+    # (the third rung's, before its cut) lies at -39.58, 28 to 29 cycles past the two contacts. The rotor
+    # cannot pass its stop, so both are stalls short of it, and no contact is left
+    low, kept = [-11.11, -10.25, -43.66], [True, True, False]
+    assert st.short_of(low, -1, -39.58, kept) == [0, 1]
+    with pytest.raises(ValueError, match=r"no rung read this stop's contact; rungs \[0, 1\] stalled short"):
+        st.stop(low, kept, short=st.short_of(low, -1, -39.58, kept))
+    # its high stop: the farthest fitted sample lies 6.8 cycles on the free side of the median, none short
+    high = [902.10, 902.64, 901.39]
+    assert st.short_of(high, +1, 895.33) == []
+    assert st.stop(high, short=st.short_of(high, +1, 895.33)).contact == 902.10
+    # a stall among contacts that met the stop: left out of the median and named, the stop kept
+    low = [-38.4, -10.2, -38.9, -39.2]
+    short = st.short_of(low, -1, -35.1)
+    assert short == [1]
+    s = st.stop(low, short=short)
+    assert (s.contact, s.n, s.short, s.odd, s.left_out) == (-38.9, 3, [1], [], [])
+    # a sample up to ODD_CYCLES past a contact is the contact read's own scatter, not a stall
+    assert st.short_of([-10.0], -1, -10.0 - st.ODD_CYCLES) == []
 
 
 def test_the_travel_and_the_hold_margin_are_in_the_trains_degrees():
