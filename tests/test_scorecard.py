@@ -2208,7 +2208,7 @@ def test_the_plans_of_a_rung_on_the_table_rebuild_byte_for_byte_from_the_set_of_
     assert cn.status(doc)[1] is False
     run = results.ROOT / "telemetry" / pair / "scorecard" / "13a-wide-step-on-table" / "run-1"
     ran_in = tuple(json.loads((run / TS.CAPTURES[0] / "plan.json").read_text())["guard_counts"])
-    assert (ran_in, TS.guard_of(doc)) == ((314, 3560), (126, 3748))
+    assert (ran_in, TS.guard_of(doc)) == ((314, 3560), (132, 3742))
     inp, guard = TS.inputs(SERVO, pair, BOARD.key, doc), ran_in
     center, sets = TS.build(guard, inp)
     assert list(sets) == list(TS.CAPTURES)

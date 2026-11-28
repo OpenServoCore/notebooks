@@ -3464,16 +3464,16 @@ def test_a_policy_in_degrees_is_that_many_counts_at_the_scale_of_the_count(tmp_p
     assert [count_rule(narrow, n)["value"] for n in RANGE] == [raw(middle - 85 * SCALE), raw(middle + 85 * SCALE)]
     assert count_rule(narrow, RANGE[0])["inputs"][-1] == "policy:soft_travel_deg"
     assert not any(n.startswith("soft limits") for n in narrow.notes)
-    # a window over the stops less K at each end, 1.0 deg on this train, is clamped to it, and said
+    # a window over the stops less K at each end, 2.5 deg on this train, is clamped to it, and said
     wide = context(tmp_path, theta=theta, policy={"soft_travel_deg": 999.0})
-    assert [count_rule(wide, n)["value"] for n in RANGE] == [raw(middle - 89 * SCALE), raw(middle + 89 * SCALE)]
+    assert [count_rule(wide, n)["value"] for n in RANGE] == [raw(middle - 87.5 * SCALE), raw(middle + 87.5 * SCALE)]
     assert wide.notes[-1] == ("soft limits: policy.json's soft_travel_deg, 999 deg, is over the stops' 180.00 "
-                              "deg less 1.00 deg at each end: the window is clamped to 178.00 deg, centered on "
+                              "deg less 2.50 deg at each end: the window is clamped to 175.00 deg, centered on "
                               "the stops")
     # and one under two K is held there
     tight = context(tmp_path, theta=theta, policy={"soft_travel_deg": 0.0})
-    assert [count_rule(tight, n)["value"] for n in RANGE] == [raw(middle - SCALE), raw(middle + SCALE)]
-    assert "under the least window, 2.00 deg" in tight.notes[-1]
+    assert [count_rule(tight, n)["value"] for n in RANGE] == [raw(middle - 2.5 * SCALE), raw(middle + 2.5 * SCALE)]
+    assert "under the least window, 5.00 deg" in tight.notes[-1]
     # on a low-ratio train K is 1.25 x the cut of 4 cycles: 10 deg at 2 deg a cycle
     c.registry = {**c.registry, "servo": {**c.registry["servo"], "gear_ratio": 30.0}}
     assert stopcontact.hold_margin_deg(stopcontact.deg_per_cycle(6, 30.0)) == 10.0
@@ -3597,16 +3597,20 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     assert (error["class"], error["scale_points_sha1"]) == ("policy", doc["scale"]["points_sha1"])
     assert not {"pos_error_counts", "pos_error_time_ticks"} & set(policy["hold"])
     # the range is the rated travel, 180 deg, centered between the stops on the table's count: the policy states
-    # no soft travel, and the stops, 184.33 deg apart, leave room for it inside K, 1.0 deg, at each end
+    # no soft travel, and the stops, 184.33 deg apart, leave 179.33 deg inside K, 2.5 deg, at each end, so the
+    # window is clamped to that, and said
     lo, hi = (f[n]["value"] for n in cn.STOPS)
     assert "soft_travel_deg" not in policy and "soft_margin_share" not in policy
     assert round((hi - lo) / table, 2) == 184.33
-    assert [(f[n]["value"], f[n]["class"]) for n in RANGE] == [(raw((lo + hi) / 2 - 90 * table), "policy"),
-                                                               (raw((lo + hi) / 2 + 90 * table), "policy")]
-    assert [f[n]["value"] for n in RANGE] == [126, 3748]
-    # each soft limit 2.19 deg inside its stop on the table: the slack, (184.33 - 180) / 2, and the rounding
-    inside = [(126 - lo) / table, (hi - 3748) / table]
-    assert [round(x, 2) for x in inside] == [2.19, 2.19]
+    assert [(f[n]["value"], f[n]["class"]) for n in RANGE] == [(raw(lo + 2.5 * table), "policy"),
+                                                               (raw(hi - 2.5 * table), "policy")]
+    assert [f[n]["value"] for n in RANGE] == [132, 3742]
+    assert [count_rule(c, n)["value"] for n in RANGE] == [132, 3742]
+    assert ("soft limits: the rated travel, 180 deg, is over the stops' 184.33 deg less 2.50 deg at each end: the "
+            "window is clamped to 179.33 deg, centered on the stops") in c.notes
+    # each soft limit K inside its stop on the table, to the rounding
+    inside = [(132 - lo) / table, (hi - 3742) / table]
+    assert [round(x, 2) for x in inside] == [2.48, 2.48]
     # the band on its floor over the pot's noise, and the sensor screen, in the pot's raw counts
     noise = results.read_file(results.path("3-servo", "pot-table", doc["pair"]))["pot_rest_sd_counts"]
     assert max(policy["hold_band_noise_multiple"] * noise[k] for k in ("value", "lo", "hi")) < 4
