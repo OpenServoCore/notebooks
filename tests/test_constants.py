@@ -865,7 +865,7 @@ class Geared(Bench):
     rules bind."""
 
     FIELDS = {**{n: f for n, f in Bench.FIELDS.items() if f[0] < 0xc0},
-              "angle_min_cdeg": (0xa8, 2, "rw", "uint"), "angle_max_cdeg": (0xaa, 2, "rw", "uint"),
+              "angle_min_cdeg": (0xa8, 2, "rw", "int"), "angle_max_cdeg": (0xaa, 2, "rw", "int"),
               "gear_ratio_centi": (0xac, 2, "rw", "uint"), "gear_class": (0xae, 1, "rw", "class"),
               **{n: f for n, f in Bench.FIELDS.items() if f[0] >= 0xc0}}
     STORED = {**Bench.STORED, "angle_min_cdeg": 0, "angle_max_cdeg": 18774, "gear_ratio_centi": 30805,
@@ -1069,7 +1069,7 @@ def inputs(root, slots=NEW_SLOTS, theta=THETA, policy=None, fitted=NEW_SLOTS, wi
         path.write_text(json.dumps(doc))
     path = cn.set_path(PAIR, root).with_name("policy.json")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"angle_cw_stop_deg": 0.0, "hold": {}, **(policy or {})}))
+    path.write_text(json.dumps({"hold": {}, **(policy or {})}))
 
 
 @pytest.fixture
@@ -1106,12 +1106,15 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
     assert doc["scale"] == {"kind": "table", "counts_per_deg": pytest.approx(SCALE), "points_sha1": sha}
     f = doc["fields"]
     angle = {"rule_rev": 1, "unit": "cdeg", "q": 0, "pos_unit": -1, "scale_points_sha1": sha, "protection": None}
-    # the end at the clockwise stop is the policy's angle, the other one the measured travel past it
-    assert f["angle_min_cdeg"] == {"value": 0, "class": "policy", "rule": "angle_min.table", **angle,
-                                   "inputs": ["policy:angle_cw_stop_deg", "pos_table:theta_at_stops_deg"]}
-    assert f["angle_max_cdeg"] == {
-        "value": 18000, "class": "measured", "rule": "angle_max.table", **angle,
-        "inputs": ["policy:angle_cw_stop_deg", "pos_table:theta_at_stops_deg", "pos_table:stops", "scale"]}
+    # 0 deg is the center of travel, the stops' midpoint: each end is its stop's measured angle from it
+    centered = {"class": "measured", **angle, "inputs": ["pos_table:stops", "pos_table:theta_at_stops_deg", "scale"]}
+    assert f["angle_min_cdeg"] == {"value": -9000, "rule": "angle_min.center", **centered}
+    assert f["angle_max_cdeg"] == {"value": 9000, "rule": "angle_max.center", **centered}
+    # the set reports the center, raw through the table, and the offset none was asked of
+    assert doc["center"] == {"counts": 1937.0, "raw": doc["center"]["raw"], "offset_deg": 0.0,
+                             "asked_offset_deg": None, "clamped": False}
+    t = postable.load_file(cn.set_path(PAIR, tmp_path).with_name(f"{PAIR}.pos_lut.json"))[0]
+    assert doc["center"]["raw"] == round(float(t.counts(t.theta_min + (1937 - t.raw_min) / t.scale)), 2)
     # the registry's gear ratio is a choice of which count stands for the unit, its gear class read off the part
     assert f["gear_ratio_centi"] == {
         "value": 30805, "class": "policy", "rule": "gear_ratio.registry", "rule_rev": 1,
@@ -1166,8 +1169,8 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
         "stall_omega_max_cps: 500 [none -> none, held, stall_omega_max.policy]",
         "r_q12: 17100 [none -> none, held, r.rails_fit]",
         "recip_ke_q: 11817 [none -> none, held, recip_ke.ladder]",
-        "angle_min_cdeg: 0 [none -> policy, angle_min.table]",
-        "angle_max_cdeg: 18774 -> 18000 [measured, angle_max.table]",
+        "angle_min_cdeg: 0 -> -9000 [measured, angle_min.center]",
+        "angle_max_cdeg: 18774 -> 9000 [measured, angle_max.center]",
         "gear_ratio_centi: 30805 [none -> policy, gear_ratio.registry]",
         "gear_class: 2 (metal) [none -> bench, gear_class.registry]",
         f"hash: plant moved: plant {first['hash']['plant'][:12]} -> {doc['hash']['plant'][:12]}, protection "
@@ -1178,7 +1181,7 @@ def test_build_binds_what_defines_a_count_and_carries_the_rest(first, tmp_path):
 def test_a_built_set_installs_and_checks_clean(first, geared, tmp_path):
     inputs(tmp_path)
     doc, _ = built_on(first, tmp_path)
-    assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "angle_max_cdeg"]
+    assert cn.install(doc, root=tmp_path) == ["wide-code slots", "position table", "angle_min_cdeg", "angle_max_cdeg"]
     assert cn.check(doc) == []
 
 
@@ -1269,27 +1272,59 @@ def test_every_rule_scales_by_its_position_unit(tmp_path, theta, flat):
             assert r.fn(other) == 0 or not scales_by_its_unit(wrong, tmp_path, 1.25, theta), r.name
 
 
-def test_the_angle_map_puts_the_clockwise_stop_at_the_policys_angle(tmp_path):
+def test_the_angle_map_crosses_0_at_the_center_of_travel_and_the_offset_moves_it(tmp_path):
     def angles(key="value", **kw):
         c = context(tmp_path, **kw)
         return [cn.evaluate(cn.rule_of(c, n), c)[key] for n in ("angle_min_cdeg", "angle_max_cdeg")]
 
-    assert angles() == [0, 18000]
-    # a tag angle that falls as the count rises: the high stop is the clockwise one
-    assert angles(theta=THETA[::-1]) == [18000, 0]
-    assert angles(policy={"angle_cw_stop_deg": -90.0}) == [-9000, 9000]
-    # the end at the clockwise stop is the policy's and reads no travel, the other one is measured
-    assert angles("class") == ["policy", "measured"] and angles("class", theta=THETA[::-1]) == ["measured", "policy"]
+    def soft(**kw):
+        c = context(tmp_path, **kw)
+        return [cn.evaluate(cn.rule_of(c, n), c)["value"] for n in RANGE], c.notes
+
+    # 0 deg at the stops' midpoint, 1937, each stop its 90 deg from it, counterclockwise positive
+    assert angles() == [-9000, 9000]
+    # a tag angle that falls as the count rises: the low stop is the counterclockwise one, and the map descends
+    assert angles(theta=THETA[::-1]) == [9000, -9000]
+    # both ends are measured: each is its stop's distance from the center at the table's scale
+    assert angles("class") == ["measured", "measured"]
+    assert angles("inputs") == [["pos_table:stops", "pos_table:theta_at_stops_deg", "scale"]] * 2
+    # the policy's offset puts 0 deg that many deg counterclockwise of the center, the soft window with it
+    middle, half = (STOPS[0] + STOPS[1]) / 2, 78.75 * SCALE
+    assert angles(policy={"center_offset_deg": 5.0}) == [-9500, 8500]
+    assert angles(theta=THETA[::-1], policy={"center_offset_deg": 5.0}) == [8500, -9500]
+    assert angles("inputs", policy={"center_offset_deg": 5.0})[0] == [
+        "pos_table:stops", "policy:center_offset_deg", "scale", "registry:ripple_per_rev", "registry:gear_ratio",
+        "registry:rated_travel_deg", "pos_table:theta_at_stops_deg"]
+    zero = middle + 5 * SCALE
+    assert soft(policy={"center_offset_deg": 5.0})[0] == [raw(zero - half), raw(zero + half)]
+    zero = middle + 5 * SCALE * -1
+    assert soft(theta=THETA[::-1], policy={"center_offset_deg": 5.0})[0] == [raw(zero - half), raw(zero + half)]
+    # past the room the 157.5 deg window leaves inside K at each end, (180 - 5 - 157.5) / 2 = 8.75 deg, 0 deg is
+    # clamped there, and said, never refused
+    said = ("center: policy.json's center_offset_deg, +20 deg, puts the 157.50 deg soft window past the stops less "
+            "2.50 deg at the counterclockwise end: 0 deg is clamped to +8.75 deg from the center of travel, the "
+            "furthest the window fits")
+    assert angles(policy={"center_offset_deg": 20.0}) == [-9875, 8125]
+    zero = middle + 8.75 * SCALE
+    assert soft(policy={"center_offset_deg": 20.0})[0] == [raw(zero - half), raw(zero + half)]
+    assert [n for n in soft(policy={"center_offset_deg": 20.0})[1] if n.startswith(("center", "soft"))] == [said]
+    assert angles(policy={"center_offset_deg": -20.0}) == [-8125, 9875]
+    assert "at the clockwise end: 0 deg is clamped to -8.75 deg" in soft(policy={"center_offset_deg": -20.0})[1][-1]
+    # a window as wide as the stops less K leaves 0 deg no room: any offset is clamped to the center
+    assert angles(policy={"center_offset_deg": 1.0, "soft_travel_deg": 999.0}) == [-9000, 9000]
+    # the entry that put the clockwise stop at an angle is refused in plain words
+    with pytest.raises(ValueError, match="0 deg is the servo's center of travel; to move it, state center_offset_deg"):
+        context(tmp_path, policy={"angle_cw_stop_deg": 0.0})
 
 
 def test_a_field_that_does_not_fit_is_refused(first, tmp_path):
-    inputs(tmp_path, theta=(-200.0, 200.0))
+    inputs(tmp_path, theta=(-350.0, 350.0))
     with pytest.raises(ValueError) as e:
         built_on(first, tmp_path)
-    assert str(e.value) == ("angle_max_cdeg: angle_max.table gives 40000 cdeg, 40000 as the field holds it, which "
-                            "does not fit its i16 (-32768..32767)")
+    assert str(e.value) == ("angle_min_cdeg: angle_min.center gives -35000 cdeg, -35000 as the field holds it, "
+                            "which does not fit its i16 (-32768..32767)")
     # the encoder rounds to the field's Q format, half away from zero, and passes text; it never clamps
-    r = dataclasses.replace(cn.RULES["angle_max_cdeg"]["angle_max.table"], kind="u16", q=8)
+    r = dataclasses.replace(cn.RULES["angle_max_cdeg"]["angle_max.center"], kind="u16", q=8)
     assert [cn.encode(r, x) for x in (1.5, 0.001953125, 0.0019, 255.998)] == [384, 1, 0, 65535]
     assert cn.encode(dataclasses.replace(r, kind="i16", q=0), -2.5) == -3
     assert cn.encode(r, "2 (metal)") == "2 (metal)"
@@ -1310,8 +1345,8 @@ def test_a_missing_result_holds_the_field_and_says_why(first, tmp_path):
     assert doc["wide_codes"] == {"slots": list(SLOTS), **carried, "rule": "slots.wide_codes",
                                  "held": "1-board/wide-codes has no result for board"}
     assert doc["pos_table"] == first["pos_table"] and "scale" not in doc
-    no_table = "the pair has no position table: which stop is the clockwise one is not known"
-    assert doc["fields"]["angle_max_cdeg"] == {"value": 18774, **carried, "rule": "angle_max.table",
+    no_table = "the pair has no position table: the stops its count runs between are not known"
+    assert doc["fields"]["angle_max_cdeg"] == {"value": 18774, **carried, "rule": "angle_max.center",
                                                "held": no_table, "protection": None}
     assert doc["fields"]["gear_ratio_centi"]["class"] == "policy"
     no_stops = "the pair has no position table: the stops its count runs between are not known"
@@ -1347,12 +1382,12 @@ def test_a_field_the_policy_holds_is_carried_with_what_its_rule_would_give(first
     inputs(tmp_path, policy={"hold": {"angle_max_cdeg": "the hosts read the old travel until they are moved"}})
     doc, notes = built_on(first, tmp_path)
     assert doc["fields"]["angle_max_cdeg"] == {
-        "value": 18774, "class": "none", "rule": "angle_max.table", "would_be": 18000,
+        "value": 18774, "class": "none", "rule": "angle_max.center", "would_be": 9000,
         "held": "the hosts read the old travel until they are moved", "carried_from": first["hash"]["set"],
-        "inputs": ["policy:angle_cw_stop_deg", "pos_table:theta_at_stops_deg", "pos_table:stops", "scale"],
+        "inputs": ["pos_table:stops", "pos_table:theta_at_stops_deg", "scale"],
         "protection": None}
     assert ("angle_max_cdeg: held, the hosts read the old travel until they are moved; its rule "
-            "gives 18000") in notes
+            "gives 9000") in notes
 
 
 def test_a_measured_field_at_another_table_is_refused(first, tmp_path):
@@ -1436,11 +1471,12 @@ def test_one_build_moves_one_hash(first, limited, tmp_path):
     assert moved_hashes(named, built_on(named, tmp_path)[0]) == []
     # a plant field its rule would move stays put in a protection build, and is said
     limited(260)
-    inputs(tmp_path, theta=(-80.0, 100.0), policy={"angle_cw_stop_deg": 10.0})
+    inputs(tmp_path, theta=(-80.0, 100.0), policy={"center_offset_deg": 5.0})
     both, notes = built_on(named, tmp_path, protection=["current_limit_counts"])
     assert moved_hashes(named, both) == ["protection"] and both["fields"]["current_limit_counts"]["value"] == 520
-    assert both["fields"]["angle_min_cdeg"] == {**named["fields"]["angle_min_cdeg"], "would_be": 1000}
-    assert "angle_min_cdeg: carried at 0, it would be 1000" in notes
+    assert both["fields"]["angle_min_cdeg"] == {**named["fields"]["angle_min_cdeg"], "would_be": -9500}
+    assert "angle_min_cdeg: carried at -9000, it would be -9500" in notes
+    assert both["center"] == named["center"]
     # what defines a count has to stand: a protection build does not carry a table that would move
     inputs(tmp_path, theta=(-100.0, 100.0))
     with pytest.raises(ValueError, match="the slots, the table, the scale or what the set is scored with would "
@@ -1582,7 +1618,7 @@ def test_a_pin_binds_its_field_and_shows_as_pinned(first, tmp_path):
     assert doc["fields"]["angle_max_cdeg"]["class"] == "pinned" and doc["fields"]["angle_max_cdeg"]["value"] == 18433
     assert doc["inputs"]["pins"] == {"file": f"stages/5-closed-loop/calibration/{PAIR}.pins.json",
                                      "sha1": sc.file_sha1(pins)}
-    assert cn.described(doc)[0].startswith("16 fields: 0 measured, 1 bench, 0 datasheet, 4 policy, 2 pinned, 9 none")
+    assert cn.described(doc)[0].startswith("16 fields: 1 measured, 1 bench, 0 datasheet, 3 policy, 2 pinned, 9 none")
     pins.write_text(json.dumps({"p_kp_q88": {"value": 5026}}))
     with pytest.raises(ValueError, match="p_kp_q88 lacks its value, its why or its rung"):
         built_on(first, tmp_path)
@@ -1765,13 +1801,14 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
     doc = cn.of_record(postable.default_pair())
     f = doc["fields"]
     assert not any(e["class"] in cn.WAS for e in f.values())
-    assert cn.classes(doc) == {"measured": 16, "bench": 6, "datasheet": 1, "policy": 38, "pinned": 1, "none": 1}
+    assert cn.classes(doc) == {"measured": 17, "bench": 6, "datasheet": 1, "policy": 37, "pinned": 1, "none": 1}
     # no field the firmware no longer names
     assert not set(cn.RETIRED) & set(f)
     by = {c: [n for n, e in f.items() if e["class"] == c] for c in cn.CLASSES}
     assert by["measured"] == ["j_ff_q88", "thermal_tau_s", "r_q12", "recip_ke_q", "b_i_q313", "fric_fc_counts",
                               "fric_fv_q016", "ke_vpc_q", "th_rise_q016", "ntc_raw_ref", "ntc_t_ref_cc",
-                              "ntc_k1_q88", "ntc_k2_q24", "ke_uvs_per_rad", "angle_max_cdeg", "g_window_q016"]
+                              "ntc_k1_q88", "ntc_k2_q24", "ke_uvs_per_rad", "angle_min_cdeg", "angle_max_cdeg",
+                              "g_window_q016"]
     # the one pin: the board's nominal supply word, which a capture is matched to its board by
     assert by["pinned"] == ["vdd_mv"]
     # the one value of the maker's: the speed ceiling, read off the class's page
@@ -1787,7 +1824,7 @@ def test_the_set_of_record_names_a_source_for_every_field_or_lists_it_as_debt():
                             "stall_tau_trip_counts", "oc_trip_counts", "oc_trip_ticks",
                             "openloop_zero_brake", "cutoff_cc", "thermal_tau2_s",
                             "pos_error_time_ticks", "pos_error_counts", "sensor_delta_max", "sensor_bad_count",
-                            "rail_fold_q8", "l1_q016", "l2_q88", "l3_q88", "th_rise2_q016", "angle_min_cdeg",
+                            "rail_fold_q8", "l1_q016", "l2_q88", "l3_q88", "th_rise2_q016",
                             "gear_ratio_centi", "r_brush_q12", "brush_cps"]
     # the brush term off by the policy: the value that turns it off, no identification on record
     assert {n: (f[n]["value"], f[n]["rule"], f[n]["inputs"][0]) for n in ("r_brush_q12", "brush_cps")} == {
@@ -1855,7 +1892,7 @@ SWEEP_PICK = ": the pick of a bench sweep under a rule written before its sessio
 
 def test_the_policy_of_record_holds_what_the_rules_read():
     policy = json.loads((results.ROOT / cn.FOLDER / cn.POLICY).read_text())
-    assert isinstance(policy["angle_cw_stop_deg"], float) and isinstance(policy["hold"], dict)
+    assert cn.RETIRED_CW_STOP not in policy and cn.CENTER_OFFSET not in policy and isinstance(policy["hold"], dict)
     assert set(policy["hold"]) <= set(cn.RULES)
     assert isinstance(policy["observer"]["hz"], float) and all(policy["hold"].values())
     # a choice that is a decision says so, under `why`, by the name of its entry, or of the field where the
@@ -1922,7 +1959,7 @@ def test_build_as_a_command(cli, geared, tmp_path, monkeypatch, capsys):
     capsys.readouterr()
     cli("build", "--out", str(tmp_path / "derived.json"))
     out = capsys.readouterr().out.splitlines()
-    assert out[0].endswith("derived.json") and "angle_max_cdeg: 18774 -> 18000 [measured, angle_max.table]" in out
+    assert out[0].endswith("derived.json") and "angle_max_cdeg: 18774 -> 9000 [measured, angle_max.center]" in out
     assert any(line.startswith("hash: plant moved: ") for line in out)
     assert (tmp_path / f"{PAIR}.constants.json").read_bytes() == of_record
     # without --out it is the set of record that is written, on top of the one that stood
@@ -2476,16 +2513,22 @@ def base(first, tmp_path):
 
 
 def test_a_deviation_of_policy_goes_through_the_rules_and_is_named_in_the_set(base, tmp_path):
-    f = dev_file(tmp_path, "cw-5", note="the clockwise stop at 5 deg", policy={"angle_cw_stop_deg": 5.0})
+    f = dev_file(tmp_path, "center-5", note="0 deg 5 deg counterclockwise of the center",
+                 policy={"center_offset_deg": 5.0})
     doc, _ = cn.derive(base, f, tmp_path, REG)
-    # the entry moves what its rules give, both ends of the angle map at the set's scale: no count is typed
-    assert doc["deviation"] == {"file": "deviations/cw-5.json", "sha1": sc.file_sha1(f),
-                                "fields": {"angle_min_cdeg": [0, 500], "angle_max_cdeg": [18000, 18500]}}
+    # the entry moves what its rules give, the soft window and both ends of the angle map at the set's scale:
+    # no count is typed
+    assert doc["deviation"] == {"file": "deviations/center-5.json", "sha1": sc.file_sha1(f), "fields": {
+        "pos_min_soft_counts": [314, 417], "pos_max_soft_counts": [3560, 3663], "angle_min_cdeg": [-9000, -9500],
+        "angle_max_cdeg": [9000, 8500]}}
+    assert doc["center"] == {**base["center"], "counts": round(1937 + 5 * SCALE, 2), "raw": doc["center"]["raw"],
+                             "offset_deg": 5.0, "asked_offset_deg": 5.0}
     sha = cn.points_sha1(POINTS)
     assert (doc["fields"]["angle_max_cdeg"]["class"], doc["fields"]["angle_max_cdeg"]["scale_points_sha1"]) == (
         "measured", sha)
     # it is the set with that one thing changed: the file among its inputs, the set before it named
-    assert doc["inputs"] == {**base["inputs"], "deviation": {"file": "deviations/cw-5.json", "sha1": sc.file_sha1(f)}}
+    assert doc["inputs"] == {**base["inputs"], "deviation": {"file": "deviations/center-5.json",
+                                                             "sha1": sc.file_sha1(f)}}
     assert doc["previous"] == base["hash"] and moved_hashes(base, doc) == ["plant"]
     assert all(doc["fields"][n]["value"] == e["value"] for n, e in base["fields"].items()
                if n not in doc["deviation"]["fields"])
@@ -2493,13 +2536,15 @@ def test_a_deviation_of_policy_goes_through_the_rules_and_is_named_in_the_set(ba
     # the same inputs give the same bytes, the file loads, and every verb says what it is
     path = cn.write(doc, tmp_path / "derived.constants.json")
     assert cn.load(path) == doc and cn.render(cn.derive(base, f, tmp_path, REG)[0]) == path.read_text()
-    assert cn.described(doc)[0] == ("derived, not a set of record: deviations/cw-5.json moves angle_min_cdeg 0 -> "
-                                    "500, angle_max_cdeg 18000 -> 18500")
+    assert cn.described(doc)[0] == ("derived, not a set of record: deviations/center-5.json moves "
+                                    "pos_min_soft_counts 314 -> 417, pos_max_soft_counts 3560 -> 3663, "
+                                    "angle_min_cdeg -9000 -> -9500, angle_max_cdeg 9000 -> 8500")
     # the deviation file moved, the derived set is stale
     assert cn.status(doc, tmp_path, REG)[1] is False
-    f.write_text(json.dumps({"policy": {"angle_cw_stop_deg": 6.0}}))
+    f.write_text(json.dumps({"policy": {"center_offset_deg": 6.0}}))
     lines, stale = cn.status(doc, tmp_path, REG)
-    assert stale and lines[0].startswith("stale: deviation (deviations/cw-5.json) is no longer the file the set read")
+    assert stale and lines[0].startswith("stale: deviation (deviations/center-5.json) is no longer the file the set "
+                                         "read")
 
 
 def test_a_deviation_pins_literals_and_a_protection_field_moves_alone(base, tmp_path):
@@ -2520,10 +2565,10 @@ def test_a_deviation_pins_literals_and_a_protection_field_moves_alone(base, tmp_
 @pytest.mark.parametrize("doc, match", [
     ({"pins": {"current_limit_counts": pin(500), "p_kp_q88": pin(5026)}},
      "a deviation that moves a protection field \\(current_limit_counts\\) may move nothing else"),
-    ({"pins": {"current_limit_counts": pin(500)}, "policy": {"angle_cw_stop_deg": 5.0}},
+    ({"pins": {"current_limit_counts": pin(500)}, "policy": {"center_offset_deg": 5.0}},
      "a deviation that moves a protection field \\(current_limit_counts\\) may move nothing else"),
     ({"pins": {"p_kp_q88": pin(40212)}}, "the deviation moves no field of the set"),
-    ({"policy": {"angle_cw_stop_deg": 0.0}}, "the deviation moves no field of the set"),
+    ({"policy": {"center_offset_deg": 0.0}}, "the deviation moves no field of the set"),
     ({"fields": {"p_kp_q88": 5026}}, "a deviation holds policy entries, pins or holds to release, and no fields"),
     ({"note": "nothing"}, "a deviation holds policy entries, pins or holds to release, and this one none"),
     ({"release": "p_kp_q88"}, "`release` is a list of the fields whose hold it releases"),
@@ -2574,7 +2619,7 @@ def test_a_derived_set_is_checked_and_installed_by_its_path(geared, tmp_path, mo
     capsys.readouterr()
     run("--set", str(derived), "install")
     out = capsys.readouterr().out.splitlines()
-    assert "angle_max_cdeg: 18774 -> 18000" in out and "position table: IDENTITY -> LIVE, 8 pages read back" in out
+    assert "angle_max_cdeg: 18774 -> 9000" in out and "position table: IDENTITY -> LIVE, 8 pages read back" in out
     run("--set", str(derived), "check")
     run("--set", str(derived), "status")
     assert cn.set_path(PAIR, tmp_path).read_bytes() == of_record
@@ -3611,6 +3656,14 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     # each soft limit K inside its stop on the table, to the rounding
     inside = [(132 - lo) / table, (hi - 3742) / table]
     assert [round(x, 2) for x in inside] == [2.48, 2.48]
+    # 0 deg is the center of travel, the stops' midpoint, 1937 on the table and 1963.08 raw through it: the map
+    # crosses 0 there to the rounding, and the window is centered on it
+    assert [f[n]["value"] for n in ("angle_min_cdeg", "angle_max_cdeg")] == [-9217, 9217]
+    zero = lo + (0 - f["angle_min_cdeg"]["value"]) * (hi - lo) / (f["angle_max_cdeg"]["value"]
+                                                                 - f["angle_min_cdeg"]["value"])
+    assert abs(zero - 1937) <= 0.5 and abs((132 + 3742) / 2 - zero) <= 1
+    assert doc["center"] == {"counts": 1937.0, "raw": 1963.08, "offset_deg": 0.0, "asked_offset_deg": None,
+                             "clamped": False}
     # the band on its floor over the pot's noise, and the sensor screen, in the pot's raw counts
     noise = results.read_file(results.path("3-servo", "pot-table", doc["pair"]))["pot_rest_sd_counts"]
     assert max(policy["hold_band_noise_multiple"] * noise[k] for k in ("value", "lo", "hi")) < 4
@@ -3625,7 +3678,7 @@ def test_the_bench_pairs_fields_in_counts_are_the_policys_speeds_and_angle_on_th
     assert all(f[n]["class"] == "policy" and f[n]["scale_points_sha1"] == doc["scale"]["points_sha1"]
                and f[n]["pos_unit"] == -1 and "scale" not in f[n] for n in ("v_kp_q88", "v_ki_q412"))
     assert [n for n, e in f.items() if e.get("scale") == "unknown"] == []
-    assert cn.described(doc)[0] == ("63 fields: 16 measured, 6 bench, 1 datasheet, 38 policy, 1 pinned, 1 none "
+    assert cn.described(doc)[0] == ("63 fields: 17 measured, 6 bench, 1 datasheet, 37 policy, 1 pinned, 1 none "
                                     "(no source); 0 per-count at an unknown scale")
 
 
@@ -4285,6 +4338,8 @@ LOOSEN = ("stall_response", "thermal_tau_s", "thermal_tau2_s", "rail_fold_q8", "
 RULED = ("v_kp_q88", "v_ki_q412", "v_kaw_q412")
 # the soft limits the window rule moved off the share of the stops' span the reference rung ran at
 WINDOWED = ("pos_min_soft_counts", "pos_max_soft_counts")
+# the angle map the center rule moved off the one the reference rung ran on, which put 0 deg at the clockwise stop
+CENTERED = ("angle_min_cdeg", "angle_max_cdeg")
 
 
 def before_the_releases(doc):
@@ -4298,8 +4353,9 @@ def before_the_releases(doc):
     before the lock hold, no speed
     ceiling, which the table had no field for, the friction slope the
     cruise refit moved since (REFIT), the fields the gains' rule moved
-    since (RULED) and the soft limits the window rule moved (WINDOWED)
-    at the value the rung ran on, and
+    since (RULED), the soft limits the window rule moved (WINDOWED) and
+    the angle map the center rule moved (CENTERED) at the value the rung
+    ran on, and
     the table of that day: the fields the firmware took out since (GONE
     and UNDERVOLT_STEP) back at the values the rung ran on, the ones it
     added (ADDED) out, and the ones it named otherwise since (RENAMED) by
@@ -4313,7 +4369,8 @@ def before_the_releases(doc):
     for n in (cn.CEILING, *ADDED):
         del before["fields"][n]
     before["fields"].update({n: {"value": None, "protection": cn.protection_of(n)} for n in (*GONE, *UNDERVOLT_STEP)})
-    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT, *RULED, *WINDOWED)},
+    before = deviated(before, **{n: ran[n] for n in (*plant, *steps, *MOTION, *GONE, *REFIT, *RULED, *WINDOWED,
+                                                     *CENTERED)},
                       current_limit_counts=raw(0.5 * scale), yield_current_counts=raw(0.25 * scale),
                       stall_release_counts=raw(0.09 * scale))
     old = {new: old for old, new in cn.RENAMED.items()}
@@ -4334,7 +4391,7 @@ def test_an_install_of_the_set_of_record_over_the_set_before_its_releases_names_
     state = {"fields": {cn.RENAMED.get(n, n): e["value"] for n, e in before["fields"].items()}}
     differ = [n for n in f if state["fields"].get(n) != f[n]["value"]]
     assert differ == [n for n in f if n in (*plant, *steps, *MOTION, *SHEET_STEP, *HOLD_STEP, *ADDED, *REFIT,
-                                            *RULED, *WINDOWED)]
+                                            *RULED, *WINDOWED, *CENTERED)]
     assert (len(plant), len(steps)) == (11, 13)
     assert {*GONE, *UNDERVOLT_STEP, *cn.RENAMED} == set(before["fields"]) - set(f)
     assert {n for n, less in cn.RETIRED.items() if less is None} == set(GONE)
@@ -4458,7 +4515,7 @@ def test_a_deviation_of_the_session_is_one_change_of_the_plant_over_the_set_of_r
         # reference rung ran on, the table of that day once more (`before_the_releases`)
         assert rung["set"]["hash"]["plant"] == before["hash"]["plant"] != derived["hash"]["plant"]
         assert [n for n in f if n not in cn.PROTECTION and ran.get(n) != f[n]["value"]] == [
-            n for n in f if n in (*whole, *MOTION, *ADDED, *REFIT, *RULED, *WINDOWED)]
+            n for n in f if n in (*whole, *MOTION, *ADDED, *REFIT, *RULED, *WINDOWED, *CENTERED)]
         assert [n for n in whole if n not in GONE] == [n for n in f if n in whole] and len(whole) == 11
         # the arms of the bisect and the current gains' side cut it in groups: the resistance, the back-EMF
         # constant, the model block and the friction term each alone, the current loop's three, and the two

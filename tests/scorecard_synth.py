@@ -175,14 +175,14 @@ class Servo:
 
     def set(self, name, v):
         addr, width, _, kind = self.FIELDS[name]
-        self.table[addr:addr + width] = v if kind == "bytes" else int(v).to_bytes(width, "little")
+        self.table[addr:addr + width] = v if kind == "bytes" else int(v).to_bytes(width, "little", signed=kind == "int")
 
     def decoded(self, name):
         addr, width, _, kind = self.FIELDS[name]
         raw = bytes(self.table[addr:addr + width])
         if kind == "bytes":
             return raw.hex(" ")
-        v = int.from_bytes(raw, "little")
+        v = int.from_bytes(raw, "little", signed=kind == "int")
         return ("on" if v else "off") if kind == "bool" else v
 
     def get(self, name):
@@ -367,9 +367,11 @@ TEST_MOTION_RAW = {"velocity_limit_cps": 1410, "accel_limit_q88": 3609}
 
 class Moving(Bench):
     """The fake servo with the limits of motion, stored at the
-    scorecard's own on the raw pot's count, so a rung on a set adopted
-    from it writes nothing."""
+    scorecard's own on the raw pot's count, and the angle map a table
+    over its stops gives, 0 deg at their midpoint, so a rung on a set
+    adopted from it writes nothing."""
 
     FIELDS = dict(sorted({**Bench.FIELDS, "velocity_limit_cps": (0x44, 2, "rw", "uint"),
-                          "accel_limit_q88": (0x46, 2, "rw", "uint")}.items(), key=lambda kv: kv[1][0]))
-    STORED = {**Bench.STORED, **TEST_MOTION_RAW}
+                          "accel_limit_q88": (0x46, 2, "rw", "uint"), "angle_min_cdeg": (0xa8, 2, "rw", "int"),
+                          "angle_max_cdeg": (0xaa, 2, "rw", "int")}.items(), key=lambda kv: kv[1][0]))
+    STORED = {**Bench.STORED, **TEST_MOTION_RAW, "angle_min_cdeg": -9000, "angle_max_cdeg": 9000}

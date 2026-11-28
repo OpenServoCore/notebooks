@@ -521,8 +521,8 @@ its fields, and the reason and the need of the ones with none.
 
 Every verb prints the count per class, and the count of fields with no
 source whose value is per position count, which were fitted at a scale
-nothing recorded. On mg90-d with board D the set holds 64 fields: 16
-measured, 6 bench, one datasheet, 39 policy, one pinned and one with no
+nothing recorded. On mg90-d with board D the set holds 63 fields: 17
+measured, 6 bench, one datasheet, 37 policy, one pinned and one with no
 source. The pin is the board's nominal supply word, `vdd_mv` (below).
 Six of the policy's are the current loop's three gains and the
 observer's three, each bound by its rule at a bandwidth a bench sweep
@@ -632,9 +632,18 @@ the ones that define a count and what follows from it directly. The
 slots are the board's wide-code result. The table is the pair's table
 file, LIVE, which must be built against the set's stops and fitted on
 the set's slots. The scale is the table's counts per degree. The angle
-map puts the clockwise stop at the policy's angle and the other stop
-the travel past it, the travel being the stops' span at that scale, so
-a host that reads the map gets the table's counts per degree. The gear
+map crosses 0 deg at the servo's center, the midpoint of the two stops
+on the table, and gives each stop its distance from there at that
+scale, counterclockwise positive, so a host commands 0 deg at the
+center, finds the center as the count where the map is 0, and gets the
+table's counts per degree from the map's span over the stops'. On
+mg90-d the map is -92.17 deg at 82 and +92.17 deg at 3792, 0 deg at
+1937 on the table, 1963 raw. The policy's `center_offset_deg` puts 0
+deg that many degrees counterclockwise of the center for an
+application whose zero sits elsewhere; the soft window moves with it
+(below). The set reports where 0 deg is under `center`, raw through
+the table, with the offset; the servo holds no word of it but the
+map. The gear
 ratio and the gear class are the registry's. The motor block, the
 feedforwards and the observer gains have the rules of the table below.
 A field with no rule, no pin and no record in the pair's sources file
@@ -1127,8 +1136,15 @@ count, which reads each stop as itself. The window is as wide as the
 policy's `soft_travel_deg` where it states one, and the servo's rated
 travel where it does not. This MG90 is sold as a 180 deg servo, and
 neither maker document states a travel, so the registry carries 180 deg
-as its user's entry. A window wider than the stops less a hold margin
-K at each end is clamped to that width, and the build says so. K is
+as its user's entry. The window is centered on 0 deg, the center of
+travel unless the policy's `center_offset_deg` moves it, so its edges
+are 0 deg plus and minus half its width. A window wider than the stops
+less a hold margin K at each end is clamped to that width, and the
+build says so. An offset that would put the window past K inside a
+stop is clamped to the furthest the window fits, and said, never
+refused: under the rated 180 deg window, clamped as below, 0 deg has no
+room to move on mg90-d, and a narrower `soft_travel_deg` gives it
+room. K is
 2.5 deg, the larger of 2.5 deg and 1.25 times the 4 ripple cycles a
 stop's contact read cuts off before contact, 0.78 deg on this train
 (`oscnb.stopcontact`). The 2.5 deg holds a landing's overshoot at the

@@ -332,8 +332,8 @@ PER_COUNT = frozenset((
 
 ORIGIN = "servo-state"      # the origin a value adopted from a record of the servo's state names
 BEFORE = "the servo's state before the path"
-TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "scales", "limits", "fields",
-       "hash", "previous", "deviation")
+TOP = ("format", "pair", "inputs", "origins", "wide_codes", "pos_table", "scale", "center", "scales", "limits",
+       "fields", "hash", "previous", "deviation")
 BLOCKS = ("inputs", "origins", "scales", "limits", "fields")    # written an entry a line
 LEAD = ("value", "slots", "state", "kind", "counts_per_deg", "points_sha1", "class", "reason", "needs",
         "datasheet_candidate")
@@ -748,7 +748,7 @@ class Context:
     """What a rule reads through, every read recorded as it is made, so
     a field's inputs are what its rule read: results of record (`q`,
     `raw`), the registry (`reg`), the policy file (`policy`), and the
-    scale of the count (`counts_per_deg`, `travel_deg`, `stops`,
+    scale of the count (`counts_per_deg`, `stops`,
     `ascending`).
     `inputs` gathers what a set names under `inputs`, `notes` what a
     build has to say. A read of something that is not there raises
@@ -788,6 +788,10 @@ class Context:
             if free:
                 raise ValueError(f"{sc.shown(deviation)}: {', '.join(free)} is not held: a deviation releases a "
                                  f"hold of {POLICY}")
+        if RETIRED_CW_STOP in self.policies:
+            raise ValueError(f"the policy states {RETIRED_CW_STOP}, which no rule reads: 0 deg is the servo's center "
+                             f"of travel; to move it, state {CENTER_OFFSET}, the degrees counterclockwise of the "
+                             "center")
         loose = [n for n, pin in self.pins.items() if not all(k in pin for k in ("value", "why", "rung"))]
         if loose:
             raise ValueError(f"the pins of {pair}: {', '.join(loose)} lacks its value, its why or its rung")
@@ -879,14 +883,6 @@ class Context:
         return self.scale["counts_per_deg"]
 
     @property
-    def travel_deg(self):
-        """Stop to stop, deg, at the scale of the count."""
-        if self.table is None:
-            raise Missing("the pair has no position table: the stops its scale runs between are not known")
-        self.reads.append(("pos_table:stops", None))
-        return (self.table.raw_max - self.table.raw_min) / self.counts_per_deg
-
-    @property
     def stops(self):
         """The raw counts of the two stops, low then high, which the
         table reads as themselves."""
@@ -930,26 +926,28 @@ def evaluate(r, c):
 
 
 # The angle map: centi-deg at each stop, rising counterclockwise facing
-# the horn, the clockwise stop at the policy's angle and the other one
-# the travel past it. The travel is the stops' span at the scale of the
-# count, so a host that divides the map's span by the stops' gets the
-# table's counts per deg (ident kinematics.rs deg_per_count). The end
-# at the clockwise stop is the policy's angle and reads no travel; the
-# other one is measured, the travel being the table's.
-def by_travel(inputs):
-    return "measured" if "scale" in inputs else "policy"
+# the horn, 0 deg at the servo's center (`center`), so a host commands
+# 0 deg there and finds the center as the count where the map is 0. Each
+# end is its stop's distance from the center at the scale of the count,
+# so a host that divides the map's span by the stops' gets the table's
+# counts per deg (ident kinematics.rs deg_per_count).
+def angle(high):
+    """An end of the angle map, cdeg: the low stop's or the high one's
+    angle from the center. A clamped center is said once among the
+    build's notes."""
+    def cdeg(c):
+        zero, _, _, said = center(c)
+        if said and said not in c.notes:
+            c.notes.append(said)
+        stop = c.stops[1 if high else 0]
+        return 100 * (1 if c.ascending else -1) * (stop - zero) / c.counts_per_deg
+    return cdeg
 
 
-@rule("angle_min_cdeg", "angle_min.table", kind="i16", unit="cdeg", pos_unit=-1, cls=by_travel,
-      mirrors="core regions/calib.rs CalibKinematics, tools/osc cal/mod.rs rail_angles")
-def angle_min(c):
-    return 100 * (c.policy("angle_cw_stop_deg") + (0 if c.ascending else c.travel_deg))
-
-
-@rule("angle_max_cdeg", "angle_max.table", kind="i16", unit="cdeg", pos_unit=-1, cls=by_travel,
-      mirrors="core regions/calib.rs CalibKinematics, tools/osc cal/mod.rs rail_angles")
-def angle_max(c):
-    return 100 * (c.policy("angle_cw_stop_deg") + (c.travel_deg if c.ascending else 0))
+rule("angle_min_cdeg", "angle_min.center", kind="i16", unit="cdeg", pos_unit=-1,
+     mirrors="core regions/calib.rs CalibKinematics, tools/osc cal/mod.rs rail_angles")(angle(False))
+rule("angle_max_cdeg", "angle_max.center", kind="i16", unit="cdeg", pos_unit=-1,
+     mirrors="core regions/calib.rs CalibKinematics, tools/osc cal/mod.rs rail_angles")(angle(True))
 
 
 # The registry's gear ratio is a choice of which count stands for the
@@ -1453,6 +1451,8 @@ def in_counts(key, per_tick=False):
 
 
 SOFT_TRAVEL = "soft_travel_deg"     # the policy entry that sets the soft window's width, deg
+CENTER_OFFSET = "center_offset_deg"     # the policy entry that moves 0 deg off the center of travel, deg CCW
+RETIRED_CW_STOP = "angle_cw_stop_deg"   # the entry that put 0 deg at the clockwise stop, refused where stated
 # deg, the narrowest soft window, as a multiple of the hold margin K: one
 # K either side of the window's center, the room each soft limit keeps
 # from its stop. A width under it, a typo of 0 among them, would put both
@@ -1460,18 +1460,17 @@ SOFT_TRAVEL = "soft_travel_deg"     # the policy entry that sets the soft window
 SOFT_FLOOR_MARGINS = 2
 
 
-def soft_window(c):
-    """(the low soft limit, the high one, counts, and what a clamp says,
-    None when there is none). The window is centered between the stops
-    the table reads as themselves, which stand for the two first
-    contacts: the record's are a hand reading, and a table pinned by
-    the ripple is pinned at them (`stopcontact`). Its width W is the
+def soft_width(c):
+    """(the soft window's width W, the hold margin K, the physical travel
+    P, deg, and what a clamp says, None when there is none). W is the
     policy's soft_travel_deg where it states one, else the servo's rated
-    travel, clamped to at most the physical travel P less the hold
-    margin K at each end (`stopcontact.hold_margin_deg`) and to at least
-    SOFT_FLOOR_MARGINS x K. The degrees are the scale's, so a half-width
-    reaches counts only through the table. A clamp is said, never
-    refused, and a pair with no room for a window at all is refused."""
+    travel, clamped to at most P less K at each end
+    (`stopcontact.hold_margin_deg`) and to at least SOFT_FLOOR_MARGINS x
+    K. P is the stops' span on the table, which reads them as themselves
+    and stands for the two first contacts: the record's are a hand
+    reading, and a table pinned by the ripple is pinned at them
+    (`stopcontact`). A clamp is said, never refused, and a pair with no
+    room for a window at all is refused."""
     lo, hi = c.stops
     per_deg = c.counts_per_deg
     per_cycle = stopcontact.deg_per_cycle(c.reg("motor", "ripple_per_rev"), c.reg("servo", "gear_ratio"))
@@ -1491,8 +1490,59 @@ def soft_window(c):
                else f"under the least window, {least:.2f} deg")
         said = (f"soft limits: {whose}, {asked:g} deg, is {why}: the window is clamped to {width:.2f} deg, "
                 "centered on the stops")
-    middle, half = (lo + hi) / 2, width / 2 * per_deg
-    return middle - half, middle + half, said
+    return width, margin, physical, said
+
+
+def center(c):
+    """(the count 0 deg is at, the offset it sits at from the center of
+    travel, deg counterclockwise, the offset the policy asks, None when it
+    asks none, and what a clamp says, None when there is none). The center
+    of travel is the stops' midpoint on the table. The policy's
+    center_offset_deg moves 0 deg off it, clamped so the soft window,
+    centered on 0 deg, keeps K inside each stop: 0 deg stays the window's
+    middle. A clamp is said, never refused."""
+    lo, hi = c.stops
+    middle = (lo + hi) / 2
+    if CENTER_OFFSET not in c.policies:
+        return middle, 0.0, None, None
+    asked = c.policy(CENTER_OFFSET)
+    width, margin, physical, _ = soft_width(c)
+    room = max(0.0, (physical - 2 * margin - width) / 2)
+    offset, said = min(max(asked, -room), room), None
+    if offset != asked:
+        end = "counterclockwise" if asked > 0 else "clockwise"
+        said = (f"center: {POLICY}'s {CENTER_OFFSET}, {asked:+g} deg, puts the {width:.2f} deg soft window past the "
+                f"stops less {margin:.2f} deg at the {end} end: 0 deg is clamped to {offset:+.2f} deg from the "
+                "center of travel, the furthest the window fits")
+    return middle + (1 if c.ascending else -1) * offset * c.counts_per_deg, offset, asked, said
+
+
+def soft_window(c):
+    """(the low soft limit, the high one, counts, and what the build says
+    of them): the window `soft_width` gives, centered on 0 deg
+    (`center`). The degrees are the scale's, so a half-width reaches
+    counts only through the table."""
+    width, _, _, said = soft_width(c)
+    zero, _, _, moved = center(c)
+    half = width / 2 * c.counts_per_deg
+    return zero - half, zero + half, [s for s in (said, moved) if s]
+
+
+def center_of(c):
+    """The set's report of its center: the count 0 deg is at, raw through
+    the table, the offset from the center of travel and the one asked,
+    deg, and whether it was clamped; None for a pair with no table. It is
+    on no servo: the servo states its center once, as the angle map's 0."""
+    if c.table is None:
+        return None
+    try:
+        zero, offset, asked, said = center(c)
+    except Missing:
+        return None
+    t = c.table
+    raw = float(t.counts(t.theta_min + (zero - t.raw_min) / t.scale))
+    return {"counts": round(zero, 2), "raw": round(raw, 2), "offset_deg": round(offset, 2),
+            "asked_offset_deg": asked, "clamped": said is not None}
 
 
 def soft_limit(high):
@@ -1500,8 +1550,7 @@ def soft_limit(high):
     A clamp is said once among the build's notes."""
     def counts(c):
         low, high_, said = soft_window(c)
-        if said and said not in c.notes:
-            c.notes.append(said)
+        c.notes += [s for s in said if s not in c.notes]
         return high_ if high else low
     return counts
 
@@ -2411,6 +2460,9 @@ def build(pair, previous=None, protection=(), root=results.ROOT, registry=None, 
            "previous": previous["hash"] if previous else None}
     if scale is not None:
         doc["scale"] = scale
+    middle = copy.deepcopy(previous.get("center")) if protection else center_of(c)
+    if middle is not None:
+        doc["center"] = middle
     if scales:
         doc["scales"] = scales
     limits = {n: copy.deepcopy(e) for n, e in ((previous or {}).get("limits") or {}).items() if n not in fields}
