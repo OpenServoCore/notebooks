@@ -482,7 +482,10 @@ each end, is a skipped run, and the sweep is refused under a median of
 100 rows per code. A run takes a slot only under a code that reads wide
 (at least half of what a code standing for itself and the run would read)
 and when it skips three codes or more: a shorter one moves the reading by
-a count or less, inside the converter's ripple from code to code. No
+a count or less, inside the converter's ripple from code to code. The run
+is counted over every row; the code reads wide over every row or over one
+direction's passes alone against that direction's own median, since the
+two directions do not dwell on a stuck code alike. No
 notebook: the tool prints the table and writes `results/<board>.json`.
 
 Run: `uv run python -m oscnb.widecodes capture`, then `find`. `install`
